@@ -1,29 +1,15 @@
 version: '2'
 services:
   compiler:
-    build: ./compiler/
     image: brewblox/firmware-compiler
     container_name: firmware-compiler
     privileged: true
-    # user: 1000:1000 # set this to what running 'id' on a shell returns to prevent the build results being owned by root 
     volumes:
         - ../:/firmware
-        # - "/etc/timezone:/etc/timezone:ro"
-        # - "/etc/localtime:/etc/localtime:ro"
     command: tail -f /dev/null
-    # environment:
-    #    - COMPOSE_CONVERT_WINDOWS_PATHS=1
 
-  simulator-compiler:
-    build: ./simulator-compiler/
-    image: brewblox/firmware-simulator-compiler
-    container_name: firmware-simulator-compiler
-    volumes:
-        - ../:/firmware
-        
   simulator:
-    build: ./simulator/
-    image: brewblox/firmware-simulator:develop
+    image: brewblox/firmware-simulator:local
     privileged: true
     container_name: firmware-simulator
     volumes:
@@ -34,9 +20,8 @@ services:
         - "8332:8332"
         # http
         - "8380:80"
-        
+
   coverage-simulator:
-    build: ./compiler/
     image: brewblox/firmware-compiler
     container_name: firmware-coverage-simulator
     volumes:
@@ -50,9 +35,4 @@ services:
         - "8380:80"
         # websocket display emulation
         - "8380:7376"
-    command: bash run-simulator.sh        
-
-networks:
-    default:
-      driver: bridge
-
+    command: bash run-simulator.sh
