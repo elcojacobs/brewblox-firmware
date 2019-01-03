@@ -5,10 +5,16 @@ sudo: required
 services:
   - docker
 
+env:
+  global:
+    # Both docker and github repo names are case sensitive
+    - SIM_REPO=brewblox/firmware-simulator
+    - FLASH_REPO=brewblox/firmware-flasher
+    - GITHUB_REPO=BrewBlox/brewblox-firmware
+
 # Required Travis env variables:
 # - DOCKER_USER
 # - DOCKER_PASSWORD (secret)
-# - GITHUB_REPO
 
 script:
   - cd ./docker
@@ -24,8 +30,6 @@ before_deploy:
   docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD};
   export CLEAN_TRAVIS_BRANCH=$(echo "${TRAVIS_BRANCH}" | tr '/' '-' | tr '[:upper:]' '[:lower:]');
   export TAG_VERSION=$(git describe --tags);
-  export SIM_REPO=brewblox/firmware-simulator;
-  export FLASH_REPO=brewblox/firmware-flasher;
 
 deploy:
   # Deploy latest and version tag to Docker Hub on tagged commits
