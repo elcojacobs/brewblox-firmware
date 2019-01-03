@@ -1,4 +1,4 @@
-FROM node:11
+FROM brewblox/rpi-node:11
 
 WORKDIR /app
 

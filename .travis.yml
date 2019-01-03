@@ -39,6 +39,8 @@ deploy:
       bash push-local.sh ${SIM_REPO} ${TAG_VERSION};
       bash push-local.sh ${FLASH_REPO} latest;
       bash push-local.sh ${FLASH_REPO} ${TAG_VERSION};
+      bash push-rpi-local.sh ${FLASH_REPO} rpi-latest;
+      bash push-rpi-local.sh ${FLASH_REPO} rpi-${TAG_VERSION};
     skip_cleanup: true
     on:
       tags: true
@@ -48,6 +50,7 @@ deploy:
     script:
       bash push-local.sh ${SIM_REPO} ${CLEAN_TRAVIS_BRANCH};
       bash push-local.sh ${FLASH_REPO} ${CLEAN_TRAVIS_BRANCH};
+      bash push-rpi-local.sh ${FLASH_REPO} rpi-${CLEAN_TRAVIS_BRANCH};
     skip_cleanup: true
     on:
       tags: false
