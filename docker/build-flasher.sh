@@ -13,7 +13,10 @@ docker run \
         bash compile-proto.sh
         make clean APP=brewblox PLATFORM=p1
         make APP=brewblox PLATFORM=p1
-        cp -r /firmware/build/target/brewblox-p1 /firmware/docker/flasher/brewblox
+        cp -r /firmware/build/target/brewblox-p1 /firmware/docker/flasher/brewblox-p1
+        make clean APP=brewblox PLATFORM=photon
+        make APP=brewblox PLATFORM=photon
+        cp -r /firmware/build/target/brewblox-photon /firmware/docker/flasher/brewblox-photon
     '
 
 docker build -t brewblox/firmware-flasher:local flasher
