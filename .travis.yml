@@ -4,13 +4,53 @@ sudo: required
 
 services:
   - docker
-  
+
+env:
+  global:
+    # Both docker and github repo names are case sensitive
+    - SIM_REPO=brewblox/firmware-simulator
+    - FLASH_REPO=brewblox/firmware-flasher
+    - GITHUB_REPO=BrewBlox/brewblox-firmware
+
+# Required Travis env variables:
+# - DOCKER_USER
+# - DOCKER_PASSWORD (secret)
+
 script:
   - cd ./docker
-  - docker-compose pull compiler
   - docker-compose run --rm compiler bash run-ci.sh
 
 notifications:
   slack:
     secure: AoLzFHi7c7sRdcsMIzCgG3amg/1acImECO21Q3LXf6i6++ytqrvgTiQMQp9k1XJq+WVlrRiP7NDl3o8oMQv9nR/xrNXhosYHXVHAYY/B1nh4jl4pp8hPTMQUJcac64w1zbJMMqlABbawelVg8qF4zn+TNX+io8APERoycBpQgT4=
 
+before_deploy:
+  docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD};
+  export CLEAN_TRAVIS_BRANCH=$(echo "${TRAVIS_BRANCH}" | tr '/' '-' | tr '[:upper:]' '[:lower:]');
+  export TAG_VERSION=$(git describe --tags);
+  bash build-simulator.sh;
+  bash build-flasher.sh;
+
+deploy:
+  # Deploy latest and version tag to Docker Hub on tagged commits
+  - provider: script
+    script:
+      bash push-local.sh ${SIM_REPO} latest;
+      bash push-local.sh ${SIM_REPO} ${TAG_VERSION};
+      bash push-local.sh ${FLASH_REPO} latest;
+      bash push-local.sh ${FLASH_REPO} ${TAG_VERSION};
+    skip_cleanup: true
+    on:
+      tags: true
+
+  # Deploy to Docker Hub on any push to an upstream development branch, tagged as branch name
+  - provider: script
+    script:
+      bash push-local.sh ${SIM_REPO} ${CLEAN_TRAVIS_BRANCH};
+      bash push-local.sh ${FLASH_REPO} ${CLEAN_TRAVIS_BRANCH};
+    skip_cleanup: true
+    on:
+      tags: false
+      repo: ${GITHUB_REPO}
+      all_branches: true
+      condition: ${TRAVIS_BRANCH} != master
