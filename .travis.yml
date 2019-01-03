@@ -19,8 +19,6 @@ env:
 script:
   - cd ./docker
   - docker-compose run --rm compiler bash run-ci.sh
-  - bash build-simulator.sh
-  - bash build-flasher.sh
 
 notifications:
   slack:
@@ -30,6 +28,8 @@ before_deploy:
   docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD};
   export CLEAN_TRAVIS_BRANCH=$(echo "${TRAVIS_BRANCH}" | tr '/' '-' | tr '[:upper:]' '[:lower:]');
   export TAG_VERSION=$(git describe --tags);
+  bash build-simulator.sh;
+  bash build-flasher.sh;
 
 deploy:
   # Deploy latest and version tag to Docker Hub on tagged commits
