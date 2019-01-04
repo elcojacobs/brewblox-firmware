@@ -18,8 +18,14 @@
  */
 
 #include "SysInfoBlock.h"
+#include "Board.h"
 #include "deviceid_hal.h"
+#include "stringify.h"
 #include <cstring>
+
+#ifndef GIT_VERSION
+#error GIT_VERSION not set
+#endif
 
 cbox::CboxError
 SysInfoBlock::streamTo(cbox::DataOut& out) const
@@ -27,6 +33,24 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
     blox_SysInfo message = blox_SysInfo_init_zero;
 
     HAL_device_ID(static_cast<uint8_t*>(&message.deviceId[0]), 12);
+
+    strncpy(message.version, stringify(GIT_VERSION), 20);
+
+    message.platform = blox_SysInfo_Platform(PLATFORM_ID);
+
+    auto hw = blox_SysInfo_Hardware::blox_SysInfo_Hardware_unknown_hw;
+    switch (getSparkVersion()) {
+    case SparkVersion::V1:
+        hw = blox_SysInfo_Hardware_Spark1;
+        break;
+    case SparkVersion::V2:
+        hw = blox_SysInfo_Hardware_Spark2;
+        break;
+    case SparkVersion::V3:
+        hw = blox_SysInfo_Hardware_Spark3;
+        break;
+    }
+    message.hardware = hw;
 
     return streamProtoTo(out, &message, blox_SysInfo_fields, blox_SysInfo_size);
 }

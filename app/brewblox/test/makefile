@@ -124,6 +124,9 @@ LDFLAGS += $(shell pkg-config --libs protobuf)
 # don't generate warnings for system headers
 CFLAGS += -Wno-system-headers
 
+GIT_VERSION = $(shell cd $(SOURCE_PATH); git rev-parse --short HEAD)
+CFLAGS += -DGIT_VERSION="$(GIT_VERSION)"
+
 CPPEXCLUDES += app/brewblox/blox/TouchSettingsBlock.cpp
 CPPEXCLUDES += app/brewblox/blox/WiFiSettingsBlock.cpp
 

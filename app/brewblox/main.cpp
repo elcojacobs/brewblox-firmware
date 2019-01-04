@@ -23,6 +23,7 @@
 #include "Buzzer.h"
 #include "MDNS.h"
 #include "application.h" // particle stuff
+#include "blox/stringify.h"
 #include "cbox/Object.h"
 #include "d4d.hpp"
 #include "display/screens/WidgetsScreen.h"
@@ -64,9 +65,6 @@ watchdogCheckin()
 {
 }
 #endif
-
-#define str(x) #x
-#define xstr(x) "x"
 
 void
 displayTick()
@@ -131,9 +129,9 @@ initMdns()
             hw += "3";
             break;
         }
-        mdns.addTXTEntry("VERSION", "0.1.0");
+        mdns.addTXTEntry("VERSION", stringify(GIT_VERSION));
         mdns.addTXTEntry("ID", System.deviceID());
-        mdns.addTXTEntry("PLATFORM", xstr(PLATFORM_ID));
+        mdns.addTXTEntry("PLATFORM", stringify(PLATFORM_ID));
         mdns.addTXTEntry("HW", hw);
     }
 }
