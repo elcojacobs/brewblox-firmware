@@ -78,7 +78,7 @@ SCENARIO("A SetpointProfile block")
 
         WHEN("The box has received the current time (in seconds since epoch")
         {
-            // create mock sensor
+            // set seconds since epoch
             testBox.put(uint16_t(0));
             testBox.put(commands::WRITE_OBJECT);
             testBox.put(cbox::obj_id_t(3)); // ticks block is at 3
@@ -122,6 +122,21 @@ SCENARIO("A SetpointProfile block")
                 CHECK(testBox.lastReplyHasStatusOk());
                 // 20.5 * 4096 = 83968
                 CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } points { time: 20020 temperature: 86016 } setting: 83968 enabled: true");
+
+                AND_WHEN("The current time lies outside of the profile, the setting field is stripped")
+                {
+                    testBox.update(35000); // system is running for 25 seconds, so seconds since epoch should be 20.035 now
+
+                    testBox.put(uint16_t(0));
+                    testBox.put(commands::READ_OBJECT);
+                    testBox.put(cbox::obj_id_t(100));
+
+                    auto decoded = blox::SetpointProfile();
+                    testBox.processInputToProto(decoded);
+                    CHECK(testBox.lastReplyHasStatusOk());
+
+                    CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } points { time: 20020 temperature: 86016 } enabled: true strippedFields: 2");
+                }
             }
         }
     }

@@ -102,13 +102,16 @@
         {
             "label": "compile proto",
             "type": "shell",
-            "command": "bash",
+            "command": "docker-compose",
             "args": [
+                "exec",
+                "compiler",
+                "bash",
                 "compile-proto.sh"
             ],
             "group": "build",
             "options": {
-                "cwd": "${workspaceFolder}/build"
+                "cwd": "${workspaceFolder}/docker"
             },
             "presentation": {
                 "echo": true,
@@ -118,7 +121,7 @@
                 "showReuseMessage": false,
                 "clear": true
             },
-            "problemMatcher": "$gcc"
+            "problemMatcher": []
         },
         {
             "label": "build app tests",
