@@ -38,6 +38,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     testBox.reset();
 
     // create mock sensor 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(100));
     testBox.put(uint8_t(0xFF));
@@ -52,6 +53,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create setpoint 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(101));
     testBox.put(uint8_t(0xFF));
@@ -66,6 +68,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create pair 1 (target)
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(102));
     testBox.put(uint8_t(0xFF));
@@ -80,6 +83,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create mock sensor 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(103));
     testBox.put(uint8_t(0xFF));
@@ -94,6 +98,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create setpoint 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(104));
     testBox.put(uint8_t(0xFF));
@@ -108,6 +113,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create pair 2 (reference)
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(105));
     testBox.put(uint8_t(0xFF));
@@ -122,6 +128,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create actuator
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(106));
     testBox.put(uint8_t(0xFF));
@@ -141,6 +148,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     testBox.update(0);
 
     // read actuator
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(106));
     {
@@ -153,6 +161,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     }
 
     // read reference pair
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(102));
 
@@ -165,6 +174,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     }
 
     // read target pair
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(105));
 

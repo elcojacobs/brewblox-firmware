@@ -74,12 +74,13 @@ public:
                 pinObj->getConstrained().state(ActuatorDigital::State::Inactive);
             }
         }
-        brewbloxBox().update(0);
         clearStreams();
+        inEncoder.put(uint16_t(0)); // msg id
         inEncoder.put(cbox::Box::CommandID::CLEAR_OBJECTS);
         inEncoder.endMessage();
         brewbloxBox().hexCommunicate();
         clearStreams();
+        brewbloxBox().update(0);
     }
 
     bool lastReplyHasStatusOk()

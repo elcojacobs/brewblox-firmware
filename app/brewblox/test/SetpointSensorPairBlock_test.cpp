@@ -45,6 +45,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     testBox.reset();
 
     // create mock sensor
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(100));
     testBox.put(uint8_t(0xFF));
@@ -59,6 +60,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create setpoint
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(101));
     testBox.put(uint8_t(0xFF));
@@ -73,6 +75,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create pair
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(102));
     testBox.put(uint8_t(0xFF));
@@ -87,6 +90,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     CHECK(testBox.lastReplyHasStatusOk());
 
     // read pair
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(102));
 
@@ -107,6 +111,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
         THEN("The input value is flagged as stripped field")
         {
             // read pair
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::READ_OBJECT);
             testBox.put(cbox::obj_id_t(102));
 

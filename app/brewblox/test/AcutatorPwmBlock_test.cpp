@@ -33,6 +33,7 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
     testBox.reset();
 
     // create pwm actuator
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(101));
     testBox.put(uint8_t(0xFF));
@@ -52,6 +53,7 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // read pwm
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(101));
 

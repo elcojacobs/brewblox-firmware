@@ -564,9 +564,11 @@ Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
     HexTextToBinaryIn hexIn(dataIn);
     BinaryToHexTextOut hexOut(dataOut);
 
-    HexCrcDataOut out(hexOut);  // write CRC after response
-    TeeDataIn in(hexIn, out);   // ensure command input is also echoed to output
-    uint8_t cmd_id = in.next(); // command type code
+    HexCrcDataOut out(hexOut); // write CRC after response
+    TeeDataIn in(hexIn, out);  // ensure command input is also echoed to output
+    uint16_t msg_id;
+    in.get(msg_id);             // echo message id back
+    uint8_t cmd_id = in.next(); // get command type code
 
     switch (cmd_id) {
     case NONE:

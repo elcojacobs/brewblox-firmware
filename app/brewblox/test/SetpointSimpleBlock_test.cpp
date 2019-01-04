@@ -38,6 +38,7 @@ SCENARIO("A Bloc SetpointSimpleBlock")
     {
 
         // create setpoint
+        testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::CREATE_OBJECT);
         testBox.put(cbox::obj_id_t(100));
         testBox.put(uint8_t(0xFF));
@@ -54,6 +55,7 @@ SCENARIO("A Bloc SetpointSimpleBlock")
         // read setpoint
         THEN("The setpoint settings match what was sent")
         {
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::READ_OBJECT);
             testBox.put(cbox::obj_id_t(100));
 
@@ -66,6 +68,7 @@ SCENARIO("A Bloc SetpointSimpleBlock")
         AND_WHEN("The setpoint is disabled, the settting is a stripped field")
         {
             // create setpoint
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::WRITE_OBJECT);
             testBox.put(cbox::obj_id_t(100));
             testBox.put(uint8_t(0xFF));

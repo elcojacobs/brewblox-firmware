@@ -31,6 +31,7 @@ SCENARIO("Active profiles can written through the profile object at ID 1")
     testBox.reset();
 
     // write profiles block
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::WRITE_OBJECT);
     testBox.put(cbox::obj_id_t(1));
     testBox.put(uint8_t(0xFF));
@@ -42,6 +43,7 @@ SCENARIO("Active profiles can written through the profile object at ID 1")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // read profiles block
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(1));
 
@@ -50,7 +52,7 @@ SCENARIO("Active profiles can written through the profile object at ID 1")
 
     std::stringstream expected;
 
-    expected << cbox::addCrc("010100")
+    expected << cbox::addCrc("0000010100")
              << "|" << cbox::addCrc("00"   // no error
                                     "0100" // object id 2
                                     "FF"   // profiles 0xFF

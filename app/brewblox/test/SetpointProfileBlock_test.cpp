@@ -37,7 +37,7 @@ SCENARIO("A SetpointProfile block")
         using commands = cbox::Box::CommandID;
 
         testBox.reset();
-
+        testBox.put(uint16_t(0));
         testBox.put(commands::CREATE_OBJECT);
         testBox.put(cbox::obj_id_t(100));
         testBox.put(uint8_t(0xFF));
@@ -79,6 +79,7 @@ SCENARIO("A SetpointProfile block")
         WHEN("The box has received the current time (in seconds since epoch")
         {
             // create mock sensor
+            testBox.put(uint16_t(0));
             testBox.put(commands::WRITE_OBJECT);
             testBox.put(cbox::obj_id_t(3)); // ticks block is at 3
             testBox.put(uint8_t(0xFF));
@@ -112,6 +113,7 @@ SCENARIO("A SetpointProfile block")
             }
             AND_WHEN("The SetpointProfile block streams out protobuf settings, the data is as expected")
             {
+                testBox.put(uint16_t(0));
                 testBox.put(commands::READ_OBJECT);
                 testBox.put(cbox::obj_id_t(100));
 

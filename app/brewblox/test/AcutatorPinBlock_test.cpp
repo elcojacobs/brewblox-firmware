@@ -36,6 +36,7 @@ SCENARIO("An ActuatorPinBlock")
         testBox.reset();
 
         // write to pin actuator (system object)
+        testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::WRITE_OBJECT);
         testBox.put(cbox::obj_id_t(10));
         testBox.put(uint8_t(0xFF));
@@ -56,6 +57,7 @@ SCENARIO("An ActuatorPinBlock")
         testBox.processInput();
         CHECK(testBox.lastReplyHasStatusOk());
 
+        testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
         testBox.put(cbox::obj_id_t(10));
 
@@ -70,6 +72,7 @@ SCENARIO("An ActuatorPinBlock")
 
         // write state inactive
         auto writeState = [&testBox, &decoded](blox::AD_State state) {
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::WRITE_OBJECT);
             testBox.put(cbox::obj_id_t(10));
             testBox.put(uint8_t(0xFF));

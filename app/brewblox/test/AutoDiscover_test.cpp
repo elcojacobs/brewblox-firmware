@@ -36,11 +36,12 @@ SCENARIO("Auto discovery of OneWire devices")
 
     WHEN("An object discovery command is received")
     {
+        testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::DISCOVER_NEW_OBJECTS);
         auto reply = testBox.processInput();
         THEN("3 new objects are discovered")
         {
-            CHECK(reply == cbox::addCrc("0C") + "|0000" + "," + cbox::addCrc("6400") + "," + cbox::addCrc("6500") + "," + cbox::addCrc("6600") + "," + cbox::addCrc("6700") + "\n");
+            CHECK(reply == cbox::addCrc("00000C") + "|0000" + "," + cbox::addCrc("6400") + "," + cbox::addCrc("6500") + "," + cbox::addCrc("6600") + "," + cbox::addCrc("6700") + "\n");
             AND_THEN("These objects can be used as temp sensor")
             {
                 auto d1 = brewbloxBox().makeCboxPtr<TempSensor>(100);
@@ -57,16 +58,18 @@ SCENARIO("Auto discovery of OneWire devices")
 
         AND_WHEN("The command is given for the second time")
         {
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::DISCOVER_NEW_OBJECTS);
             auto reply = testBox.processInput();
             THEN("No new objects are discovered")
             {
-                CHECK(reply == cbox::addCrc("0C") + "|0000\n");
+                CHECK(reply == cbox::addCrc("00000C") + "|0000\n");
             }
         }
 
         AND_WHEN("One of the sensors is removed")
         {
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::DELETE_OBJECT);
             testBox.put(cbox::obj_id_t(101));
             testBox.processInput();
@@ -74,9 +77,10 @@ SCENARIO("Auto discovery of OneWire devices")
 
             THEN("It will be discovered again")
             {
+                testBox.put(uint16_t(0)); // msg id
                 testBox.put(commands::DISCOVER_NEW_OBJECTS);
                 auto reply = testBox.processInput();
-                CHECK(reply == cbox::addCrc("0C") + "|0000" + "," + cbox::addCrc("6800") + "\n");
+                CHECK(reply == cbox::addCrc("00000C") + "|0000" + "," + cbox::addCrc("6800") + "\n");
             }
         }
     }

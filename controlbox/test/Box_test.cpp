@@ -63,11 +63,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a read object command, it is processed by the Box")
     {
-        *in << "010200"; // read object 2
+        *in << "0000010200"; // read object 2
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("010200")
+        expected << addCrc("0000010200")
                  << "|" << addCrc("00"        // no error
                                   "0200"      // object id 2
                                   "FF"        // profiles 0xFF
@@ -79,11 +79,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a read object command for a non-existing object, INVALID_OBJECT_ID is returned")
     {
-        *in << "010800"; // read object 8
+        *in << "0000010800"; // read object 8
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("010800")
+        expected << addCrc("0000010800")
                  << "|" << addCrc("40")
                  << "\n";
         CHECK(out->str() == expected.str());
@@ -91,11 +91,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a read stored object command for a non-existing object, INVALID_OBJECT_ID is returned")
     {
-        *in << "060800"; // read stored object 8
+        *in << "0000060800"; // read stored object 8
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("060800")
+        expected << addCrc("0000060800")
                  << "|" << addCrc("40")
                  << "\n";
         CHECK(out->str() == expected.str());
@@ -103,11 +103,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a write object command, it is processed by the Box")
     {
-        *in << "02020001E80333333333"; // write object 2, set profiles to 01 and value to 33333333
+        *in << "000002020001E80333333333"; // write object 2, set profiles to 01 and value to 33333333
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("02020001E80333333333")
+        expected << addCrc("000002020001E80333333333")
                  << "|" << addCrc("00"        // no error
                                   "0200"      // object id 2
                                   "01"        // profiles 0x01
@@ -119,11 +119,11 @@ SCENARIO("A controlbox Box")
         AND_WHEN("A connection sends a write object command with a wrong object type, INVALID_OBJECT_TYPE is returned and the object unchanged")
         {
             clearStreams();
-            *in << "02020001E90333333333"; // E903 instead of E803 is used
+            *in << "000002020001E90333333333"; // E903 instead of E803 is used
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("02020001E90333333333")
+            expected << addCrc("000002020001E90333333333")
                      << "|" << addCrc("41"        // INVALID_OBJECT_TYPE
                                       "0200"      // object id 2
                                       "01"        // profiles 0x01
@@ -136,7 +136,7 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a create object command, it is processed by the Box")
     {
-        *in << "03"        // create object
+        *in << "000003"    // create object
             << "0000"      // ID assigned by box
             << "FF"        // profiles FF
             << "E803"      // type 1000
@@ -144,7 +144,7 @@ SCENARIO("A controlbox Box")
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("030000FFE80344444444") << "|"
+        expected << addCrc("0000030000FFE80344444444") << "|"
                  << addCrc("00"        // status
                            "6400"      // id
                            "FF"        // profiles
@@ -158,12 +158,12 @@ SCENARIO("A controlbox Box")
         {
             clearStreams();
 
-            *in << "04"
+            *in << "000004"
                 << "6400"; // ID 100
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("046400")
+            expected << addCrc("0000046400")
                      << "|" << addCrc("00")
                      << "\n";
             CHECK(out->str() == expected.str());
@@ -173,7 +173,7 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a create object command with an ID in the system range, it is refused with INVALID_OBJECT_ID")
     {
-        *in << "03"        // create object
+        *in << "000003"    // create object
             << "0500"      // ID 5
             << "FF"        // profiles FF
             << "E803"      // type 1000
@@ -181,18 +181,18 @@ SCENARIO("A controlbox Box")
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("030500FFE80344444444") << "|" << addCrc("40") << "\n";
+        expected << addCrc("0000030500FFE80344444444") << "|" << addCrc("40") << "\n";
         CHECK(out->str() == expected.str());
     }
 
     WHEN("A connection sends a delete object command for system object, it is refused with status object_not_deletable (35)")
     {
-        *in << "04"
+        *in << "000004"
             << "0200"; // delete object, ID 2
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("040200")
+        expected << addCrc("0000040200")
                  << "|" << addCrc("23") // error code for object_not_deletable
                  << "\n";
         CHECK(out->str() == expected.str());
@@ -200,23 +200,23 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a delete object command for a non-existing object, it is refused with status invalid_object_id (65)")
     {
-        *in << "04"
+        *in << "000004"
             << "0001"; // delete object, ID 256
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("040001")
+        expected << addCrc("0000040001")
                  << "|" << addCrc("40") << "\n"; // error code for invalid object id
         CHECK(out->str() == expected.str());
     }
 
     WHEN("A connection sends a list objects command, all objects are sent out")
     {
-        *in << "05"; // list all objects
+        *in << "000005"; // list all objects
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("05")
+        expected << addCrc("000005")
                  << "|" << addCrc("00")
                  << "," << addCrc("0100FFFEFF01")
                  << "," << addCrc("0200FFE80311111111")
@@ -227,7 +227,7 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a list compatible objects command, ids of only compatible objects are returned")
     {
-        *in << "03"        // create object
+        *in << "000003"    // create object
             << "6400"      // ID 100
             << "FF"        // profiles FF
             << "E903"      // type 1001, LongIntVector
@@ -237,7 +237,7 @@ SCENARIO("A controlbox Box")
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("036400FFE90302003333333344444444") << "|"
+        expected << addCrc("0000036400FFE90302003333333344444444") << "|"
                  << addCrc("00"        // status
                            "6400"      // id 100
                            "FF"        // profiles
@@ -251,7 +251,7 @@ SCENARIO("A controlbox Box")
 
         clearStreams();
 
-        *in << "03"        // create object
+        *in << "000003"    // create object
             << "6500"      // ID 101
             << "FF"        // profiles FF
             << "EB03"      // type 1003, NameableLongIntObject
@@ -259,7 +259,7 @@ SCENARIO("A controlbox Box")
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("036500FFEB0344444444") << "|"
+        expected << addCrc("0000036500FFEB0344444444") << "|"
                  << addCrc("00"        // status
                            "6500"      // id
                            "FF"        // profiles
@@ -271,12 +271,12 @@ SCENARIO("A controlbox Box")
 
         clearStreams();
 
-        *in << "0B";   // list compatible objects
-        *in << "E803"; // typeid for LongIntObject
+        *in << "00000B"; // list compatible objects
+        *in << "E803";   // typeid for LongIntObject
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0BE803")
+        expected << addCrc("00000BE803")
                  << "|" << addCrc("00")
                  << "," << addCrc("0200") // id 2
                  << "," << addCrc("0300") // id 3
@@ -287,11 +287,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a noop command, it receives a reply.")
     {
-        *in << "00"; // list all objects
+        *in << "000000"; // list all objects
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("00")
+        expected << addCrc("000000")
                  << "|" << addCrc("00")
                  << "\n";
         CHECK(out->str() == expected.str());
@@ -299,11 +299,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends an invalid command, it receives a reply with error code invalid command.")
     {
-        *in << "99";
+        *in << "000099";
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("99")
+        expected << addCrc("000099")
                  << "|" << addCrc("3F")
                  << "\n";
         CHECK(out->str() == expected.str());
@@ -313,7 +313,7 @@ SCENARIO("A controlbox Box")
     {
         clearStreams();
 
-        *in << "03"        // create object
+        *in << "000003"    // create object
             << "0000"      // id assigned by box
             << "00"        // active in no profiles
             << "E803"      // typeid 1000
@@ -321,12 +321,12 @@ SCENARIO("A controlbox Box")
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("03000000E80344444444") << "|" // command repetition
-                 << addCrc("00"                           // status OK
-                           "6400"                         // id 100
-                           "00"                           // profiles 0x00
-                           "FFFF"                         // type InactiveObject
-                           "E803")                        // actual type 1000
+        expected << addCrc("000003000000E80344444444") << "|" // command repetition
+                 << addCrc("00"                               // status OK
+                           "6400"                             // id 100
+                           "00"                               // profiles 0x00
+                           "FFFF"                             // type InactiveObject
+                           "E803")                            // actual type 1000
                  << "\n";
 
         CHECK(out->str() == expected.str());
@@ -336,7 +336,7 @@ SCENARIO("A controlbox Box")
         {
             clearStreams();
 
-            *in << "066400"; // read stored object 100
+            *in << "0000066400"; // read stored object 100
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
@@ -344,7 +344,7 @@ SCENARIO("A controlbox Box")
             // The message will have 2 CRCs appended.
             // This allows to distinguish between an error in EEPROM or a communication error.
 
-            expected << addCrc("066400") << "|"
+            expected << addCrc("0000066400") << "|"
                      << addCrc("00"        // status
                                "6400"      // id
                                "00"        // stored profiles
@@ -358,7 +358,7 @@ SCENARIO("A controlbox Box")
         {
             clearStreams();
 
-            *in << "02"        // write object
+            *in << "000002"    // write object
                 << "6400"      // id 100
                 << "00"        // active in no profiles
                 << "E803"      // typeid 1000
@@ -366,12 +366,12 @@ SCENARIO("A controlbox Box")
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("02640000E80314141414") << "|" // command repetition
-                     << addCrc("41"                           // status invalid object type
-                               "6400"                         // id 100
-                               "00"                           // profiles 0x00
-                               "FFFF"                         // type InactiveObject
-                               "E803")                        // actual type 1000
+            expected << addCrc("000002640000E80314141414") << "|" // command repetition
+                     << addCrc("41"                               // status invalid object type
+                               "6400"                             // id 100
+                               "00"                               // profiles 0x00
+                               "FFFF"                             // type InactiveObject
+                               "E803")                            // actual type 1000
                      << "\n";
 
             CHECK(out->str() == expected.str());
@@ -380,11 +380,11 @@ SCENARIO("A controlbox Box")
             {
                 clearStreams();
 
-                *in << "066400"; // read stored object 100
+                *in << "0000066400"; // read stored object 100
                 *in << crc(in->str()) << "\n";
                 box.hexCommunicate();
 
-                expected << addCrc("066400") << "|"
+                expected << addCrc("0000066400") << "|"
                          << addCrc("00"        // status
                                    "6400"      // id
                                    "00"        // stored profiles
@@ -399,20 +399,20 @@ SCENARIO("A controlbox Box")
         {
             clearStreams();
 
-            *in << "02"    // write object
-                << "6400"  // id 100
-                << "FF"    // active in all profiles
-                << "FFFF"  // typeid 1000
-                << "0000"; // actual type doesn't matter
+            *in << "000002" // write object
+                << "6400"   // id 100
+                << "FF"     // active in all profiles
+                << "FFFF"   // typeid 1000
+                << "0000";  // actual type doesn't matter
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("026400FFFFFF0000") << "|" // command repetition
-                     << addCrc("00"                       // status OK
-                               "6400"                     // id
-                               "FF"                       // profiles
-                               "E803"                     // stored type
-                               "44444444")                // stored data
+            expected << addCrc("0000026400FFFFFF0000") << "|" // command repetition
+                     << addCrc("00"                           // status OK
+                               "6400"                         // id
+                               "FF"                           // profiles
+                               "E803"                         // stored type
+                               "44444444")                    // stored data
                      << "\n";
 
             CHECK(out->str() == expected.str());
@@ -421,11 +421,11 @@ SCENARIO("A controlbox Box")
             {
                 clearStreams();
 
-                *in << "066400"; // read stored object 100
+                *in << "0000066400"; // read stored object 100
                 *in << crc(in->str()) << "\n";
                 box.hexCommunicate();
 
-                expected << addCrc("066400") << "|"
+                expected << addCrc("0000066400") << "|"
                          << addCrc("00"        // status
                                    "6400"      // id
                                    "FF"        // stored profiles
@@ -441,7 +441,7 @@ SCENARIO("A controlbox Box")
     {
         CHECK(box.getActiveProfiles() == 0x01); // default is only profile 0 active
 
-        *in << "03"
+        *in << "000003"
             << "6400"
             << "01"
             << "E803"
@@ -451,7 +451,7 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
         clearStreams();
 
-        *in << "03"
+        *in << "000003"
             << "6500"
             << "02"
             << "E803"
@@ -461,7 +461,7 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
         clearStreams();
 
-        *in << "03"
+        *in << "000003"
             << "6600"
             << "03"
             << "E803"
@@ -471,7 +471,7 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
         clearStreams();
 
-        *in << "02"
+        *in << "000002"
             << "0300"
             << "00"
             << "E803"
@@ -487,11 +487,11 @@ SCENARIO("A controlbox Box")
 
         THEN("System object 3 was written, but it is not deactivated, because it is a system object)")
         {
-            *in << "010300"; // read object 03
+            *in << "0000010300"; // read object 03
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("010300") << "|" << addCrc("00030000E80312341234") << "\n";
+            expected << addCrc("0000010300") << "|" << addCrc("00030000E80312341234") << "\n";
             CHECK(out->str() == expected.str());
         }
 
@@ -504,7 +504,7 @@ SCENARIO("A controlbox Box")
 
         WHEN("An object is given an active profiles value that would disable it, it is replaced by InactiveObject")
         {
-            *in << "02"        // command
+            *in << "000002"    // command
                 << "6400"      // id
                 << "00"        // profiles of object
                 << "E803"      // type
@@ -516,15 +516,15 @@ SCENARIO("A controlbox Box")
 
         WHEN("The active profiles setting is changed (through the persisted block representing it)")
         {
-            *in << "02"   // command
-                << "0100" // id of profiles object
-                << "FF"   // profiles of object
-                << "FEFF" // type of profiles object
-                << "02";  // value
+            *in << "000002" // command
+                << "0100"   // id of profiles object
+                << "FF"     // profiles of object
+                << "FEFF"   // type of profiles object
+                << "02";    // value
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("020100FFFEFF02") << "|" << addCrc("000100FFFEFF02") << "\n";
+            expected << addCrc("0000020100FFFEFF02") << "|" << addCrc("000100FFFEFF02") << "\n";
             CHECK(out->str() == expected.str());
             CHECK(box.getActiveProfiles() == 0x2);
 
@@ -544,11 +544,11 @@ SCENARIO("A controlbox Box")
             {
                 clearStreams();
 
-                *in << "05"; // list all objects
+                *in << "000005"; // list all objects
                 *in << crc(in->str()) << "\n";
                 box.hexCommunicate();
 
-                expected << addCrc("05") << "|"
+                expected << addCrc("000005") << "|"
                          << addCrc("00")
                          << "," << addCrc("0100FFFEFF02")
                          << "," << addCrc("0200FFE80311111111")
@@ -590,7 +590,7 @@ SCENARIO("A controlbox Box")
                         auto out2 = std::make_shared<std::stringstream>();
                         connSource2.add(in2, out2);
 
-                        *in2 << "05"; // list all objects
+                        *in2 << "000005"; // list all objects
                         *in2 << crc(in2->str()) << "\n";
                         box2.hexCommunicate();
 
@@ -657,7 +657,7 @@ SCENARIO("A controlbox Box")
                             auto out2 = std::make_shared<std::stringstream>();
                             connSource2.add(in2, out2);
 
-                            *in2 << "05"; // list all objects
+                            *in2 << "000005"; // list all objects
                             *in2 << crc(in2->str()) << "\n";
                             box2.hexCommunicate();
 
@@ -677,11 +677,11 @@ SCENARIO("A controlbox Box")
                                 expected.str("");
                                 expected.clear();
 
-                                *in2 << "066500"; // read stored object 101
+                                *in2 << "0000066500"; // read stored object 101
                                 *in2 << crc(in2->str()) << "\n";
                                 box2.hexCommunicate();
 
-                                expected << addCrc("066500") << "|"
+                                expected << addCrc("0000066500") << "|"
                                          << addCrc("00"             // status
                                                    + damagedObject) // obj data
                                          << "\n";
@@ -696,12 +696,12 @@ SCENARIO("A controlbox Box")
         THEN("When list stored objects command is received, eeprom data for all objects is streamed")
         {
             clearStreams();
-            *in << "07"; // list stored objects
+            *in << "000007"; // list stored objects
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
             // each object has 2 CRCs: one from EEPROM and from the message part
-            expected << addCrc("07") << "|" << addCrc("00")
+            expected << addCrc("000007") << "|" << addCrc("00")
                      << "," << addCrc("640001E80344444444")
                      << "," << addCrc("650002E80344444444")
                      << "," << addCrc("660003E80344444444")
@@ -714,23 +714,23 @@ SCENARIO("A controlbox Box")
         THEN("When the clear objects command is received, all user objects are removed, system objects remain")
         {
             clearStreams();
-            *in << "08"; // clear all objects
+            *in << "000008"; // clear all objects
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("08") << "|"
+            expected << addCrc("000008") << "|"
                      << addCrc("00") << "\n";
             CHECK(out->str() == expected.str());
 
             clearStreams();
-            *in << "05"; // list all objects
+            *in << "000005"; // list all objects
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("05") << "|" << addCrc("00") // status OK
-                     << "," << addCrc("0100FFFEFF01")       // profiles object
-                     << "," << addCrc("0200FFE80311111111") // obj 2
-                     << "," << addCrc("030000E80312341234") // obj 3
+            expected << addCrc("000005") << "|" << addCrc("00") // status OK
+                     << "," << addCrc("0100FFFEFF01")           // profiles object
+                     << "," << addCrc("0200FFE80311111111")     // obj 2
+                     << "," << addCrc("030000E80312341234")     // obj 3
                      << "\n";
             CHECK(out->str() == expected.str());
         }
@@ -743,41 +743,41 @@ SCENARIO("A controlbox Box")
         // object creation and write also triggers an object update
 
         clearStreams();
-        *in << "03"    // create counter object
-            << "6400"  // ID 100
-            << "FF"    // profiles FF
-            << "EA03"  // type 1002
-            << "E803"; // interval 1000
+        *in << "000003" // create counter object
+            << "6400"   // ID 100
+            << "FF"     // profiles FF
+            << "EA03"   // type 1002
+            << "E803";  // interval 1000
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("036400FFEA03E803") << "|" // command repetition
-                 << addCrc("00"                       // status OK
-                           "6400"                     // id 100
-                           "FF"                       // profiles 0xFF
-                           "EA03"                     // type 1002
-                           "E803"                     // interval 1000
-                           "0100")                    // count 1
+        expected << addCrc("0000036400FFEA03E803") << "|" // command repetition
+                 << addCrc("00"                           // status OK
+                           "6400"                         // id 100
+                           "FF"                           // profiles 0xFF
+                           "EA03"                         // type 1002
+                           "E803"                         // interval 1000
+                           "0100")                        // count 1
                  << "\n";
 
         CHECK(out->str() == expected.str());
 
         clearStreams();
-        *in << "03"    // create counter object
-            << "6500"  // ID 101
-            << "FF"    // profiles FF
-            << "EA03"  // type 1002
-            << "D007"; // interval 2000
+        *in << "000003" // create counter object
+            << "6500"   // ID 101
+            << "FF"     // profiles FF
+            << "EA03"   // type 1002
+            << "D007";  // interval 2000
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("036400FFEA03D007") << "|" // command repetition
-                 << addCrc("00"                       // status OK
-                           "6500"                     // id 101
-                           "FF"                       // profiles 0xFF
-                           "EA03"                     // type 1002
-                           "D007"                     // interval 2000
-                           "0100")                    // count 1
+        expected << addCrc("0000036400FFEA03D007") << "|" // command repetition
+                 << addCrc("00"                           // status OK
+                           "6500"                         // id 101
+                           "FF"                           // profiles 0xFF
+                           "EA03"                         // type 1002
+                           "D007"                         // interval 2000
+                           "0100")                        // count 1
                  << "\n";
 
         auto counterObjPtr1 = box.getObject(100).lock();
@@ -810,11 +810,11 @@ SCENARIO("A controlbox Box")
 
         box.update(10500); // update just before write
         clearStreams();
-        *in << "02"    // write counter object
-            << "6400"  // ID 100
-            << "FF"    // profiles FF
-            << "EA03"  // type 1002
-            << "A00F"; // interval 4000
+        *in << "000002" // write counter object
+            << "6400"   // ID 100
+            << "FF"     // profiles FF
+            << "EA03"   // type 1002
+            << "A00F";  // interval 4000
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
@@ -866,12 +866,12 @@ SCENARIO("A controlbox Box")
 
     WHEN("An object with links to other objects is created, it can use data from those other objects")
     {
-        *in << "03"    // create object
-            << "6400"  // ID 100
-            << "FF"    // profiles FF
-            << "ED03"  // type 1005
-            << "0200"  // ptr 1 points to object 2
-            << "0300"; // ptr 2 points to object 3
+        *in << "000003" // create object
+            << "6400"   // ID 100
+            << "FF"     // profiles FF
+            << "ED03"   // type 1005
+            << "0200"   // ptr 1 points to object 2
+            << "0300";  // ptr 2 points to object 3
 
         std::string command = in->str();
 
@@ -899,12 +899,12 @@ SCENARIO("A controlbox Box")
         {
             clearStreams();
 
-            *in << "02"    // write object
-                << "6400"  // ID 100
-                << "FF"    // profiles FF
-                << "ED03"  // type 1005
-                << "0300"  // ptr 1 points to object 3
-                << "0400"; // ptr 2 points to object 4
+            *in << "000002" // write object
+                << "6400"   // ID 100
+                << "FF"     // profiles FF
+                << "ED03"   // type 1005
+                << "0300"   // ptr 1 points to object 3
+                << "0400";  // ptr 2 points to object 4
 
             std::string command = in->str();
 
@@ -932,15 +932,15 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends only a partial message, a CRC error is returned")
     {
-        *in << "03"   // create object
-            << "0000" // ID assigned by box
-            << "FF";  // profiles FF
-                      //<< "E803"      // type 1000
-                      //<< "44444444"; // value 44444444
-                      // *in << crc(in->str()) << "\n";
+        *in << "000003" // create object
+            << "0000"   // ID assigned by box
+            << "FF";    // profiles FF
+                        //<< "E803"      // type 1000
+                        //<< "44444444"; // value 44444444
+                        // *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << "030000FF"
+        expected << "0000030000FF"
                  << "|"
                  << addCrc("43") << "\n";
         CHECK(out->str() == expected.str());
@@ -948,21 +948,22 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends only a partial message with half a hex encoded byte (1 nibble), a CRC error is returned")
     {
-        *in << "03" // create object
-            << "0"; // ID assigned by box
+        *in << "000003" // create object
+            << "0";     // ID assigned by box
 
         box.hexCommunicate();
 
-        expected << "0300"
+        expected << "00000300"
                  << "|"
                  << addCrc("43") << "\n";
         CHECK(out->str() == expected.str());
     }
 
-    WHEN("All commands are sent commands with invalid CRC, CRC errors are returned")
+    WHEN("All commands are sent with invalid CRC, CRC errors are returned")
     {
         for (uint8_t c = 1; c <= 10; ++c) {
             clearStreams();
+            *in << "0000"; // msg id
             *in << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << +c;
             *in << "0000000000";
             *in << crc(in->str() + "10");
@@ -977,7 +978,7 @@ SCENARIO("A controlbox Box")
     {
         CHECK(testInfo.rebootCount == 0);
 
-        *in << "09" // reboot
+        *in << "000009" // reboot
             << crc(in->str()) << "\n";
 
         box.hexCommunicate();
@@ -989,7 +990,7 @@ SCENARIO("A controlbox Box")
     {
         auto rebootCountBeforeCommand = testInfo.rebootCount;
 
-        *in << "03"        // create object
+        *in << "000003"    // create object
             << "0000"      // ID assigned by box
             << "FF"        // profiles FF
             << "E803"      // type 1000
@@ -1012,7 +1013,7 @@ SCENARIO("A controlbox Box")
         CHECK(storage.freeSpace() < 2000);
         CHECK(countNonZeroBytes() > 10);
 
-        *in << "0A" // factory reset
+        *in << "00000A" // factory reset
             << crc(in->str()) << "\n";
 
         box.hexCommunicate();
@@ -1025,7 +1026,7 @@ SCENARIO("A controlbox Box")
 
     WHEN("A device discovery command is received")
     {
-        *in << "0C"; // discover new objects
+        *in << "00000C"; // discover new objects
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
@@ -1034,7 +1035,7 @@ SCENARIO("A controlbox Box")
 
         THEN("A list of IDs of newly created objects is returned")
         {
-            expected << addCrc("0C") << "|"
+            expected << addCrc("00000C") << "|"
                      << addCrc("00")          // status
                      << "," << addCrc("6400") // new object id 100
                      << "," << addCrc("6500") // new object id 101
@@ -1046,11 +1047,11 @@ SCENARIO("A controlbox Box")
         THEN("The objects that didn't exist yet but where provided by the scanner have been created")
         {
             clearStreams();
-            *in << "05"; // list all objects
+            *in << "000005"; // list all objects
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("05")
+            expected << addCrc("000005")
                      << "|" << addCrc("00")
                      << "," << addCrc("0100FFFEFF01")
                      << "," << addCrc("0200FFE80311111111")
@@ -1065,11 +1066,11 @@ SCENARIO("A controlbox Box")
         THEN("The newly discoverd objects are persisted")
         {
             clearStreams();
-            *in << "07"; // list stored objects
+            *in << "000007"; // list stored objects
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("07")
+            expected << addCrc("000007")
                      << "|" << addCrc("00")
                      << "," << addCrc("6400FFE80333333333")
                      << "," << addCrc("6500FFE80344444444")

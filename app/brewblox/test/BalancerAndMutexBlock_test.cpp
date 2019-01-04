@@ -37,6 +37,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     testBox.reset();
 
     // create balancer
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(100));
     testBox.put(uint8_t(0xFF));
@@ -49,6 +50,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create mutex
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(101));
     testBox.put(uint8_t(0xFF));
@@ -62,6 +64,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // configure pin actuator 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::WRITE_OBJECT);
     testBox.put(cbox::obj_id_t(10)); // system object 10 is a predefined pin actuator
     testBox.put(uint8_t(0xFF));
@@ -79,6 +82,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create pwm actuator 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(201));
     testBox.put(uint8_t(0xFF));
@@ -101,6 +105,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // configure pin actuator 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::WRITE_OBJECT);
     testBox.put(cbox::obj_id_t(11)); // system object 11 is a predefined pin actuator
     testBox.put(uint8_t(0xFF));
@@ -119,6 +124,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create pwm actuator 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
     testBox.put(cbox::obj_id_t(301));
     testBox.put(uint8_t(0xFF));
@@ -145,6 +151,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     testBox.update(1000);
 
     // read balancer
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(100));
 
@@ -157,6 +164,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read mutex
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(101));
 
@@ -168,6 +176,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read a pin actuator 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(10));
 
@@ -179,6 +188,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read a pin actuator 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(11));
 
@@ -190,6 +200,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read a pwm actuator 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(201));
 
@@ -207,6 +218,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read a pwm actuator 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(301));
 
@@ -229,6 +241,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read a pwm actuator 1
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(201));
 
@@ -239,6 +252,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
     }
 
     // read a pwm actuator 2
+    testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(301));
 

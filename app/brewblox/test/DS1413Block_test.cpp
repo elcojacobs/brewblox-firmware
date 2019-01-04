@@ -37,6 +37,7 @@ SCENARIO("A DS2413 Block")
 
         testBox.reset();
 
+        testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::CREATE_OBJECT);
         testBox.put(cbox::obj_id_t(100));
         testBox.put(uint8_t(0xFF));
@@ -49,7 +50,7 @@ SCENARIO("A DS2413 Block")
 
         testBox.processInput();
         CHECK(testBox.lastReplyHasStatusOk());
-
+        testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
         testBox.put(cbox::obj_id_t(100));
 
@@ -74,6 +75,7 @@ SCENARIO("A DS2413 Block")
 
         AND_WHEN("A DS2413Actuator is created that uses one of the channels")
         {
+            testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::CREATE_OBJECT);
             testBox.put(cbox::obj_id_t(101));
             testBox.put(uint8_t(0xFF));
@@ -91,6 +93,7 @@ SCENARIO("A DS2413 Block")
 
             THEN("A read of the actuator is as expected")
             {
+                testBox.put(uint16_t(0)); // msg id
                 testBox.put(commands::READ_OBJECT);
                 testBox.put(cbox::obj_id_t(101));
 
