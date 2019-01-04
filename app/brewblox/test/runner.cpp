@@ -18,6 +18,6 @@ unsigned
 HAL_device_ID(uint8_t* dest, unsigned destLen)
 {
     if (dest != nullptr && destLen != 0)
-        memset(dest, 0, destLen);
+        memset(dest, '9', destLen);
     return destLen;
 }
