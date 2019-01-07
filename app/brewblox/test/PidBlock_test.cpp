@@ -152,5 +152,5 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
                                         "enabled: true active: true "
                                         "kp: 40960 ti: 2000 td: 200 "
                                         "p: 40950 i: 20475 "
-                                        "error: 4095 integral: 4096000");
+                                        "error: 4095 integral: 4095000");
 }
