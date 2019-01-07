@@ -672,5 +672,31 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
             CHECK(pid.p() + pid.i() + pid.d() != actuator->setting());
         }
+
+        THEN("The integral will be reduced back to zero if increased Kp makes the proportional part over 100")
+        {
+            pid.kp(-25);
+
+            start = now;
+            while (now <= start + 1000'000) {
+                if (now >= nextPwmUpdate) {
+                    nextPwmUpdate = pwm.update(now);
+                }
+                if (now >= nextPidUpdate) {
+                    pid.update();
+                    actuator->update();
+                    nextPidUpdate = now + 1000;
+                }
+                ++now;
+            }
+
+            pid.update();
+
+            CHECK(pid.p() == Approx(125).epsilon(0.01));
+            CHECK(pid.i() == Approx(0.0).margin(0.1));
+            CHECK(pid.d() == Approx(0.0).margin(0.01));
+
+            CHECK(pid.p() + pid.i() + pid.d() != actuator->setting());
+        }
     }
 }
