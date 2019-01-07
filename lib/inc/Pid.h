@@ -29,8 +29,7 @@ class Pid {
 public:
     using in_t = fp12_t;
     using out_t = fp12_t;
-    using integral_t = safe_elastic_fixed_point<29, 12, int64_t>;
-    using integral_external_t = safe_elastic_fixed_point<19, 12, int64_t>;
+    using integral_t = safe_elastic_fixed_point<19, 12, int32_t>;
     using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
 
 private:
@@ -79,16 +78,9 @@ public:
         return m_error;
     }
 
-    integral_external_t integral() const
+    integral_t integral() const
     {
-        // m_integral is scaled with Kp (because m_p is added each second)
-        // scale back before returning value
-        if (m_kp == 0) {
-            return integral_external_t(0);
-        }
-        auto rounder = m_integral >= 0 ? m_kp / 2 : -m_kp / 2;
-        auto result = (m_integral + rounder) / m_kp;
-        return result;
+        return m_integral;
     }
 
     auto derivative() const
@@ -129,6 +121,10 @@ public:
 
     void ti(const uint16_t& arg)
     {
+        if (m_ti != 0) {
+            // scale integral history so integral action doesn't change
+            m_integral = (m_integral * arg) / m_ti;
+        }
         m_ti = arg;
     }
 

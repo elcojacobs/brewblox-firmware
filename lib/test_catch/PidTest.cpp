@@ -19,6 +19,7 @@
 
 #include <catch.hpp>
 
+#include "ActuatorAnalogConstrained.h"
 #include "ActuatorAnalogMock.h"
 #include "ActuatorDigitalConstrained.h"
 #include "ActuatorDigitalMock.h"
@@ -429,10 +430,13 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         [&sensor]() { return sensor; });
 
     auto mock = ActuatorDigitalMock();
-    auto constrained = std::make_shared<ActuatorDigitalConstrained>(mock);
-    auto actuator = std::make_shared<ActuatorPwm>(
-        [constrained]() { return constrained; },
+    auto constrainedDigital = std::make_shared<ActuatorDigitalConstrained>(mock);
+
+    auto pwm = ActuatorPwm(
+        [constrainedDigital]() { return constrainedDigital; },
         4000);
+
+    auto actuator = std::make_shared<ActuatorAnalogConstrained>(pwm);
 
     auto pid = Pid(
         [&pair]() { return pair; },
@@ -449,10 +453,11 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         auto start = now;
         while (++now < start + 1000'000) {
             if (now >= nextPwmUpdate) {
-                nextPwmUpdate = actuator->update(now);
+                nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
                 pid.update();
+                actuator->update();
                 nextPidUpdate = now + 1000;
             }
         }
@@ -511,12 +516,13 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         auto start = now;
         while (now <= start + 900'000) {
             if (now >= nextPwmUpdate) {
-                nextPwmUpdate = actuator->update(now);
+                nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
                 mockVal = temp_t(20.0 + 9.0 * (now - start) / 900'000);
                 sensor->value(mockVal);
                 pid.update();
+                actuator->update();
                 accumulatedError += pid.error();
                 nextPidUpdate = now + 1000;
             }
@@ -547,12 +553,13 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         auto start = now;
         while (now <= start + 900'000) {
             if (now >= nextPwmUpdate) {
-                nextPwmUpdate = actuator->update(now);
+                nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
                 mockVal = temp_t(30.0 - 9.0 * (now - start) / 900'000);
                 sensor->value(mockVal);
                 pid.update();
+                actuator->update();
                 accumulatedError += pid.error();
                 nextPidUpdate = now + 1000;
             }
@@ -566,5 +573,104 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
+    }
+
+    WHEN("When changing Ti")
+    {
+        pid.kp(-10);
+        pid.ti(2000);
+        pid.td(200);
+
+        setpoint->setting(20);
+        sensor->value(21);
+
+        temp_t mockVal;
+
+        auto start = now;
+        while (now <= start + 1000'000) {
+            if (now >= nextPwmUpdate) {
+                nextPwmUpdate = pwm.update(now);
+            }
+            if (now >= nextPidUpdate) {
+                pid.update();
+                actuator->update();
+                nextPidUpdate = now + 1000;
+            }
+            ++now;
+        }
+
+        CHECK(pid.error() == Approx(-1).epsilon(0.01));
+        CHECK(pid.p() == Approx(10).epsilon(0.01));
+        CHECK(pid.i() == Approx(10.0 * 1000 / 2000).epsilon(0.01));
+        CHECK(pid.d() == Approx(0.0).margin(0.01));
+
+        pid.ti(1000);
+        pid.update();
+
+        THEN("The integral action is unchanged")
+        {
+            CHECK(pid.i() == Approx(10.0 * 1000 / 2000).epsilon(0.01));
+        }
+        THEN("The integral is scaled with the inverse factor of the change")
+        {
+            CHECK(pid.integral() == Approx(-500).epsilon(0.01));
+        }
+    }
+
+    WHEN("When a maximum constraint is added to the actuator that limits to a value under the proportional part")
+    {
+        pid.kp(-10);
+        pid.ti(2000);
+        pid.td(200);
+
+        setpoint->setting(20);
+        sensor->value(25);
+
+        temp_t mockVal;
+
+        auto start = now;
+        while (now <= start + 1000'000) {
+            if (now >= nextPwmUpdate) {
+                nextPwmUpdate = pwm.update(now);
+            }
+            if (now >= nextPidUpdate) {
+                pid.update();
+                actuator->update();
+                nextPidUpdate = now + 1000;
+            }
+            ++now;
+        }
+
+        CHECK(pid.p() == Approx(50).epsilon(0.01));
+        CHECK(pid.i() == Approx(50.0 * 1000 / 2000).epsilon(0.01));
+        CHECK(pid.d() == Approx(0.0).margin(0.01));
+
+        CHECK(pid.p() + pid.i() + pid.d() == actuator->setting());
+
+        THEN("The integral will be reduced back to zero by the anti-windup after adding the constraint")
+        {
+            actuator->addConstraint(std::make_unique<AAConstraints::Maximum<1>>(40));
+
+            start = now;
+            while (now <= start + 1000'000) {
+                if (now >= nextPwmUpdate) {
+                    nextPwmUpdate = pwm.update(now);
+                }
+                if (now >= nextPidUpdate) {
+                    pid.update();
+                    actuator->update();
+                    nextPidUpdate = now + 1000;
+                }
+                ++now;
+            }
+
+            pid.update();
+
+            CHECK(pid.p() == Approx(50).epsilon(0.01));
+            CHECK(pid.i() == Approx(0.0).margin(0.05));
+            CHECK(pid.d() == Approx(0.0).margin(0.01));
+
+            CHECK(pid.p() + pid.i() + pid.d() != actuator->setting());
+        }
     }
 }
