@@ -19,28 +19,32 @@
 
 #pragma once
 
+#include "protocol_defs.h"
+#include "events.h"
+#include "message_channel.h"
+#include "messages.h"
+
+#include "completion_handler.h"
+#include "communication_diagnostic.h"
+
 namespace particle
 {
 namespace protocol
 {
 
-#include "protocol_defs.h"
-#include "events.h"
-#include "message_channel.h"
+class Protocol;
 
 class Publisher
 {
 public:
+	explicit Publisher(Protocol* protocol) :
+			protocol(protocol)
+	{
+	}
 
 	inline bool is_system(const char* event_name)
 	{
-		// if there were a strncmpi this would be easier!
-		char prefix[6];
-		if (!*event_name || strlen(event_name) < 5)
-			return false;
-		memcpy(prefix, event_name, 5);
-		prefix[5] = '\0';
-		return !strcasecmp(prefix, "spark");
+		return !strncmp(event_name, "spark", 5);
 	}
 
 	bool is_rate_limited(bool is_system_event, system_tick_t millis)
@@ -83,26 +87,44 @@ public:
 		return false;
 	}
 
-public:
-
 	ProtocolError send_event(MessageChannel& channel, const char* event_name,
 			const char* data, int ttl, EventType::Enum event_type, int flags,
-			system_tick_t time)
+			system_tick_t time, CompletionHandler handler)
 	{
 		bool is_system_event = is_system(event_name);
 		bool rate_limited = is_rate_limited(is_system_event, time);
-		if (rate_limited)
+		if (rate_limited) {
+			g_rateLimitedEventsCounter++;
 			return BANDWIDTH_EXCEEDED;
+		}
 
 		Message message;
 		channel.create(message);
-		bool noack = flags & EventType::NO_ACK;
-		bool confirmable = channel.is_unreliable() && !noack;
+		bool confirmable = channel.is_unreliable();
+		if (flags & EventType::NO_ACK) {
+			confirmable = false;
+		} else if (flags & EventType::WITH_ACK) {
+			confirmable = true;
+		}
 		size_t msglen = Messages::event(message.buf(), 0, event_name, data, ttl,
 				event_type, confirmable);
 		message.set_length(msglen);
-		return channel.send(message);
+		const ProtocolError result = channel.send(message);
+		if (result == NO_ERROR) {
+			// Register completion handler only if acknowledgement was requested explicitly
+			if ((flags & EventType::WITH_ACK) && message.has_id()) {
+			    add_ack_handler(message.get_id(), std::move(handler));
+			} else {
+			    handler.setResult();
+			}
+		}
+		return result;
 	}
+
+private:
+	Protocol* protocol;
+
+	void add_ack_handler(message_id_t msg_id, CompletionHandler handler);
 };
 
 }}

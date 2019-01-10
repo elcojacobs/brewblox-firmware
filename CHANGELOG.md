@@ -1,3 +1,606 @@
+## 1.0.0
+
+### BREAKING CHANGES
+
+- Beginning with 1.0.0 release, Particle.publish() and Particle.subscribe() methods will require event scope to be specified explicitly. This means using `PRIVATE` or `PUBLIC` for `Particle.publish()` and `MY_DEVICES` or `ALL_DEVICES` for `Particle.subscribe()`.  Please update your apps to include the event scope to avoid compilation errors in firmware `>0.7.0`. Deprecation warnings for this change began with `0.7.0-rc.3` [#1365](https://github.com/spark/firmware/pull/1365)
+- [Core/Photon/P1] `WiFi.RSSI()` must be cast to `int8_t` when used inline with Serial.print() to produce correct results.  E.g. `Serial.printlnf("%d", (int8_t) WiFi.RSSI() );` Electron is not affected. [#1423](https://github.com/particle-iot/firmware/pull/1423)
+
+### FEATURES
+
+- Diagnostics service [#1390](https://github.com/spark/firmware/pull/1390)
+- Network and Cloud diagnostics [#1424](https://github.com/spark/firmware/pull/1424)
+- Diagnostics for unacked messages and rate limited events [#1391](https://github.com/spark/firmware/pull/1391)
+- System uptime diagnoatics [#1393](https://github.com/spark/firmware/pull/1393)
+- Network Signal Quality/Strength rework and diagnostics [#1423](https://github.com/spark/firmware/pull/1423)
+- RAM usage diagnostic sources data [#1411](https://github.com/spark/firmware/pull/1411)
+- Battery charge diagnostics [#1395](https://github.com/spark/firmware/pull/1395)
+- Battery State diagnostics [#1398](https://github.com/spark/firmware/pull/1398)
+- [Electron] Reworked power management [#1412](https://github.com/spark/firmware/pull/1412)
+- Low-latency interrupt handlers [#1394](https://github.com/spark/firmware/pull/1394)
+- [Electron] adds UPSV handling to cellular_hal [#1480](https://github.com/particle-iot/firmware/pull/1480)
+- [Photon/P1] TCPClient: non-blocking, blocking, blocking with timeout writes support [#1485](https://github.com/particle-iot/firmware/pull/1485)
+- Network and cloud diagnostics [#1424](https://github.com/particle-iot/firmware/pull/1424)
+- Out of heap system event and heap fragmentation detection [#1452](https://github.com/particle-iot/firmware/pull/1452)
+- USB request handlers [#1444](https://github.com/particle-iot/firmware/pull/1444)
+
+### ENHANCEMENTS
+
+- [Photon/P1] Moves Wi-Fi tester into application module [#1378](https://github.com/spark/firmware/pull/1378)
+- [Photon/P1] Wi-FI firmware compression [#1421](https://github.com/spark/firmware/pull/1421)
+- Only remake $(TARGET_BASE).elf el al. if necessary [#1223](https://github.com/particle-iot/firmware/pull/1223)
+- Use 'using std::**' instead of define * std::* [#1258](https://github.com/particle-iot/firmware/pull/1258)
+- Added docs on local build setup [#1374](https://github.com/particle-iot/firmware/pull/1374)
+- Firmware update and access to internal flash via USB requests [#1456](https://github.com/particle-iot/firmware/pull/1456)
+- Generalize FuelGauge to also use alternative I2C interfaces. [#1443](https://github.com/particle-iot/firmware/pull/1443)
+- [Photon/P1] WiFi.dnsServerIP()/WiFi.dhcpServerIP() support [#1386](https://github.com/particle-iot/firmware/pull/1386)
+- [Photon/P1] Increase maximum supported number of simultaneously active TCP connections [#1350](https://github.com/particle-iot/firmware/pull/1350)
+- Disable WKP pin waking device up from `SLEEP_MODE_DEEP` [#1409](https://github.com/particle-iot/firmware/pull/1409)
+- System.sleep(): support for multiple wake up pins [#1405](https://github.com/particle-iot/firmware/pull/1405)
+- System.sleep() wake up reason [#1410](https://github.com/particle-iot/firmware/pull/1410)
+- Serialize access to the CRC peripheral (STM32F2xx) [#1465](https://github.com/particle-iot/firmware/pull/1465)
+- [Photon/P1] Enables support for SHA384/SHA512 certificates for WPA Enterprise [#1501](https://github.com/particle-iot/firmware/pull/1501)
+- [Photon/P1] A number of networking-related fixes v2 [#1500](https://github.com/particle-iot/firmware/pull/1500)
+- [Electron/Photon/P1] Increase Device OS API argument lengths. More data in Functions, Variables, Publish, Subscribe... oh my! [#1537](https://github.com/particle-iot/firmware/pull/1537)
+- [Electron] Adds support for SARA-R410 to the Cellular HAL [#1532](https://github.com/particle-iot/firmware/pull/1532)
+- [Electron/Photon/P1] Do not check and lock bootloader sector write protection on every boot [ch17416] [#1578](https://github.com/particle-iot/firmware/pull/1578)
+- [Photon/P1] Memory usage optimizations ([#1635](https://github.com/particle-iot/firmware/pull/1635))
+- [Electron/Photon/P1] Cache persistent feature flags ([#1640](https://github.com/particle-iot/firmware/pull/1640))
+
+### BUGFIXES
+
+- [Electron] Error handling in the data usage API [#1435](https://github.com/spark/firmware/pull/1435)
+- Cloud random seed not working [#1312](https://github.com/spark/firmware/issues/1312)
+- Fixed shadowing of write(const unint_8_t`*`, sizte_t) in USBKeyboard [#1372](https://github.com/particle-iot/firmware/pull/1372)
+- Fix usage of an incorrect prerequisite name in program-* targets [#1463](https://github.com/particle-iot/firmware/pull/1463)
+- [Virtual] Fixes virtual device running with UDP protocol [#1462](https://github.com/particle-iot/firmware/pull/1462)
+- [Core] Fixes I2C slave mode [#1309](https://github.com/particle-iot/firmware/pull/1309)
+- [Electron] moves some newlib functions into part1 [#1471](https://github.com/particle-iot/firmware/pull/1471)
+- [Electron] DCD fixes [#1454](https://github.com/particle-iot/firmware/pull/1454)
+- [Electron] connect_cancel() fix [#1464](https://github.com/particle-iot/firmware/pull/1464)
+- [Electron] Fix caching of the description CRCs in the backup RAM [#1413](https://github.com/particle-iot/firmware/pull/1413)
+- [Electron] Guard cellular_command() with a global lock [#1415](https://github.com/particle-iot/firmware/pull/1415)
+- [Electron] Fix heap bounds build for system part1 [#1478](https://github.com/particle-iot/firmware/pull/1478)
+- [Photon/P1/Electron] Recursive logging freezes the application thread while the LogHandler is trying to acquire a lock on the resource [#1517](https://github.com/particle-iot/firmware/pull/1517)
+- [Photon/Electron] WKP pin needs to be disabled as a wakeup source on boot to allow its normal operation [#1496](https://github.com/particle-iot/firmware/pull/1496)
+- [Photon/P1] A number of networking-related fixes v2 [#1500](https://github.com/particle-iot/firmware/pull/1500)
+- [Photon/P1] A number of networking-related fixes [#1492](https://github.com/particle-iot/firmware/pull/1492)
+- [Electron] Fixes missing URCs for received data during TX or RX socket operations. This caused the modem not to be able to receive further data properly until it re-connected to the Cloud which it would do automatically but usually after a short or longer period of time. [#1530](https://github.com/particle-iot/firmware/pull/1530)
+- [Electron] `Particle.keepAlive()` API was broken since v0.6.2-rc.2 firmware on Electron where the System would override an early set User ping interval.  This required a workaround of updating the keepAlive after the System made a connection to the Cloud.  See issue #1482 for workaround. [#1536](https://github.com/particle-iot/firmware/pull/1536)
+- [Electron] Bug fixes for SARA-R410 LTE E Series [#1547](https://github.com/particle-iot/firmware/pull/1547)
+- [Electron] Disables 30 second ping for Kore SIMs on SARA_R410 (default 23 minute ping re-applied)
+- [Electron/LTE] Fast OTA Fixes [#1558](https://github.com/particle-iot/firmware/pull/1558)
+- [Electron/LTE] eDRX & Power Saving mode disabled by default [#1567](https://github.com/particle-iot/firmware/pull/1567)
+- [Electron/Photon/P1] Fixes recursive semaphore lock timeout [ch21928] [#1577](https://github.com/particle-iot/firmware/pull/1577)
+- [Electron/LTE] adds 1 retry for UDP/TCP socket send in case of error [ch18789] [#1576](https://github.com/particle-iot/firmware/pull/1576)
+- [Photon/P1] Invalidate sockets when turning WiFi off ([#1639](https://github.com/particle-iot/firmware/pull/1639))
+- [Electron] Do not set the sticky skip hello after handshake ([#1624](https://github.com/particle-iot/firmware/pull/1624))
+- [Electron] `PMIC::getInputCurrentLimit()` cannot report values higher than 900mA ([#1581](https://github.com/particle-iot/firmware/pull/1581))
+- [Electron/LTE] AT+CNUM command causing registration failure on LTE devices ([#1627](https://github.com/particle-iot/firmware/pull/1627))
+- [Electron/LTE] Power Manager Watchdog Timer Fix ([#1581](https://github.com/particle-iot/firmware/pull/1581))
+- [Electron/Photon/P1] Wait for Wiring Thread to start ([#1528](https://github.com/particle-iot/firmware/pull/1528))
+- [Electron/Photon/P1] Do not disable interrupts on every system loop iteration ([#1622](https://github.com/particle-iot/firmware/pull/1622))
+- [Electron/Photon/P1] Fixes SOS in 0.8.0-rc.11 and also ensures button and OOM events are handled synchronously. Previously in multi-threaded applications the button handling may have been delayed to run within the application thread.  Now it is always handled immediately and should be noted that it is called from an ISR, so it is not advised to dynamically allocate memory in button event handlers. ([#1600](https://github.com/particle-iot/firmware/pull/1600)) ([#1650](https://github.com/particle-iot/firmware/pull/1650))
+- [Electron/LTE] Fixes unique stale socket issue with LTE devices ([#1666](https://github.com/particle-iot/firmware/pull/1666))
+
+### INTERNAL
+
+- Minor refactoring of the USB protocol implementation [#1473](https://github.com/particle-iot/firmware/pull/1473)
+- [Electron] Flash size optimizations [#1469](https://github.com/particle-iot/firmware/pull/1469)
+- Documents low level USB request completion notifications [#1475](https://github.com/particle-iot/firmware/pull/1475)
+- IS_CLAIMED request fixes [#1472](https://github.com/particle-iot/firmware/pull/1472)
+- fixes the unit test build [#1474](https://github.com/particle-iot/firmware/pull/1474)
+- Fixes some 0.8.0-rc.2 tests [#1476](https://github.com/particle-iot/firmware/pull/1476)
+- [Electron] fixes sticker-rig issue with POWER_ON command [#1544](https://github.com/particle-iot/firmware/pull/1544)
+- [Electron] Fixes monolithic build [#1543](https://github.com/particle-iot/firmware/pull/1543)
+
+## 0.8.0-rc.14
+
+### BUGFIXES
+
+- [Electron/LTE] Fixes unique stale socket issue with LTE devices ([#1666](https://github.com/particle-iot/firmware/pull/1666))
+
+## 0.8.0-rc.12
+
+### ENHANCEMENTS
+
+- [Electron/Photon/P1] Cache persistent feature flags ([#1640](https://github.com/particle-iot/firmware/pull/1640))
+- [Photon/P1] Memory usage optimizations ([#1635](https://github.com/particle-iot/firmware/pull/1635))
+
+### BUGFIXES
+
+- [Electron/Photon/P1] Fixes SOS in 0.8.0-rc.11 and also ensures button and OOM events are handled synchronously. Previously in multi-threaded applications the button handling may have been delayed to run within the application thread.  Now it is always handled immediately and should be noted that it is called from an ISR, so it is not advised to dynamically allocate memory in button event handlers. ([#1600](https://github.com/particle-iot/firmware/pull/1600)) ([#1650](https://github.com/particle-iot/firmware/pull/1650))
+- [Electron/Photon/P1] Do not disable interrupts on every system loop iteration ([#1622](https://github.com/particle-iot/firmware/pull/1622))
+- [Electron/Photon/P1] Wait for Wiring Thread to start ([#1528](https://github.com/particle-iot/firmware/pull/1528))
+- [Electron/LTE] Power Manager Watchdog Timer Fix ([#1581](https://github.com/particle-iot/firmware/pull/1581))
+- [Electron/LTE] AT+CNUM command causing registration failure on LTE devices ([#1627](https://github.com/particle-iot/firmware/pull/1627))
+- [Electron] `PMIC::getInputCurrentLimit()` cannot report values higher than 900mA ([#1581](https://github.com/particle-iot/firmware/pull/1581))
+- [Electron] Do not set the sticky skip hello after handshake ([#1624](https://github.com/particle-iot/firmware/pull/1624))
+- [Photon/P1] Invalidate sockets when turning WiFi off ([#1639](https://github.com/particle-iot/firmware/pull/1639))
+
+## 0.8.0-rc.11
+
+### ENHANCEMENTS
+
+- [Electron/Photon/P1] Do not check and lock bootloader sector write protection on every boot [ch17416] [#1578](https://github.com/particle-iot/firmware/pull/1578)
+
+### BUGFIXES
+
+- [Electron/LTE] adds 1 retry for UDP/TCP socket send in case of error [ch18789] [#1576](https://github.com/particle-iot/firmware/pull/1576)
+- [Electron/Photon/P1] Fixes recursive semaphore lock timeout [ch21928] [#1577](https://github.com/particle-iot/firmware/pull/1577)
+
+## 0.8.0-rc.10
+
+### BUGFIXES
+
+- [Electron/LTE] eDRX & Power Saving mode disabled by default [#1567](https://github.com/particle-iot/firmware/pull/1567)
+
+## 0.8.0-rc.9
+
+### BUGFIXES
+
+- [Electron/LTE] Fast OTA Fixes [#1558](https://github.com/particle-iot/firmware/pull/1558)
+
+## 0.8.0-rc.8
+
+**Note:** This is primarily a MFG. release for SARA-R410 LTE modules. The changes do touch code used on other Electron based platforms, but no other features or fixes are relevant for U260, U270, U201, or G350 modems.  This code has been tested on-device for all mentioned modem types with passing results.  Please let us know if you find any issues.
+
+### BUGFIXES
+
+- [Electron] Disables 30 second ping for Kore SIMs on SARA_R410 (default 23 minute ping re-applied)
+
+## 0.8.0-rc.7
+
+**Note:** This is primarily a MFG. release for SARA-R410 LTE modules. The changes do touch code used on other Electron based platforms, but no other features or fixes are relevant for U260, U270, U201, or G350 modems.  This code has been tested on-device for all mentioned modem types with passing results.  Please let us know if you find any issues.
+
+### BUGFIXES
+
+- [Electron] Bug fixes for SARA-R410 LTE E Series [#1547](https://github.com/particle-iot/firmware/pull/1547)
+
+## 0.8.0-rc.6
+
+**Note:** This is primarily a MFG. release for SARA-R410 LTE modules. The changes do touch code used on other Electron based platforms, but no other features or fixes are relevant for U260, U270, U201, or G350 modems.  This code has been tested on-device for all mentioned modem types with passing results.  Please let us know if you find any issues.
+
+### INTERNAL
+
+- [Electron] Fixes monolithic build [#1543](https://github.com/particle-iot/firmware/pull/1543)
+- [Electron] fixes sticker-rig issue with POWER_ON command [#1544](https://github.com/particle-iot/firmware/pull/1544)
+
+## 0.8.0-rc.5
+
+**Note:** This is primarily a MFG. release for SARA-R410 LTE modules. The changes do touch code used on other Electron based platforms, but no other features or fixes are relevant for U260, U270, U201, or G350 modems.  This code has been tested on-device for all mentioned modem types with passing results.  Please let us know if you find any issues.
+
+### ENHANCEMENTS
+
+- [Electron] Adds support for SARA-R410 to the Cellular HAL [#1532](https://github.com/particle-iot/firmware/pull/1532)
+
+## 0.8.0-rc.4
+
+### ENHANCEMENTS
+
+- [Electron/Photon/P1] Increase Device OS API argument lengths. More data in Functions, Variables, Publish, Subscribe... oh my! [#1537](https://github.com/particle-iot/firmware/pull/1537)
+
+### BUGFIXES
+
+- [Electron] `Particle.keepAlive()` API was broken since v0.6.2-rc.2 firmware on Electron where the System would override an early set User ping interval.  This required a workaround of updating the keepAlive after the System made a connection to the Cloud.  See issue #1482 for workaround. [#1536](https://github.com/particle-iot/firmware/pull/1536)
+- [Electron] Fixes missing URCs for received data during TX or RX socket operations. This caused the modem not to be able to receive further data properly until it re-connected to the Cloud which it would do automatically but usually after a short or longer period of time. [#1530](https://github.com/particle-iot/firmware/pull/1530)
+
+## 0.8.0-rc.3
+
+### ENHANCEMENTS
+
+- [Photon/P1] A number of networking-related fixes v2 [#1500](https://github.com/particle-iot/firmware/pull/1500)
+- [Photon/P1] Enables support for SHA384/SHA512 certificates for WPA Enterprise [#1501](https://github.com/particle-iot/firmware/pull/1501)
+
+### BUGFIXES
+
+- [Photon/P1] A number of networking-related fixes [#1492](https://github.com/particle-iot/firmware/pull/1492)
+- [Photon/P1] A number of networking-related fixes v2 [#1500](https://github.com/particle-iot/firmware/pull/1500)
+- [Photon/Electron] WKP pin needs to be disabled as a wakeup source on boot to allow its normal operation [#1496](https://github.com/particle-iot/firmware/pull/1496)
+- [Photon/P1/Electron] Recursive logging freezes the application thread while the LogHandler is trying to acquire a lock on the resource [#1517](https://github.com/particle-iot/firmware/pull/1517)
+
+## 0.8.0-rc.2
+
+### FEATURES
+
+- USB request handlers [#1444](https://github.com/particle-iot/firmware/pull/1444)
+- Out of heap system event and heap fragmentation detection [#1452](https://github.com/particle-iot/firmware/pull/1452)
+- Network and cloud diagnostics [#1424](https://github.com/particle-iot/firmware/pull/1424)
+- [Photon/P1] TCPClient: non-blocking, blocking, blocking with timeout writes support [#1485](https://github.com/particle-iot/firmware/pull/1485)
+- [Electron] adds UPSV handling to cellular_hal [#1480](https://github.com/particle-iot/firmware/pull/1480)
+
+### ENHANCEMENTS
+
+- Serialize access to the CRC peripheral (STM32F2xx) [#1465](https://github.com/particle-iot/firmware/pull/1465)
+- System.sleep() wake up reason [#1410](https://github.com/particle-iot/firmware/pull/1410)
+- System.sleep(): support for multiple wake up pins [#1405](https://github.com/particle-iot/firmware/pull/1405)
+- Disable WKP pin waking device up from `SLEEP_MODE_DEEP` [#1409](https://github.com/particle-iot/firmware/pull/1409)
+- [Photon/P1] Increase maximum supported number of simultaneously active TCP connections [#1350](https://github.com/particle-iot/firmware/pull/1350)
+- [Photon/P1] WiFi.dnsServerIP()/WiFi.dhcpServerIP() support [#1386](https://github.com/particle-iot/firmware/pull/1386)
+- Generalize FuelGauge to also use alternative I2C interfaces. [#1443](https://github.com/particle-iot/firmware/pull/1443)
+- Firmware update and access to internal flash via USB requests [#1456](https://github.com/particle-iot/firmware/pull/1456)
+- Added docs on local build setup [#1374](https://github.com/particle-iot/firmware/pull/1374)
+- Use 'using std::**' instead of define * std::* [#1258](https://github.com/particle-iot/firmware/pull/1258)
+- Only remake $(TARGET_BASE).elf el al. if necessary [#1223](https://github.com/particle-iot/firmware/pull/1223)
+
+### BUGFIXES
+
+- [Electron] Fix heap bounds build for system part1 [#1478](https://github.com/particle-iot/firmware/pull/1478)
+- [Electron] Guard cellular_command() with a global lock [#1415](https://github.com/particle-iot/firmware/pull/1415)
+- [Electron] Fix caching of the description CRCs in the backup RAM [#1413](https://github.com/particle-iot/firmware/pull/1413)
+- [Electron] connect_cancel() fix [#1464](https://github.com/particle-iot/firmware/pull/1464)
+- [Electron] DCD fixes [#1454](https://github.com/particle-iot/firmware/pull/1454)
+- [Electron] moves some newlib functions into part1 [#1471](https://github.com/particle-iot/firmware/pull/1471)
+- [Core] Fixes I2C slave mode [#1309](https://github.com/particle-iot/firmware/pull/1309)
+- [Virtual] Fixes virtual device running with UDP protocol [#1462](https://github.com/particle-iot/firmware/pull/1462)
+- Fix usage of an incorrect prerequisite name in program-* targets [#1463](https://github.com/particle-iot/firmware/pull/1463)
+- Fixed shadowing of write(const unint_8_t`*`, sizte_t) in USBKeyboard [#1372](https://github.com/particle-iot/firmware/pull/1372)
+
+### INTERNAL
+
+- Fixes some 0.8.0-rc.2 tests [#1476](https://github.com/particle-iot/firmware/pull/1476)
+- fixes the unit test build [#1474](https://github.com/particle-iot/firmware/pull/1474)
+- IS_CLAIMED request fixes [#1472](https://github.com/particle-iot/firmware/pull/1472)
+- Documents low level USB request completion notifications [#1475](https://github.com/particle-iot/firmware/pull/1475)
+- [Electron] Flash size optimizations [#1469](https://github.com/particle-iot/firmware/pull/1469)
+- Minor refactoring of the USB protocol implementation [#1473](https://github.com/particle-iot/firmware/pull/1473)
+
+## 0.8.0-rc.1
+
+## FEATURES
+
+- Low-latency interrupt handlers [#1394](https://github.com/spark/firmware/pull/1394)
+- [Electron] Reworked power management [#1412](https://github.com/spark/firmware/pull/1412)
+- Battery State diagnostics [#1398](https://github.com/spark/firmware/pull/1398)
+- Battery charge diagnostics [#1395](https://github.com/spark/firmware/pull/1395)
+- RAM usage diagnostic sources data [#1411](https://github.com/spark/firmware/pull/1411)
+- Network Signal Quality/Strength rework and diagnostics [#1423](https://github.com/spark/firmware/pull/1423)
+- System uptime diagnoatics [#1393](https://github.com/spark/firmware/pull/1393)
+- Diagnostics for unacked messages and rate limited events [#1391](https://github.com/spark/firmware/pull/1391)
+- Network and Cloud diagnostics [#1424](https://github.com/spark/firmware/pull/1424)
+- Diagnostics service [#1390](https://github.com/spark/firmware/pull/1390)
+
+## ENHANCEMENTS
+
+- [Photon/P1] Wi-FI firmware compression [#1421](https://github.com/spark/firmware/pull/1421)
+- [Photon/P1] Moves Wi-Fi tester into application module [#1378](https://github.com/spark/firmware/pull/1378)
+
+## BUGFIXES
+
+- Cloud random seed not working [#1312](https://github.com/spark/firmware/issues/1312)
+- [Electron] Error handling in the data usage API [#1435](https://github.com/spark/firmware/pull/1435)
+
+## 0.7.0 (see additional changelog 0.7.0-rc.1 ~ 0.7.0-rc.7)
+
+### BUGFIX
+
+- [Photon/Electron] WKP pin needs to be disabled as a wakeup source on boot to allow its normal operation [#1496](https://github.com/particle-iot/firmware/pull/1496)
+
+## 0.7.0-rc.7
+
+### BUGFIX
+
+- [Photon] Regression with SoftAP and URL-encoded form query [#1432](https://github.com/spark/firmware/issues/1432)
+- Particle.connect() hard blocking since 0.6.1-rc.1 [#1399](https://github.com/spark/firmware/issues/1399)
+- [Electron] Cellular resolve does not return 0 / false when it receives bad DNS resolution related to bad cell service [#1304](https://github.com/spark/firmware/issues/1304)
+- [Core] Use the device ID as the USB serial number [#1367](https://github.com/spark/firmware/issues/1367)
+- [Electron] Fix heap bounds for system part 1 [#1478](https://github.com/particle-iot/firmware/pull/1478)
+- [Electron] connect_cancel() fix [#1464](https://github.com/particle-iot/firmware/pull/1464)
+- Fixed shadowing of `write(const unint_8_t*, sizte_t)` in USBKeyboard [#1372](https://github.com/particle-iot/firmware/pull/1372)
+
+## 0.7.0-rc.6
+
+### BUGFIX
+
+- [Electron] Add dependency in system-part-1 on 0.6.4 system-part-3 to prevent upgrades from 0.6.3 or earlier to avoid incompatibilties
+with these releases.
+
+## 0.7.0-rc.5
+
+### BUGFIX
+
+ - The device ID is output in lowercase in DFU mode. [#1432](https://github.com/spark/firmware/issues/1432)
+ - increase the DTLS buffer from 768 to 800 bytes, so that the system describe message is sent.
+ - remove rigid dependency check in bootloader that was causing DCT functions to not load in 0.8.0-rc.1 [#1436](https://github.com/spark/firmware/pull/1436)
+
+## 0.7.0-rc.4
+
+### ENHANCEMENTS
+
+ - USART Half-duplex enhancements [#1308](https://github.com/spark/firmware/pull/1380)
+
+### BUGFIX
+
+ - KRACK WPA2 security bugfix [#1420](https://github.com/spark/firmware/pull/1420)
+ - Monolithic build linker error [#1370](https://github.com/spark/firmware/pull/1370)
+ - 4-digit serial numbers had additional characters [#1380](https://github.com/spark/firmware/pull/1380)
+
+
+## 0.7.0-rc.3
+
+### DEPRECATED API
+
+[`[PR #1365]`](https://github.com/spark/firmware/pull/1365) Beginning with 0.8.0 release, `Particle.publish()` and `Particle.subscribe()` methods will require event scope to be specified explicitly. Please update your apps now to include the event scope to avoid compilation errors in >=0.8.0.
+
+### BUGFIX
+
+[`[PR #1362]`](https://github.com/spark/firmware/pull/1362) [`[Fixes #1360]`](https://github.com/spark/firmware/issues/1360) Fixed SoftAP HTTP usage hard faulting in 0.7.0-rc.1 and 0.7.0-rc.2
+
+
+## 0.7.0-rc.2
+
+### ENHANCEMENTS
+
+- [`[PR #1357]`](https://github.com/spark/firmware/pull/1357) Expands the device code from 4 digits to 6 digits for Photon/P1/Electron platforms
+
+### BUGFIX
+
+- [`[PR #1346]`](https://github.com/spark/firmware/pull/1346) [`[Fixes #1344]`](https://github.com/spark/firmware/issues/1344) `[Photon/P1]` When using `SYSTEM_THREAD(ENABLED)` the TCPServer and WPA Enterprise connections were broken.
+- [`[PR #1354]`](https://github.com/spark/firmware/pull/1354) [`[Fixes #1062]`](https://github.com/spark/firmware/issues/1062) A call to `WiFi.scan()` when Wi-Fi module is off or not ready was resulting in a hard fault.
+- [`[PR #1357]`](https://github.com/spark/firmware/pull/1357) [`[Fixes #1348]`](https://github.com/spark/firmware/issues/1348) SoftAP SSID was not respecting the string's null terminator, 2 char SSID would appear as 4.
+- [`[PR #1355]`](https://github.com/spark/firmware/pull/1355) When using WPA Enterprise access point and constantly reconnecting to it, heap was becoming fragmented which resulted in inability to connect to the access point anymore. Also reduced overall heap usage.
+
+### INTERNAL
+
+- [`[PR #1342]`](https://github.com/spark/firmware/pull/1342) Removed the `firmware-docs` subtree from the `firmware` repo.  Docs updates are made directly to `docs` repo again.
+- [`[PR #1352]`](https://github.com/spark/firmware/pull/1352) Added test for `RGB.onChange()` handler leak
+- [`[PR #1358]`](https://github.com/spark/firmware/pull/1358) Updates minimal ARM gcc version required to 5.3.1
+- [`[PR #1359]`](https://github.com/spark/firmware/pull/1359) Fixes build with `PLATFORM=gcc` on OSX with clang's gcc wrapper
+
+
+## 0.7.0-rc.1
+
+### FEATURES
+
+- [`[PR #1245]`](https://github.com/spark/firmware/pull/1245) `Particle.publish()` now able to use Future API
+- [`[PR #1289]`](https://github.com/spark/firmware/pull/1289) [`[Implements #914]`](https://github.com/spark/firmware/issues/914) `[Photon/P1]` WPA/WPA2 Enterprise support added (PEAP/MSCHAPv2 and EAP-TLS)! [Photon/P1] Automatic cipher/security detection when configuring WiFi settings over Serial.
+
+### ENHANCEMENTS
+
+- [`[PR #1242]`](https://github.com/spark/firmware/pull/1242) `[Photon/P1/Electron]` DFU transfer speeds increased! v100 bootloader is now 41% faster than v7 and 60% faster than the latest v11.
+- [`[PR #1236]`](https://github.com/spark/firmware/pull/1236) [`[Fixes #1201]`](https://github.com/spark/firmware/issues/1201) [`[Fixes #1194]`](https://github.com/spark/firmware/issues/1194) Added type-safe wrapper for enum-based flags for `Particle.publish()` which enables logical OR'ed flag combinations `PRIVATE | WITH_ACK`
+- [`[PR #1247]`](https://github.com/spark/firmware/pull/1247) Adds error checking to `WiFi.setCredentials()`, will return `true` if credentials has been stored successfully, or `false` otherwise.
+- [`[PR #1248]`](https://github.com/spark/firmware/pull/1248) Added an overload to `map()` function that takes `double` arguments.
+- [`[PR #1296]`](https://github.com/spark/firmware/pull/1296) `[Photon/P1]` Added support for setting a custom DNS hostname, default is device ID.
+- [`[PR #1260]`](https://github.com/spark/firmware/pull/1260) [`[Implements #1067]`](https://github.com/spark/firmware/issues/1067) Adds ability to interrupt the blinking cyan cloud connection with the SETUP/MODE button.
+- [`[PR #1271]`](https://github.com/spark/firmware/pull/1271) [`[Implements #1180]`](https://github.com/spark/firmware/issues/1180) `[Photon/P1]` Constrains `WiFi.RSSI()` to -1dBm max.
+- [`[PR #1270]`](https://github.com/spark/firmware/pull/1270) Removes `spark/device/ota_result` event and instead sends OTA'd module info as a payload in UpdateDone message, or as an ACK to UpdateDone.
+- [`[PR #1300]`](https://github.com/spark/firmware/pull/1300) Restores public server key and server address if missing
+- [`[PR #1325]`](https://github.com/spark/firmware/pull/1325) Use backup registers instead of DCT to store system flags to avoid chance of a DCT corruption.
+- [`[PR #1306]`](https://github.com/spark/firmware/pull/1306) Bootloader module dependency and integrity checks have been added to system-part2.  If they fail, the device is forced into safe mode and a new bootloader will be OTA transferred to the device.
+- [`[PR #1329]`](https://github.com/spark/firmware/pull/1329) Adds a verification and retry scheme to the bootloader flashing routine.
+- [`[PR #1330]`](https://github.com/spark/firmware/pull/1330) `[Electron]` Added CRC checking to the Electron DCD implementation so that write errors are detected. Added a critical section around flash operations and around DCD operations to make them thread safe.
+- [`[PR #1307]`](https://github.com/spark/firmware/pull/1307) `[Photon/P1]` New version of WICED adds CRC checking to the DCT implementation so that write errors are detected. Added a critical section around flash operations and around DCT operations to make them thread safe.
+- [`[PR #1269]`](https://github.com/spark/firmware/pull/1269) [`[Closes #1165]`](https://github.com/spark/firmware/issues/1165) Cloud connection can be closed gracefully allowing confirmable messages to reach the cloud before the connection is terminated
+
+### BUGFIX
+
+- [`[PR #1246]`](https://github.com/spark/firmware/pull/1246) Fixes possible corruption of event data in multi-threaded firmware
+- [`[PR #1234]`](https://github.com/spark/firmware/pull/1234) [`[Fixes #1139]`](https://github.com/spark/firmware/issues/1139) `[Electron]` `spark/hardware/max_binary` event was sent in error, adding 69 more bytes of data to handshake (full or session resume). Also fixes other preprocessor errors.
+- [`[PR #1236]`](https://github.com/spark/firmware/pull/1236) [`[Fixes #1201]`](https://github.com/spark/firmware/issues/1201) [`[Fixes #1194]`](https://github.com/spark/firmware/issues/1194) Sanitized `Particle.publish()` overloads.
+- [`[PR #1237]`](https://github.com/spark/firmware/pull/1237) Fixes potential memory leak and race condition issues in `RGB.onChange()` function.
+- [`[PR #1247]`](https://github.com/spark/firmware/pull/1247) Previously no null pointer checks on password argument of `WiFi.setCredentials()`.
+- [`[PR #1248]`](https://github.com/spark/firmware/pull/1248) [`[Fixes #1193]`](https://github.com/spark/firmware/issues/1193) Fixes divide by zero on incorrect parameters of `map()` function.
+- [`[PR #1254]`](https://github.com/spark/firmware/pull/1254) [`[Fixes #1241]`](https://github.com/spark/firmware/issues/1241) `WiFi.connecting()` was returning `false` while DHCP is resolving, will now remain `true`.
+- [`[PR #1296]`](https://github.com/spark/firmware/pull/1296) [`[Fixes #1251]`](https://github.com/spark/firmware/issues/1251) `[Photon/P1]` Default Wi-Fi DNS hostname changed to device ID, to avoid spaces in name which may cause issues.
+- [`[PR #1255]`](https://github.com/spark/firmware/pull/1255) [`[Fixes #1136]`](https://github.com/spark/firmware/issues/1136) `[Core]` Interrupts were disabled by default.
+- [`[PR #1259]`](https://github.com/spark/firmware/pull/1259) [`[Fixes #1176]`](https://github.com/spark/firmware/issues/1176)  Makes `System.sleep(mode, seconds)` a synchronous operation in multithreaded firmware. This ensures the device is in a well-defined state before entering sleep mode.
+- [`[PR #1315]`](https://github.com/spark/firmware/pull/1315) Fixes Particle Publish flag implicit conversion issue. e.g. `Particle.publish("event", "data", NO_ACK);` was previously changing event's TTL instead disabling acknowledgement of the event)
+- [`[PR #1316]`](https://github.com/spark/firmware/pull/1316) Fixes LED indication when network credentials are cleared by holding the SETUP button for >10 seconds.
+- [`[PR #1270]`](https://github.com/spark/firmware/pull/1270) [`[Fixes #1240]`](https://github.com/spark/firmware/issues/1240) TCP Firmware will not ACK every chunk in Fast OTA mode now.
+- [`[PR #1302]`](https://github.com/spark/firmware/pull/1302) [`[Fixes #1282]`](https://github.com/spark/firmware/issues/1282) `[Electron]` `Wire1` was not working correctly.
+- [`[PR #1326]`](https://github.com/spark/firmware/pull/1326) Renamed `system_error` enum to `system_error_t` to avoid conflicts with `std::system_error` class.
+- [`[PR #1286]`](https://github.com/spark/firmware/pull/1286) Improves stability of TCP server implementation: 1) Update server's list of clients on a client destruction (thanks @tlangmo!), 2) TCPClient now closes underlying socket on destruction.
+- [`[PR #1327]`](https://github.com/spark/firmware/pull/1327) [`[Fixes #1098]`](https://github.com/spark/firmware/issues/1098) [Photon/P1] Previously, when entering Sleep-stop mode: `System.sleep(D1, RISING, 60);` while in the process of making a Wi-Fi connection resulted in some parts of the radio still being initialized, consuming about 10-15mA more than normal.
+- [`[PR #1336]`](https://github.com/spark/firmware/pull/1336) Fixes an issue with Serial when receiving consecutive multiple 64-byte transmissions from Host
+- [`[PR #1337]`](https://github.com/spark/firmware/pull/1337) Fixed system attempting to enter listening mode every 1ms when the SETUP button is pressed.
+- [`[PR #1289]`](https://github.com/spark/firmware/pull/1289) Fixes a stack overlap with system-part2 static RAM on Photon/P1
+- [`[PR #1289]`](https://github.com/spark/firmware/pull/1289) Fixes a memory leak when Thread is terminated
+- [`[PR #1289]`](https://github.com/spark/firmware/pull/1289) Fixes a deadlock in SoftAP, when connection is terminated prematurely
+- [`[PR #1340]`](https://github.com/spark/firmware/pull/1340) `[Electron]` Fixes the monolithic build
+
+### INTERNAL
+
+- [`[PR #1313]`](https://github.com/spark/firmware/pull/1313) Compilation fixes for GCC platform
+- [`[PR #1323]`](https://github.com/spark/firmware/pull/1323) USB vendor requests should be executed on system thread instead of being processed in ISR.
+- [`[PR #1338]`](https://github.com/spark/firmware/pull/1338) Do not read or write feature flags from an ISR
+
+## 0.6.4
+
+### BUGFIXES
+
+- Downgrade bootloader functionality in 0.6.3 would enter an infinite loop after flashing system part 1 0.7.0-rc.X using OTA/serial. `particle flash --usb`/DFU was not affected.
+
+## 0.6.3
+
+### ENHANCEMENTS
+
+- Downgrade bootloader when downgrading from 0.7.0 or newer. [#1416](https://github.com/spark/firmware/pull/1416)
+
+### BUGFIXES
+
+- [KRACK WPA2 security fix](https://github.com/spark/firmware/pull/1419)
+
+## 0.6.2 (same as 0.6.2-rc.2)
+
+### FEATURES
+
+- [[PR #1311]](https://github.com/spark/firmware/pull/1311) `[Implements CH1537] [Electron]` Added support for Twilio SIMs by default in system firmware.
+
+### BUG FIX
+
+- [[PR #1310]](https://github.com/spark/firmware/pull/1310) Fixes a error when `<algorithm>` has already been included before the `math.h` header. Now we only include `math.h` when Arduino compatibility is requested. (math.h was not included in 0.6.0).
+
+## 0.6.2-rc.1
+
+### ENHANCEMENT / BUG FIX
+
+- [[PR #1283]](https://github.com/spark/firmware/pull/1283) [[Implements #1278]](https://github.com/spark/firmware/issues/1278) Restores 0.6.0-style Arduino compatibility by default, full Arduino compatibility when including Arduino.h
+
+## 0.6.1 (same as 0.6.1-rc.2)
+
+### FEATURES
+
+- [[PR #1225]](https://github.com/spark/firmware/pull/1225) [Photon/P1/Electron] Added support for custom LED colors in bootloader v11 (Safe Mode, DFU Mode, Firmware Reset).
+- [[PR #1227]](https://github.com/spark/firmware/pull/1227) [[Implements #961]](https://github.com/spark/firmware/issues/961) [Electron] Added new API for hostname IP address lookup `IPAddress ip = Cellular.resolve(hostname)`
+
+### ENHANCEMENTS
+
+- [[PR #1216]](https://github.com/spark/firmware/pull/1216) Improved Arduino Compatibility (now supported by default, added PARTICLE_NO_ARDUINO_COMPATIBILITY=y command line option for disabling)
+- [[PR #1217]](https://github.com/spark/firmware/pull/1217) Added Windows, Mac command, & Unix/Linux meta USB keyboard scancode definitions.
+- [[PR #1224]](https://github.com/spark/firmware/pull/1224) Allow the compiler to garbage collect USBKeyboard and USBMouse implementations if they are not used in user code, saving flash space.
+- [[PR #1225]](https://github.com/spark/firmware/pull/1225) [Photon/P1/Electron] Combined `LEDStatus` and `LEDCustomStatus` into a single class -> `LEDStatus`
+
+### BUG FIXES
+
+- [[PR #1221]](https://github.com/spark/firmware/pull/1221) [[Fixes #1220]](https://github.com/spark/firmware/issues/1220) [Electron] TIM8 PWM pins (B0, B1) did not work correctly in bootloader with `RGB.mirrorTo()`
+- [[PR #1222]](https://github.com/spark/firmware/pull/1222) Fixed bug in `String(const char* str, int len)` constructor when the string is longer than the specified length.
+- [[PR #1225]](https://github.com/spark/firmware/pull/1225) [Photon/P1/Electron] Fixed LED indication shown during device key generation (blinking white) introduced in 0.6.1-rc.1
+- [[PR #1226]](https://github.com/spark/firmware/pull/1226) [[Fixes #1181]](https://github.com/spark/firmware/issues/1181) [Photon/P1/Core] Process TCP `DESCRIBE` properly and return only one response, SYSTEM, APPLICATION, or COMBINED (ALL) describe message.  Was sending separate SYSTEM and APPLICATION previously.
+- [[PR #1230]](https://github.com/spark/firmware/pull/1230) Safe Mode event was being published unconditionally introduced in 0.6.1-rc.1
+- [[PR #1231]](https://github.com/spark/firmware/pull/1231) [Electron] fixes double newline parser issue on G350 introduced in 428835a 0.6.1-rc.1
+
+
+
+## 0.6.1-rc.1
+
+### FEATURES
+
+- [[PR #1190]](https://github.com/spark/firmware/pull/1190) [[Implements #1114]](https://github.com/spark/firmware/issues/1114) Added ability to mirror MODE/SETUP button to any GPIO, available from time of boot, active high or low.
+- [[PR #1182]](https://github.com/spark/firmware/pull/1182) [[Fixes #687]](https://github.com/spark/firmware/issues/687) [[Docs]](https://prerelease-docs.particle.io/reference/firmware/electron/#setlistentimeout-) Added `WiFi.set|getListenTimeout()` | `Cellular.set|getListenTimeout()` to override the automatic new Listening Mode timeout (Wi-Fi = no timeout by default, Cellular = 5 minute timeout by default).
+- [[PR #1154]](https://github.com/spark/firmware/pull/1154) Added `low_battery` system event, which is generated when low battery condition is detected. This is when the battery falls below the SoC threshold (default 10%, max settable 32%).  The event can only be generated again if the system goes from a non-charging to charing state after the event is generated. The event doesn't carry any data.
+- [[PR #1144]](https://github.com/spark/firmware/pull/1144) Added tracking of ACKs for published events (see `WITH_ACK` flag for `Particle.publish()`)
+- [[PR #1135]](https://github.com/spark/firmware/pull/1135) [[Fixes #1116]](https://github.com/spark/firmware/issues/1116) [[Fixes #965]](https://github.com/spark/firmware/issues/965) New Time API's! `Time.isValid()` | `Particle.syncTimePending()` | `Particle.syncTimeDone()` | `Particle.timeSyncedLast()`
+- [[PR #1127]](https://github.com/spark/firmware/pull/1127) [[PR #1213]](https://github.com/spark/firmware/pull/1213) Added support for runtime logging configuration, which allows to enable logging on already running system via USB control requests. Disabled by default to save flash memory space. (note: this feature is not fully baked with tool support)
+- [[PR #1120]](https://github.com/spark/firmware/pull/1120) [[Implements #1059]](https://github.com/spark/firmware/issues/1059) [P1] Added extra spare pin to P1 (P1S6) with GPIO and PWM support.
+- [[PR #1204]](https://github.com/spark/firmware/pull/1204) [[Implements #1113]](https://github.com/spark/firmware/issues/1113) RGB LED pins can be mirrored to other PWM capable pins via `RGB.mirrorTo()`. Common Anode/Cathode LED and Bootloader compatible. See PR for usage.
+- [[PR #1205]](https://github.com/spark/firmware/pull/1205) [[Closes #569]](https://github.com/spark/firmware/issues/569) [[Closes #976]](https://github.com/spark/firmware/issues/976) [[Closes #1111]](https://github.com/spark/firmware/issues/1111) By implementing a centralized LED service and theme "engine" for system LED signaling, giving users the ability to apply custom LED colors and patterns for system events.
+
+### ENHANCEMENTS
+
+- [[PR #1191]](https://github.com/spark/firmware/pull/1191) Added more Arduino Library compatibility
+- [[PR #1188]](https://github.com/spark/firmware/pull/1188) [[Implements #1152]](https://github.com/spark/firmware/issues/1152) Added SPI API's: `SPISettings` | `SPI.beginTransaction()` | `SPI.endTransaction()`
+- [[PR #1169]](https://github.com/spark/firmware/pull/1169) Updated system communication logging with new logging API
+- [[PR #1160]](https://github.com/spark/firmware/pull/1160) [Electron] Modem USART paused via HW_FLOW_CONTROL (RTS) before going into sleep with SLEEP_NETWORK_STANDBY. Receives and buffers small messages while system sleeping.
+- [[PR #1159]](https://github.com/spark/firmware/pull/1159) [[Closes #1085]](https://github.com/spark/firmware/issues/1085) [[Closes #1054]](https://github.com/spark/firmware/issues/1054) Added support for GCC 5.4.x
+- [[PR #1151]](https://github.com/spark/firmware/pull/1151) [[Closes #977]](https://github.com/spark/firmware/issues/977) Added System events for cloud/network connection state changes
+- [[PR #1122]](https://github.com/spark/firmware/pull/1122) Attach to host even if Serial, USBSerial1 and Keyboard/Mouse are disabled, so that "Control Interface" that receives vendor requests is still accessible.
+- [[PR #1097]](https://github.com/spark/firmware/pull/1097) [[Implements #1032]](https://github.com/spark/firmware/issues/1032) When flashing (OTA/YModem) an invalid firmware binary (that the device ignores) it will post an event describing why the binary was not applied.
+- [[PR #1203]](https://github.com/spark/firmware/pull/1203) [[PR #1212]](https://github.com/spark/firmware/pull/1212) Automatic bootloader updates have returned to the Electron.  v9 bootloader has been added to firmware release >=0.6.1-rc.1 for Photon/P1/Electron.  After updating your system firmware, a new v9 bootloader will be applied to your device if required.  v9 includes support for SETUP/MODE button and RGB LED mirroring at the bootloader level of operation.  Also included are updates to USB DFU mode so that Windows users do not need to install separate drivers via Zadig.  Bootloader GREEN and WHITE LED flashing speeds (Firmware Reset modes) are faster now as well (you won't see these unless you have loaded user firmware to the Backup location).
+- [[PR #1125]](https://github.com/spark/firmware/pull/1125) Breaks on-going network connection when Sleep stop mode is called, thereby speeding up the time to entering sleep when using SYSTEM_THREAD(ENABLED).
+
+### BUGFIX
+
+- [[PR #1186]](https://github.com/spark/firmware/pull/1186) Fixed issue where USB `Serial` might deadlock when interrupts are disabled while using `DEBUG_BUILD=y`
+- [[PR #1179]](https://github.com/spark/firmware/pull/1179) [[Fixes #1178]](https://github.com/spark/firmware/issues/1178) [[Fixes #1060]](https://github.com/spark/firmware/issues/1160) [Electron] Bootloader build was failing, fixed and added to CI.
+- [[PR #1158]](https://github.com/spark/firmware/pull/1158) [[Fixes #1133]](https://github.com/spark/firmware/issues/1133) [Electron] Before sleeping, now waits for server sent confirmable messages to be acknowledged, in addition to previous behavior of device generated confirmable messages being acknowledged.  Reduces data usage.
+- [[PR #1156]](https://github.com/spark/firmware/pull/1156) [[Fixes #1155]](https://github.com/spark/firmware/pull/1156) System.sleep(30) wasn't reapplying power to the network device after set time.
+- [[PR #1147]](https://github.com/spark/firmware/pull/1147) [Electron] Fixed approx. -0.1V offset on FuelGauge().getVCell() readings
+- [[PR #1145]](https://github.com/spark/firmware/pull/1145) [[Fixes #973]](https://github.com/spark/firmware/issues/973) `Particle.connect()` now blocks `loop()` from running until `Particle.connected()` is `true` in single threaded SEMI_AUTOMATIC mode.
+- [[PR #1140]](https://github.com/spark/firmware/pull/1140) [[Fixes #1138]](https://github.com/spark/firmware/issues/1138) [[Fixes #1104]](https://github.com/spark/firmware/issues/1104) [Electron] Fixed modem USART and buffer handling
+- [[PR #1130]](https://github.com/spark/firmware/pull/1130) Particle.subscribe() used with same events but changing scope between PUBLIC and PRIVATE or vice versa would potentially result in non-registered subscriptions.  This was also crashing the GCC virtual device with a segfault when subscription checksums were calculated.
+
+### INTERNAL
+
+- [[PR #1196]](https://github.com/spark/firmware/pull/1196) Re-enable GNU extensions for libc globally. Fixes build with ARM GCC 4.9.3 Q1.
+- [[PR #1189]](https://github.com/spark/firmware/pull/1189) Typo caused a warning during compilation in wiring/no_fixture Cellular tests.
+- [[PR #1184]](https://github.com/spark/firmware/pull/1184) [Electron] moved cellular HAL and its direct dependencies from module 2 to module 3 to free up space (this is system-part3 was reduced in size, while system-part1 was increased)
+- [[PR #1167]](https://github.com/spark/firmware/pull/1167) [[Fixes #1036]](https://github.com/spark/firmware/issues/1036) [GCC Virtual Device] workaround for 100% CPU usage problem.
+- [[PR #1146]](https://github.com/spark/firmware/pull/1146) [[Closes #1040]](https://github.com/spark/firmware/issues/1040) Added asserts for checking that network calls are run on system thread.
+- [[PR #1134]](https://github.com/spark/firmware/pull/1134) [GCC Virtual Device] Error in socket_hal's socket_receive() logic caused random cloud connection errors.
+
+
+## v0.6.0 (same as v0.6.0-rc.2)
+
+### ENHANCEMENTS
+
+- USB HID enhancements, please see PR: [#1110](https://github.com/spark/firmware/pull/1110) for a list. Closes [#1096](https://github.com/spark/firmware/issues/1096)
+
+### BUGFIX
+
+- Consecutive HID reports were overwriting previous the report before it was delivered to the host. Fixes [#1090](https://github.com/spark/firmware/issues/1090).
+- Disabling multiple USB configurations (normal/high power) as this breaks composite driver on Windows. Fixes [#1089](https://github.com/spark/firmware/issues/1089) Serial and USBSerial1 not working at same time on Windows 8.1 Pro.
+- Do not run the event loop from delay() when threading is enabled. Fixes [#1055](https://github.com/spark/firmware/issues/1055)
+- Cancel current connection attempt before entering the listening mode with WiFi.listen(true) and also WiFi.off(). Fixes [#1013](https://github.com/spark/firmware/issues/1013)
+
+### INTERNAL
+
+- Removed hardcoded server IP that was used when DNS resolution fails. Instead, the cloud connection is failed and the system will have to retry.  This means DNS lookup failure is now consistent with other modes of connection failure.  Addresses #139 Related to #1024
+
+
+## v0.6.0-rc.1
+
+### BREAKING CHANGES
+- `UDP.flush()` and `TCP.flush()`  now conform to the `Stream.flush()` behavior from Arduino 1.0 Wiring. The current (correct) behavior is to wait
+  until all data has been transmitted. Previous behavior discarded data in the buffer. [#469](https://github.com/spark/firmware/issues/469)
+
+### FEATURES
+- [Logging](https://docs.staging.particle.io/reference/firmware/electron/#logging) library for flexible system and application logging. [Docs](https://docs.staging.particle.io/reference/firmware/electron/#logging)
+- [Electron] Reduced data consumption connecting to the cloud with deep sleep. ([See the Docs](https://docs.staging.particle.io/reference/firmware/electron/#optimizing-cellular-data-use-with-cloud-connectivity-on-the-electron) for how to gain the full data reduction.) [#953](https://github.com/spark/firmware/pull/953)
+- Can set Claim Code via the Serial interface (for use by the CLI.) [#602](https://github.com/spark/firmware/issues/602)
+- Device ID available via dfu-util. [#949](https://github.com/spark/firmware/pull/949)
+- [Electron] Firmware Reset now available. [#975](https://github.com/spark/firmware/pull/975) and  [Docs](https://docs.particle.io/guide/getting-started/modes/electron/#firmware-reset)
+- System Reset Reason [#403](https://github.com/spark/firmware/issues/403) [Docs](https://docs.staging.particle.io/reference/firmware/electron/#reset-reason)
+- [Photon/Electron/P1] Composite USB device driver with HID Mouse & Keyboard implementation for STM32F2 [#902](https://github.com/spark/firmware/pull/902) and [#528](https://github.com/spark/firmware/issues/528)
+- Exposes Device ID and Bootloader Version through USB descriptors while in DFU mode, Microsoft WCID support [#1001](https://github.com/spark/firmware/pull/1001)
+- USB vendor-specific setup request handling [#1010](https://github.com/spark/firmware/pull/1010)
+- [Electron] now allows OTA bootloader updates [#1002](https://github.com/spark/firmware/pull/1002)
+- Added Daylight Saving Time support [#1058](https://github.com/spark/firmware/pull/1058) per proposed [#211](https://github.com/spark/firmware/issues/211) [Docs](https://docs.staging.particle.io/reference/firmware/electron/#local-)
+
+### ENHANCEMENTS
+
+- Local build warns if crc32 is not present. [#941](https://github.com/spark/firmware/issues/941)
+- [Photon/Core] MAC address is available immediately after `WiFi.on()` [#879](https://github.com/spark/firmware/issues/879)
+- [virtual device] support for TCP Server [#1000](https://github.com/spark/firmware/pull/1000)
+- [virtual device] support for EEPROM emulation [#1004](https://github.com/spark/firmware/pull/1004)
+- Low-level RTOS queues exposed in HAL [#1018](https://github.com/spark/firmware/pull/1018)
+- USART LIN bus support. [#930](https://github.com/spark/firmware/pull/930) [Docs](https://docs.staging.particle.io/reference/firmware/electron/#begin--1)
+- USART added support for 7E1, 7E2, 7O1, 7O2 modes. [#997](https://github.com/spark/firmware/pull/997) [Docs](https://docs.staging.particle.io/reference/firmware/electron/#begin--1)
+- Configurable resolution for analogWrite (PWM and DAC) [#991](https://github.com/spark/firmware/pull/991) [analogWrite() Docs](https://docs.staging.particle.io/reference/firmware/electron/#analogwrite-pwm-) | [analogWriteResolution() Docs](https://docs.staging.particle.io/reference/firmware/electron/#analogwriteresolution-pwm-and-dac-) |  [analogWriteMaxFrequency() Docs](https://docs.staging.particle.io/reference/firmware/electron/#analogwritemaxfrequency-pwm-)
+- [System flag](https://docs.particle.io/reference/firmware/core/#system-flags) `SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS` to control if the device resets the network when it cannot connect to the cloud. [#946](https://github.com/spark/firmware/pull/946)
+- [Photon] 1KB system backup memory added (same size as Electron) reducing user backup memory to 3KB (3068 bytes) [#1046](https://github.com/spark/firmware/pull/1046)
+- Automatically adds vendored libraries from the `lib` directory for extended application projects [#1053](https://github.com/spark/firmware/pull/1053)
+- Extended spi_master_slave tests with SPI_MODE0/1/2/3 and MSBFIRST/LSBFIRST testing [#1056](https://github.com/spark/firmware/pull/1056)
+- [Electron] System parts reordered from 3,1,2 to 1,2,3 to preserve logical flashing order for OTA/YModem when upgrading. [#1065](https://github.com/spark/firmware/pull/1065)
+
+### BUGFIXES
+
+- SoftAP mode persisting when setup complete if Wi-Fi was off. [#971](https://github.com/spark/firmware/issues/971)
+- Free memory allocated for previous system interrupt handler [#951](https://github.com/spark/firmware/pull/951) fixes [#927](https://github.com/spark/firmware/issues/927)
+- Fixes to I2C Slave mode implementation with clock stretching enabled [#931](https://github.com/spark/firmware/pull/931)
+- `millis()`/`micros()` are now atomic to ensure monotonic values. Fixes [#916](https://github.com/spark/firmware/issues/916), [#925](https://github.com/spark/firmware/issues/925) and [#1042](https://github.com/spark/firmware/issues/1042)
+- availableForWrite() was reporting bytes available instead of bytes available for write [#1020](https://github.com/spark/firmware/pull/1020) and [#1017](https://github.com/spark/firmware/issues/1017)
+- `digitalRead()` interferes with `analogRead()` [#993](https://github.com/spark/firmware/issues/993)
+- USART 9-bit receiving. [#968](https://github.com/spark/firmware/issues/968)
+- Fix soft AP suffix broken by the addition of device id in DCT [#1030](https://github.com/spark/firmware/pull/1030)
+- WKP pin should not be enabled as a wakeup source unconditionally for STOP mode [#948](https://github.com/spark/firmware/pull/948) and [#938](https://github.com/spark/firmware/issues/938)
+- General I2C Improvements and MCP23017 tests [#1047](https://github.com/spark/firmware/pull/1047)
+- Rebuilt Wiced_Network_LwIP_FreeRTOS.a WWD_for_SDIO_FreeRTOS.a on OSX [#1057](https://github.com/spark/firmware/pull/1057) fixes Local build stalling on object dump [#1049](https://github.com/spark/firmware/issues/1049)
+- Validates that module dependencies would still be satisfied after the module from the "ota_module" location is flashed (via OTA or YMODEM flashing) [#1063](https://github.com/spark/firmware/pull/1063)
+- System.sleep SLEEP_MODE_DEEP timing accuracy and sleep STOP mode retains user interrupt handler after resuming [#1051](https://github.com/spark/firmware/pull/1051) fixes [#1043](https://github.com/spark/firmware/issues/1043) and [#1029](https://github.com/spark/firmware/issues/1029)
+
+### INTERNAL
+
+- [Electron] Use floating point arithmetic in PWM to save about 1KB of flash space [#1027](https://github.com/spark/firmware/pull/1027)
+- Feature/vendorlibraries [#1009](https://github.com/spark/firmware/pull/1009)
+- [Electron] Added a 3rd system module to provide room for additional system firmware [#1035](https://github.com/spark/firmware/pull/1035)
+- Remove accidental SYSTEM_MODE(MANUAL) from pwm.cpp in wiring/no_fixture [#1052](https://github.com/spark/firmware/pull/1052)
+
+## v0.5.5
+
+### ENHANCEMENTS
+
+- Downgrade bootloader when downgrading from 0.7.0 or newer. [#1417](https://github.com/spark/firmware/pull/1417)
+
+### BUGFIXES
+
+- [KRACK WPA2 security fix](https://github.com/spark/firmware/pull/1418)
+
+## v0.5.4
+
+### ENHANCEMENTS
+
+- [`[PR #1353]`](https://github.com/spark/firmware/pull/1353) Sticker Rig support added for Electron manufacturing.  6-Digit device setup code added.  Firmware reset enabled on Electron.
+
 ## v0.5.3 (same as v0.5.3-rc.3)
 
 ### ENHANCEMENTS
@@ -73,7 +676,7 @@
 ### BUGFIXES
 
 - [Photon/P1] Fix a timing-critical bug in WICED that causes system freeze. [#877](https://github.com/spark/firmware/issues/877)
-- Tone not available on A7 after stop-mode sleep. [#938](https://github.com/spark/firmware/issues/938) 
+- Tone not available on A7 after stop-mode sleep. [#938](https://github.com/spark/firmware/issues/938)
 - Regression in EEPROM emulation size. [#983](https://github.com/spark/firmware/pull/983)
 - [Electron] Wrong bitmask is provided for 4208 setting in power management [#987](https://github.com/spark/firmware/pull/987)
 
@@ -93,7 +696,7 @@
 
 - Soft AP Claim code fix [#956](https://github.com/spark/firmware/pull/956)
 - Variable template fix [#952](https://github.com/spark/firmware/pull/952)
-- TCPClient on Electron not receiving all of the data for small files [#896](https://github.com/spark/firmware/issues/896) 
+- TCPClient on Electron not receiving all of the data for small files [#896](https://github.com/spark/firmware/issues/896)
 
 ## v0.5.0-rc.1
 
@@ -101,11 +704,11 @@
 
 - [Electron] [SYSTEM_THREAD()](https://docs.particle.io/reference/firmware/electron/#system-thread) is supported (in Beta) [#884](https://github.com/spark/firmware/pull/884)
 - [Electron] Cellular [Data Usage API](https://docs.particle.io/reference/firmware/electron/#getdatausage-) [#866](https://github.com/spark/firmware/pull/866)
-- [Electron] Configurable keep-alive ping [#913](https://github.com/spark/firmware/pull/913) 
+- [Electron] Configurable keep-alive ping [#913](https://github.com/spark/firmware/pull/913)
 - [Electron] Cellular [Band Select API](https://docs.particle.io/reference/firmware/electron/#getbandavailable-) [#891](https://github.com/spark/firmware/pull/891)
 - [Electron] Cellular [Local IP API](https://docs.particle.io/reference/firmware/electron/#localip-) [#850](https://github.com/spark/firmware/pull/850)
 - [Photon/Electron] Stack overflow detection with SOS code [13-blinks](https://docs.particle.io/guide/getting-started/modes/photon/#red-flash-sos)
-- [Photon/Electron] [SPI Slave support](https://docs.particle.io/reference/firmware/photon/#begin-spi_mode-uint16_t-) [#882](https://github.com/spark/firmware/pull/882) 
+- [Photon/Electron] [SPI Slave support](https://docs.particle.io/reference/firmware/photon/#begin-spi_mode-uint16_t-) [#882](https://github.com/spark/firmware/pull/882)
 - Atomic writes in [EEPROM emulation](https://docs.particle.io/reference/firmware/electron/#eeprom) [#871](https://github.com/spark/firmware/pull/871)
 - Software Watchdog [#860](https://github.com/spark/firmware/pull/860)
 - [Serial.availableForWrite()](https://docs.particle.io/reference/firmware/photon/#availableforwrite-) and [Serial.blockOnOverrun()](https://docs.particle.io/reference/firmware/photon/#blockonoverrun-) [#798](https://github.com/spark/firmware/issues/798)
@@ -113,13 +716,13 @@
 
 ### ENHANCEMENTS
 
-- Compiler error with variable/function names that are too long. [#883](https://github.com/spark/firmware/pull/883) 
-- DFU writes are verified [#870](https://github.com/spark/firmware/pull/870) 
+- Compiler error with variable/function names that are too long. [#883](https://github.com/spark/firmware/pull/883)
+- DFU writes are verified [#870](https://github.com/spark/firmware/pull/870)
 - [Electron] [NO_ACK flag](https://docs.particle.io/reference/firmware/electron/#particle-publish-) on `Particle.publish()` disables acknoweldgements reducing data use [#862](https://github.com/spark/firmware/pull/862)
 - [Electron] Allow session to resume when IP changes. [#848](https://github.com/spark/firmware/pull/848)
 - [Electron] Ensure published events are received by the cloud before sleeping. [#909](https://github.com/spark/firmware/pull/909)
 - [Electron] [SLEEP_NETWORK_STANDBY on System.sleep()](https://docs.particle.io/reference/firmware/electron/#sleep-sleep-) [#845](https://github.com/spark/firmware/pull/845)
-- Serial baudrate to select ymodem mode includes listening mode [#912](https://github.com/spark/firmware/pull/912) 
+- Serial baudrate to select ymodem mode includes listening mode [#912](https://github.com/spark/firmware/pull/912)
 - Wi-Fi connection process forced to timeout after 60 seconds if unsuccessful [#898](https://github.com/spark/firmware/pull/898)
 - Added write-verify-retry-fail logic to DFU writes [#870](https://github.com/spark/firmware/pull/870)
 - Support for USART (Serial1/2/4/5) [data bits, parity and stop bits](https://docs.particle.io/reference/firmware/electron/#begin-) [#757](https://github.com/spark/firmware/pull/757)
@@ -130,7 +733,7 @@
 - [Electron] Free socket when the socket is closed remotely [#885](https://github.com/spark/firmware/pull/885)
 - Extended CAN filters [#857](https://github.com/spark/firmware/pull/857)
 - I2C does not ensure a stop condition completes correctly in endTransmission [#856](https://github.com/spark/firmware/pull/856)
-- DAC1/2 possible problem with `digitalWrite()` after `analogWrite()` [#855](https://github.com/spark/firmware/pull/855) 
+- DAC1/2 possible problem with `digitalWrite()` after `analogWrite()` [#855](https://github.com/spark/firmware/pull/855)
 - Servo HAL: Do not disable timer if some of its channels are still in use [#839](https://github.com/spark/firmware/pull/839)
 - USB driver fixes and Serial.available() not returning values greater than 1 [#812](https://github.com/spark/firmware/pull/812) [#669](https://github.com/spark/firmware/issues/669) [#846](https://github.com/spark/firmware/issues/846) [#923](https://github.com/spark/firmware/issues/923)
 - SOS During `WiFi.scan()` [#651](https://github.com/spark/firmware/issues/651)
@@ -146,7 +749,7 @@
 ### FEATURES
 
 - Support for CAN Bus [#790](https://github.com/spark/firmware/pull/790)
-- [blockOnOverrun()]((https://docs.particle.io/reference/firmware/photon/#blockonoverrun-)) on hardware serial to allow applications to disable the default flow control. 
+- [blockOnOverrun()]((https://docs.particle.io/reference/firmware/photon/#blockonoverrun-)) on hardware serial to allow applications to disable the default flow control.
 - [availableForWrite()]((https://docs.particle.io/reference/firmware/photon/#availableforwrite-)) on hardware serial to allow applications to implement flow control. [#798](https://github.com/spark/firmware/issues/798)
 - [WiFi.BSSID()](https://docs.particle.io/reference/firmware/photon/#wifi-bssid-) to retrieve the 6-byte MAC address of the connected AP. [#816](https://github.com/spark/firmware/pull/816)
 - [attachInterrupt()](https://docs.particle.io/reference/firmware/photon/#attachinterrupt-) configurable interrupt priority [#806](https://github.com/spark/firmware/issues/806)
@@ -154,23 +757,23 @@
 - [photon] [WiFi.getCredentials()](https://docs.particle.io/reference/firmware/photon/#wifi-getcredentials-) lists configured credentials.  [#759](https://github.com/spark/firmware/issues/759)
 - variable frequency PWM via [analogWrite(pin,value,hz)](https://docs.particle.io/reference/firmware/photon/#analogwrite-) [#756](https://github.com/spark/firmware/pull/756)
 - [ATOMIC_BLOCK()](https://docs.particle.io/reference/firmware/photon/#atomic_block-) and [SINGLE_THREADED_BLOCK()](https://docs.particle.io/reference/firmware/photon/#single_threaded_block-) declarations for atomicity and thread scheduling control. [#758](https://github.com/spark/firmware/issues/758)
-- [API](https://docs.particle.io/reference/firmware/photon/#synchronizing-access-to-shared-system-resources) for Guarding resources for use between threads. 
+- [API](https://docs.particle.io/reference/firmware/photon/#synchronizing-access-to-shared-system-resources) for Guarding resources for use between threads.
 - System events for individual button clicks and a run of button clicks. [#818](https://github.com/spark/firmware/issues/818)
 
 ### ENHANCEMENTS
 
-- [System.freeMemory()](https://docs.particle.io/reference/firmware/photon/#system-freememory-) shows an accurate value for free memory rather than the highwater mark for the heap. 
+- [System.freeMemory()](https://docs.particle.io/reference/firmware/photon/#system-freememory-) shows an accurate value for free memory rather than the highwater mark for the heap.
 - [threading] Entering listening mode does not block the system thread. [#788](https://github.com/spark/firmware/issues/788)
 - [threading] System times out waiting for unresponsive application when attempting to reset. [#763](https://github.com/spark/firmware/issues/763)
-- [threading] `Particle.publish()` doesn't block when in listening mode.  [#761](https://github.com/spark/firmware/issues/761)  
+- [threading] `Particle.publish()` doesn't block when in listening mode.  [#761](https://github.com/spark/firmware/issues/761)
 - [threading]. `delay()`/`Particle.process()` pumps application events.
 - Serial, Serial1, SPI and EEPROM global objects guaranteed to be initialized before use. (Prevents White breathing LED if Serial used in a global instance constructor.)
-- [Software Timers]((https://docs.particle.io/reference/firmware/photon/#software-timers) have an option for one-shot timers, and support class member function callbacks. 
+- [Software Timers]((https://docs.particle.io/reference/firmware/photon/#software-timers) have an option for one-shot timers, and support class member function callbacks.
 
 ### BUGFIXES
 
 - RSA key generation would sometimes produce invalid keys. [#779](https://github.com/spark/firmware/pull/779)
-- Static IP configuration was not being used. 
+- Static IP configuration was not being used.
 - Interrupt on WKP with class method as an ISR [#819](https://github.com/spark/firmware/issues/819)
 - Memory leak configuring WiFi credentials via SoftAP (TCP/HTTP)
 - SPI DMA transfer callback invoked too early [#791](https://github.com/spark/firmware/issues/791)
@@ -180,13 +783,13 @@
 - Factory Reset doesn't clear WiFi credentials until `network.connect()`. [#736](https://github.com/spark/firmware/issues/736)
 - Comparison between `IPAddress` objects does not always work.  [#715](https://github.com/spark/firmware/issues/715)
 - P1 dfu-util 0.8 does not read/write from External Flash. [#706](https://github.com/spark/firmware/issues/706)
-- DFU errors writing to flash silently ignored. [#813](https://github.com/spark/firmware/pull/813) 
+- DFU errors writing to flash silently ignored. [#813](https://github.com/spark/firmware/pull/813)
 - [threading] heap allocation not thread-safe. [#826](https://github.com/spark/firmware/issues/826)
 - System crash when button interrupt occurs during i2c transmission. [#709](https://github.com/spark/firmware/issues/709)
-- [photon] 'analogWrite()` to DAC pins.  [#671](https://github.com/spark/firmware/issues/671)  
-- [photon] `analogWrite()` to DAC pins requires `pinMode()` each time. [#662](https://github.com/spark/firmware/issues/662)  
+- [photon] 'analogWrite()` to DAC pins.  [#671](https://github.com/spark/firmware/issues/671)
+- [photon] `analogWrite()` to DAC pins requires `pinMode()` each time. [#662](https://github.com/spark/firmware/issues/662)
 - [photon] `System.sleep(pin,edge)` doesn't wake.  [#655](https://github.com/spark/firmware/issues/655)
-  
+
 
 ## v0.4.8-rc.1
 

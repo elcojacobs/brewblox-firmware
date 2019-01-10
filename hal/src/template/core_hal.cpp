@@ -74,16 +74,26 @@ void HAL_Core_Enter_Stop_Mode(uint16_t wakeUpPin, uint16_t edgeTriggerMode)
 {
 }
 
+int32_t HAL_Core_Enter_Stop_Mode_Ext(const uint16_t* pins, size_t pins_count, const InterruptMode* mode, size_t mode_count, long seconds, void* reserved)
+{
+    return -1;
+}
+
 void HAL_Core_Execute_Stop_Mode(void)
 {
 }
 
-void HAL_Core_Enter_Standby_Mode(uint32_t seconds, void* reserved)
+void HAL_Core_Enter_Standby_Mode(uint32_t seconds, uint32_t flags)
 {
 }
 
 void HAL_Core_Execute_Standby_Mode(void)
 {
+}
+
+int HAL_Core_Get_Last_Reset_Info(int *reason, uint32_t *data, void *reserved)
+{
+    return -1;
 }
 
 /**
@@ -157,4 +167,26 @@ void HAL_Core_Write_Backup_Register(uint32_t BKP_DR, uint32_t Data)
 uint32_t HAL_Core_Read_Backup_Register(uint32_t BKP_DR)
 {
     return 0xFFFFFFFF;
+}
+
+void HAL_Core_Button_Mirror_Pin_Disable(uint8_t bootloader, uint8_t button, void* reserved)
+{
+}
+
+void HAL_Core_Button_Mirror_Pin(uint16_t pin, InterruptMode mode, uint8_t bootloader, uint8_t button, void *reserved)
+{
+}
+
+void HAL_Core_Led_Mirror_Pin_Disable(uint8_t led, uint8_t bootloader, void* reserved)
+{
+}
+
+void HAL_Core_Led_Mirror_Pin(uint8_t led, pin_t pin, uint32_t flags, uint8_t bootloader, void* reserved)
+{
+}
+
+void HAL_Set_Event_Callback(HAL_Event_Callback callback, void* reserved) {
+}
+
+void hal_notify_event(int event, int flags, void* data) {
 }

@@ -17,6 +17,9 @@
  ******************************************************************************
  */
 
+#include "logging.h"
+LOG_SOURCE_CATEGORY("comm.protocol")
+
 #include "protocol.h"
 #include "chunked_transfer.h"
 #include "subscriptions.h"
@@ -47,16 +50,19 @@ ProtocolError Protocol::handle_received_message(Message& message,
 	token_t token = queue[4];
 	message_id_t msg_id = CoAP::message_id(queue);
 	ProtocolError error = NO_ERROR;
-	//DEBUG("message type %d", message_type);
+	//LOG(WARN,"message type %d", message_type);
 	switch (message_type)
 	{
 	case CoAPMessageType::DESCRIBE:
 	{
-		// 4 bytes header, 1 byte token, 2 bytes location path for event
+		// 4 bytes header, 1 byte token, 2 bytes location path
 		// 2 bytes optional single character location path for describe flags
-		int descriptor_type = DESCRIBE_ALL;
-		if (message.length()>8)
+		int descriptor_type = DESCRIBE_DEFAULT;
+		if (message.length()>8 && queue[8] <= DESCRIBE_MAX) {
 			descriptor_type = queue[8];
+		} else if (message.length() > 8) {
+			LOG(WARN, "Invalid DESCRIBE flags %02x", queue[8]);
+		}
 		error = send_description(token, msg_id, descriptor_type);
 		break;
 	}
@@ -67,7 +73,7 @@ ProtocolError Protocol::handle_received_message(Message& message,
 
 	case CoAPMessageType::VARIABLE_REQUEST:
 	{
-		char variable_key[13];
+		char variable_key[MAX_VARIABLE_KEY_LENGTH+1];
 		variables.decode_variable_request(variable_key, message);
 		return variables.handle_variable_request(variable_key, message,
 				channel, token, msg_id,
@@ -121,6 +127,9 @@ ProtocolError Protocol::handle_received_message(Message& message,
 		break;
 
 	case CoAPMessageType::EMPTY_ACK:
+		ack_handlers.setResult(msg_id);
+		break;
+
 	case CoAPMessageType::ERROR:
 	default:
 		; // drop it on the floor
@@ -167,7 +176,7 @@ void Protocol::handle_time_response(uint32_t time)
 	//uint32_t latency = last_chunk_millis ? (callbacks.millis()-last_chunk_millis)/2000 : 0;
 	//last_chunk_millis = 0;
 	// todo - compute connection latency
-	callbacks.set_time(time, 0, NULL);
+	timesync_.handle_time_response(time, callbacks.millis(), callbacks.set_time);
 }
 
 /**
@@ -203,19 +212,59 @@ void Protocol::init(const SparkCallbacks &callbacks,
 	initialized = true;
 }
 
+uint32_t Protocol::application_state_checksum(uint32_t (*calc_crc)(const uint8_t* data, uint32_t len), uint32_t subscriptions_crc,
+		uint32_t describe_app_crc, uint32_t describe_system_crc)
+{
+	uint32_t chk[3];
+	chk[0] = subscriptions_crc;
+	chk[1] = describe_app_crc;
+	chk[2] = describe_system_crc;
+	return calc_crc((uint8_t*)chk, sizeof(chk));
+}
+
+void Protocol::update_subscription_crc()
+{
+	if (descriptor.app_state_selector_info)
+	{
+		uint32_t crc = subscriptions.compute_subscriptions_checksum(callbacks.calculate_crc);
+		this->channel.command(Channel::SAVE_SESSION);
+		descriptor.app_state_selector_info(SparkAppStateSelector::SUBSCRIPTIONS, SparkAppStateUpdate::PERSIST, crc, nullptr);
+		this->channel.command(Channel::LOAD_SESSION);
+	}
+}
+
+/**
+ * Computes the current checksum from the application cloud state
+ */
+uint32_t Protocol::application_state_checksum()
+{
+	return descriptor.app_state_selector_info ? application_state_checksum(callbacks.calculate_crc,
+			subscriptions.compute_subscriptions_checksum(callbacks.calculate_crc),
+			descriptor.app_state_selector_info(SparkAppStateSelector::DESCRIBE_APP, SparkAppStateUpdate::COMPUTE, 0, nullptr),
+			descriptor.app_state_selector_info(SparkAppStateSelector::DESCRIBE_SYSTEM, SparkAppStateUpdate::COMPUTE, 0, nullptr))
+			: 0;
+}
 
 /**
  * Establish a secure connection and send and process the hello message.
  */
 int Protocol::begin()
 {
+	LOG_CATEGORY("comm.protocol.handshake");
+	LOG(INFO,"Establish secure connection");
 	chunkedTransfer.reset();
 	pinger.reset();
+	timesync_.reset();
 
-	ProtocolError error = channel.establish();
+	// FIXME: Pending completion handlers should be cancelled at the end of a previous session
+	ack_handlers.clear();
+	last_ack_handlers_update = callbacks.millis();
+
+	uint32_t channel_flags = 0;
+	ProtocolError error = channel.establish(channel_flags, application_state_checksum());
 	bool session_resumed = (error==SESSION_RESUMED);
 	if (error && !session_resumed) {
-		WARN("handshake failed with code %d", error);
+		LOG(ERROR,"handshake failed with code %d", error);
 		return error;
 	}
 
@@ -223,34 +272,38 @@ int Protocol::begin()
 	{
 		// for now, unconditionally move the session on resumption
 		channel.command(MessageChannel::MOVE_SESSION, nullptr);
+		if (channel_flags & SKIP_SESSION_RESUME_HELLO) {
+			flags |= SKIP_SESSION_RESUME_HELLO;
+		}
 	}
 
 	// hello not needed because it's already been sent and the server maintains device state
 	if (session_resumed && channel.is_unreliable() && (flags & SKIP_SESSION_RESUME_HELLO))
 	{
 		ping(true);
-		DEBUG("resumed session - not sending hello message");
+		LOG(INFO,"resumed session - not sending HELLO message");
 		return error;
 	}
 
 	// todo - this will return code 0 even when the session was resumed,
 	// causing all the application events to be sent.
 
+	LOG(INFO,"Sending HELLO message");
 	error = hello(descriptor.was_ota_upgrade_successful());
 	if (error)
 	{
-		ERROR("Hanshake: could not send hello message: %d", error);
+		LOG(ERROR,"Could not send HELLO message: %d", error);
 		return error;
 	}
 
 	if (flags & REQUIRE_HELLO_RESPONSE) {
+		LOG(INFO,"Receiving HELLO response");
 		error = hello_response();
 		if (error)
 			return error;
 	}
-	INFO("Hanshake: completed");
+	LOG(INFO,"Handshake completed");
 	channel.notify_established();
-	flags |= SKIP_SESSION_RESUME_HELLO;
 	return error;
 }
 
@@ -263,7 +316,9 @@ ProtocolError Protocol::hello(bool was_ota_upgrade_successful)
 	Message message;
 	channel.create(message);
 
-	size_t len = build_hello(message, was_ota_upgrade_successful);
+	uint8_t flags = was_ota_upgrade_successful ? 1 : 0;
+	flags |= 2;		// diagnostics support
+	size_t len = build_hello(message, flags);
 	message.set_length(len);
 	message.set_confirm_received(true);
 	last_message_millis = callbacks.millis();
@@ -275,7 +330,7 @@ ProtocolError Protocol::hello_response()
 	ProtocolError error = event_loop(CoAPMessageType::HELLO,  4000); // read the hello message from the server
 	if (error)
 	{
-		ERROR("Handshake: could not receive hello response %d", error);
+		LOG(ERROR,"Handshake: could not receive HELLO response %d", error);
 	}
 	return error;
 }
@@ -293,12 +348,13 @@ ProtocolError Protocol::event_loop(CoAPMessageType::Enum message_type,
 		system_tick_t timeout)
 {
 	system_tick_t start = callbacks.millis();
+	LOG(INFO,"waiting %d seconds for message type=%d", timeout/1000, message_type);
 	do
 	{
 		CoAPMessageType::Enum msgtype;
 		ProtocolError error = event_loop(msgtype);
 		if (error) {
-			ERROR("message type=%d, error=%d", msgtype, error);
+			LOG(ERROR,"message type=%d, error=%d", (int)msgtype, error);
 			return error;
 		}
 		if (msgtype == message_type)
@@ -315,6 +371,11 @@ ProtocolError Protocol::event_loop(CoAPMessageType::Enum message_type,
  */
 ProtocolError Protocol::event_loop(CoAPMessageType::Enum& message_type)
 {
+	// Process expired completion handlers
+	const system_tick_t t = callbacks.millis();
+	ack_handlers.update(t - last_ack_handlers_update);
+	last_ack_handlers_update = t;
+
 	Message message;
 	message_type = CoAPMessageType::NONE;
 	ProtocolError error = channel.receive(message);
@@ -323,6 +384,7 @@ ProtocolError Protocol::event_loop(CoAPMessageType::Enum& message_type)
 		if (message.length())
 		{
 			error = handle_received_message(message, message_type);
+			LOG(INFO,"rcv'd message type=%d", (int)message_type);
 		}
 		else
 		{
@@ -334,12 +396,87 @@ ProtocolError Protocol::event_loop(CoAPMessageType::Enum& message_type)
 	{
 		// bail if and only if there was an error
 		chunkedTransfer.cancel();
-		WARN("Event loop error %d", error);
+		LOG(ERROR,"Event loop error %d", error);
 		return error;
 	}
 	return error;
 }
 
+void Protocol::build_describe_message(Appender& appender, int desc_flags)
+{
+	// diagnostics must be requested in isolation to be a binary packet
+	if (descriptor.append_metrics && (desc_flags == DESCRIBE_METRICS))
+	{
+		appender.append(char(0));	// null byte means binary data
+		appender.append(char(DESCRIBE_METRICS)); 									// uint16 describes the type of binary packet
+		appender.append(char(0));	//
+		const int flags = 1;		// binary
+		const int page = 0;
+		descriptor.append_metrics(append_instance, &appender, flags, page, nullptr);
+	}
+	else {
+		appender.append("{");
+		bool has_content = false;
+
+		if (desc_flags & DESCRIBE_APPLICATION)
+		{
+			has_content = true;
+			appender.append("\"f\":[");
+
+			int num_keys = descriptor.num_functions();
+			int i;
+			for (i = 0; i < num_keys; ++i)
+			{
+				if (i)
+				{
+					appender.append(',');
+				}
+				appender.append('"');
+
+				const char* key = descriptor.get_function_key(i);
+				size_t function_name_length = strlen(key);
+				if (MAX_FUNCTION_KEY_LENGTH < function_name_length)
+				{
+					function_name_length = MAX_FUNCTION_KEY_LENGTH;
+				}
+				appender.append((const uint8_t*) key, function_name_length);
+				appender.append('"');
+			}
+
+			appender.append("],\"v\":{");
+
+			num_keys = descriptor.num_variables();
+			for (i = 0; i < num_keys; ++i)
+			{
+				if (i)
+				{
+					appender.append(',');
+				}
+				appender.append('"');
+				const char* key = descriptor.get_variable_key(i);
+				size_t variable_name_length = strlen(key);
+				SparkReturnType::Enum t = descriptor.variable_type(key);
+				if (MAX_VARIABLE_KEY_LENGTH < variable_name_length)
+				{
+					variable_name_length = MAX_VARIABLE_KEY_LENGTH;
+				}
+				appender.append((const uint8_t*) key, variable_name_length);
+				appender.append("\":");
+				appender.append('0' + (char) t);
+			}
+			appender.append('}');
+		}
+
+		if (descriptor.append_system_info && (desc_flags & DESCRIBE_SYSTEM))
+		{
+			if (has_content)
+				appender.append(',');
+			has_content = true;
+			descriptor.append_system_info(append_instance, &appender, nullptr);
+		}
+		appender.append('}');
+	}
+}
 
 /**
  * Produces and transmits a describe message.
@@ -354,68 +491,32 @@ ProtocolError Protocol::send_description(token_t token, message_id_t msg_id, int
 	size_t desc = Messages::description(buf, msg_id, token);
 
 	BufferAppender appender(buf + desc, message.capacity());
-	appender.append("{");
-	bool has_content = false;
 
-	if (desc_flags && DESCRIBE_APPLICATION)
-	{
-		has_content = true;
-		appender.append("\"f\":[");
+	build_describe_message(appender, desc_flags);
 
-		int num_keys = descriptor.num_functions();
-		int i;
-		for (i = 0; i < num_keys; ++i)
-		{
-			if (i)
-			{
-				appender.append(',');
-			}
-			appender.append('"');
-
-			const char* key = descriptor.get_function_key(i);
-			size_t function_name_length = strlen(key);
-			if (MAX_FUNCTION_KEY_LENGTH < function_name_length)
-			{
-				function_name_length = MAX_FUNCTION_KEY_LENGTH;
-			}
-			appender.append((const uint8_t*) key, function_name_length);
-			appender.append('"');
-		}
-
-		appender.append("],\"v\":{");
-
-		num_keys = descriptor.num_variables();
-		for (i = 0; i < num_keys; ++i)
-		{
-			if (i)
-			{
-				appender.append(',');
-			}
-			appender.append('"');
-			const char* key = descriptor.get_variable_key(i);
-			size_t variable_name_length = strlen(key);
-			SparkReturnType::Enum t = descriptor.variable_type(key);
-			if (MAX_VARIABLE_KEY_LENGTH < variable_name_length)
-			{
-				variable_name_length = MAX_VARIABLE_KEY_LENGTH;
-			}
-			appender.append((const uint8_t*) key, variable_name_length);
-			appender.append("\":");
-			appender.append('0' + (char) t);
-		}
-		appender.append('}');
-	}
-
-	if (descriptor.append_system_info && (desc_flags & DESCRIBE_SYSTEM))
-	{
-		if (has_content)
-			appender.append(',');
-		descriptor.append_system_info(append_instance, &appender, nullptr);
-	}
-	appender.append('}');
-	int msglen = appender.next() - (uint8_t *) buf;
+	int msglen = appender.next() - (uint8_t*) buf;
 	message.set_length(msglen);
-	return channel.send(message);
+	LOG(INFO,"Sending '%s%s%s' describe message", desc_flags & DESCRIBE_SYSTEM ? "S" : "",
+											  desc_flags & DESCRIBE_APPLICATION ? "A" : "",
+											  desc_flags & DESCRIBE_METRICS ? "M" : "");
+	ProtocolError error = channel.send(message);
+	if (error==NO_ERROR && descriptor.app_state_selector_info &&
+            (desc_flags & DESCRIBE_APPLICATION || desc_flags & DESCRIBE_SYSTEM))
+	{
+        this->channel.command(Channel::SAVE_SESSION);
+		if (desc_flags & DESCRIBE_APPLICATION)
+		{
+			// have sent the describe message to the cloud so update the crc
+			descriptor.app_state_selector_info(SparkAppStateSelector::DESCRIBE_APP, SparkAppStateUpdate::COMPUTE_AND_PERSIST, 0, nullptr);
+		}
+		if (desc_flags & DESCRIBE_SYSTEM)
+		{
+			// have sent the describe message to the cloud so update the crc
+			descriptor.app_state_selector_info(SparkAppStateSelector::DESCRIBE_SYSTEM, SparkAppStateUpdate::COMPUTE_AND_PERSIST, 0, nullptr);
+		}
+        this->channel.command(Channel::LOAD_SESSION);
+	}
+	return error;
 }
 
 
@@ -442,6 +543,15 @@ uint32_t Protocol::ChunkedTransferCallbacks::calculate_crc(const unsigned char *
 system_tick_t Protocol::ChunkedTransferCallbacks::millis()
 {
 	return callbacks->millis();
+}
+
+int Protocol::get_describe_data(spark_protocol_describe_data* data, void* reserved)
+{
+	data->maximum_size = 768;  // a conservative guess based on dtls and lightssl encryption overhead and the CoAP data
+	BufferAppender2 appender(nullptr,  0);	// don't need to store the data, just count the size
+	build_describe_message(appender, data->flags);
+	data->current_size = appender.dataSize();
+	return 0;
 }
 
 

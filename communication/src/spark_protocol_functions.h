@@ -30,6 +30,7 @@
 #include "file_transfer.h"
 #include "protocol_selector.h"
 #include "protocol_defs.h"
+#include "completion_handler.h"
 
 
 #ifdef	__cplusplus
@@ -157,6 +158,14 @@ int spark_protocol_handshake(ProtocolFacade* protocol, void* reserved=NULL);
 bool spark_protocol_event_loop(ProtocolFacade* protocol, void* reserved=NULL);
 bool spark_protocol_is_initialized(ProtocolFacade* protocol);
 int spark_protocol_presence_announcement(ProtocolFacade* protocol, unsigned char *buf, const unsigned char *id, void* reserved=NULL);
+
+// Additional parameters for spark_protocol_send_event()
+typedef struct {
+    size_t size;
+    completion_callback handler_callback;
+    void* handler_data;
+} spark_protocol_send_event_data;
+
 bool spark_protocol_send_event(ProtocolFacade* protocol, const char *event_name, const char *data,
                 int ttl, uint32_t flags, void* reserved);
 bool spark_protocol_send_subscription_device(ProtocolFacade* protocol, const char *event_name, const char *device_id, void* reserved=NULL);
@@ -169,14 +178,26 @@ void spark_protocol_set_product_id(ProtocolFacade* protocol, product_id_t produc
 void spark_protocol_set_product_firmware_version(ProtocolFacade* protocol, product_firmware_version_t product_firmware_version, unsigned int param=0, void* reserved = NULL);
 void spark_protocol_get_product_details(ProtocolFacade* protocol, product_details_t* product_details, void* reserved=NULL);
 
-int spark_protocol_set_connection_property(ProtocolFacade* protocol, unsigned property_id,
-                                           unsigned data, void* datap, void* reserved);
+int spark_protocol_set_connection_property(ProtocolFacade* protocol, unsigned property_id, unsigned data, particle::protocol::connection_properties_t* conn_prop, void* reserved);
+bool spark_protocol_time_request_pending(ProtocolFacade* protocol, void* reserved=NULL);
+system_tick_t spark_protocol_time_last_synced(ProtocolFacade* protocol, time_t* tm, void* reserved=NULL);
+
+typedef struct {
+	size_t size;				// size of this structure
+	uint32_t flags;				// for now 0, may be used to influence the details retrieved
+	uint16_t current_size;
+	uint16_t maximum_size;
+} spark_protocol_describe_data;
+
+int spark_protocol_get_describe_data(ProtocolFacade* protocol, spark_protocol_describe_data* limits, void* reserved);
 
 namespace ProtocolCommands {
-	enum Enum {
-		SLEEP,
-		WAKE
-	};
+  enum Enum {
+    SLEEP,
+    WAKE,
+    DISCONNECT,
+    TERMINATE
+  };
 };
 
 
@@ -191,7 +212,7 @@ int spark_protocol_command(ProtocolFacade* protocol, ProtocolCommands::Enum cmd,
  * @return The number of plaintext bytes in the plain text buffer, or <0 on error.
  */
 extern int decrypt_rsa(const uint8_t* ciphertext, const uint8_t* private_key,
-        uint8_t* plaintext, int max_plaintext_len);
+        uint8_t* plaintext, int32_t max_plaintext_len);
 
 void extract_public_rsa_key(uint8_t* device_pubkey, const uint8_t* device_privkey);
 

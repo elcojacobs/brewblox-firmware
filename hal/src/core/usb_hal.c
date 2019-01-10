@@ -32,6 +32,9 @@
 #include "usb_pwr.h"
 #include "usb_prop.h"
 #include "delay_hal.h"
+#include "usb_settings.h"
+#include "deviceid_hal.h"
+#include "bytes2hexbuf.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -41,7 +44,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 #ifdef USB_CDC_ENABLE
-volatile uint8_t  USART_Rx_Buffer[USART_RX_DATA_SIZE];
+volatile uint8_t  USART_Rx_Buffer[USB_RX_BUFFER_SIZE];
+uint32_t USART_Rx_Buffer_size = USB_RX_BUFFER_SIZE;
 volatile uint32_t USART_Rx_ptr_in = 0;
 volatile uint32_t USART_Rx_ptr_out = 0;
 volatile uint32_t USART_Rx_length  = 0;
@@ -60,9 +64,6 @@ __IO uint8_t PrevXferComplete;
 
 /* Extern variables ----------------------------------------------------------*/
 extern volatile LINE_CODING linecoding;
-
-/* Private function prototypes -----------------------------------------------*/
-static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len);
 
 #if defined (USB_CDC_ENABLE) || defined (USB_HID_ENABLE)
 /*******************************************************************************
@@ -90,18 +91,14 @@ void SPARK_USB_Setup(void)
  *******************************************************************************/
 void Get_SerialNum(void)
 {
-  uint32_t Device_Serial0, Device_Serial1, Device_Serial2;
-
-  Device_Serial0 = *(uint32_t*)ID1;
-  Device_Serial1 = *(uint32_t*)ID2;
-  Device_Serial2 = *(uint32_t*)ID3;
-
-  Device_Serial0 += Device_Serial2;
-
-  if (Device_Serial0 != 0)
-  {
-    IntToUnicode (Device_Serial0, &USB_StringSerial[2] , 8);
-    IntToUnicode (Device_Serial1, &USB_StringSerial[18], 4);
+  uint8_t deviceId[16];
+  char deviceIdHex[sizeof(deviceId) * 2 + 1] = {0};
+  unsigned deviceIdLen = 0;
+  deviceIdLen = HAL_device_ID(deviceId, sizeof(deviceId));
+  bytes2hexbuf(deviceId, deviceIdLen, deviceIdHex);
+  for (unsigned i = 2, pos = 0; i < USB_SIZ_STRING_SERIAL && pos < 2 * deviceIdLen; i += 2, pos++) {
+    USB_StringSerial[i] = deviceIdHex[pos];
+    USB_StringSerial[i + 1] = '\0';
   }
 }
 #endif
@@ -206,7 +203,7 @@ int32_t USB_USART_Receive_Data(uint8_t peek)
 int32_t USB_USART_Available_Data_For_Write(void)
 {
   if(bDeviceState == CONFIGURED)
-    return (USART_RX_DATA_SIZE - USART_Rx_ptr_in) % USART_RX_DATA_SIZE;
+    return (USB_RX_BUFFER_SIZE - USART_Rx_ptr_in) % USB_RX_BUFFER_SIZE;
   return -1;
 }
 
@@ -226,7 +223,7 @@ void USB_USART_Send_Data(uint8_t Data)
     USART_Rx_ptr_in++;
 
     /* To avoid buffer overflow */
-    if(USART_Rx_ptr_in == USART_RX_DATA_SIZE)
+    if(USART_Rx_ptr_in == USB_RX_BUFFER_SIZE)
     {
       USART_Rx_ptr_in = 0;
     }
@@ -249,6 +246,77 @@ void USB_USART_Flush_Data(void)
 {
     // Not implemented properly
 }
+
+void HAL_USB_Init()
+{
+  // TODO
+}
+
+void HAL_USB_Attach()
+{
+ // TODO
+}
+
+void HAL_USB_Detach()
+{
+  // TODO
+}
+
+void HAL_USB_USART_Init(HAL_USB_USART_Serial serial, const HAL_USB_USART_Config* config)
+{
+}
+
+void HAL_USB_USART_Begin(HAL_USB_USART_Serial serial, uint32_t baud, void *reserved)
+{
+  USB_USART_Init(baud);
+}
+
+void HAL_USB_USART_End(HAL_USB_USART_Serial serial)
+{
+  USB_USART_Init(0);
+}
+
+unsigned int HAL_USB_USART_Baud_Rate(HAL_USB_USART_Serial serial)
+{
+  return USB_USART_Baud_Rate();
+}
+
+int32_t HAL_USB_USART_Available_Data(HAL_USB_USART_Serial serial)
+{
+  return USB_USART_Available_Data();
+}
+
+int32_t HAL_USB_USART_Available_Data_For_Write(HAL_USB_USART_Serial serial)
+{
+  return USB_USART_Available_Data_For_Write();
+}
+
+int32_t HAL_USB_USART_Receive_Data(HAL_USB_USART_Serial serial, uint8_t peek)
+{
+  return USB_USART_Receive_Data(peek);
+}
+
+int32_t HAL_USB_USART_Send_Data(HAL_USB_USART_Serial serial, uint8_t data)
+{
+  USB_USART_Send_Data(data);
+  return 1;
+}
+
+void HAL_USB_USART_Flush_Data(HAL_USB_USART_Serial serial)
+{
+  USB_USART_Flush_Data();
+}
+
+bool HAL_USB_USART_Is_Enabled(HAL_USB_USART_Serial serial)
+{
+  return true;
+}
+
+bool HAL_USB_USART_Is_Connected(HAL_USB_USART_Serial serial)
+{
+  return true;
+}
+
 #endif
 
 #ifdef USB_HID_ENABLE
@@ -275,31 +343,3 @@ void USB_HID_Send_Report(void *pHIDReport, size_t reportSize)
   }
 }
 #endif
-
-/*******************************************************************************
- * Function Name  : HexToChar.
- * Description    : Convert Hex 32Bits value into char.
- * Input          : None.
- * Output         : None.
- * Return         : None.
- *******************************************************************************/
-static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len)
-{
-  uint8_t idx = 0;
-
-  for( idx = 0 ; idx < len ; idx ++)
-  {
-    if( ((value >> 28)) < 0xA )
-    {
-      pbuf[ 2* idx] = (value >> 28) + '0';
-    }
-    else
-    {
-      pbuf[2* idx] = (value >> 28) + 'A' - 10;
-    }
-
-    value = value << 4;
-
-    pbuf[ 2* idx + 1] = 0;
-  }
-}

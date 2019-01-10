@@ -23,14 +23,21 @@
 #include "system_task.h"
 #include "system_cloud.h"
 #include "system_cloud_internal.h"
+#include "system_network_internal.h"
 #include "system_threading.h"
 #include "rtc_hal.h"
 #include "core_hal.h"
-#include "rgbled.h"
+#include "led_service.h"
 #include <stddef.h>
 #include "spark_wiring_fuel.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_platform.h"
+#include "system_power.h"
+
+#if PLATFORM_ID==PLATFORM_ELECTRON_PRODUCTION
+# include "parser.h"
+#endif
+
 
 struct WakeupState
 {
@@ -43,12 +50,15 @@ WakeupState wakeupState;
 
 static void network_suspend() {
     // save the current state so it can be restored on wakeup
-    wakeupState.wifi = !SPARK_WLAN_SLEEP;
-    wakeupState.wifiConnected = wakeupState.cloud | network_ready(0, 0, NULL) | network_connecting(0, 0, NULL);
 #ifndef SPARK_NO_CLOUD
     wakeupState.cloud = spark_cloud_flag_auto_connect();
-    // disconnect the cloud now, and clear the auto connect status
-    spark_cloud_socket_disconnect();
+#endif
+    wakeupState.wifi = !SPARK_WLAN_SLEEP;
+    wakeupState.wifiConnected = wakeupState.cloud || network_ready(0, 0, NULL) || network_connecting(0, 0, NULL);
+    // Disconnect the cloud and the network
+    network_disconnect(0, NETWORK_DISCONNECT_REASON_SLEEP, NULL);
+#ifndef SPARK_NO_CLOUD
+    // Clear the auto connect status
     spark_cloud_flag_disconnect();
 #endif
     network_off(0, 0, 0, NULL);
@@ -84,13 +94,12 @@ void sleep_fuel_gauge()
 
 bool network_sleep_flag(uint32_t flags)
 {
-    static_assert(static_cast<int>(SystemSleepNetwork::Off)==0, "expected SystemSleepNetwork::Off==0");
-    static_assert(static_cast<int>(SystemSleepNetwork::Standby)==1, "expected SystemSleepNetwork::Standby==1");
-    return (flags & 1)==0;
+    return (flags & SLEEP_NETWORK_STANDBY.value()) == 0;
 }
 
-void system_sleep(Spark_Sleep_TypeDef sleepMode, long seconds, uint32_t param, void* reserved)
+int system_sleep_impl(Spark_Sleep_TypeDef sleepMode, long seconds, uint32_t param, void* reserved)
 {
+    SYSTEM_THREAD_CONTEXT_SYNC(system_sleep_impl(sleepMode, seconds, param, reserved));
     // TODO - determine if these are valuable:
     // - Currently publishes will get through with or without #1.
     // - More data is consumed with #1.
@@ -114,31 +123,41 @@ void system_sleep(Spark_Sleep_TypeDef sleepMode, long seconds, uint32_t param, v
     switch (sleepMode)
     {
         case SLEEP_MODE_WLAN:
+            if (seconds)
+            {
+                HAL_RTC_Set_UnixAlarm((time_t) seconds);
+            }
             break;
 
         case SLEEP_MODE_DEEP:
             if (network_sleep_flag(param))
             {
-                network_disconnect(0, 0, NULL);
+                network_disconnect(0, NETWORK_DISCONNECT_REASON_SLEEP, NULL);
                 network_off(0, 0, 0, NULL);
             }
-            HAL_Core_Enter_Standby_Mode(seconds, nullptr);
+
+            system_power_management_sleep();
+            HAL_Core_Enter_Standby_Mode(seconds,
+                (param & SLEEP_DISABLE_WKP_PIN.value()) ? HAL_STANDBY_MODE_FLAG_DISABLE_WKP_PIN : 0);
             break;
 
 #if Wiring_SetupButtonUX
         case SLEEP_MODE_SOFTPOWEROFF:
-            network_disconnect(0,0,NULL);
+            network_disconnect(0, NETWORK_DISCONNECT_REASON_SLEEP, NULL);
             network_off(0, 0, 0, NULL);
             sleep_fuel_gauge();
-            HAL_Core_Enter_Standby_Mode(seconds, nullptr);
+            system_power_management_sleep();
+            HAL_Core_Enter_Standby_Mode(seconds,
+                (param & SLEEP_DISABLE_WKP_PIN.value()) ? HAL_STANDBY_MODE_FLAG_DISABLE_WKP_PIN : 0);
             break;
 #endif
     }
+    return 0;
 }
 
-int system_sleep_pin_impl(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long seconds, uint32_t param, void* reserved)
+int system_sleep_pin_impl(const uint16_t* pins, size_t pins_count, const InterruptMode* modes, size_t modes_count, long seconds, uint32_t param, void* reserved)
 {
-    SYSTEM_THREAD_CONTEXT_SYNC(system_sleep_pin_impl(wakeUpPin, edgeTriggerMode, seconds, param, reserved));
+    SYSTEM_THREAD_CONTEXT_SYNC(system_sleep_pin_impl(pins, pins_count, modes, modes_count, seconds, param, reserved));
     // If we're connected to the cloud, make sure all
     // confirmable UDP messages are sent before sleeping
     if (spark_cloud_flag_connected()) {
@@ -150,12 +169,32 @@ int system_sleep_pin_impl(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long sec
     {
         network_suspend();
     }
-    LED_Off(LED_RGB);
-    HAL_Core_Enter_Stop_Mode(wakeUpPin, edgeTriggerMode, seconds);
+
+#if PLATFORM_ID==PLATFORM_ELECTRON_PRODUCTION
+    if (!network_sleep_flag(param)) {
+        // Pause the modem Serial
+        cellular_pause(nullptr);
+    }
+#endif
+
+    led_set_update_enabled(0, nullptr); // Disable background LED updates
+    LED_Off(LED_RGB);    
+	system_power_management_sleep();
+    int ret = HAL_Core_Enter_Stop_Mode_Ext(pins, pins_count, modes, modes_count, seconds, nullptr);
+    led_set_update_enabled(1, nullptr); // Enable background LED updates
+
+#if PLATFORM_ID==PLATFORM_ELECTRON_PRODUCTION
+    if (!network_sleep_flag(param)) {
+        // Pause the modem Serial
+        cellular_resume(nullptr);
+    }
+#endif
+
     if (network_sleep)
     {
         network_resume();   // asynchronously bring up the network/cloud
     }
+
     // if single-threaded, managed mode then reconnect to the cloud (for up to 60 seconds)
     auto mode = system_mode();
     if (system_thread_get_state(nullptr)==spark::feature::DISABLED && (mode==AUTOMATIC || mode==SEMI_AUTOMATIC) && spark_cloud_flag_auto_connect()) {
@@ -165,7 +204,7 @@ int system_sleep_pin_impl(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long sec
     if (spark_cloud_flag_connected()) {
         Spark_Wake();
     }
-    return 0;
+    return ret;
 }
 
 /**
@@ -173,5 +212,20 @@ int system_sleep_pin_impl(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long sec
  */
 void system_sleep_pin(uint16_t wakeUpPin, uint16_t edgeTriggerMode, long seconds, uint32_t param, void* reserved)
 {
-    system_sleep_pin_impl(wakeUpPin, edgeTriggerMode, seconds, param, reserved);
+    // Cancel current connection attempt to unblock the system thread
+    network.connect_cancel(true);
+    InterruptMode m = (InterruptMode)edgeTriggerMode;
+    system_sleep_pin_impl(&wakeUpPin, 1, &m, 1, seconds, param, reserved);
+}
+
+void system_sleep(Spark_Sleep_TypeDef sleepMode, long seconds, uint32_t param, void* reserved)
+{
+    network.connect_cancel(true);
+    system_sleep_impl(sleepMode, seconds, param, reserved);
+}
+
+int32_t system_sleep_pins(const uint16_t* pins, size_t pins_count, const InterruptMode* modes, size_t modes_count, long seconds, uint32_t param, void* reserved)
+{
+    network.connect_cancel(true);
+    return system_sleep_pin_impl(pins, pins_count, modes, modes_count, seconds, param, reserved);
 }

@@ -38,6 +38,7 @@
 #include "deviceid_hal.h"
 #include "system_mode.h"
 
+extern void (*random_seed_from_cloud_handler)(unsigned int);
 
 #ifndef SPARK_NO_CLOUD
 
@@ -87,6 +88,18 @@ bool spark_sync_time(void *reserved)
     return spark_cloud_flag_connected();
 }
 
+bool spark_sync_time_pending(void* reserved)
+{
+    SYSTEM_THREAD_CONTEXT_SYNC(spark_sync_time_pending(reserved));
+    return spark_protocol_time_request_pending(sp, nullptr);
+}
+
+system_tick_t spark_sync_time_last(time_t* tm, void* reserved)
+{
+    SYSTEM_THREAD_CONTEXT_SYNC(spark_sync_time_last(tm, reserved));
+    return spark_protocol_time_last_synced(sp, tm, nullptr);
+}
+
 /**
  * Convert from the API flags to the communications lib flags
  * The event visibility flag (public/private) is encoded differently. The other flags map directly.
@@ -102,7 +115,15 @@ bool spark_send_event(const char* name, const char* data, int ttl, uint32_t flag
 {
     SYSTEM_THREAD_CONTEXT_SYNC(spark_send_event(name, data, ttl, flags, reserved));
 
-    return spark_protocol_send_event(sp, name, data, ttl, convert(flags), NULL);
+    spark_protocol_send_event_data d = { sizeof(spark_protocol_send_event_data) };
+    if (reserved) {
+        // Forward completion callback to the protocol implementation
+        auto r = static_cast<const spark_send_event_data*>(reserved);
+        d.handler_callback = r->handler_callback;
+        d.handler_data = r->handler_data;
+    }
+
+    return spark_protocol_send_event(sp, name, data, ttl, convert(flags), &d);
 }
 
 bool spark_variable(const char *varKey, const void *userVar, Spark_Data_TypeDef userVarType, spark_variable_t* extra)
@@ -112,16 +133,7 @@ bool spark_variable(const char *varKey, const void *userVar, Spark_Data_TypeDef 
     User_Var_Lookup_Table_t* item = NULL;
     if (NULL != userVar && NULL != varKey && strlen(varKey)<=USER_VAR_KEY_LENGTH)
     {
-        if ((item=find_var_by_key_or_add(varKey))!=NULL)
-        {
-            item->userVar = userVar;
-            item->userVarType = userVarType;
-            if (extra) {
-                item->update = extra->update;
-            }
-            memset(item->userVarKey, 0, USER_VAR_KEY_LENGTH);
-            memcpy(item->userVarKey, varKey, USER_VAR_KEY_LENGTH);
-        }
+    	item=find_var_by_key_or_add(varKey, userVar, userVarType, extra);
     }
     return item!=NULL;
 }
@@ -179,4 +191,19 @@ String spark_deviceID(void)
     uint8_t id[len];
     HAL_device_ID(id, len);
     return bytes2hex(id, len);
+}
+
+int spark_set_connection_property(unsigned property_id, unsigned data, particle::protocol::connection_properties_t* conn_prop, void* reserved)
+{
+    SYSTEM_THREAD_CONTEXT_SYNC(spark_set_connection_property(property_id, data, conn_prop, reserved));
+    return spark_protocol_set_connection_property(sp, property_id, data, conn_prop, reserved);
+}
+
+int spark_set_random_seed_from_cloud_handler(void (*handler)(unsigned int), void* reserved)
+{
+#ifndef SPARK_NO_CLOUD
+    random_seed_from_cloud_handler = handler;
+#endif // SPARK_NO_CLOUD
+
+    return 0;
 }

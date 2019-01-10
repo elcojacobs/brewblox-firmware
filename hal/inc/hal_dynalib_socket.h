@@ -52,9 +52,11 @@ DYNALIB_FN(9, hal_socket, socket_reset_blocking_call, sock_result_t(void))
 DYNALIB_FN(10, hal_socket, socket_create_tcp_server, sock_result_t(uint16_t, network_interface_t))
 DYNALIB_FN(11, hal_socket, socket_accept, sock_result_t(sock_handle_t))
 DYNALIB_FN(12, hal_socket, socket_handle_invalid, sock_handle_t(void))
-DYNALIB_FN(13, hal_socket, socket_join_multicast, sock_result_t(const HAL_IPAddress*, network_interface_t, void*))
-DYNALIB_FN(14, hal_socket, socket_leave_multicast, sock_result_t(const HAL_IPAddress*, network_interface_t, void*))
+DYNALIB_FN(13, hal_socket, socket_join_multicast, sock_result_t(const HAL_IPAddress*, network_interface_t, socket_multicast_info_t*))
+DYNALIB_FN(14, hal_socket, socket_leave_multicast, sock_result_t(const HAL_IPAddress*, network_interface_t, socket_multicast_info_t*))
 DYNALIB_FN(15, hal_socket, socket_peer, sock_result_t(sock_handle_t, sock_peer_t*, void*))
+DYNALIB_FN(16, hal_socket, socket_shutdown, sock_result_t(sock_handle_t, int))
+DYNALIB_FN(17, hal_socket, socket_send_ex, sock_result_t(sock_handle_t, const void*, socklen_t, uint32_t, system_tick_t, void*))
 
 DYNALIB_END(hal_socket)
 

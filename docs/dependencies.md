@@ -12,25 +12,46 @@ Building the firmware locally requires these dependencies ot be installed:
 #### 1. GCC for ARM Cortex processors
 The Core/Photon uses an ARM Cortex M3 CPU based microcontroller. All of the code is built around the GNU GCC toolchain offered and maintained by ARM.
 
-The build requires version 4.9.3 20150529 or newer of ARM GCC and will print an error
+The build requires version 5.3.1 20160307 or newer of ARM GCC and will print an error
 message if the version is older than this.
 
 
 **Linux and Windows**:
-- Download and install version 4.9.x from: https://launchpad.net/gcc-arm-embedded
+- Download and install version 5.3.1 from: https://launchpad.net/gcc-arm-embedded
 
 **OS X** users can install the toolchain with [Homebrew](http://brew.sh/):
 - `brew tap PX4/homebrew-px4`
 - `brew update`
-- `brew install gcc-arm-none-eabi-49`
-- `arm-none-eabi-gcc --version` (should now say v4.9.x)
+- copy/paste this in Terminal and press ENTER to create the proper Brew formula
+```
+echo -e "gcc-arm-none-eabi-53.rb
+require 'formula'
+
+class GccArmNoneEabi53 < Formula
+  homepage 'https://launchpad.net/gcc-arm-embdded'
+  version '20160307'
+  url 'https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-mac.tar.bz2'
+  sha256 '480843ca1ce2d3602307f760872580e999acea0e34ec3d6f8b6ad02d3db409cf'
+
+  def install
+    ohai 'Copying binaries...'
+    system 'cp', '-rv', 'arm-none-eabi', 'bin', 'lib', 'share', "#{prefix}/"
+  end
+end" > /usr/local/Homebrew/Library/Taps/px4/homebrew-px4/gcc-arm-none-eabi-53.rb
+```
+
+- install it!
+```
+brew install gcc-arm-none-eabi-53
+```
+- `arm-none-eabi-gcc --version` (should now say v5.3.1)
 
 If you are upgrading an existing installation you will have to unlink and link your symblinks:
 - `brew update`
-- `brew install gcc-arm-none-eabi-49` (when you run this, it will tell you the following commands)
-- `brew unlink gcc-arm-none-eabi-48` (example)
-- `brew link --overwrite gcc-arm-none-eabi-49` (example)
-- `arm-none-eabi-gcc --version` (should now say v4.9.x)
+- `brew install gcc-arm-none-eabi-53` (when you run this, it will tell you the following commands)
+- `brew unlink gcc-arm-none-eabi-49` (example)
+- `brew link --overwrite gcc-arm-none-eabi-53` (example)
+- `arm-none-eabi-gcc --version` (should now say v5.3.1)
 
 #### 2. Make
 In order to turn your source code into binaries, you will need a tool called `make`. Windows users need to explicitly install `make` on their machines. Make sure you can use it from the terminal window.
@@ -49,9 +70,11 @@ Download and install Git: http://git-scm.com/
 
 #### 6. Command line tools
 
-- crc32
+On Windows, you'll need to install MinGW and have it in your path to make available some of the typical *nix command line tools. 
+
+The tool `crc32` is also needed:
  - available in MinGW on Windows
  - available by default on OS X
- - linux users, please check with your package manager
+ - linux users, please check with your package manager. On debian based systems it can be installed via `sudo apt-get install libarchive-zip-perl`
 
 

@@ -28,6 +28,7 @@
 #include "gpio_hal.h"
 #include "pinmap_impl.h"
 #include "stm32f2xx.h"
+#include "service_debug.h"
 #include <stddef.h>
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +65,7 @@ typedef struct exti_channel {
 } exti_channel;
 
 //Array to hold user ISR function pointers
-static exti_channel exti_channels[16];
+static exti_channel exti_channels[16] = {{0}};
 
 typedef struct exti_state {
     uint32_t imr;
@@ -73,7 +74,7 @@ typedef struct exti_state {
     uint32_t ftsr;
 } exti_state;
 
-static exti_state exti_saved_state;
+static exti_state exti_saved_state = {0};
 
 /* Extern variables ----------------------------------------------------------*/
 
@@ -262,6 +263,11 @@ void HAL_Interrupts_Restore(void) {
   EXTI->FTSR = exti_saved_state.ftsr;
 }
 
+uint32_t HAL_Interrupts_Pin_IRQn(pin_t pin) {
+  STM32_Pin_Info* PIN_MAP = HAL_Pin_Map();
+  return GPIO_IRQn[PIN_MAP[pin].gpio_pin];
+}
+
 /*******************************************************************************
  * Function Name  : HAL_EXTI_Handler (Declared as weak in WICED - platform_gpio.c)
  * Description    : This function is called by any of the interrupt handlers. It
@@ -288,17 +294,30 @@ void HAL_Interrupts_Trigger(uint16_t EXTI_Line, void* reserved)
   }
 }
 
-
-int HAL_disable_irq()
+int HAL_Set_Direct_Interrupt_Handler(IRQn_Type irqn, HAL_Direct_Interrupt_Handler handler, uint32_t flags, void* reserved)
 {
-  int is = __get_PRIMASK();
-  __disable_irq();
-  return is;
-}
+  if (irqn < NonMaskableInt_IRQn || irqn > HASH_RNG_IRQn) {
+    return 1;
+  }
 
-void HAL_enable_irq(int is) {
-    if ((is & 1) == 0) {
-        __enable_irq();
-    }
-}
+  int32_t state = HAL_disable_irq();
+  volatile uint32_t* isrs = (volatile uint32_t*)SCB->VTOR;
 
+  if (handler == NULL && (flags & HAL_DIRECT_INTERRUPT_FLAG_RESTORE)) {
+    // Restore
+    HAL_Core_Restore_Interrupt(irqn);
+  } else {
+    isrs[IRQN_TO_IDX(irqn)] = (uint32_t)handler;
+  }
+
+  if (flags & HAL_DIRECT_INTERRUPT_FLAG_DISABLE) {
+    // Disable
+    NVIC_DisableIRQ(irqn);
+  } else if (flags & HAL_DIRECT_INTERRUPT_FLAG_ENABLE) {
+    NVIC_EnableIRQ(irqn);
+  }
+
+  HAL_enable_irq(state);
+
+  return 0;
+}

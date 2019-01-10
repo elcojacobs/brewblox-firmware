@@ -42,7 +42,9 @@ public:
 
     /** Initialization member function
     */
-    void begin(unsigned int);
+    void begin(unsigned baud, bool hwFlowCtrl);
+
+    void end();
 
     // tx channel
     //----------------------------------------------------
@@ -96,11 +98,22 @@ public:
     */
     void txIrqBuf(void);
 
+    /** resumes paused receiver (hardware flow control)
+    */
+    void rxResume();
+
+    /** pauses receiver (deasserts RTS line - hardware flow control)
+    */
+    void rxPause();
+
 protected:
     //! start transmission helper
     void txStart(void);
     //! move bytes to hardware
     void txCopy(void);
+
     Pipe<char> _pipeRx; //!< receive pipe
     Pipe<char> _pipeTx; //!< transmit pipe
+    int baud_;
+    bool pause_, hwFlowCtrl_;
 };

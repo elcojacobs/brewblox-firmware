@@ -33,8 +33,6 @@
 /* Include for debug capabilty */
 #define MDM_DEBUG
 
-#define USE_USART3_HARDWARE_FLOW_CONTROL_RTS_CTS 1
-
 /** basic modem parser class
 */
 class MDMParser
@@ -46,23 +44,27 @@ public:
     //! get static instance
     static MDMParser* getInstance() { return inst; };
 
+    /* Used to set the power mode used in MDMParser::init() */
+    void setPowerMode(int mode);
+
     /* Used to cancel all operations */
     void cancel(void);
 
     /* User to resume all operations */
     void resume(void);
 
-    /** Combined Init, checkNetStatus, join suitable for simple applications
-        \param simpin a optional pin of the SIM card
+    /** Register in the network and establish a PSD connection.
         \param apn  the of the network provider e.g. "internet" or "apn.provider.com"
         \param username is the user name text string for the authentication phase
         \param password is the password text string for the authentication phase
         \param auth is the authentication mode (CHAP,PAP,NONE or DETECT)
         \return true if successful, false otherwise
     */
-    bool connect(const char* simpin = NULL,
-            const char* apn = "spark.telefonica.com", const char* username = NULL,
+    bool connect(const char* apn = NULL, const char* username = NULL,
             const char* password = NULL, Auth auth = AUTH_DETECT);
+
+    /** Close the PSD connection. */
+    bool disconnect();
 
     /**
      * Used to issue a hardware reset of the modem
@@ -94,7 +96,7 @@ public:
         \param timeout_ms -1 blocking, else non blocking timeout in ms
         \return true if successful and connected to network, false otherwise
     */
-    bool registerNet(NetStatus* status = NULL, system_tick_t timeout_ms = 300000);
+    bool registerNet(const char* apn = nullptr, NetStatus* status = NULL, system_tick_t timeout_ms = 300000);
 
     /** check if the network is available
         \param status an optional structure to with network information
@@ -144,7 +146,7 @@ public:
 
     /** Setup the PDP context
     */
-    bool pdp(const char* apn = "spark.telefonica.com");
+    bool pdp(const char* apn = NULL);
 
     // ----------------------------------------------------------------
     // Data Connection (GPRS)
@@ -157,13 +159,13 @@ public:
         \param auth is the authentication mode (CHAP,PAP,NONE or DETECT)
         \return the ip that is assigned
     */
-    MDM_IP join(const char* apn = "spark.telefonica.com", const char* username = NULL,
+    MDM_IP join(const char* apn = NULL, const char* username = NULL,
                        const char* password = NULL, Auth auth = AUTH_DETECT);
 
     /** deregister (detach) the MT from the GPRS service.
         \return true if successful, false otherwise
     */
-    bool disconnect(void);
+    bool deactivate(void);
 
     bool reconnect(void);
 
@@ -412,6 +414,9 @@ public:
     */
     int sendFormated(const char* format, ...);
 
+    /** This method is similar to sendFormated() but takes the formatting arguments as va_list */
+    int sendFormattedWithArgs(const char* format, va_list args);
+
     /** callback function for #waitFinalResp with void* as argument
         \param type the #getLine response
         \param buf the parsed line
@@ -445,6 +450,24 @@ public:
     {
         return waitFinalResp((_CALLBACKPTR)cb, (void*)param, timeout_ms);
     }
+
+    /** Send AT command and wait for a response.
+        \param fmt the format string (CRLF terminated)
+        \param args the formatting arguments
+        \param cb the optional callback function
+        \param param the optional callback function parameter
+        \param timeout the response timeout in milliseconds
+        \sa sendFormated
+        \sa waitFinalResp
+    */
+    int sendCommandWithArgs(const char* fmt, va_list args, _CALLBACKPTR cb = NULL, void* param = NULL,
+            system_tick_t timeout = 10000);
+
+    /** Acquires the modem lock. */
+    void lock();
+
+    /** Releases the modem lock. */
+    void unlock();
 
 protected:
     /** Write bytes to the physical interface. This function should be
@@ -486,18 +509,13 @@ protected:
         \param index the index of the received SMS
     */
     void SMSreceived(int index);
-protected:
-    // for rtos over riding by useing Rtos<MDMxx>
-    //! override the lock in a rtos system
-    virtual void lock(void)        { }
-    //! override the unlock in a rtos system
-    virtual void unlock(void)      { }
+
 protected:
     // parsing callbacks for different AT commands and their parameter arguments
     static int _cbString(int type, const char* buf, int len, char* str);
     static int _cbInt(int type, const char* buf, int len, int* val);
     // device
-    static int _cbATI(int type, const char* buf, int len, Dev* dev);
+    static int _cbCGMM(int type, const char* buf, int len, DevStatus* s);
     static int _cbCPIN(int type, const char* buf, int len, Sim* sim);
     static int _cbCCID(int type, const char* buf, int len, char* ccid);
     // network
@@ -509,6 +527,9 @@ protected:
     static int _cbCNUM(int type, const char* buf, int len, char* num);
     static int _cbUACTIND(int type, const char* buf, int len, int* i);
     static int _cbUDOPN(int type, const char* buf, int len, char* mccmnc);
+    static int _cbCGPADDR(int type, const char* buf, int len, MDM_IP* ip);
+    struct CGDCONTparam { char type[8]; char apn[32]; };
+    static int _cbCGDCONT(int type, const char* buf, int len, CGDCONTparam* param);
     // sockets
     static int _cbCMIP(int type, const char* buf, int len, MDM_IP* ip);
     static int _cbUPSND(int type, const char* buf, int len, int* act);
@@ -562,11 +583,12 @@ protected:
     bool _activated;
     bool _attached;
     bool _attached_urc;
+    int _power_mode;
     volatile bool _cancel_all_operations;
 #ifdef MDM_DEBUG
     int _debugLevel;
     system_tick_t _debugTime;
-    void _debugPrint(int level, const char* color, const char* format, ...);
+    void _debugPrint(int level, const char* color, const char* format, ...) __attribute__((format(printf, 4, 5)));
 #endif
 };
 
@@ -601,6 +623,10 @@ public:
         while (readable())
             getc();
     }
+
+    void pause();
+    void resumeRecv();
+
 protected:
     /** Write bytes to the physical interface.
         \param buf the buffer to write

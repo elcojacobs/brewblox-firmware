@@ -27,15 +27,17 @@
 #ifndef _SOCKET_HAL_H
 #define	_SOCKET_HAL_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
 #include "debug.h"
 #include <stdint.h>
 #include "system_tick_hal.h"
 #include "inet_hal.h"
 #include <stdbool.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+#define SOCKET_WAIT_FOREVER (0xffffffff)
 
 typedef struct _sockaddr_t
 {
@@ -49,6 +51,7 @@ typedef int32_t sock_result_t;
 
 static const uint8_t SOCKET_STATUS_INACTIVE = 1;
 static const uint8_t SOCKET_STATUS_ACTIVE = 0;
+
 
 uint8_t socket_active_status(sock_handle_t socket);
 
@@ -69,6 +72,8 @@ sock_result_t socket_receivefrom(sock_handle_t sd, void* buffer, socklen_t len, 
 
 sock_result_t socket_send(sock_handle_t sd, const void* buffer, socklen_t len);
 
+sock_result_t socket_send_ex(sock_handle_t sd, const void* buffer, socklen_t len, uint32_t flags, system_tick_t timeout, void* reserved);
+
 /**
  *
  * @param sd        The socket handle to send
@@ -83,6 +88,8 @@ sock_result_t socket_sendto(sock_handle_t sd, const void* buffer, socklen_t len,
 
 sock_result_t socket_close(sock_handle_t sd);
 
+sock_result_t socket_shutdown(sock_handle_t sd, int how);
+
 sock_result_t socket_reset_blocking_call();
 
 sock_result_t socket_create_tcp_server(uint16_t port, network_interface_t nif);
@@ -93,6 +100,12 @@ sock_result_t socket_accept(sock_handle_t sd);
  */
 sock_handle_t socket_handle_invalid();
 
+typedef struct  __attribute__((packed)) socket_multicast_info_t
+{
+	uint16_t size;
+	sock_handle_t sock_handle;
+} socket_multicast_info_t;
+
 /*
  * Join a multicast address for all UDP sockets. This will allow reception of multicast packets
  * sent to the given address on all UDP sockets which have bound the port to which the multicast
@@ -102,7 +115,7 @@ sock_handle_t socket_handle_invalid();
  * @param reserved Reserved for future use
  * @return Return the result of the join operation, 0 for success, other values for errors
  */
-sock_result_t socket_join_multicast(const HAL_IPAddress *address, network_interface_t nif, void *reserved);
+sock_result_t socket_join_multicast(const HAL_IPAddress *address, network_interface_t nif, socket_multicast_info_t *reserved);
 
 
 /*
@@ -112,7 +125,7 @@ sock_result_t socket_join_multicast(const HAL_IPAddress *address, network_interf
  * @param reserved Reserved for future use
  * @return Return the result of the leave operation, 0 for success, other values for errors
  */
-sock_result_t socket_leave_multicast(const HAL_IPAddress *address, network_interface_t nif, void *reserved);
+sock_result_t socket_leave_multicast(const HAL_IPAddress *address, network_interface_t nif, socket_multicast_info_t *reserved);
 
 
 typedef struct sock_peer_t {
@@ -156,6 +169,18 @@ enum hal_socket_type
  * Notification that an open socket has been closed.
  */
 void HAL_NET_notify_socket_closed(sock_handle_t socket);
+
+#ifndef SHUT_RD
+#define SHUT_RD 1
+#endif
+
+#ifndef SHUT_WR
+#define SHUT_WR 2
+#endif
+
+#ifndef SHUT_RDWR
+#define SHUT_RDWR (SHUT_RD | SHUT_WR)
+#endif
 
 
 #endif

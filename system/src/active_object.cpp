@@ -17,10 +17,14 @@
  ******************************************************************************
  */
 
+#include "active_object.h"
+
+#include "spark_wiring_interrupts.h"
+#include "debug.h"
+
 #if PLATFORM_THREADING
 
 #include <string.h>
-#include "active_object.h"
 #include "concurrent_hal.h"
 #include "timer_hal.h"
 
@@ -37,7 +41,9 @@ void ActiveObjectBase::start_thread()
 
 void ActiveObjectBase::run()
 {
-    std::lock_guard<std::mutex> lck (_start);
+    /* XXX: We shouldn't constantly hold a mutex. This breaks priority inhertiance mechanisms in FreeRTOS. */
+    /* It's not even used anywhere */
+    // std::lock_guard<std::mutex> lck (_start);
     started = true;
 
     uint32_t last_background_run = 0;
@@ -74,4 +80,35 @@ void ActiveObjectBase::run_active_object(ActiveObjectBase* object)
     object->run();
 }
 
-#endif
+#endif // PLATFORM_THREADING
+
+void ISRTaskQueue::enqueue(Task* task) {
+    ATOMIC_BLOCK() {
+        // Add task object to the queue
+        if (lastTask_) {
+            lastTask_->next = task;
+        } else { // The queue is empty
+            firstTask_ = task;
+        }
+        task->next = nullptr;
+        lastTask_ = task;
+    }
+}
+
+bool ISRTaskQueue::process() {
+    Task* task = nullptr;
+    if (!firstTask_) {
+        return false;
+    }
+    ATOMIC_BLOCK() {
+        // Take task object from the queue
+        task = firstTask_;
+        firstTask_ = task->next;
+        if (!firstTask_) {
+            lastTask_ = nullptr;
+        }
+    }
+    // Invoke task function
+    task->func(task);
+    return true;
+}

@@ -29,6 +29,7 @@
 #include "timer_hal.h"
 #include "pinmap_impl.h"
 #include <stddef.h>
+#include "delay_hal.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -80,6 +81,10 @@ typedef struct STM32_I2C_Info {
 
     void (*callback_onRequest)(void);
     void (*callback_onReceive)(int);
+
+    I2C_Mode mode;
+
+    uint8_t clkStretchingEnabled;
 } STM32_I2C_Info;
 
 /*
@@ -104,6 +109,17 @@ static void HAL_I2C_SoftwareReset(HAL_I2C_Interface i2c)
     /* Reset all I2C registers */
     I2C_SoftwareResetCmd(i2cMap[i2c]->I2C_Peripheral, ENABLE);
     I2C_SoftwareResetCmd(i2cMap[i2c]->I2C_Peripheral, DISABLE);
+
+    /* Clear all I2C interrupt error flags, and re-enable them */
+    I2C_ClearITPendingBit(i2cMap[i2c]->I2C_Peripheral, I2C_IT_SMBALERT | I2C_IT_PECERR |
+            I2C_IT_TIMEOUT | I2C_IT_ARLO | I2C_IT_OVR | I2C_IT_BERR | I2C_IT_AF);
+    I2C_ITConfig(i2cMap[i2c]->I2C_Peripheral, I2C_IT_ERR, ENABLE);
+
+    /* Re-enable Event and Buffer interrupts in Slave mode */
+    if(i2cMap[i2c]->mode == I2C_MODE_SLAVE)
+    {
+        I2C_ITConfig(i2cMap[i2c]->I2C_Peripheral, I2C_IT_EVT | I2C_IT_BUF, ENABLE);
+    }
 
     /* Enable the I2C peripheral */
     I2C_Cmd(i2cMap[i2c]->I2C_Peripheral, ENABLE);
@@ -130,6 +146,8 @@ void HAL_I2C_Init(HAL_I2C_Interface i2c, void* reserved)
     i2cMap[i2c]->txBufferLength = 0;
 
     i2cMap[i2c]->transmitting = 0;
+
+    i2cMap[i2c]->clkStretchingEnabled = 1;
 }
 
 void HAL_I2C_Set_Speed(HAL_I2C_Interface i2c, uint32_t speed, void* reserved)
@@ -152,6 +170,8 @@ void HAL_I2C_Stretch_Clock(HAL_I2C_Interface i2c, bool stretch, void* reserved)
     {
         I2C_StretchClockCmd(i2cMap[i2c]->I2C_Peripheral, DISABLE);
     }
+
+    i2cMap[i2c]->clkStretchingEnabled = stretch;
 }
 
 void HAL_I2C_Begin(HAL_I2C_Interface i2c, I2C_Mode mode, uint8_t address, void* reserved)
@@ -161,6 +181,9 @@ void HAL_I2C_Begin(HAL_I2C_Interface i2c, I2C_Mode mode, uint8_t address, void* 
 
     i2cMap[i2c]->txBufferIndex = 0;
     i2cMap[i2c]->txBufferLength = 0;
+    i2cMap[i2c]->mode = mode;
+
+    i2cMap[i2c]->mode = mode;
 
     /* Enable I2C clock */
     *i2cMap[i2c]->I2C_RCC_APBRegister |= i2cMap[i2c]->I2C_RCC_APBClockEnable;
@@ -520,6 +543,34 @@ void HAL_I2C_Set_Callback_On_Request(HAL_I2C_Interface i2c, void (*function)(voi
     i2cMap[i2c]->callback_onRequest = function;
 }
 
+uint8_t HAL_I2C_Reset(HAL_I2C_Interface i2c, uint32_t reserved, void* reserved1)
+{
+    if (HAL_I2C_Is_Enabled(i2c, NULL)) {
+        HAL_I2C_End(i2c, NULL);
+
+        HAL_Pin_Mode(i2cMap[i2c]->I2C_SDA_Pin, INPUT_PULLUP); //Turn SCA into high impedance input
+        HAL_Pin_Mode(i2cMap[i2c]->I2C_SCL_Pin, OUTPUT); //Turn SCL into a normal GPO
+        HAL_GPIO_Write(i2cMap[i2c]->I2C_SCL_Pin, 1); // Start idle HIGH
+
+        //Generate 9 pulses on SCL to tell slave to release the bus
+        for(int i=0; i <9; i++)
+        {
+            HAL_GPIO_Write(i2cMap[i2c]->I2C_SCL_Pin, 0);
+            HAL_Delay_Microseconds(100);
+            HAL_GPIO_Write(i2cMap[i2c]->I2C_SCL_Pin, 1);
+            HAL_Delay_Microseconds(100);
+        }
+
+        //Change SCL to be an input
+        HAL_Pin_Mode(i2cMap[i2c]->I2C_SCL_Pin, INPUT_PULLUP);
+
+        HAL_I2C_Begin(i2c, i2cMap[i2c]->mode, i2cMap[i2c]->I2C_InitStructure.I2C_OwnAddress1 >> 1, NULL);
+        HAL_Delay_Milliseconds(50);
+        return 0;
+    }
+    return 1;
+}
+
 static void HAL_I2C_ER_InterruptHandler(HAL_I2C_Interface i2c)
 {
 #if 0 //Checks whether specified I2C interrupt has occurred and clear IT pending bit.
@@ -569,15 +620,48 @@ static void HAL_I2C_ER_InterruptHandler(HAL_I2C_Interface i2c)
  * @param  None
  * @retval None
  */
-void I2C1_ER_irq(void)
+void HAL_I2C1_ER_Handler(void)
 {
     HAL_I2C_ER_InterruptHandler(HAL_I2C_INTERFACE1);
 }
 
 static void HAL_I2C_EV_InterruptHandler(HAL_I2C_Interface i2c)
 {
+    /* According to reference manual Figure 219 (http://www.st.com/web/en/resource/technical/document/reference_manual/CD00225773.pdf):
+     * 3. After checking the SR1 register content, the user should perform the complete clearing sequence for each
+     * flag found set.
+     * Thus, for ADDR and STOPF flags, the following sequence is required inside the I2C interrupt routine:
+     * READ SR1
+     * if (ADDR == 1) {READ SR1; READ SR2}
+     * if (STOPF == 1) {READ SR1; WRITE CR1}
+     * The purpose is to make sure that both ADDR and STOPF flags are cleared if both are found set
+     */
+    uint32_t sr1 = I2C_ReadRegister(i2cMap[i2c]->I2C_Peripheral, I2C_Register_SR1);
+
+    /* EV4 */
+    if (sr1 & I2C_EVENT_SLAVE_STOP_DETECTED)
+    {
+        /* software sequence to clear STOPF */
+        I2C_GetFlagStatus(i2cMap[i2c]->I2C_Peripheral, I2C_FLAG_STOPF);
+        // Restore clock stretching settings
+        // This will also clear EV4
+        I2C_StretchClockCmd(i2cMap[i2c]->I2C_Peripheral, i2cMap[i2c]->clkStretchingEnabled ? ENABLE : DISABLE);
+        //I2C_Cmd(i2cMap[i2c]->I2C_Peripheral, ENABLE);
+
+        i2cMap[i2c]->rxBufferLength = i2cMap[i2c]->rxBufferIndex;
+        i2cMap[i2c]->rxBufferIndex = 0;
+
+        if(NULL != i2cMap[i2c]->callback_onReceive)
+        {
+            // alert user program
+            i2cMap[i2c]->callback_onReceive(i2cMap[i2c]->rxBufferLength);
+        }
+    }
+
+    uint32_t st = I2C_GetLastEvent(i2cMap[i2c]->I2C_Peripheral);
+
     /* Process Last I2C Event */
-    switch (I2C_GetLastEvent(i2cMap[i2c]->I2C_Peripheral))
+    switch (st)
     {
     /********** Slave Transmitter Events ************/
 
@@ -594,6 +678,7 @@ static void HAL_I2C_EV_InterruptHandler(HAL_I2C_Interface i2c)
         }
 
         i2cMap[i2c]->txBufferIndex = 0;
+
         break;
 
     /* Check on EV3 */
@@ -602,6 +687,13 @@ static void HAL_I2C_EV_InterruptHandler(HAL_I2C_Interface i2c)
         if (i2cMap[i2c]->txBufferIndex < i2cMap[i2c]->txBufferLength)
         {
             I2C_SendData(i2cMap[i2c]->I2C_Peripheral, i2cMap[i2c]->txBuffer[i2cMap[i2c]->txBufferIndex++]);
+        }
+        else
+        {
+            // If no data is loaded into DR register and clock stretching is enabled,
+            // the device will continue pulling SCL low. To avoid that, disable clock stretching
+            // when the tx buffer is exhausted to release SCL.
+            I2C_StretchClockCmd(i2cMap[i2c]->I2C_Peripheral, DISABLE);
         }
         break;
 
@@ -616,23 +708,11 @@ static void HAL_I2C_EV_InterruptHandler(HAL_I2C_Interface i2c)
     /* Check on EV2*/
     case I2C_EVENT_SLAVE_BYTE_RECEIVED:
     case (I2C_EVENT_SLAVE_BYTE_RECEIVED | I2C_SR1_BTF):
-        i2cMap[i2c]->rxBuffer[i2cMap[i2c]->rxBufferIndex++] = I2C_ReceiveData(i2cMap[i2c]->I2C_Peripheral);
-        break;
-
-    /* Check on EV4 */
-    case I2C_EVENT_SLAVE_STOP_DETECTED:
-        /* software sequence to clear STOPF */
-        I2C_GetFlagStatus(i2cMap[i2c]->I2C_Peripheral, I2C_FLAG_STOPF);
-        I2C_Cmd(i2cMap[i2c]->I2C_Peripheral, ENABLE);
-
-        i2cMap[i2c]->rxBufferLength = i2cMap[i2c]->rxBufferIndex;
-        i2cMap[i2c]->rxBufferIndex = 0;
-
-        if(NULL != i2cMap[i2c]->callback_onReceive)
-        {
-            // alert user program
-            i2cMap[i2c]->callback_onReceive(i2cMap[i2c]->rxBufferLength);
-        }
+        // Prevent RX buffer overflow
+        if (i2cMap[i2c]->rxBufferIndex < BUFFER_LENGTH)
+            i2cMap[i2c]->rxBuffer[i2cMap[i2c]->rxBufferIndex++] = I2C_ReceiveData(i2cMap[i2c]->I2C_Peripheral);
+        else
+            (void)I2C_ReceiveData(i2cMap[i2c]->I2C_Peripheral);
         break;
 
     default:
@@ -645,7 +725,17 @@ static void HAL_I2C_EV_InterruptHandler(HAL_I2C_Interface i2c)
  * @param  None
  * @retval None
  */
-void I2C1_EV_irq(void)
+void HAL_I2C1_EV_Handler(void)
 {
     HAL_I2C_EV_InterruptHandler(HAL_I2C_INTERFACE1);
+}
+
+int32_t HAL_I2C_Acquire(HAL_I2C_Interface i2c, void* reserved)
+{
+    return -1;
+}
+
+int32_t HAL_I2C_Release(HAL_I2C_Interface i2c, void* reserved)
+{
+    return -1;
 }

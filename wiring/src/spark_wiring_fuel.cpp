@@ -25,17 +25,58 @@
  */
 
 #include "spark_wiring_fuel.h"
+#include <mutex>
+#include "spark_wiring_power.h"
 
-FuelGauge::FuelGauge()
+FuelGauge::FuelGauge(bool _lock) :
+#if (PLATFORM_ID == PLATFORM_ELECTRON_PRODUCTION)
+    FuelGauge(Wire3, _lock)
+#else
+    FuelGauge(Wire, _lock)
+#endif /* (PLATFORM_ID == PLATFORM_ELECTRON_PRODUCTION) */
 {
+}
 
+FuelGauge::FuelGauge(TwoWire& i2c, bool _lock)
+    : i2c_(i2c),
+      lock_(_lock) {
+
+    if (lock_) {
+        lock();
+    }
+}
+
+FuelGauge::~FuelGauge()
+{
+    if (lock_) {
+        unlock();
+    }
 }
 
 boolean FuelGauge::begin()
 {
-	// this should be unecessary since, begin is already called from pmic setup
-	return 1;
+    if (!i2c_.isEnabled()) {
+		i2c_.begin();
+    }
+    return i2c_.isEnabled();
 }
+
+namespace detail {
+	// Converts VCELL_REGISTER reading to Battery Voltage
+	float _getVCell(byte MSB, byte LSB) {
+		// VCELL = 12-bit value, 1.25mV (1V/800) per bit
+		float value = (float)((MSB << 4) | (LSB >> 4));
+		return value / 800.0;
+	}
+
+	// Converts SOC_REGISTER reading to state of charge of the cell as a percentage
+	float _getSoC(byte MSB, byte LSB) {
+		// MSB is the whole number
+		// LSB is the decimal, resolution in units 1/256%
+		float decimal = LSB / 256.0;
+		return MSB + decimal;
+	}
+} // namespace detail
 
 // Read and return the cell voltage
 float FuelGauge::getVCell() {
@@ -44,9 +85,7 @@ float FuelGauge::getVCell() {
 	byte LSB = 0;
 
 	readRegister(VCELL_REGISTER, MSB, LSB);
-	int value = (MSB << 4) | (LSB >> 4);
-	return map(value, 0x000, 0xFFF, 0, 50000) / 10000.0;
-	//return value * 0.00125;
+	return detail::_getVCell(MSB, LSB);
 }
 
 // Read and return the state of charge of the cell
@@ -56,8 +95,32 @@ float FuelGauge::getSoC() {
 	byte LSB = 0;
 
 	readRegister(SOC_REGISTER, MSB, LSB);
-	float decimal = LSB / 256.0;
-	return MSB + decimal;
+	return detail::_getSoC(MSB, LSB);
+}
+
+float FuelGauge::getNormalizedSoC() {
+    std::lock_guard<FuelGauge> l(*this);
+    PMIC power(true);
+
+    const float soc = getSoC() / 100.0f;
+    const float termV = ((float)power.getChargeVoltageValue()) / 1000.0f;
+    const float magicVoltageDiff = 0.1f;
+    const float reference100PercentV = 4.2f;
+    const float referenceMaxV = std::max(reference100PercentV, termV) - magicVoltageDiff;
+
+    const float magicError = 0.05f;
+    const float maxCharge = (1.0f - (reference100PercentV - referenceMaxV)) - magicError;
+    const float minCharge = 0.0f; // 0%
+
+    float normalized = (soc - minCharge) * (1.0f / (maxCharge - minCharge)) + 0.0f;
+    // Clamp at [0.0, 1.0]
+    if (normalized < 0.0f) {
+        normalized = 0.0f;
+    } else if (normalized > 1.0f) {
+        normalized = 1.0f;
+    }
+
+    return normalized * 100.0f;
 }
 
 // Return the version number of the chip
@@ -133,6 +196,7 @@ void FuelGauge::quickStart() {
 
 void FuelGauge::sleep() {
 
+    std::lock_guard<FuelGauge> l(*this);
 	byte MSB = 0;
 	byte LSB = 0;
 
@@ -143,7 +207,7 @@ void FuelGauge::sleep() {
 }
 
 void FuelGauge::wakeup() {
-
+    std::lock_guard<FuelGauge> l(*this);
 	byte MSB = 0;
 	byte LSB = 0;
 
@@ -155,29 +219,34 @@ void FuelGauge::wakeup() {
 
 
 void FuelGauge::readConfigRegister(byte &MSB, byte &LSB) {
-
 	readRegister(CONFIG_REGISTER, MSB, LSB);
 }
 
 
 void FuelGauge::readRegister(byte startAddress, byte &MSB, byte &LSB) {
-#if Wiring_Wire3
-	Wire3.beginTransmission(MAX17043_ADDRESS);
-    Wire3.write(startAddress);
-    Wire3.endTransmission(true);
+    std::lock_guard<FuelGauge> l(*this);
+    i2c_.beginTransmission(MAX17043_ADDRESS);
+    i2c_.write(startAddress);
+    i2c_.endTransmission(true);
 
-    Wire3.requestFrom(MAX17043_ADDRESS, 2, true);
-    MSB = Wire3.read();
-    LSB = Wire3.read();
-#endif
+    i2c_.requestFrom(MAX17043_ADDRESS, 2, true);
+    MSB = i2c_.read();
+    LSB = i2c_.read();
 }
 
 void FuelGauge::writeRegister(byte address, byte MSB, byte LSB) {
-#if Wiring_Wire3
-	Wire3.beginTransmission(MAX17043_ADDRESS);
-    Wire3.write(address);
-    Wire3.write(MSB);
-    Wire3.write(LSB);
-    Wire3.endTransmission(true);
-#endif
+    std::lock_guard<FuelGauge> l(*this);
+    i2c_.beginTransmission(MAX17043_ADDRESS);
+    i2c_.write(address);
+    i2c_.write(MSB);
+    i2c_.write(LSB);
+    i2c_.endTransmission(true);
+}
+
+bool FuelGauge::lock() {
+    return i2c_.lock();
+}
+
+bool FuelGauge::unlock() {
+	return i2c_.unlock();
 }

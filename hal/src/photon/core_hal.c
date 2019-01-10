@@ -32,6 +32,8 @@
 #include "delay_hal.h"
 #include <stdint.h>
 
+void SysTickChain();
+
 /**
  * Start of interrupt vector table.
  */
@@ -40,20 +42,23 @@ extern char link_interrupt_vectors_location;
 extern char link_ram_interrupt_vectors_location;
 extern char link_ram_interrupt_vectors_location_end;
 
-const unsigned HardFaultIndex = 3;
-const unsigned MemManageIndex = 4;
-const unsigned BusFaultIndex = 5;
-const unsigned UsageFaultIndex = 6;
-const unsigned SysTickIndex = 15;
-const unsigned USART1Index = 53;
-const unsigned USART2Index = 54;
-const unsigned ButtonExtiIndex = BUTTON1_EXTI_IRQ_INDEX;
-const unsigned TIM7Index = 71;
-const unsigned DMA2Stream2Index = 74;
-const unsigned CAN2_TX_IRQHandler_Idx               = 79;
-const unsigned CAN2_RX0_IRQHandler_Idx              = 80;
-const unsigned CAN2_RX1_IRQHandler_Idx              = 81;
-const unsigned CAN2_SCE_IRQHandler_Idx              = 82;
+const HAL_InterruptOverrideEntry hal_interrupt_overrides[] = {
+    {HardFault_IRQn, HardFault_Handler},
+    {MemoryManagement_IRQn, MemManage_Handler},
+    {BusFault_IRQn, BusFault_Handler},
+    {UsageFault_IRQn, UsageFault_Handler},
+    {SysTick_IRQn, SysTickOverride},
+    {USART1_IRQn, HAL_USART1_Handler},
+    {USART2_IRQn, HAL_USART2_Handler},
+    {BUTTON1_EXTI_IRQn, Mode_Button_EXTI_irq},
+    {TIM7_IRQn, TIM7_override},
+    {DMA2_Stream2_IRQn, DMA2_Stream2_irq_override},
+    {CAN2_TX_IRQn, CAN2_TX_irq},
+    {CAN2_RX0_IRQn, CAN2_RX0_irq},
+    {CAN2_RX1_IRQn, CAN2_RX1_irq},
+    {CAN2_SCE_IRQn, CAN2_SCE_irq}
+};
+
 /**
  * Updated by HAL_1Ms_Tick()
  */
@@ -67,26 +72,34 @@ void HAL_Core_Setup_override_interrupts(void) {
 
     memcpy(&link_ram_interrupt_vectors_location, &link_interrupt_vectors_location, &link_ram_interrupt_vectors_location_end-&link_ram_interrupt_vectors_location);
     uint32_t* isrs = (uint32_t*)&link_ram_interrupt_vectors_location;
-    isrs[HardFaultIndex] = (uint32_t)HardFault_Handler;
-    isrs[MemManageIndex] = (uint32_t)MemManage_Handler;
-    isrs[BusFaultIndex] = (uint32_t)BusFault_Handler;
-    isrs[UsageFaultIndex] = (uint32_t)UsageFault_Handler;
-    isrs[SysTickIndex] = (uint32_t)SysTickOverride;
-    isrs[USART1Index] = (uint32_t)HAL_USART1_Handler;
-    isrs[USART2Index] = (uint32_t)HAL_USART2_Handler;
-    isrs[ButtonExtiIndex] = (uint32_t)Mode_Button_EXTI_irq;
-    isrs[TIM7Index] = (uint32_t)TIM7_override;  // WICED uses this for a JTAG watchdog handler
-    isrs[DMA2Stream2Index] = (uint32_t)DMA2_Stream2_irq_override;
-    isrs[CAN2_TX_IRQHandler_Idx]            = (uint32_t)CAN2_TX_irq;
-    isrs[CAN2_RX0_IRQHandler_Idx]           = (uint32_t)CAN2_RX0_irq;
-    isrs[CAN2_RX1_IRQHandler_Idx]           = (uint32_t)CAN2_RX1_irq;
-    isrs[CAN2_SCE_IRQHandler_Idx]           = (uint32_t)CAN2_SCE_irq;
+    for(int i = 0; i < sizeof(hal_interrupt_overrides)/sizeof(HAL_InterruptOverrideEntry); i++) {
+        isrs[IRQN_TO_IDX(hal_interrupt_overrides[i].irq)] = (uint32_t)hal_interrupt_overrides[i].handler;
+    }
     SCB->VTOR = (unsigned long)isrs;
+}
+
+void HAL_Core_Restore_Interrupt(IRQn_Type irqn) {
+    uint32_t handler = ((const uint32_t*)&link_interrupt_vectors_location)[IRQN_TO_IDX(irqn)];
+
+    // Special chain handler
+    if (irqn == SysTick_IRQn) {
+        handler = (uint32_t)SysTickChain;
+    } else {
+        for(int i = 0; i < sizeof(hal_interrupt_overrides)/sizeof(HAL_InterruptOverrideEntry); i++) {
+            if (hal_interrupt_overrides[i].irq == irqn) {
+                handler = (uint32_t)hal_interrupt_overrides[i].handler;
+                break;
+            }
+        }
+    }
+
+    volatile uint32_t* isrs = (volatile uint32_t*)SCB->VTOR;
+    isrs[IRQN_TO_IDX(irqn)] = handler;
 }
 
 
 /* Extern function prototypes ------------------------------------------------*/
-void HAL_Core_Init(void)
+void HAL_Core_Init_finalize(void)
 {
     wiced_core_init();
     wlan_initialize_dct();
@@ -94,7 +107,7 @@ void HAL_Core_Init(void)
 
 void SysTickChain()
 {
-    void (*chain)(void) = (void (*)(void))((uint32_t*)&link_interrupt_vectors_location)[SysTickIndex];
+    void (*chain)(void) = (void (*)(void))((uint32_t*)&link_interrupt_vectors_location)[IRQN_TO_IDX(SysTick_IRQn)];
 
     chain();
 
@@ -114,7 +127,7 @@ void HAL_Core_Setup_finalize(void)
     // Now that main() has been executed, we can plug in the original WICED ISR in the
     // ISR chain.)
     uint32_t* isrs = (uint32_t*)&link_ram_interrupt_vectors_location;
-    isrs[SysTickIndex] = (uint32_t)SysTickChain;
+    isrs[IRQN_TO_IDX(SysTick_IRQn)] = (uint32_t)SysTickChain;
 
 #ifdef MODULAR_FIRMWARE
     const uint32_t app_backup = 0x800C000;
@@ -122,14 +135,14 @@ void HAL_Core_Setup_finalize(void)
     // in the eeprom region.
     const module_info_t* app_info = FLASH_ModuleInfo(FLASH_INTERNAL, app_backup);
     if (app_info->module_start_address==(void*)0x80A0000) {
-    		LED_SetRGBColor(RGB_COLOR_GREEN);
-    		uint32_t length = app_info->module_end_address-app_info->module_start_address+4;
-    		if (length < 80*1024 && FLASH_CopyMemory(FLASH_INTERNAL, app_backup, FLASH_INTERNAL, 0x80E0000, length, MODULE_FUNCTION_USER_PART, MODULE_VERIFY_CRC|MODULE_VERIFY_FUNCTION)) {
-        		FLASH_CopyMemory(FLASH_INTERNAL, app_backup, FLASH_INTERNAL, 0x80A0000, length, MODULE_FUNCTION_USER_PART, MODULE_VERIFY_CRC|MODULE_VERIFY_DESTINATION_IS_START_ADDRESS|MODULE_VERIFY_FUNCTION);
-    			FLASH_EraseMemory(FLASH_INTERNAL, app_backup, length);
-    		}
-    		LED_SetRGBColor(RGB_COLOR_WHITE);
-    	}
+            LED_SetRGBColor(RGB_COLOR_GREEN);
+            uint32_t length = app_info->module_end_address-app_info->module_start_address+4;
+            if (length < 80*1024 && FLASH_CopyMemory(FLASH_INTERNAL, app_backup, FLASH_INTERNAL, 0x80E0000, length, MODULE_FUNCTION_USER_PART, MODULE_VERIFY_CRC|MODULE_VERIFY_FUNCTION) == FLASH_ACCESS_RESULT_OK) {
+                FLASH_CopyMemory(FLASH_INTERNAL, app_backup, FLASH_INTERNAL, 0x80A0000, length, MODULE_FUNCTION_USER_PART, MODULE_VERIFY_CRC|MODULE_VERIFY_DESTINATION_IS_START_ADDRESS|MODULE_VERIFY_FUNCTION);
+                FLASH_EraseMemory(FLASH_INTERNAL, app_backup, length);
+            }
+            LED_SetRGBColor(RGB_COLOR_WHITE);
+        }
 #endif
 }
 
@@ -140,9 +153,9 @@ void HAL_Core_Setup_finalize(void)
  */
 void Mode_Button_EXTI_irq(void)
 {
-    void (*chain)(void) = (void (*)(void))((uint32_t*)&link_interrupt_vectors_location)[ButtonExtiIndex];
+    void (*chain)(void) = (void (*)(void))((uint32_t*)&link_interrupt_vectors_location)[IRQN_TO_IDX(BUTTON1_EXTI_IRQn)];
 
-    Handle_Mode_Button_EXTI_irq();
+    Handle_Mode_Button_EXTI_irq(BUTTON1);
 
     chain();
 }

@@ -1,3 +1,4 @@
+#ifndef HAL_CELLULAR_EXCLUDE
 
 #include <stdint.h>
 #include "socket_hal.h"
@@ -91,9 +92,20 @@ sock_result_t socket_close(sock_handle_t sock)
     return (result ? 0 : 1);
 }
 
+sock_result_t socket_shutdown(sock_handle_t sd, int how)
+{
+    return -1;
+}
+
 sock_result_t socket_send(sock_handle_t sd, const void* buffer, socklen_t len)
 {
     return electronMDM.socketSend(sd, (const char*)buffer, len);
+}
+
+sock_result_t socket_send_ex(sock_handle_t sd, const void* buffer, socklen_t len, uint32_t flags, system_tick_t timeout, void* reserved)
+{
+    /* NOTE: non-blocking mode and timeouts are not supported */
+    return socket_send(sd, buffer, len);
 }
 
 sock_result_t socket_sendto(sock_handle_t sd, const void* buffer, socklen_t len, uint32_t flags, sockaddr_t* addr, socklen_t addr_size)
@@ -119,12 +131,12 @@ sock_handle_t socket_handle_invalid()
     return SOCKET_INVALID;
 }
 
-sock_result_t socket_join_multicast(const HAL_IPAddress* addr, network_interface_t nif, void* reserved)
+sock_result_t socket_join_multicast(const HAL_IPAddress* addr, network_interface_t nif, socket_multicast_info_t* reserved)
 {
     return -1;
 }
 
-sock_result_t socket_leave_multicast(const HAL_IPAddress* addr, network_interface_t nif, void* reserved)
+sock_result_t socket_leave_multicast(const HAL_IPAddress* addr, network_interface_t nif, socket_multicast_info_t* reserved)
 {
     return -1;
 }
@@ -138,3 +150,5 @@ sock_result_t socket_create_tcp_server(uint16_t port, network_interface_t nif)
 {
     return -1;
 }
+
+#endif // !defined(HAL_CELLULAR_EXCLUDE)

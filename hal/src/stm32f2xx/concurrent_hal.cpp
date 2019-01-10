@@ -22,6 +22,8 @@
  */
 
 #include "concurrent_hal.h"
+
+#include "core_hal_stm32f2xx.h"
 #include "static_assert.h"
 #include "delay_hal.h"
 #include "FreeRTOS.h"
@@ -32,6 +34,18 @@
 #include "stm32f2xx.h"
 #include "interrupts_hal.h"
 #include <mutex>
+#include <atomic>
+#include "flash_acquire.h"
+#include "periph_lock.h"
+#include "core_hal.h"
+#include "logging.h"
+#include "atomic_flag_mutex.h"
+#include "static_recursive_mutex.h"
+#include "service_debug.h"
+
+#if PLATFORM_ID == 6 || PLATFORM_ID == 8
+# include "wwd_rtos_interface.h"
+#endif // PLATFORM_ID == 6 || PLATFORM_ID == 8
 
 // For OpenOCD FreeRTOS support
 extern const int  __attribute__((used)) uxTopUsedPriority = configMAX_PRIORITIES;
@@ -54,6 +68,11 @@ static_assert(sizeof(uint32_t)==sizeof(void*), "Requires uint32_t to be same siz
 #define _CREATE_NAME_TYPE const signed char
 #endif
 
+namespace {
+
+StaticRecursiveMutex g_periphMutex;
+
+} // namespace
 
 /**
  * Creates a new thread.
@@ -120,8 +139,23 @@ os_result_t os_thread_join(os_thread_t thread)
     }
     return 0;
 #else
-    return -1;
+    while (eTaskGetState(thread) != eDeleted)
+    {
+        HAL_Delay_Milliseconds(10);
+    }
+    return 0;
 #endif
+}
+
+/**
+ * Terminate thread.
+ * @param thread    The thread to terminate, or NULL to terminate current thread.
+ * @return 0 if the thread has successfully terminated. non-zero in case of an error.
+ */
+os_result_t os_thread_exit(os_thread_t thread)
+{
+    vTaskDelete(thread);
+    return 0;
 }
 
 /**
@@ -131,7 +165,11 @@ os_result_t os_thread_join(os_thread_t thread)
  */
 os_result_t os_thread_cleanup(os_thread_t thread)
 {
-    vTaskDelete(thread);
+#if PLATFORM_ID == 6 || PLATFORM_ID == 8
+    if (!thread || os_thread_is_current(thread))
+        return 1;
+    host_rtos_delete_terminated_thread((host_thread_type_t*)&thread);
+#endif // PLATFORM_ID == 6 || PLATFORM_ID == 8
     return 0;
 }
 
@@ -300,7 +338,7 @@ void os_condition_variable_notify_all(condition_variable_t cond)
 }
 
 
-int os_queue_create(os_queue_t* queue, size_t item_size, size_t item_count)
+int os_queue_create(os_queue_t* queue, size_t item_size, size_t item_count, void*)
 {
     *queue = xQueueCreate(item_count, item_size);
     return *queue==NULL;
@@ -308,22 +346,27 @@ int os_queue_create(os_queue_t* queue, size_t item_size, size_t item_count)
 
 static_assert(portMAX_DELAY==CONCURRENT_WAIT_FOREVER, "expected portMAX_DELAY==CONCURRENT_WAIT_FOREVER");
 
-int os_queue_put(os_queue_t queue, const void* item, system_tick_t delay)
+int os_queue_put(os_queue_t queue, const void* item, system_tick_t delay, void*)
 {
-	if (HAL_IsISR())
-		return xQueueSendFromISR(queue, item, nullptr)!=pdTRUE;
-	else
-		return xQueueSend(queue, item, delay)!=pdTRUE;
+    if (HAL_IsISR()) {
+        BaseType_t woken = pdFALSE;
+        int res = xQueueSendFromISR(queue, item, &woken) != pdTRUE;
+        portYIELD_FROM_ISR(woken);
+        return res;
+    } else {
+        return xQueueSend(queue, item, delay)!=pdTRUE;
+    }
 }
 
-int os_queue_take(os_queue_t queue, void* item, system_tick_t delay)
+int os_queue_take(os_queue_t queue, void* item, system_tick_t delay, void*)
 {
     return xQueueReceive(queue, item, delay)!=pdTRUE;
 }
 
-void os_queue_destroy(os_queue_t queue)
+int os_queue_destroy(os_queue_t queue, void*)
 {
     vQueueDelete(queue);
+    return 0;
 }
 
 
@@ -468,4 +511,36 @@ int os_timer_destroy(os_timer_t timer, void* reserved)
 int os_timer_is_active(os_timer_t timer, void* reserved)
 {
     return xTimerIsTimerActive(timer) != pdFALSE;
+}
+
+static AtomicFlagMutex<os_result_t, os_thread_yield> flash_lock;
+void __flash_acquire() {
+    if (!rtos_started) {
+        return;
+    }
+    if (HAL_IsISR()) {
+        PANIC(UsageFault, "Flash operation from IRQ");
+    }
+    flash_lock.lock();
+}
+
+void __flash_release() {
+    if (!rtos_started) {
+        return;
+    }
+    flash_lock.unlock();
+}
+
+void periph_lock() {
+    if (!rtos_started) {
+        return;
+    }
+    g_periphMutex.lock();
+}
+
+void periph_unlock() {
+    if (!rtos_started) {
+        return;
+    }
+    g_periphMutex.unlock();
 }

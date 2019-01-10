@@ -153,6 +153,7 @@ void HAL_Interrupts_Attach(uint16_t pin, HAL_InterruptHandler handler, void* dat
   {
     //configure NVIC
     //select NVIC channel to configure
+    NVIC_InitStructure.NVIC_IRQChannel = GPIO_IRQn[GPIO_PinSource];
     if (config == NULL) {
       if(GPIO_PinSource > 4)
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 14;
@@ -286,4 +287,8 @@ void HAL_enable_irq(int is) {
     }
 }
 
-
+int HAL_Set_Direct_Interrupt_Handler(IRQn_Type irqn, HAL_Direct_Interrupt_Handler handler, uint32_t flags, void* reserved)
+{
+    // Not supported
+    return 1;
+}

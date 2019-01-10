@@ -5,6 +5,7 @@
 #include "file_transfer.h"
 #include "static_assert.h"
 #include "appender.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +46,14 @@ bool system_fileTransfer(system_file_transfer_t* transfer, void* reserved=NULL);
 void system_lineCodingBitRateHandler(uint32_t bitrate);
 
 bool system_module_info(appender_fn appender, void* append_data, void* reserved=NULL);
+bool system_metrics(appender_fn appender, void* append_data, uint32_t flags, uint32_t page, void* reserved=NULL);
 bool append_system_version_info(Appender* appender);
+
+bool ota_update_info(appender_fn append, void* append_data, void* mod, bool full, void* reserved);
+
+typedef enum {
+    MODULE_INFO_JSON_INCLUDE_PLATFORM_ID = 0x0001
+} module_info_json_flags_t;
 
 /**
  *
@@ -63,7 +71,7 @@ int Spark_Prepare_For_Firmware_Update(FileTransfer::Descriptor& file, uint32_t f
  * @param reserved NULL
  * @return 0 on success.
  */
-int Spark_Finish_Firmware_Update(FileTransfer::Descriptor& file, uint32_t flags, void* reserved);
+int Spark_Finish_Firmware_Update(FileTransfer::Descriptor& file, uint32_t flags, void* module);
 
 /**
  * Provides a chunk of the file data.
@@ -114,6 +122,18 @@ typedef enum
 	 */
 	SYSTEM_FLAG_WIFITESTER_OVER_SERIAL1,
 
+    /**
+     * Enable/disable publishing of last reset info to the cloud.
+     */
+    SYSTEM_FLAG_PUBLISH_RESET_INFO,
+
+    /**
+     * When 0, the system doesn't reset network connection on cloud connection errors.
+     * When 1 (default), the system resets network connection after a number of failed attempts to
+     * connect to the cloud.
+     */
+    SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS,
+
     SYSTEM_FLAG_MAX
 
 } system_flag_t;
@@ -124,6 +144,19 @@ void system_pending_shutdown();
 
 int system_set_flag(system_flag_t flag, uint8_t value, void* reserved);
 int system_get_flag(system_flag_t flag, uint8_t* value,void* reserved);
+
+/**
+ * Formats the diagnostic data using an appender function.
+ *
+ * @param id Array of data source IDs. This argument can be set to NULL to format all registered data sources.
+ * @param count Number of data source IDs in the array.
+ * @param flags Formatting flags.
+ * @param append Appender function.
+ * @param append_data Opaque data passed to the appender function.
+ * @param reserved Reserved argument (should be set to NULL).
+ */
+int system_format_diag_data(const uint16_t* id, size_t count, unsigned flags, appender_fn append, void* append_data,
+        void* reserved);
 
 #ifdef __cplusplus
 }

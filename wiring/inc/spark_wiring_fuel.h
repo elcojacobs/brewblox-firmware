@@ -43,14 +43,23 @@
 #define CONFIG_REGISTER   0x0C
 #define COMMAND_REGISTER  0xFE
 
+/* detail functions defined for unit tests */
+namespace detail {
+    float _getVCell(byte MSB, byte LSB);
+    float _getSoC(byte MSB, byte LSB);
+}
 
 class FuelGauge {
+public:
+    FuelGauge(bool _lock = false);
+    FuelGauge(TwoWire& i2c, bool _lock = false);
+    ~FuelGauge();
 
-  public:
-      FuelGauge();
     boolean begin();
+
     float getVCell();
     float getSoC();
+    float getNormalizedSoC();
     int getVersion();
     byte getCompensateValue();
     byte getAlertThreshold();
@@ -62,11 +71,17 @@ class FuelGauge {
     void sleep();
     void wakeup();
 
-  private:
+    bool lock();
+    bool unlock();
+
+private:
 
     void readConfigRegister(byte &MSB, byte &LSB);
     void readRegister(byte startAddress, byte &MSB, byte &LSB);
     void writeRegister(byte address, byte MSB, byte LSB);
+
+    TwoWire& i2c_;
+    bool lock_;
 };
 
 #endif

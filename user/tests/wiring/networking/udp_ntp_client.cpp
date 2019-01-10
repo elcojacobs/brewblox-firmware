@@ -28,9 +28,10 @@
 
 unsigned int localPort = 8888;      // local port to listen for UDP packets
 
-IPAddress timeServer(132, 163, 4, 101); // time-a.timefreq.bldrdoc.gov NTP server
-// IPAddress timeServer(132, 163, 4, 102); // time-b.timefreq.bldrdoc.gov NTP server
-// IPAddress timeServer(132, 163, 4, 103); // time-c.timefreq.bldrdoc.gov NTP server
+IPAddress timeServer;
+// time-a.timefreq.bldrdoc.gov NTP server
+// time-b.timefreq.bldrdoc.gov NTP server
+// time-c.timefreq.bldrdoc.gov NTP server
 
 const int NTP_PACKET_SIZE= 48; // NTP time stamp is in the first 48 bytes of the message
 
@@ -81,6 +82,13 @@ unsigned long getNTPClientTime(void)
     // timeout after 10 secs
     while(millis() - _millis < 10000)
     {
+
+#if Wiring_WiFi
+        timeServer = WiFi.resolve("time-a.timefreq.bldrdoc.gov");
+#elif Wiring_Cellular
+        timeServer = Cellular.resolve("time-a.timefreq.bldrdoc.gov");
+#endif
+
         sendNTPpacket(timeServer); // send an NTP packet to a time server
 
         delay(1000);

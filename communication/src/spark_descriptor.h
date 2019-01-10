@@ -40,6 +40,25 @@ namespace SparkReturnType {
   };
 }
 
+/**
+ * The application state is divided into distinct types.
+ */
+namespace SparkAppStateSelector {
+	enum Enum {
+		DESCRIBE_APP,
+		DESCRIBE_SYSTEM,
+		SUBSCRIPTIONS,
+	};
+}
+
+namespace SparkAppStateUpdate {
+	enum Enum {
+		COMPUTE = 1,
+		PERSIST = 2,
+		COMPUTE_AND_PERSIST = 3
+	};
+}
+
 struct SparkDescriptor
 {
     typedef std::function<bool(const void*, SparkReturnType::Enum)> FunctionResultCallback;
@@ -61,7 +80,30 @@ struct SparkDescriptor
 
     void (*call_event_handler)(uint16_t size, FilteringEventHandler* handler, const char* event, const char* data, void* reserved);
 
-    void* reserved[3];      // add a few additional pointers
+    /**
+     * Optional callback - may be null.
+     * @param selector	The app state information to retrieve or update
+     * @param operation	COMPUTE to retrieve, the value. PESIST to set the persistent storage to the given value, COMPUTE_AND_PERSIST to compute and persist a given value. funcs/vars crc can be retrieved,
+     * 	subscriptions crc can be set.
+     * 	The descriptor state (DESCRIBE_APP/DESCRIBE_SYSTEM) can be computed by the callback and can be used with COMPUTE and COMPUTE_AND_PERSIST operations.
+     * 	The subscription state (SUBSCRIPTIONS) is computed by the caller and passed to the callback (secifying PERSIST as the operation.)
+     * @param data		when operation==1 this is the value ot set. otherwise unused.
+     * @return when operation==COMPUTE, the crc of the application state is retrieved when operation is COMPUTE. Otherwise the return value is 0.
+     */
+    uint32_t (*app_state_selector_info)(SparkAppStateSelector::Enum selector, SparkAppStateUpdate::Enum operation, uint32_t data, void* reserved);
+
+    /**
+     * Append metrics to the given appender.
+     * @param appender	The appender function to call with the "append" data and the string to append
+     * @param append		Opaque data to be passed to appender
+     * @param flags		0x01 - append as binary daata, otherwise append as json
+     * @param page		A key to select which metrics data to output. Presently unused and should be 0, which means the default metrics.
+     * @param reserved	For future expansion.
+     * @return
+     */
+    bool (*append_metrics)(appender_fn appender, void* append, uint32_t flags, uint32_t page, void* reserved);
+
+    void* reserved[1];      // add a few additional pointers
 };
 
 STATIC_ASSERT(SparkDescriptor_size, sizeof(SparkDescriptor)==60 || sizeof(void*)!=4);

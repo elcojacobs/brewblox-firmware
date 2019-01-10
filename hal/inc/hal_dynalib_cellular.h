@@ -32,6 +32,7 @@
 #include "cellular_hal.h"
 #include "cellular_internal.h"
 #include "inet_hal.h"
+#include "net_hal.h"
 #endif
 
 DYNALIB_BEGIN(hal_cellular)
@@ -53,7 +54,7 @@ DYNALIB_FN(13, hal_cellular, cellular_cancel, void(bool, bool, void*))
 DYNALIB_FN(14, hal_cellular, HAL_NET_SetNetWatchDog, uint32_t(uint32_t))
 DYNALIB_FN(15, hal_cellular, inet_gethostbyname, int(const char*, uint16_t, HAL_IPAddress*, network_interface_t, void*))
 DYNALIB_FN(16, hal_cellular, inet_ping, int(const HAL_IPAddress*, network_interface_t, uint8_t, void*))
-DYNALIB_FN(17, hal_cellular, cellular_signal, cellular_result_t(CellularSignalHal&, void*))
+DYNALIB_FN(17, hal_cellular, cellular_signal, cellular_result_t(CellularSignalHal*, cellular_signal_t*))
 DYNALIB_FN(18, hal_cellular, cellular_command, cellular_result_t(_CALLBACKPTR_MDM, void*, system_tick_t, const char*, ...))
 DYNALIB_FN(19, hal_cellular, cellular_data_usage_set, cellular_result_t(CellularDataHal*,void*))
 DYNALIB_FN(20, hal_cellular, cellular_data_usage_get, cellular_result_t(CellularDataHal*,void*))
@@ -61,6 +62,17 @@ DYNALIB_FN(21, hal_cellular, cellular_band_select_set, cellular_result_t(MDM_Ban
 DYNALIB_FN(22, hal_cellular, cellular_band_select_get, cellular_result_t(MDM_BandSelect* bands, void* reserved))
 DYNALIB_FN(23, hal_cellular, cellular_band_available_get, cellular_result_t(MDM_BandSelect* bands, void* reserved))
 DYNALIB_FN(24, hal_cellular, cellular_sms_received_handler_set, cellular_result_t(_CELLULAR_SMS_CB_MDM cb, void* data, void* reserved))
+DYNALIB_FN(25, hal_cellular, HAL_USART3_Handler_Impl, void(void*))
+DYNALIB_FN(26, hal_cellular, HAL_NET_SetCallbacks, void(const HAL_NET_Callbacks*, void*))
+DYNALIB_FN(27, hal_cellular, cellular_pause, cellular_result_t(void*))
+DYNALIB_FN(28, hal_cellular, cellular_resume, cellular_result_t(void*))
+DYNALIB_FN(29, hal_cellular, cellular_imsi_to_network_provider, cellular_result_t(void*))
+DYNALIB_FN(30, hal_cellular, cellular_network_provider_data_get, const CellularNetProvData(void*))
+DYNALIB_FN(31, hal_cellular, cellular_lock, int(void*))
+DYNALIB_FN(32, hal_cellular, cellular_unlock, void(void*))
+DYNALIB_FN(33, hal_cellular, cellular_set_power_mode, void(int mode, void* reserved))
+DYNALIB_FN(34, hal_cellular, cellular_connect, cellular_result_t(void*))
+DYNALIB_FN(35, hal_cellular, cellular_disconnect, cellular_result_t(void*))
 DYNALIB_END(hal_cellular)
 
 #endif  // PLATFORM_ID == 10

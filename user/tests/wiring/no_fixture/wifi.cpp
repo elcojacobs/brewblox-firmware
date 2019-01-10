@@ -25,7 +25,7 @@
 test(WIFI_01_resolve_3_levels)
 {
     IPAddress address = WiFi.resolve("pool.ntp.org");
-    assertNotEqual(address[0], 0);
+    assertNotEqual(address, 0);
 
     // ensure the version field is set
     assertNotEqual(address.version(), 0);
@@ -37,64 +37,190 @@ test(WIFI_01_resolve_3_levels)
 test(WIFI_02_resolve_4_levels)
 {
     IPAddress address = WiFi.resolve("north-america.pool.ntp.org");
-    assertNotEqual(address[0], 0);
+    assertNotEqual(address, 0);
+}
+
+test(WIFI_03_resolve) {
+    IPAddress addr = WiFi.resolve("this.is.not.a.real.host");
+    assertEqual(addr, 0);
 }
 
 void checkIPAddress(const char* name, const IPAddress& address)
 {
-	if (address.version()==0 || address[0]==0)
-	{
-		Serial.print("address failed:");
-		Serial.println(name);
-		assertNotEqual(address.version(), 0);
-		assertNotEqual(address[0], 0);
-	}
+    if (address.version()==0 || !address)
+    {
+        Serial.print("address failed:");
+        Serial.println(name);
+        assertNotEqual(address.version(), 0);
+        assertNotEqual(address, 0);
+    }
 }
 
 void checkEtherAddress(const uint8_t* address)
 {
-	uint8_t sum = 0;
-	for (int i=0; i<6; i++)
-	{
-		sum |= address[i];
-	}
-	assertNotEqual(sum, 0);
+    uint8_t sum = 0;
+    for (int i=0; i<6; i++)
+    {
+        sum |= address[i];
+    }
+    assertNotEqual(sum, 0);
 }
 
-test(WIFI_03_config)
+test(WIFI_04_config)
 {
-	checkIPAddress("local", WiFi.localIP());
+    checkIPAddress("local", WiFi.localIP());
+    checkIPAddress("dnsServer", WiFi.dnsServerIP());
+    checkIPAddress("dhcpServer", WiFi.dhcpServerIP());
+    checkIPAddress("gateway", WiFi.gatewayIP());
 
-// WICED doesn't report DHCP or DNS server
-#if PLATFORM_ID!=6 && PLATFORM_ID!=8
-	checkIPAddress("dnsServer", WiFi.dnsServerIP());
-	checkIPAddress("dhcpServer", WiFi.dhcpServerIP());
-#endif
-	checkIPAddress("gateway", WiFi.gatewayIP());
+    uint8_t ether[6];
+    uint8_t ether2[6];
+    memset(ether, 0, 6);
+    memset(ether2, 0, 6);
 
-	uint8_t ether[6];
-	uint8_t ether2[6];
-	memset(ether, 0, 6);
-	memset(ether2, 0, 6);
+    assertTrue(WiFi.macAddress(ether)==ether);
+    assertTrue(WiFi.macAddress(ether2)==ether2);
+    checkEtherAddress(ether);
+    assertTrue(!memcmp(ether, ether2, 6))
 
-	assertTrue(WiFi.macAddress(ether)==ether);
-	assertTrue(WiFi.macAddress(ether2)==ether2);
-	checkEtherAddress(ether);
-	assertTrue(!memcmp(ether, ether2, 6))
-
-	memset(ether, 0, 6);
-	memset(ether2, 0, 6);
-	assertTrue(WiFi.BSSID(ether)==ether);
-	assertTrue(WiFi.BSSID(ether2)==ether2);
-	checkEtherAddress(ether);
-	assertTrue(!memcmp(ether, ether2, 6))
+    memset(ether, 0, 6);
+    memset(ether2, 0, 6);
+    assertTrue(WiFi.BSSID(ether)==ether);
+    assertTrue(WiFi.BSSID(ether2)==ether2);
+    checkEtherAddress(ether);
+    assertTrue(!memcmp(ether, ether2, 6))
 }
 
-test(WIFI_04_scan)
+test(WIFI_05_scan)
 {
-	WiFiAccessPoint aps[20];
-	int apsFound = WiFi.scan(aps, 20);
-	assertMoreOrEqual(apsFound, 1);
+    spark::Vector<WiFiAccessPoint> aps(20);
+    int apsFound = WiFi.scan(aps.data(), 20);
+    assertMoreOrEqual(apsFound, 1);
+}
+
+#if PLATFORM_ID == 6 || PLATFORM_ID == 8
+
+test(WIFI_06_reconnections_that_use_wlan_restart_dont_cause_memory_leaks)
+{
+    /* This test should only be run with threading disabled */
+    if (system_thread_get_state(nullptr) == spark::feature::ENABLED) {
+        skip();
+        return;
+    }
+
+    assertTrue(Particle.connected());
+
+    Particle.disconnect();
+    waitFor(Particle.disconnected, 10000);
+    assertTrue(Particle.disconnected());
+
+    WiFi.disconnect();
+    uint32_t ms = millis();
+    while (WiFi.ready()) {
+        if (millis() - ms >= 10000) {
+            assertTrue(false);
+        }
+    }
+
+    set_system_mode(SEMI_AUTOMATIC);
+
+    Particle.connect();
+    waitFor(Particle.connected, 10000);
+
+    Particle.disconnect();
+    waitFor(Particle.disconnected, 10000);
+    assertTrue(Particle.disconnected());
+
+    WiFi.disconnect();
+    ms = millis();
+    while (WiFi.ready()) {
+        if (millis() - ms >= 10000) {
+            assertTrue(false);
+        }
+    }
+
+    uint32_t freeRam1 = System.freeMemory();
+
+    wlan_restart(NULL);
+
+    Particle.connect();
+    waitFor(Particle.connected, 10000);
+
+    Particle.disconnect();
+    waitFor(Particle.disconnected, 10000);
+    assertTrue(Particle.disconnected());
+
+    WiFi.disconnect();
+    ms = millis();
+    while (WiFi.ready()) {
+        if (millis() - ms >= 10000) {
+            assertTrue(false);
+        }
+    }
+
+    uint32_t freeRam2 = System.freeMemory();
+
+    assertMoreOrEqual(freeRam2, freeRam1);
+}
+
+#endif // PLATFORM_ID == 6 || PLATFORM_ID == 8
+
+test(WIFI_07_restore_connection)
+{
+    set_system_mode(AUTOMATIC);
+    if (!Particle.connected())
+    {
+        Particle.connect();
+    }
+}
+
+#if PLATFORM_ID == 6 || PLATFORM_ID == 8
+
+test(WIFI_08_reset_hostname)
+{
+    assertEqual(WiFi.setHostname(NULL), 0);
+}
+
+test(WIFI_09_default_hostname_equals_device_id)
+{
+    String hostname = WiFi.hostname();
+    String devId = System.deviceID();
+    assertEqual(hostname, devId);
+}
+
+test(WIFI_10_custom_hostname_can_be_set)
+{
+    String hostname("testhostname");
+    assertEqual(WiFi.setHostname(hostname), 0);
+    assertEqual(WiFi.hostname(), hostname);
+}
+
+test(WIFI_11_restore_default_hostname)
+{
+    assertEqual(WiFi.setHostname(NULL), 0);
+}
+
+#endif // PLATFORM_ID == 6 || PLATFORM_ID == 8
+
+test(WIFI_12_scan_returns_zero_result_or_error_when_wifi_is_off)
+{
+    WiFiAccessPoint results[5];
+    WiFi.off();
+    uint32_t ms = millis();
+    while (WiFi.ready()) {
+        if (millis() - ms >= 10000) {
+            assertTrue(false);
+        }
+    }
+    assertLessOrEqual(WiFi.scan(results, 5), 0);
+}
+
+test(WIFI_13_restore_connection)
+{
+    if (!Particle.connected())
+    {
+        Particle.connect();
+    }
 }
 
 #endif

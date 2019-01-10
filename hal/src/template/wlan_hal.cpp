@@ -79,10 +79,6 @@ void Set_NetApp_Timeout(void)
 {
 }
 
-void Clear_NetApp_Dhcp(void)
-{
-}
-
 wlan_result_t wlan_disconnect_now()
 {
     return 0;
@@ -91,6 +87,11 @@ wlan_result_t wlan_disconnect_now()
 wlan_result_t wlan_connected_rssi(char* ssid)
 {
     return 0;
+}
+
+int wlan_connected_info(void* reserved, wlan_connected_info_t* inf, void* reserved1)
+{
+    return -1;
 }
 
 int wlan_set_credentials(WLanCredentials* c)
@@ -152,7 +153,37 @@ void wlan_set_ipaddress(const HAL_IPAddress* device, const HAL_IPAddress* netmas
 {
 }
 
+IPAddressSource wlan_get_ipaddress_source(void* reserved)
+{
+    return DYNAMIC_IP;
+}
+
+int wlan_get_ipaddress(IPConfig* conf, void* reserved)
+{
+    return -1;
+}
+
 int wlan_scan(wlan_scan_result_t callback, void* cookie)
 {
+    return -1;
+}
+
+int wlan_restart(void* reserved)
+{
+    return -1;
+}
+
+int wlan_get_hostname(char* buf, size_t len, void* reserved)
+{
+    // Unsupported
+    if (buf) {
+        buf[0] = '\0';
+    }
+    return -1;
+}
+
+int wlan_set_hostname(const char* hostname, void* reserved)
+{
+    // Unsupported
     return -1;
 }

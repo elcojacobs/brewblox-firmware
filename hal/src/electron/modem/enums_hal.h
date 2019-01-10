@@ -20,17 +20,36 @@
 #pragma once
 
 #include <string.h>
+#include <stdint.h>
 
 // ----------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------
 //! MT Device Types
-typedef enum { DEV_UNKNOWN, DEV_SARA_G350, DEV_LISA_U200, DEV_LISA_C200,
-               DEV_SARA_U260, DEV_SARA_U270, DEV_LEON_G200 } Dev;
+typedef enum {
+    DEV_UNKNOWN   = 0,
+    DEV_SARA_G350 = 1,
+    DEV_LISA_U200 = 2,
+    DEV_LISA_C200 = 3,
+    DEV_SARA_U260 = 4,
+    DEV_SARA_U270 = 5,
+    DEV_LEON_G200 = 6,
+    DEV_SARA_U201 = 7,
+    DEV_SARA_R410 = 8
+} Dev;
 //! SIM Status
-typedef enum { SIM_UNKNOWN, SIM_MISSING, SIM_PIN, SIM_READY } Sim;
+typedef enum {
+    SIM_UNKNOWN = 0,
+    SIM_MISSING = 1,
+    SIM_PIN     = 2,
+    SIM_READY   = 3
+} Sim;
 //! SIM Status
-typedef enum { LPM_DISABLED, LPM_ENABLED, LPM_ACTIVE } Lpm;
+typedef enum {
+    LPM_DISABLED = 0,
+    LPM_ENABLED  = 1,
+    LPM_ACTIVE   = 2
+} Lpm;
 //! Device status
 typedef struct {
     Dev dev;            //!< Device Type
@@ -45,18 +64,48 @@ typedef struct {
     char ver[16];       //!< Software Version
 } DevStatus;
 //! Registration Status
-typedef enum { REG_UNKNOWN, REG_DENIED, REG_NONE, REG_HOME, REG_ROAMING } Reg;
+typedef enum {
+    REG_UNKNOWN = 0,
+    REG_DENIED  = 1,
+    REG_NONE    = 2,
+    REG_HOME    = 3,
+    REG_ROAMING = 4
+} Reg;
 //! Access Technology
-typedef enum { ACT_UNKNOWN, ACT_GSM, ACT_EDGE, ACT_UTRAN, ACT_CDMA } AcT;
+typedef enum {
+    ACT_UNKNOWN     = 0,
+    ACT_GSM         = 1,
+    ACT_EDGE        = 2,
+    ACT_UTRAN       = 3,
+    ACT_CDMA        = 4,
+    ACT_LTE         = 5,
+    ACT_LTE_CAT_M1  = 6,
+    ACT_LTE_CAT_NB1 = 7
+} AcT;
 //! Network Status
 typedef struct {
     Reg csd;        //!< CSD Registration Status (Circuit Switched Data)
     Reg psd;        //!< PSD Registration status (Packet Switched Data)
+    Reg eps;        //!< EPS registration status (Evolved Packet System)
     AcT act;        //!< Access Technology
     int rssi;       //!< Received Signal Strength Indication (in dBm, range -113..-53)
     int qual;       //!< In UMTS RAT indicates the Energy per Chip/Noise ratio in dB levels
                     //!< of the current cell (see <ecn0_ lev> in +CGED command description),
                     //!< see 3GPP TS 45.008 [20] subclause 8.2.4
+    union {
+        int rxlev;  //!< GSM RAT: RXLEV ([0, 63], 99), see 3GPP TS 45.008 subclause 8.1.4
+        int rscp;   //!< UMTS RAT: RSCP ([-5, 91], 255), see 3GPP TS 25.133 subclause 9.1.1.3
+        int rsrp;   //!< LTE RAT: RSRP ([0, 95], 255), see 3GPP TS 36.133 subclause 9.1.4
+        int asu;    //!< Abstract accessor
+    };
+
+    union {
+        int rxqual; //!< GSM RAT: RXQUAL ([0, 7], 99), see 3GPP TS 45.008 subclause 8.2.4
+        int ecno;   //!< UMTS RAT: ECNO ([0, 49], 255), see 3GPP TS 25.133 subclause 9.1.2.3
+        int rsrq;   //!< LTE RAT: RSRQ ([0, 97], 255), see 3GPP TS 36.133 subclause 9.1.7
+        int aqual;  //!< Abstract accessor
+    };
+
     char opr[16+1]; //!< Operator Name
     char num[32];   //!< Mobile Directory Number
     unsigned short lac;  //!< location area code in hexadecimal format (2 bytes in hex)
@@ -111,10 +160,10 @@ typedef uint32_t MDM_IP;
 #define NOIP ((MDM_IP)0) //!< No IP address
 // IP number formating and conversion
 #define IPSTR           "%d.%d.%d.%d"
-#define IPNUM(ip)       ((ip)>>24)&0xff, \
-                        ((ip)>>16)&0xff, \
-                        ((ip)>> 8)&0xff, \
-                        ((ip)>> 0)&0xff
+#define IPNUM(ip)       (int)(((ip)>>24)&0xff), \
+                        (int)(((ip)>>16)&0xff), \
+                        (int)(((ip)>> 8)&0xff), \
+                        (int)(((ip)>> 0)&0xff)
 #define IPADR(a,b,c,d) ((((uint32_t)(a))<<24) | \
                         (((uint32_t)(b))<<16) | \
                         (((uint32_t)(c))<< 8) | \
@@ -125,14 +174,22 @@ typedef uint32_t MDM_IP;
 // Device
 // ----------------------------------------------------------------
 
-typedef enum { AUTH_NONE, AUTH_PAP, AUTH_CHAP, AUTH_DETECT } Auth;
+typedef enum {
+    AUTH_NONE   = 0,
+    AUTH_PAP    = 1,
+    AUTH_CHAP   = 2,
+    AUTH_DETECT = 3
+} Auth;
 
 // ----------------------------------------------------------------
 // Sockets
 // ----------------------------------------------------------------
 
 //! Type of IP protocol
-typedef enum { MDM_IPPROTO_TCP = 0, MDM_IPPROTO_UDP = 1 } IpProtocol;
+typedef enum {
+    MDM_IPPROTO_TCP = 0,
+    MDM_IPPROTO_UDP = 1
+} IpProtocol;
 
 //! Socket error return codes
 #define MDM_SOCKET_ERROR    (-1)
@@ -167,6 +224,7 @@ enum {
     TYPE_PLUS       = 0x400000,
     TYPE_TEXT       = 0x500000,
     TYPE_ABORTED    = 0x600000,
+    TYPE_DBLNEWLINE = 0x700000,
 
     // special timout constant
     TIMEOUT_BLOCKING = 0xffffffff

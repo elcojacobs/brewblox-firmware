@@ -61,7 +61,6 @@ extern volatile uint8_t SPARK_WLAN_STARTED;
 extern volatile uint8_t SPARK_CLOUD_SOCKETED;
 extern volatile uint8_t SPARK_CLOUD_CONNECTED;
 extern volatile uint8_t SPARK_FLASH_UPDATE;
-extern volatile uint8_t SPARK_LED_FADE;
 
 extern volatile uint8_t Spark_Error_Count;
 extern volatile uint8_t Cloud_Handshake_Error_Count;
@@ -82,6 +81,29 @@ unsigned backoff_period(unsigned connection_attempts);
  */
 void* system_internal(int item, void* reserved);
 
+uint8_t application_thread_current(void* reserved);
+uint8_t system_thread_current(void* reserved);
+uint8_t main_thread_current(void* reserved);
+
+uint8_t application_thread_invoke(void (*callback)(void* data), void* data, void* reserved);
+
+/**
+ * Cancels current network connection attempt and aborts cloud connection. This function can be
+ * called from an ISR and is used to unblock the system thread in order to perform some other
+ * operation immediately.
+ */
+void cancel_connection();
+
+/**
+ * Allocates memory from a pool designed for small and short-lived allocations. This function can
+ * be called from an ISR.
+ */
+void* system_pool_alloc(size_t size, void* reserved);
+
+/**
+ * Frees the memory allocated with system_pool_alloc(). This function can be called from an ISR.
+ */
+void system_pool_free(void* ptr, void* reserved);
 
 #ifdef __cplusplus
 }

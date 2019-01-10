@@ -90,10 +90,6 @@ void Set_NetApp_Timeout(void)
 {
 }
 
-void Clear_NetApp_Dhcp(void)
-{
-}
-
 wlan_result_t wlan_disconnect_now()
 {
     INFO("Virtual WLAN disconnected");
@@ -103,6 +99,11 @@ wlan_result_t wlan_disconnect_now()
 wlan_result_t wlan_connected_rssi()
 {
     return 0;
+}
+
+int wlan_connected_info(void* reserved, wlan_connected_info_t* inf, void* reserved1)
+{
+    return -1;
 }
 
 int wlan_set_credentials(WLanCredentials* c)
@@ -162,6 +163,12 @@ int wlan_select_antenna(WLanSelectAntenna_TypeDef antenna)
     return 0;
 }
 
+WLanSelectAntenna_TypeDef wlan_get_antenna(void* reserved)
+{
+    return ANT_NONE;
+}
+
+
 bool fetch_or_generate_setup_ssid(void* SSID)
 {
     return false;
@@ -190,6 +197,16 @@ void wlan_set_ipaddress(const HAL_IPAddress* device, const HAL_IPAddress* netmas
 {
 }
 
+IPAddressSource wlan_get_ipaddress_source(void* reserved)
+{
+    return DYNAMIC_IP;
+}
+
+int wlan_get_ipaddress(IPConfig* conf, void* reserved)
+{
+    return -1;
+}
+
 int wlan_scan(wlan_scan_result_t callback, void* cookie)
 {
     return -1;
@@ -198,4 +215,24 @@ int wlan_scan(wlan_scan_result_t callback, void* cookie)
 int wlan_get_credentials(wlan_scan_result_t callback, void* callback_data)
 {
 	return -1;
+}
+
+int wlan_restart(void* reserved)
+{
+  return -1;
+}
+
+int wlan_get_hostname(char* buf, size_t len, void* reserved)
+{
+    // Unsupported
+    if (buf) {
+        buf[0] = '\0';
+    }
+    return -1;
+}
+
+int wlan_set_hostname(const char* hostname, void* reserved)
+{
+    // Unsupported
+    return -1;
 }

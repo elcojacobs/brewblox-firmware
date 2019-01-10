@@ -26,6 +26,7 @@
  ******************************************************************************
  */
 #include "spark_wiring_interrupts.h"
+#include "spark_wiring_platform.h"
 
 static wiring_interrupt_handler_t* handlers[TOTAL_PINS];
 
@@ -166,5 +167,19 @@ bool detachSystemInterrupt(hal_irq_t irq)
     HAL_InterruptCallback prev = { 0 };
     const bool ok = HAL_Set_System_Interrupt_Handler(irq, NULL, &prev, NULL);
     delete (wiring_interrupt_handler_t*)prev.data;
+    return ok;
+}
+
+bool attachInterruptDirect(IRQn_Type irq, HAL_Direct_Interrupt_Handler handler, bool enable)
+{
+    const bool ok = !HAL_Set_Direct_Interrupt_Handler(irq, handler, enable ? HAL_DIRECT_INTERRUPT_FLAG_ENABLE : HAL_DIRECT_INTERRUPT_FLAG_NONE, nullptr);
+    return ok;
+}
+
+bool detachInterruptDirect(IRQn_Type irq, bool disable)
+{
+    const bool ok = !HAL_Set_Direct_Interrupt_Handler(irq, nullptr,
+        HAL_DIRECT_INTERRUPT_FLAG_RESTORE | (disable ? HAL_DIRECT_INTERRUPT_FLAG_DISABLE : HAL_DIRECT_INTERRUPT_FLAG_NONE), nullptr);
+
     return ok;
 }

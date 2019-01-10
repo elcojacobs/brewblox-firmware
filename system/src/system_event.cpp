@@ -19,9 +19,12 @@
 
 #include "system_event.h"
 #include "system_threading.h"
+#include "interrupts_hal.h"
+#include "system_task.h"
 #include <stdint.h>
 #include <vector>
 
+namespace {
 
 struct SystemEventSubscription {
 
@@ -57,6 +60,57 @@ struct SystemEventSubscription {
 // for now a simple implementation
 std::vector<SystemEventSubscription> subscriptions;
 
+void system_notify_event_impl(system_event_t event, uint32_t data, void* pointer, void (*fn)(void* data), void* fndata) {
+    for (const SystemEventSubscription& subscription : subscriptions) {
+        subscription.notify(event, data, pointer);
+    }
+    if (fn) {
+        fn(fndata);
+    }
+}
+
+void system_notify_event_async(system_event_t event, uint32_t data, void* pointer, void (*fn)(void* data), void* fndata) {
+    // run event notifications on the application thread
+    APPLICATION_THREAD_CONTEXT_ASYNC(system_notify_event_async(event, data, pointer, fn, fndata));
+    system_notify_event_impl(event, data, pointer, fn, fndata);
+}
+
+class SystemEventTask : public ISRTaskQueue::Task {
+    system_event_t event_;
+    uint32_t data_;
+    void* pointer_;
+    void (*fn_)(void* data);
+    void* fndata_;
+
+    /**
+     * @param task  The task to execute. It is an instance of SystemEventTask.
+     */
+    static void execute(Task* task) {
+        auto that = reinterpret_cast<SystemEventTask*>(task);
+        that->notify();
+    }
+
+    /**
+     * Notify the system event encoded in this class.
+     */
+    void notify() {
+        system_notify_event_async(event_, data_, pointer_, fn_, fndata_);
+        system_pool_free(this, nullptr);
+    }
+
+public:
+
+    SystemEventTask(system_event_t event, uint32_t data, void* pointer, void (*fn)(void* data), void* fndata) {
+        event_ = event;
+        data_ = data;
+        pointer_ = pointer;
+        fn_ = fn;
+        fndata_ = fndata;
+        func = execute;
+    }
+};
+
+} // unnamed
 
 /**
  * Subscribes to the system events given
@@ -81,24 +135,23 @@ void system_unsubscribe_event(system_event_t events, system_event_handler_t* han
 {
 }
 
-/**
- * Notifes all subscribers about an event.
- * @param event
- * @param data
- * @param pointer
- */
-void system_notify_event(system_event_t event, uint32_t data, void* pointer, void (*fn)(void* data), void* fndata)
-{
-    APPLICATION_THREAD_CONTEXT_ASYNC(system_notify_event(event, data, pointer, fn, fndata));
-    // run event notifications on the application thread
-
-    for (const SystemEventSubscription& subscription : subscriptions)
-    {
-        subscription.notify(event, data, pointer);
+void system_notify_event(system_event_t event, uint32_t data, void* pointer, void (*fn)(void* data), void* fndata,
+        unsigned flags) {
+    // TODO: Add an API that would allow user applications to control which event handlers can be
+    // executed synchronously, possibly in the context of an ISR
+    if (flags & NOTIFY_SYNCHRONOUSLY) {
+        system_notify_event_impl(event, data, pointer, fn, fndata);
+    } else if (HAL_IsISR()) {
+        void* space = (system_pool_alloc(sizeof(SystemEventTask), nullptr));
+        if (space) {
+            auto task = new (space) SystemEventTask(event, data, pointer, fn, fndata);
+            SystemISRTaskQueue.enqueue(task);
+        };
+    } else {
+        system_notify_event_async(event, data, pointer, fn, fndata);
     }
-    if (fn)
-        fn(fndata);
 }
 
-
-
+void system_notify_time_changed(uint32_t data, void* reserved, void* reserved1) {
+    system_notify_event(time_changed, data);
+}
