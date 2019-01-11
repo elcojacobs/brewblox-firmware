@@ -18,8 +18,8 @@ RUN apk add --no-cache usbutils curl bash \
     && apk del curl
 
 
-COPY ./brewblox-p1 ./brewblox-p1
-COPY ./brewblox-photon ./brewblox-photon
+COPY ./brewblox-p1/brewblox.bin ./brewblox-p1/
+COPY ./brewblox-photon/brewblox.bin ./brewblox-photon/
 COPY ./serial-switcher.py ./
 COPY ./flash ./
 COPY ./bootloader ./
