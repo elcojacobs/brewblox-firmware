@@ -1,7 +1,7 @@
 FROM brewblox/firmware-particle
 
 WORKDIR /app
-ENV PARTICLE_VERSION=0.8.0-rc.12
+ENV PARTICLE_VERSION=1.0.0
 ENV PARTICLE_RELEASES=https://github.com/particle-iot/firmware/releases/download/v${PARTICLE_VERSION}
 
 
