@@ -194,9 +194,8 @@ setup()
 void
 loop()
 {
-    manageConnections();
-
     if (!WiFi.listening()) {
+        manageConnections();
         brewbloxBox().hexCommunicate();
     }
 

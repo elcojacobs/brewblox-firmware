@@ -1,23 +1,29 @@
 #!/usr/bin/env python
 
-import sys
+import argparse
 
 import serial
 
-baudRate = 14400
-neutralBaudRate = 9600
-portName = "/dev/ttyACM0"
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--port',
+                    help='Serial port. [%(default)s]',
+                    default='/dev/ttyACM0')
+parser.add_argument('-b', '--baud-rate',
+                    help='Active baud rate. [%(default)s]',
+                    default=14400,
+                    type=int)
+parser.add_argument('--neutral-baud-rate',
+                    help='Neutral baud rate. [%(default)s]',
+                    default=9600,
+                    type=int)
 
-if len(sys.argv) > 1:
-    portName = int(sys.argv[1])
 
-if len(sys.argv) > 2:
-    baudRate = sys.argv[2]
+args = parser.parse_args()
 
 try:
-    ser = serial.Serial(portName, baudRate)
+    ser = serial.Serial(args.port, args.baud_rate)
     ser.close()
-    ser = serial.Serial(portName, neutralBaudRate)
+    ser = serial.Serial(args.port, args.neutral_baud_rate)
     ser.close()
 
 except Exception:
