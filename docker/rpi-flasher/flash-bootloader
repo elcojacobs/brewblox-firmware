@@ -1,15 +1,22 @@
 #! /usr/bin/env bash
 set -e
 
-USB_FLASH="node_modules/.bin/particle flash --usb --yes"
 SERIAL_FLASH="node_modules/.bin/particle serial flash"
 
 if [[ -n $(lsusb -d 2b04:c006) ]]; then
+    echo "Triggering listening mode"
+    ./trigger-listening
     echo "Flashing Photon bootloader..."
     ${SERIAL_FLASH} bootloader-photon.bin
+    exit
 fi
 
 if [[ -n $(lsusb -d 2b04:c008) ]]; then
+    echo "Triggering listening mode"
+    ./trigger-listening
     echo "Flashing P1 bootloader..."
     ${SERIAL_FLASH} bootloader-p1.bin
+    exit
 fi
+
+echo "No compatible USB devices found"
