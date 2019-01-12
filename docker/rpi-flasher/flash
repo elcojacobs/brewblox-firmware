@@ -11,6 +11,7 @@ if [[ -n $(lsusb -d 2b04:d006) ]]; then
     ${USB_FLASH} system-part2-photon.bin
     echo "Flashing Firmware file..."
     ${USB_FLASH} brewblox-photon.bin
+    exit
 fi
 
 if [[ -n $(lsusb -d 2b04:d008) ]]; then
@@ -21,4 +22,7 @@ if [[ -n $(lsusb -d 2b04:d008) ]]; then
     ${USB_FLASH} system-part2-p1.bin
     echo "Flashing Firmware file..."
     ${USB_FLASH} brewblox-p1.bin
+    exit
 fi
+
+echo "No compatible USB devices found"
