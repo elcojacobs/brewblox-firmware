@@ -6,8 +6,8 @@ ENV PARTICLE_RELEASES=https://github.com/particle-iot/firmware/releases/download
 
 
 RUN apk add --no-cache usbutils curl bash \
-  && echo 'python serial-switcher.py' > ./prepare && chmod +x ./prepare \
-  && echo 'python serial-switcher.py -b 28800' > ./prepare-bootloader && chmod +x ./prepare-bootloader \
+  && echo 'python serial-switcher.py' > ./trigger-dfu && chmod +x ./trigger-dfu \
+  && echo 'python serial-switcher.py -b 28800' > ./trigger-listening && chmod +x ./trigger-listening \
   \
   && curl -sL -o bootloader-p1.bin ${PARTICLE_RELEASES}/bootloader-${PARTICLE_VERSION}-p1.bin \
   && curl -sL -o system-part1-p1.bin ${PARTICLE_RELEASES}/system-part1-${PARTICLE_VERSION}-p1.bin \
@@ -31,7 +31,7 @@ ENTRYPOINT [ "bash" ]
 # The container must be restarted after preparing the device
 # Example calls:
 
-# docker run --rm --privileged brewblox/firmware-flasher:local prepare
+# docker run --rm --privileged brewblox/firmware-flasher:local trigger-dfu
 # docker run --rm --privileged brewblox/firmware-flasher:local flash
-# docker run --rm --privileged brewblox/firmware-flasher:local prepare-bootloader
+# docker run --rm --privileged brewblox/firmware-flasher:local trigger-listening
 # docker run --rm --privileged -it brewblox/firmware-flasher:local flash-bootloader
