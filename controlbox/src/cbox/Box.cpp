@@ -510,7 +510,7 @@ Box::clearObjects(DataIn& in, HexCrcDataOut& out)
     }
 
     // remove user objects from storage
-    auto cit = objects.cbegin();
+    auto cit = objects.userBegin();
     while (cit != objects.cend()) {
         auto id = cit->id();
         cit++;
