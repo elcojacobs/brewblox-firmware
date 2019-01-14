@@ -510,9 +510,14 @@ Box::clearObjects(DataIn& in, HexCrcDataOut& out)
     }
 
     // remove user objects from storage
-    for (auto cit = objects.cbegin(); cit != objects.cend(); cit++) {
-        storage.disposeObject(cit->id());
+    auto cit = objects.cbegin();
+    while (cit != objects.cend()) {
+        auto id = cit->id();
+        cit++;
+        bool mergeDisposed = cit == objects.cend(); // merge disposed blocks on last delete
+        storage.disposeObject(id, mergeDisposed);
     }
+
     // remove all user objects from vector
     objects.clear();
 
@@ -520,7 +525,7 @@ Box::clearObjects(DataIn& in, HexCrcDataOut& out)
 }
 
 /**
- * 
+ * Search scannable buses for new objects and create them
  *
  */
 

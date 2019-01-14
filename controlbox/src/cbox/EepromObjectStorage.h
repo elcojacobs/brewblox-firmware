@@ -210,18 +210,21 @@ public:
         return CboxError::OK;
     }
 
-    virtual bool disposeObject(const storage_id_t& id) override final
+    virtual bool disposeObject(const storage_id_t& id, bool mergeDisposed = true) override final
     {
         RegionDataIn block = getObjectReader(id, true); // sets reader to data start of block data
+        bool found = false;
         if (block.available() > 0) {
             // overwrite block type with disposed block
             uint16_t dataStart = reader.offset();
             uint16_t blockTypeOffset = dataStart - objectHeaderLength();
             eeprom.writeByte(blockTypeOffset, static_cast<uint8_t>(BlockType::disposed_block));
-            mergeDisposedBlocks();
-            return true;
+            found = true;
         }
-        return false;
+        if (mergeDisposed) {
+            mergeDisposedBlocks();
+        }
+        return found;
     }
 
     virtual void clear() override final
