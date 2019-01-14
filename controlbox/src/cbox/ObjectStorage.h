@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <functional>
 #include <cstdint>
+#include <functional>
 
 namespace cbox {
 
@@ -42,7 +42,7 @@ public:
     virtual CboxError retrieveObjects(
         const std::function<CboxError(const storage_id_t& id, RegionDataIn&)>& handler)
         = 0;
-    virtual bool disposeObject(const storage_id_t& id) = 0;
+    virtual bool disposeObject(const storage_id_t& id, bool mergeDisposed = true) = 0;
 
     virtual void clear() = 0;
 };

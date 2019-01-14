@@ -182,6 +182,10 @@ setup()
 
     StartupScreen::setProgress(100);
 
+    // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
+    // This avoids having to do it later when writing to EEPROM
+    EEPROM.performPendingErase();
+
     StartupScreen::setStep("Ready!");
 
     while (ticks.millis() < 5000) {

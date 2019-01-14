@@ -48,6 +48,104 @@
             "problemMatcher": "$gcc"
         },
         {
+            "label": "build_p1_docker",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "make",
+                "APP=brewblox",
+                "PLATFORM=p1"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "flash_p1_docker",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "make",
+                "APP=brewblox",
+                "PLATFORM=p1",
+                "program-dfu"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc",
+            "dependsOn": [
+                "trigger_dfu_p1_docker",
+                "restart_compiler",
+            ]
+        },
+        {
+            "label": "trigger_dfu_p1_docker",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "--privileged",
+                "brewblox/firmware-flasher:develop",
+                "trigger-dfu"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "restart_compiler",
+            "command": "docker-compose",
+            "args": [
+                "restart",
+                "compiler",
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
             "label": "touch_gcc",
             "type": "shell",
             "command": "touch",
