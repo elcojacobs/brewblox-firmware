@@ -169,7 +169,7 @@ Box::writeObject(DataIn& in, HexCrcDataOut& out)
 
     out.writeResponseSeparator();
     out.write(asUint8(status));
-    if (cobj != nullptr) {
+    if (cobj != nullptr && status == CboxError::OK) {
         cobj->forcedUpdate(lastUpdateTime); // force an update of the object
         status = cobj->streamTo(out);       // TODO: handle status ?
     }
@@ -229,23 +229,31 @@ Box::createObject(DataIn& in, HexCrcDataOut& out)
     if (out.crc()) {
         status = CboxError::CRC_ERROR_IN_COMMAND;
     }
-    out.writeResponseSeparator();
-    out.write(asUint8(status));
+    ContainedObject* ptrCobj = nullptr;
     if (status == CboxError::OK) {
         // add object to container. Id is returned because id from stream can be 0 to let the box assign it
         id = objects.add(std::move(newObj), profiles, id, false);
-        if (auto ptrCobj = objects.fetchContained(id)) {
+        ptrCobj = objects.fetchContained(id);
+        if (ptrCobj) {
             auto storeContained = [&ptrCobj](DataOut& out) -> CboxError {
                 return ptrCobj->streamPersistedTo(out);
             };
             status = storage.storeObject(id, storeContained);
-            if (id >= userStartId() && !(ptrCobj->profiles() & activeProfiles)) {
+            if (status != CboxError::OK) {
+                objects.remove(id);
+            } else if (id >= userStartId() && !(ptrCobj->profiles() & activeProfiles)) {
                 // object should not be active, replace object with inactive object
                 ptrCobj->deactivate();
             }
-            ptrCobj->forcedUpdate(lastUpdateTime); // force an update of the object
-            status = ptrCobj->streamTo(out);       // TODO: handle status ?
+        } else {
+            status = CboxError::INVALID_OBJECT_ID;
         }
+    }
+    out.writeResponseSeparator();
+    out.write(asUint8(status));
+    if (ptrCobj != nullptr && status == CboxError::OK) {
+        ptrCobj->forcedUpdate(lastUpdateTime); // force an update of the object
+        status = ptrCobj->streamTo(out);       // TODO: handle status ?
     }
 }
 

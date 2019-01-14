@@ -124,11 +124,7 @@ SCENARIO("A controlbox Box")
             box.hexCommunicate();
 
             expected << addCrc("000002020001E90333333333")
-                     << "|" << addCrc("41"        // INVALID_OBJECT_TYPE
-                                      "0200"      // object id 2
-                                      "01"        // profiles 0x01
-                                      "E803"      // object type 1000
-                                      "33333333") // object data
+                     << "|" << addCrc("41") // INVALID_OBJECT_TYPE
                      << "\n";
             CHECK(out->str() == expected.str());
         }
@@ -367,11 +363,7 @@ SCENARIO("A controlbox Box")
             box.hexCommunicate();
 
             expected << addCrc("000002640000E80314141414") << "|" // command repetition
-                     << addCrc("41"                               // status invalid object type
-                               "6400"                             // id 100
-                               "00"                               // profiles 0x00
-                               "FFFF"                             // type InactiveObject
-                               "E803")                            // actual type 1000
+                     << addCrc("41")                              // status invalid object type
                      << "\n";
 
             CHECK(out->str() == expected.str());
