@@ -195,7 +195,7 @@ public:
                     }
                     // log event. Do not return, because we do want to handle the next block
                 }
-                blockData.spool();
+                reader.skip(blockData.available());
             } break;
             case BlockType::disposed_block:
                 if (!reader.skip(blockSize)) {
@@ -236,9 +236,10 @@ public:
         resetReader();
         while (reader.available()) {
             RegionDataIn blockData = getBlockReader(BlockType::disposed_block);
-            total += blockData.available();
+            auto blockSize = blockData.available();
+            total += blockSize;
             total += blockHeaderLength();
-            blockData.spool();
+            reader.skip(blockSize);
         }
         // subtract one header length, because that will not be available for the object
         return total - blockHeaderLength();
@@ -250,8 +251,9 @@ public:
         resetReader();
         while (reader.available()) {
             RegionDataIn blockData = getBlockReader(BlockType::disposed_block);
-            space = std::max(space, blockData.available());
-            blockData.spool();
+            auto blockSize = blockData.available();
+            space = std::max(space, blockSize);
+            reader.skip(blockSize);
         }
         return space;
     }
@@ -309,7 +311,7 @@ private:
     }
 
     // This function assumes that the reader is at the start of a block.
-    // To ensure this, after using the RegionDataIn object, call spool() on it.
+    // To ensure this, after using the RegionDataIn object, skip to the end of the block.
     RegionDataIn getBlockReader(const BlockType requestedType)
     {
         while (reader.hasNext()) {
@@ -344,7 +346,7 @@ private:
     // If found, return an EEPROM data stream limited to the block.
     // If usedSize is true, only the length that was written previously is made available, not the reserved size
     // This function assumes that the reader is at the start of a block.
-    // To ensure this, after using the RegionDataIn object, call spool() on it.
+    // To ensure this, after using the RegionDataIn object, skip to the end of the block.
     RegionDataIn getObjectReader(const storage_id_t id, bool usedSize)
     {
         resetReader();
@@ -355,7 +357,7 @@ private:
             block.get(objectSize);
             block.get(blockId);
             if (blockId != id) {
-                block.spool();
+                reader.skip(block.available());
                 continue;
             }
             if (usedSize) {
@@ -390,7 +392,7 @@ private:
             RegionDataIn blockData = getBlockReader(BlockType::disposed_block);
             uint16_t blockSize = uint16_t(blockData.available()); // this excludes the block header
             if (blockSize < neededSizeExclBlockHeader) {
-                blockData.spool();
+                reader.skip(blockSize);
                 continue;
             }
             // Large enough block found. now wrap the eeprom location with a writer instead of a reader
@@ -455,7 +457,7 @@ private:
         if (disposedLength == 0) {
             return false;
         }
-        disposedBlock.spool();
+        reader.skip(disposedLength);
 
         RegionDataIn objectBlock = getBlockReader(BlockType::object);
         uint16_t objectLength = objectBlock.available();
@@ -497,7 +499,7 @@ private:
             uint16_t disposedDataStart1 = reader.offset();
             uint16_t disposedDataLength1 = disposedBlock1.available();
 
-            disposedBlock1.spool();
+            reader.skip(disposedDataLength1);
             if (!reader.hasNext()) {
                 return false; // end of EEPROM, no next block
             }
@@ -511,7 +513,7 @@ private:
                 writer.reset(disposedDataStart1 - blockHeaderLength() + sizeof(BlockType), sizeof(uint16_t));
                 writer.put(combinedLength);
                 didMerge = true;
-                disposedBlock2.spool();
+                reader.skip(disposedLength2);
             }
         }
         return didMerge;
