@@ -1,4 +1,4 @@
-FROM brewblox/firmware-particle:rpi-latest
+FROM brewblox/firmware-particle
 
 WORKDIR /app
 ENV PARTICLE_VERSION=1.0.0
@@ -24,6 +24,7 @@ COPY ./brewblox-photon.bin ./
 COPY ./serial-switcher.py ./
 COPY ./flash ./
 COPY ./flash-bootloader ./
+COPY ./wifi ./
 
 
 ENTRYPOINT [ "bash" ]
@@ -31,7 +32,8 @@ ENTRYPOINT [ "bash" ]
 # The container must be restarted after preparing the device
 # Example calls:
 
-# docker run --rm --privileged brewblox/firmware-flasher:rpi-local trigger-dfu
-# docker run --rm --privileged brewblox/firmware-flasher:rpi-local flash
-# docker run --rm --privileged brewblox/firmware-flasher:rpi-local trigger-listening
-# docker run --rm --privileged -it brewblox/firmware-flasher:rpi-local flash-bootloader
+# docker run -it --rm --privileged brewblox/firmware-flasher:local trigger-dfu
+# docker run -it --rm --privileged brewblox/firmware-flasher:local flash
+# docker run -it --rm --privileged brewblox/firmware-flasher:local trigger-listening
+# docker run -it --rm --privileged brewblox/firmware-flasher:local flash-bootloader
+# docker run -it --rm --privileged brewblox/firmware-flasher:local wifi

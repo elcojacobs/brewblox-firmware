@@ -6,5 +6,5 @@ set -e
 
 docker run --rm --privileged multiarch/qemu-user-static:register --reset
 
-docker build -t brewblox/firmware-particle:latest particle
-docker build -t brewblox/firmware-particle:rpi-latest rpi-particle
+docker build -t brewblox/firmware-particle:latest particle/amd
+docker build -t brewblox/firmware-particle:rpi-latest particle/arm
