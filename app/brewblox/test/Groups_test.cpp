@@ -18,31 +18,32 @@
  */
 
 #include "BrewBloxTestBox.h"
+#include "cbox/GroupsObject.h"
 #include <catch.hpp>
 #include <cstdio>
 
 #include "testHelpers.h"
 
-SCENARIO("Active profiles can written through the profile object at ID 1")
+SCENARIO("Active groups can written through the groups object at ID 1")
 {
     BrewBloxTestBox testBox;
     using commands = cbox::Box::CommandID;
 
     testBox.reset();
 
-    // write profiles block
+    // write groups block
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::WRITE_OBJECT);
     testBox.put(cbox::obj_id_t(1));
-    testBox.put(uint8_t(0xFF));
-    testBox.put(cbox::ProfilesObject::staticTypeId());
+    testBox.put(uint8_t(0x8F));
+    testBox.put(cbox::GroupsObject::staticTypeId());
 
-    testBox.put(uint8_t(0x3));
+    testBox.put(uint8_t(0x2));
 
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
 
-    // read profiles block
+    // read groups block
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
     testBox.put(cbox::obj_id_t(1));
@@ -55,9 +56,9 @@ SCENARIO("Active profiles can written through the profile object at ID 1")
     expected << cbox::addCrc("0000010100")
              << "|" << cbox::addCrc("00"   // no error
                                     "0100" // object id 2
-                                    "FF"   // profiles 0xFF
+                                    "8F"   // groups 0x8F
                                     "FEFF" // object type
-                                    "03")  // object data
+                                    "82")  // object data
              << "\n";
     CHECK(reply == expected.str());
 }

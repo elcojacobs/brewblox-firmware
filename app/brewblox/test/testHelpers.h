@@ -49,7 +49,7 @@ decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message
     cbox::HexTextToBinaryIn decoder(hex);
     while (hex.next() != '|') { // spool command echo
     }
-    // spool status, id, profiles and object type
+    // spool status, id, groups and object type
     uint8_t header[6];
     decoder.read(header, 6);
 

@@ -439,7 +439,7 @@ private:
         uint16_t header;
         eeprom.get(EepromLocation(header), header);
         if (header != referenceHeader()) {
-            eeprom.clear(); // writes zeros, active profiles is now also 0x00
+            eeprom.clear(); // writes zeros, active groups is now also 0x00
             auto referenceHeaderValue = referenceHeader();
             eeprom.put(EepromLocation(header), referenceHeaderValue);
             resetWriter();

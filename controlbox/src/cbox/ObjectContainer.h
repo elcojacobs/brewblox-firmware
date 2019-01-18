@@ -114,13 +114,13 @@ public:
     }
 
     // create a new object and let box assign id
-    obj_id_t add(std::shared_ptr<Object> obj, const uint8_t active_in_profiles)
+    obj_id_t add(std::shared_ptr<Object> obj, const uint8_t active_in_groups)
     {
-        return add(std::move(obj), active_in_profiles, obj_id_t::invalid());
+        return add(std::move(obj), active_in_groups, obj_id_t::invalid());
     }
 
     // create a new object with specific id, optionally replacing an existing object
-    obj_id_t add(std::shared_ptr<Object> obj, const uint8_t active_in_profiles, const obj_id_t& id, bool replace = false)
+    obj_id_t add(std::shared_ptr<Object> obj, const uint8_t active_in_groups, const obj_id_t& id, bool replace = false)
     {
         obj_id_t newId;
         Iterator position;
@@ -145,10 +145,10 @@ public:
         }
 
         if (replace) {
-            *position = ContainedObject(newId, active_in_profiles, std::move(obj));
+            *position = ContainedObject(newId, active_in_groups, std::move(obj));
         } else {
             // insert new entry in container in sorted position
-            objects.emplace(position, newId, active_in_profiles, std::move(obj));
+            objects.emplace(position, newId, active_in_groups, std::move(obj));
         }
         return newId;
     }

@@ -44,7 +44,7 @@ private:
     // Box receives commands from connections in the connection pool and streams back the answer to the same connection
     ConnectionPool& connections;
     std::vector<std::unique_ptr<ScanningFactory>> scanners;
-    uint8_t activeProfiles = 0x01;
+    uint8_t activeGroups = 0x81; // system group and first user group
     update_t lastUpdateTime = 0;
 
     // command handlers
@@ -90,11 +90,11 @@ public:
         return objects.fetch(id);
     }
 
-    void setActiveProfilesAndUpdateObjects(uint8_t newProfiles);
+    void setActiveGroupsAndUpdateObjects(uint8_t newGroups);
 
-    uint8_t getActiveProfiles() const
+    uint8_t getActiveGroups() const
     {
-        return activeProfiles;
+        return activeGroups;
     }
 
     void update(const update_t& now)
@@ -143,46 +143,6 @@ public:
         LIST_COMPATIBLE_OBJECTS = 11, // list object IDs implementing the requested interface
         DISCOVER_NEW_OBJECTS = 12,    // discover newly connected objects that support auto discovery
     };
-};
-
-// the ProfilesObject can added to a box, so the active profile can be written as a system object and is also persisted
-class ProfilesObject : public ObjectBase<std::numeric_limits<uint16_t>::max() - 1> {
-    Box* myBox;
-
-public:
-    ProfilesObject(Box* box)
-        : myBox(box)
-    {
-    }
-
-    virtual cbox::CboxError streamFrom(cbox::DataIn& dataIn) override final
-    {
-        uint8_t newProfiles;
-        if (!dataIn.get(newProfiles)) {
-            return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
-        }
-        myBox->setActiveProfilesAndUpdateObjects(newProfiles);
-        return CboxError::OK;
-    }
-
-    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
-    {
-        uint8_t profiles = myBox->getActiveProfiles();
-        if (!out.put(profiles)) {
-            return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
-        }
-        return CboxError::OK;
-    }
-
-    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
-    {
-        return streamTo(out);
-    }
-
-    virtual update_t update(const update_t& now) override final
-    {
-        return cbox::Object::update_never(now);
-    }
 };
 
 } // end namespace cbox

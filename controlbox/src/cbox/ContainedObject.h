@@ -28,19 +28,19 @@
 namespace cbox {
 
 /**
- * A wrapper around an object that stores which type it is and in which profiles it is active
+ * A wrapper around an object that stores which type it is and in which groups it is active
  */
 class ContainedObject {
 public:
-    explicit ContainedObject(obj_id_t id, uint8_t profiles, std::shared_ptr<Object> obj)
+    explicit ContainedObject(obj_id_t id, uint8_t groups, std::shared_ptr<Object> obj)
         : _id(std::move(id))
-        , _profiles(std::move(profiles))
+        , _groups(std::move(groups))
         , _obj(std::move(obj))
         , _nextUpdateTime(0){};
 
 private:
     obj_id_t _id;                 // unique id of object
-    uint8_t _profiles;            // active in these profiles
+    uint8_t _groups;              // active in these groups
     std::shared_ptr<Object> _obj; // pointer to runtime object
     update_t _nextUpdateTime;     // next time update should be called on _obj
 
@@ -50,9 +50,9 @@ public:
         return _id;
     }
 
-    const uint8_t& profiles() const
+    const uint8_t& groups() const
     {
-        return _profiles;
+        return _groups;
     }
 
     const std::shared_ptr<Object>& object() const
@@ -84,7 +84,7 @@ public:
         if (!out.put(_id)) {
             return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
         }
-        if (!out.put(_profiles)) {
+        if (!out.put(_groups)) {
             return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
         }
         if (!out.put(_obj->typeId())) {
@@ -97,9 +97,9 @@ public:
     {
         // id is not streamed in. It is immutable and assumed to be already read to find this entry
 
-        uint8_t newProfiles;
+        uint8_t newGroups;
         obj_type_t expectedType;
-        if (!in.get(newProfiles)) {
+        if (!in.get(newGroups)) {
             return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
         }
         if (!in.get(expectedType)) {
@@ -107,7 +107,14 @@ public:
         }
 
         if (expectedType == _obj->typeId()) {
-            _profiles = newProfiles;
+            if (_groups & 0x80) {
+                // system object, always keep system group flag
+                _groups = newGroups | 0x80;
+            } else {
+                // user object, don't allow system group flag
+                _groups = newGroups & 0x7F;
+            }
+
             return _obj->streamFrom(in);
         }
         return CboxError::INVALID_OBJECT_TYPE;
@@ -121,7 +128,7 @@ public:
             // never happens, because for a write an inactive object is temporarily replaced with an active object to process the write
             return CboxError::OK; // LCOV_EXCL_LINE
         }
-        if (!out.put(_profiles)) {
+        if (!out.put(_groups)) {
             return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
         }
         if (!out.put(_obj->typeId())) {
@@ -130,4 +137,5 @@ public:
         return _obj->streamPersistedTo(out);
     }
 };
-}
+
+} // end namespace cbox

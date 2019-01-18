@@ -24,6 +24,7 @@
 #include "ContainedObject.h"
 #include "DataStream.h"
 #include "DataStreamConverters.h"
+#include "GroupsObject.h"
 #include "Object.h"
 #include "ObjectContainer.h"
 #include "ObjectStorage.h"
@@ -48,8 +49,8 @@ Box::Box(ObjectFactory& _factory,
     , connections(_connections)
     , scanners{std::move(_scanners)}
 {
-    objects.add(std::make_unique<ProfilesObject>(this), 0xFF, obj_id_t(1)); // add profiles object to give access to the active profiles setting on id 1
-    objects.setObjectsStartId(userStartId());                               // set startId for user objects to 100
+    objects.add(std::make_unique<GroupsObject>(this), 0x80, obj_id_t(1)); // add groups object to give access to the active groups setting on id 1
+    objects.setObjectsStartId(userStartId());                             // set startId for user objects to 100
 }
 
 /**
@@ -96,7 +97,7 @@ Box::readObject(DataIn& in, HexCrcDataOut& out)
     out.writeResponseSeparator();
     out.write(asUint8(status));
     if (status == CboxError::OK) {
-        // stream object as id, profiles, typeId, data
+        // stream object as id, groups, typeId, data
         status = cobj->streamTo(out);
         // todo handle status?
     }
@@ -128,8 +129,9 @@ Box::writeObject(DataIn& in, HexCrcDataOut& out)
     }
 
     if (cobj != nullptr && status == CboxError::OK) {
+        // check if object was inactive and should become active
         if (cobj->object()->typeId() == InactiveObject::staticTypeId()
-            && ((cobj->profiles() & activeProfiles) != 0)) {
+            && ((cobj->groups() & activeGroups) != 0)) {
             obj_id_t id = cobj->id();
             std::shared_ptr<Object> obj;
 
@@ -138,9 +140,9 @@ Box::writeObject(DataIn& in, HexCrcDataOut& out)
                 handlerCalled = true;
                 RegionDataIn objWithoutCrc(objInStorage, objInStorage.available() - 1);
 
-                uint8_t storedProfiles; // discarded
+                uint8_t storedGroups; // discarded
                 CboxError status;
-                std::tie(status, obj, storedProfiles) = createObjectFromStream(objWithoutCrc);
+                std::tie(status, obj, storedGroups) = createObjectFromStream(objWithoutCrc);
 
                 return status;
             };
@@ -150,7 +152,7 @@ Box::writeObject(DataIn& in, HexCrcDataOut& out)
                 status = CboxError::INVALID_OBJECT_ID; // write status if handler has not written it
             }
             if (status == CboxError::OK) {
-                *cobj = ContainedObject(id, cobj->profiles(), std::move(obj)); // replace contained object
+                *cobj = ContainedObject(id, cobj->groups(), std::move(obj)); // replace contained object
             }
         }
         if (status == CboxError::OK) {
@@ -161,8 +163,8 @@ Box::writeObject(DataIn& in, HexCrcDataOut& out)
             status = storage.storeObject(id, storeContained);
         }
 
-        // deactivate object if it is not a system object and is not in an active profile
-        if (id >= userStartId() && (cobj->profiles() & activeProfiles) == 0) {
+        // deactivate object if it is not a system object and is not in an active group
+        if ((cobj->groups() & activeGroups) == 0) {
             cobj->deactivate();
         }
     }
@@ -182,9 +184,9 @@ std::tuple<CboxError, std::shared_ptr<Object>, uint8_t>
 Box::createObjectFromStream(DataIn& in)
 {
     obj_type_t typeId;
-    uint8_t profiles;
+    uint8_t groups;
 
-    if (!in.get(profiles)) {
+    if (!in.get(groups)) {
         return std::make_tuple(CboxError::INPUT_STREAM_READ_ERROR, std::shared_ptr<Object>(), uint8_t(0)); // LCOV_EXCL_LINE
     }
     if (!in.get(typeId)) {
@@ -197,7 +199,7 @@ Box::createObjectFromStream(DataIn& in)
     if (obj) {
         obj->streamFrom(in);
     }
-    return std::make_tuple(std::move(result), std::move(obj), profiles);
+    return std::make_tuple(std::move(result), std::move(obj), groups);
 }
 
 /**
@@ -208,7 +210,7 @@ Box::createObject(DataIn& in, HexCrcDataOut& out)
 {
     obj_id_t id;
     obj_type_t typeId;
-    uint8_t profiles = 0;
+    uint8_t groups = 0;
 
     CboxError status = CboxError::OK;
 
@@ -222,7 +224,7 @@ Box::createObject(DataIn& in, HexCrcDataOut& out)
 
     std::shared_ptr<Object> newObj;
     if (status == CboxError::OK) {
-        std::tie(status, newObj, profiles) = createObjectFromStream(in);
+        std::tie(status, newObj, groups) = createObjectFromStream(in);
     }
 
     in.spool();
@@ -232,7 +234,7 @@ Box::createObject(DataIn& in, HexCrcDataOut& out)
     ContainedObject* ptrCobj = nullptr;
     if (status == CboxError::OK) {
         // add object to container. Id is returned because id from stream can be 0 to let the box assign it
-        id = objects.add(std::move(newObj), profiles, id, false);
+        id = objects.add(std::move(newObj), groups, id, false);
         ptrCobj = objects.fetchContained(id);
         if (ptrCobj) {
             auto storeContained = [&ptrCobj](DataOut& out) -> CboxError {
@@ -241,7 +243,7 @@ Box::createObject(DataIn& in, HexCrcDataOut& out)
             status = storage.storeObject(id, storeContained);
             if (status != CboxError::OK) {
                 objects.remove(id);
-            } else if (id >= userStartId() && !(ptrCobj->profiles() & activeProfiles)) {
+            } else if (id >= userStartId() && !(ptrCobj->groups() & activeGroups)) {
                 // object should not be active, replace object with inactive object
                 ptrCobj->deactivate();
             }
@@ -430,10 +432,10 @@ Box::loadObjectsFromStorage()
 
         } else {
             // new object
-            uint8_t profiles;
+            uint8_t groups;
             std::shared_ptr<Object> newObj;
 
-            std::tie(status, newObj, profiles) = createObjectFromStream(tee);
+            std::tie(status, newObj, groups) = createObjectFromStream(tee);
 
             tee.spool();
             if (crcCalculator.crc() != 0) {
@@ -441,7 +443,7 @@ Box::loadObjectsFromStorage()
             }
 
             if (newObj) {
-                objects.add(std::move(newObj), profiles, id);
+                objects.add(std::move(newObj), groups, id);
             }
         }
         return status;
@@ -449,8 +451,8 @@ Box::loadObjectsFromStorage()
     // now apply the loader above to all objects in storage
     storage.retrieveObjects(objectLoader);
 
-    // finally, deactivate objects that should not be active based on the (possibly just loaded) active profiles setting
-    setActiveProfilesAndUpdateObjects(activeProfiles);
+    // finally, deactivate objects that should not be active based on the (possibly just loaded) active groups setting
+    setActiveGroupsAndUpdateObjects(activeGroups);
 }
 
 void
@@ -644,15 +646,15 @@ Box::hexCommunicate()
 }
 
 void
-Box::setActiveProfilesAndUpdateObjects(const uint8_t newProfiles)
+Box::setActiveGroupsAndUpdateObjects(const uint8_t newGroups)
 {
-    activeProfiles = newProfiles;
+    activeGroups = newGroups | 0x80; // system group cannot be disabled
     for (auto cit = objects.userbegin(); cit != objects.cend(); cit++) {
         obj_id_t objId = cit->id();
-        uint8_t objProfiles = cit->profiles();
+        uint8_t objGroups = cit->groups();
         obj_type_t objType = cit->object()->typeId();
 
-        bool shouldBeActive = activeProfiles & objProfiles;
+        bool shouldBeActive = activeGroups & objGroups;
 
         // replace entire 'contained object', not just the object inside.
         // this ensures that any smart pointers to the contained object are also invalidated
@@ -662,7 +664,7 @@ Box::setActiveProfilesAndUpdateObjects(const uint8_t newProfiles)
             auto retrieveContained = [this, &objId](RegionDataIn& objInStorage) -> CboxError {
                 CboxError status;
                 std::shared_ptr<Object> newObj;
-                uint8_t profiles = 0;
+                uint8_t groups = 0;
 
                 // use a CrcDataOut to a black hole to check the CRC
                 BlackholeDataOut hole;
@@ -670,7 +672,7 @@ Box::setActiveProfilesAndUpdateObjects(const uint8_t newProfiles)
                 TeeDataIn tee(objInStorage, crcCalculator);
 
                 crcCalculator.put(objId); // id is part of CRC, but not part of the stream we get from storage
-                std::tie(status, newObj, profiles) = createObjectFromStream(tee);
+                std::tie(status, newObj, groups) = createObjectFromStream(tee);
 
                 tee.spool();
                 if (crcCalculator.crc() != 0) {
@@ -678,7 +680,7 @@ Box::setActiveProfilesAndUpdateObjects(const uint8_t newProfiles)
                 }
 
                 if (newObj) {
-                    objects.add(std::move(newObj), profiles, objId, true);
+                    objects.add(std::move(newObj), groups, objId, true);
                 }
 
                 return status;
@@ -726,9 +728,9 @@ Box::reloadStoredObject(const obj_id_t& id)
         RegionDataIn objWithoutCrc(objInStorage, objInStorage.available() - 1);
 
         obj_type_t typeId;
-        uint8_t profiles; // discarded
+        uint8_t groups; // discarded
 
-        if (!objWithoutCrc.get(profiles)) {
+        if (!objWithoutCrc.get(groups)) {
             return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
         }
         if (!objWithoutCrc.get(typeId)) {
