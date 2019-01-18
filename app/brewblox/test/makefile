@@ -144,8 +144,6 @@ all: runner
 
 runner: $(TARGETDIR)$(TARGET)
 
-$(info ${LDFLAGS})
-
 $(TARGETDIR)$(TARGET) : $(BUILD_PATH) $(ALLOBJ)
 	@echo Building target: $@
 	$(MKDIR) $(dir $@)

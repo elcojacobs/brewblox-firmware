@@ -28,6 +28,7 @@
 #include "cbox/DataStream.h"
 #include "cbox/DataStreamIo.h"
 #include "testHelpers.h"
+#include <memory>
 #include <sstream>
 #include <type_traits>
 
