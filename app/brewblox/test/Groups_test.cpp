@@ -35,10 +35,10 @@ SCENARIO("Active groups can written through the groups object at ID 1")
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::WRITE_OBJECT);
     testBox.put(cbox::obj_id_t(1));
-    testBox.put(uint8_t(0xF1));
+    testBox.put(uint8_t(0x8F));
     testBox.put(cbox::GroupsObject::staticTypeId());
 
-    testBox.put(uint8_t(0x3));
+    testBox.put(uint8_t(0x2));
 
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
@@ -56,9 +56,9 @@ SCENARIO("Active groups can written through the groups object at ID 1")
     expected << cbox::addCrc("0000010100")
              << "|" << cbox::addCrc("00"   // no error
                                     "0100" // object id 2
-                                    "F1"   // groups 0xFF
+                                    "8F"   // groups 0x8F
                                     "FEFF" // object type
-                                    "03")  // object data
+                                    "82")  // object data
              << "\n";
     CHECK(reply == expected.str());
 }

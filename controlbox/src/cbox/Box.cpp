@@ -49,7 +49,7 @@ Box::Box(ObjectFactory& _factory,
     , connections(_connections)
     , scanners{std::move(_scanners)}
 {
-    objects.add(std::make_unique<GroupsObject>(this), 0x01, obj_id_t(1)); // add groups object to give access to the active groups setting on id 1
+    objects.add(std::make_unique<GroupsObject>(this), 0x80, obj_id_t(1)); // add groups object to give access to the active groups setting on id 1
     objects.setObjectsStartId(userStartId());                             // set startId for user objects to 100
 }
 
@@ -648,7 +648,7 @@ Box::hexCommunicate()
 void
 Box::setActiveGroupsAndUpdateObjects(const uint8_t newGroups)
 {
-    activeGroups = newGroups | 0x01; // system group cannot be disabled
+    activeGroups = newGroups | 0x80; // system group cannot be disabled
     for (auto cit = objects.userbegin(); cit != objects.cend(); cit++) {
         obj_id_t objId = cit->id();
         uint8_t objGroups = cit->groups();

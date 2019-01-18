@@ -83,44 +83,44 @@ makeBrewBloxBox()
 {
     static cbox::ObjectContainer objects({
         // groups will be at position 1
-        cbox::ContainedObject(2, 0x01, std::make_shared<SysInfoBlock>()),
-            cbox::ContainedObject(3, 0x01, std::make_shared<TicksBlock<TicksClass>>(ticks)),
-            cbox::ContainedObject(4, 0x01, std::make_shared<OneWireBusBlock>(theOneWire())),
+        cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>()),
+            cbox::ContainedObject(3, 0x80, std::make_shared<TicksBlock<TicksClass>>(ticks)),
+            cbox::ContainedObject(4, 0x80, std::make_shared<OneWireBusBlock>(theOneWire())),
 #if defined(SPARK)
-            cbox::ContainedObject(5, 0x01, std::make_shared<WiFiSettingsBlock>()),
-            cbox::ContainedObject(6, 0x01, std::make_shared<TouchSettingsBlock>()),
+            cbox::ContainedObject(5, 0x80, std::make_shared<WiFiSettingsBlock>()),
+            cbox::ContainedObject(6, 0x80, std::make_shared<TouchSettingsBlock>()),
 #endif
-            cbox::ContainedObject(7, 0x01, std::make_shared<DisplaySettingsBlock>()),
+            cbox::ContainedObject(7, 0x80, std::make_shared<DisplaySettingsBlock>()),
     });
 
 #ifdef PIN_V3_BOTTOM1
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_BOTTOM1), 0x01, 10);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_BOTTOM1), 0x80, 10);
 #endif
 #ifdef PIN_V3_BOTTOM2
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_BOTTOM2), 0x01, 11);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_BOTTOM2), 0x80, 11);
 #endif
 #ifdef PIN_V3_TOP1
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP1), 0x01, 12);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP1), 0x80, 12);
 #endif
 #ifdef PIN_V3_TOP2
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP2), 0x01, 13);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP2), 0x80, 13);
 #endif
 #ifdef PIN_V3_TOP3
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP3), 0x01, 14);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP3), 0x80, 14);
 #endif
 #ifdef PIN_ACTUATOR0
     if (getSparkVersion() == SparkVersion::V2) {
-        objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR0), 0x01, 15);
+        objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR0), 0x80, 15);
     }
 #endif
 #ifdef PIN_ACTUATOR1
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR1), 0x01, 16);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR1), 0x80, 16);
 #endif
 #ifdef PIN_ACTUATOR2
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR2), 0x01, 17);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR2), 0x80, 17);
 #endif
 #ifdef PIN_ACTUATOR3
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR3), 0x01, 18);
+    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR3), 0x80, 18);
 #endif
 
     static cbox::ObjectFactory objectFactory = {
@@ -199,4 +199,4 @@ connectionStarted(DataOut& out)
     char msg[] = "<!Connected to BrewBlox v0.1.0>";
     out.writeBuffer(&msg, strlen(msg));
 }
-}
+} // end namespace cbox

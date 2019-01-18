@@ -23,8 +23,8 @@ SCENARIO("A controlbox Box")
     ObjectContainer container = {
         // groups object will have id 1
         // add 2 system objects
-        ContainedObject(2, 0x01, std::make_shared<LongIntObject>(0x11111111)),
-        ContainedObject(3, 0x01, std::make_shared<LongIntObject>(0x22222222))};
+        ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
+        ContainedObject(3, 0x80, std::make_shared<LongIntObject>(0x22222222))};
 
     ArrayEepromAccess<2048> eeprom;
     EepromObjectStorage storage(eeprom);
@@ -71,7 +71,7 @@ SCENARIO("A controlbox Box")
         expected << addCrc("0000010200")
                  << "|" << addCrc("00"        // no error
                                   "0200"      // object id 2
-                                  "01"        // groups 0x01
+                                  "80"        // groups 0x80
                                   "E803"      // object type 1000
                                   "11111111") // object data
                  << "\n";
@@ -104,14 +104,14 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a write object command, it is processed by the Box")
     {
-        *in << "000002020001E80333333333"; // write object 2, set groups to 01 and value to 33333333
+        *in << "000002020080E80333333333"; // write object 2, set groups to 80 and value to 33333333
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("000002020001E80333333333")
+        expected << addCrc("000002020080E80333333333")
                  << "|" << addCrc("00"        // no error
                                   "0200"      // object id 2
-                                  "01"        // groups 0x01
+                                  "80"        // groups 0x80
                                   "E803"      // object type 1000
                                   "33333333") // object data
                  << "\n";
@@ -135,16 +135,16 @@ SCENARIO("A controlbox Box")
     {
         *in << "000003"    // create object
             << "0000"      // ID assigned by box
-            << "FF"        // groups FF
+            << "7F"        // groups 7F
             << "E803"      // type 1000
             << "44444444"; // value 44444444
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0000030000FFE80344444444") << "|"
+        expected << addCrc("00000300007FE80344444444") << "|"
                  << addCrc("00"        // status
                            "6400"      // id
-                           "FF"        // groups
+                           "7F"        // groups
                            "E803"      // type
                            "44444444") // data
                  << "\n";
@@ -172,13 +172,13 @@ SCENARIO("A controlbox Box")
     {
         *in << "000003"    // create object
             << "0500"      // ID 5
-            << "FF"        // groups FF
+            << "7F"        // groups 7F
             << "E803"      // type 1000
             << "44444444"; // value 44444444
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0000030500FFE80344444444") << "|" << addCrc("40") << "\n";
+        expected << addCrc("00000305007FE80344444444") << "|" << addCrc("40") << "\n";
         CHECK(out->str() == expected.str());
     }
 
@@ -215,9 +215,9 @@ SCENARIO("A controlbox Box")
 
         expected << addCrc("000005")
                  << "|" << addCrc("00")
-                 << "," << addCrc("010001FEFF03")
-                 << "," << addCrc("020001E80311111111")
-                 << "," << addCrc("030001E80322222222")
+                 << "," << addCrc("010080FEFF81")
+                 << "," << addCrc("020080E80311111111")
+                 << "," << addCrc("030080E80322222222")
                  << "\n";
         CHECK(out->str() == expected.str());
     }
@@ -226,7 +226,7 @@ SCENARIO("A controlbox Box")
     {
         *in << "000003"    // create object
             << "6400"      // ID 100
-            << "FF"        // groups FF
+            << "7F"        // groups 7F
             << "E903"      // type 1001, LongIntVector
             << "0200"      // size 2
             << "33333333"  // value 33333333
@@ -234,10 +234,10 @@ SCENARIO("A controlbox Box")
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0000036400FFE90302003333333344444444") << "|"
+        expected << addCrc("00000364007FE90302003333333344444444") << "|"
                  << addCrc("00"        // status
                            "6400"      // id 100
-                           "FF"        // groups
+                           "7F"        // groups
                            "E903"      // type 1001, LongIntVector
                            "0200"      // size 2
                            "33333333"  // value 33333333
@@ -250,16 +250,16 @@ SCENARIO("A controlbox Box")
 
         *in << "000003"    // create object
             << "6500"      // ID 101
-            << "FF"        // groups FF
+            << "7F"        // groups 7F
             << "EB03"      // type 1003, NameableLongIntObject
             << "44444444"; // value 44444444
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0000036500FFEB0344444444") << "|"
+        expected << addCrc("00000365007FEB0344444444") << "|"
                  << addCrc("00"        // status
                            "6500"      // id
-                           "FF"        // groups
+                           "7F"        // groups
                            "EB03"      // type
                            "44444444") // data
                  << "\n";
@@ -403,7 +403,7 @@ SCENARIO("A controlbox Box")
             expected << addCrc("0000026400FFFFFF0000") << "|" // command repetition
                      << addCrc("00"                           // status OK
                                "6400"                         // id
-                               "FE"                           // groups, system group is allowed to be set
+                               "7F"                           // groups, system group is allowed to be set
                                "E803"                         // stored type
                                "44444444")                    // stored data
                      << "\n";
@@ -421,7 +421,7 @@ SCENARIO("A controlbox Box")
                 expected << addCrc("0000066400") << "|"
                          << addCrc("00"        // status
                                    "6400"      // id
-                                   "FE"        // stored groups
+                                   "7F"        // stored groups
                                    "E803"      // stored type
                                    "44444444") // stored data
                          << "\n";
@@ -432,11 +432,11 @@ SCENARIO("A controlbox Box")
 
     WHEN("Objects are created in different groups")
     {
-        CHECK(box.getActiveGroups() == 0x03); // default is only profile 1 active and system profile
+        CHECK(box.getActiveGroups() == 0x81); // default is only profile 1 active and system profile
 
         *in << "000003"
             << "6400"
-            << "02"
+            << "01"
             << "E803"
             << "44444444"; // create object, ID 100, groups 01, type 1000, value 44444444
         *in << crc(in->str()) << "\n";
@@ -446,7 +446,7 @@ SCENARIO("A controlbox Box")
 
         *in << "000003"
             << "6500"
-            << "04"
+            << "02"
             << "E803"
             << "44444444"; // create object, ID 101, groups 04, type 1000, value 55555555
         *in << crc(in->str()) << "\n";
@@ -456,7 +456,7 @@ SCENARIO("A controlbox Box")
 
         *in << "000003"
             << "6600"
-            << "06"
+            << "03"
             << "E803"
             << "44444444"; // create object, ID 102, groups 06, type 1000, value 66666666
         *in << crc(in->str()) << "\n";
@@ -484,7 +484,7 @@ SCENARIO("A controlbox Box")
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("0000010300") << "|" << addCrc("00030001E80312341234") << "\n";
+            expected << addCrc("0000010300") << "|" << addCrc("00030080E80312341234") << "\n";
             CHECK(out->str() == expected.str());
         }
 
@@ -511,17 +511,17 @@ SCENARIO("A controlbox Box")
         {
             *in << "000002" // command
                 << "0100"   // id of groups object
-                << "01"     // groups of object
+                << "80"     // groups of object
                 << "FEFF"   // type of groups object
-                << "04";    // value
+                << "02";    // value
             *in << crc(in->str()) << "\n";
             box.hexCommunicate();
 
-            expected << addCrc("000002010001FEFF04") << "|" << addCrc("00010001FEFF05") << "\n";
+            expected << addCrc("000002010080FEFF02") << "|" << addCrc("00010080FEFF82") << "\n";
             CHECK(out->str() == expected.str());
             THEN("The system group always remains active")
             {
-                CHECK(box.getActiveGroups() == 0x5);
+                CHECK(box.getActiveGroups() == 0x82);
             }
             THEN("Objects that are not active anymore are replaced with Inactive Object")
             {
@@ -545,12 +545,12 @@ SCENARIO("A controlbox Box")
 
                 expected << addCrc("000005") << "|"
                          << addCrc("00")
-                         << "," << addCrc("010001FEFF05")
-                         << "," << addCrc("020001E80311111111")
-                         << "," << addCrc("030001E80312341234")
-                         << "," << addCrc("640002FFFFE803") // object 100 (0x64) is listed as inactive object of actual type 0xE803: 6400 - 01 - FFFF - E803
-                         << "," << addCrc("650004E80344444444")
-                         << "," << addCrc("660006E80344444444")
+                         << "," << addCrc("010080FEFF82")
+                         << "," << addCrc("020080E80311111111")
+                         << "," << addCrc("030080E80312341234")
+                         << "," << addCrc("640001FFFFE803") // object 100 (0x64) is listed as inactive object of actual type 0xE803: 6400 - 01 - FFFF - E803
+                         << "," << addCrc("650002E80344444444")
+                         << "," << addCrc("660003E80344444444")
                          << "\n";
                 CHECK(out->str() == expected.str());
 
@@ -561,8 +561,8 @@ SCENARIO("A controlbox Box")
                     // note that only eeprom is not newly created here
                     ObjectContainer container2 = {
                         // groups obj is id 1
-                        ContainedObject(2, 0x01, std::make_shared<LongIntObject>(0x11111111)),
-                        ContainedObject(3, 0x01, std::make_shared<LongIntObject>(0x22222222))};
+                        ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
+                        ContainedObject(3, 0x80, std::make_shared<LongIntObject>(0x22222222))};
 
                     EepromObjectStorage storage2(eeprom);
                     ObjectFactory factory2 = {
@@ -632,16 +632,16 @@ SCENARIO("A controlbox Box")
 
                         THEN("Check that the lambda works")
                         {
-                            CHECK(eepromReplace("650004E80344444444", "650004E80344444444"));  // old string is found, not replaced
-                            CHECK(eepromReplace("650004E80344444444", "650004E80344554444"));  // old string is found, and replaced
-                            CHECK(eepromReplace("650004E80344554444", "650004E80344554444"));  // new string is found, not replaced
-                            CHECK(!eepromReplace("650004E80344444444", "650004E80344444444")); // original is not found
+                            CHECK(eepromReplace("650002E80344444444", "650002E80344444444"));  // old string is found, not replaced
+                            CHECK(eepromReplace("650002E80344444444", "650002E80344554444"));  // old string is found, and replaced
+                            CHECK(eepromReplace("650002E80344554444", "650002E80344554444"));  // new string is found, not replaced
+                            CHECK(!eepromReplace("650002E80344444444", "650002E80344444444")); // original is not found
                         }
 
                         WHEN("Object data has changed, it results in a CRC error and only the damaged object is not loaded")
                         {
-                            const std::string originalObject = "650004E80344444444";
-                            const std::string damagedObject = "650004E80344554444";
+                            const std::string originalObject = "650002E80344444444";
+                            const std::string damagedObject = "650002E80344554444";
 
                             CHECK(eepromReplace(originalObject, damagedObject));
 
@@ -657,7 +657,7 @@ SCENARIO("A controlbox Box")
                             box2.hexCommunicate();
 
                             // remove object with CRC error from expected string
-                            std::string toRemove = "," + addCrc("650004E80344444444");
+                            std::string toRemove = "," + addCrc("650002E80344444444");
                             size_t pos = listObjectsOriginal.find(toRemove);
                             auto listObjectsWithObjectMissing = listObjectsOriginal.replace(pos, toRemove.length(), ""); // remove single element
 
@@ -697,10 +697,10 @@ SCENARIO("A controlbox Box")
 
             // each object has 2 CRCs: one from EEPROM and from the message part
             expected << addCrc("000007") << "|" << addCrc("00")
-                     << "," << addCrc("640002E80344444444")
-                     << "," << addCrc("650004E80344444444")
-                     << "," << addCrc("660006E80344444444")
-                     << "," << addCrc("030001E80312341234") // modified system object is also persisted
+                     << "," << addCrc("640001E80344444444")
+                     << "," << addCrc("650002E80344444444")
+                     << "," << addCrc("660003E80344444444")
+                     << "," << addCrc("030080E80312341234") // modified system object is also persisted
                      << "\n";
 
             CHECK(out->str() == expected.str());
@@ -723,9 +723,9 @@ SCENARIO("A controlbox Box")
             box.hexCommunicate();
 
             expected << addCrc("000005") << "|" << addCrc("00") // status OK
-                     << "," << addCrc("010001FEFF03")           // groups object
-                     << "," << addCrc("020001E80311111111")     // obj 2
-                     << "," << addCrc("030001E80312341234")     // obj 3
+                     << "," << addCrc("010080FEFF81")           // groups object
+                     << "," << addCrc("020080E80311111111")     // obj 2
+                     << "," << addCrc("030080E80312341234")     // obj 3
                      << "\n";
             CHECK(out->str() == expected.str());
         }
@@ -740,16 +740,16 @@ SCENARIO("A controlbox Box")
         clearStreams();
         *in << "000003" // create counter object
             << "6400"   // ID 100
-            << "FF"     // groups FF
+            << "7F"     // groups FF
             << "EA03"   // type 1002
             << "E803";  // interval 1000
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0000036400FFEA03E803") << "|" // command repetition
+        expected << addCrc("00000364007FEA03E803") << "|" // command repetition
                  << addCrc("00"                           // status OK
                            "6400"                         // id 100
-                           "FF"                           // groups 0xFF
+                           "7F"                           // groups 0x7F (system profile not set)
                            "EA03"                         // type 1002
                            "E803"                         // interval 1000
                            "0100")                        // count 1
@@ -760,16 +760,16 @@ SCENARIO("A controlbox Box")
         clearStreams();
         *in << "000003" // create counter object
             << "6500"   // ID 101
-            << "FF"     // groups FF
+            << "7F"     // groups FF
             << "EA03"   // type 1002
             << "D007";  // interval 2000
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << addCrc("0000036400FFEA03D007") << "|" // command repetition
+        expected << addCrc("00000365007FEA03D007") << "|" // command repetition
                  << addCrc("00"                           // status OK
                            "6500"                         // id 101
-                           "FF"                           // groups 0xFF
+                           "7F"                           // groups 0xFF
                            "EA03"                         // type 1002
                            "D007"                         // interval 2000
                            "0100")                        // count 1
@@ -807,7 +807,7 @@ SCENARIO("A controlbox Box")
         clearStreams();
         *in << "000002" // write counter object
             << "6400"   // ID 100
-            << "FF"     // groups FF
+            << "7F"     // groups FF
             << "EA03"   // type 1002
             << "A00F";  // interval 4000
         *in << crc(in->str()) << "\n";
@@ -863,7 +863,7 @@ SCENARIO("A controlbox Box")
     {
         *in << "000003" // create object
             << "6400"   // ID 100
-            << "FF"     // groups FF
+            << "7F"     // groups FF
             << "ED03"   // type 1005
             << "0200"   // ptr 1 points to object 2
             << "0300";  // ptr 2 points to object 3
@@ -877,7 +877,7 @@ SCENARIO("A controlbox Box")
             << addCrc(command) << "|" // command repetition
             << addCrc("00"            // status OK
                       "6400"          // id 100
-                      "FF"            // groups 0xFF
+                      "7F"            // groups 0xFF
                       "ED03"          // type 1002
                       "0200"          // ptr 1 points to ID 2
                       "0300"          // ptr 2 points to ID 3
@@ -896,7 +896,7 @@ SCENARIO("A controlbox Box")
 
             *in << "000002" // write object
                 << "6400"   // ID 100
-                << "FF"     // groups FF
+                << "7F"     // groups 7F
                 << "ED03"   // type 1005
                 << "0300"   // ptr 1 points to object 3
                 << "0400";  // ptr 2 points to object 4
@@ -910,7 +910,7 @@ SCENARIO("A controlbox Box")
                 << addCrc(command) << "|" // command repetition
                 << addCrc("00"            // status OK
                           "6400"          // id 100
-                          "FF"            // groups 0xFF
+                          "7F"            // groups 0x7F
                           "ED03"          // type 1002
                           "0300"          // ptr 1 points to ID 3
                           "0400"          // ptr 2 points to ID 4
@@ -929,13 +929,13 @@ SCENARIO("A controlbox Box")
     {
         *in << "000003" // create object
             << "0000"   // ID assigned by box
-            << "FF";    // groups FF
+            << "7F";    // groups 7F
                         //<< "E803"      // type 1000
                         //<< "44444444"; // value 44444444
                         // *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
-        expected << "0000030000FF"
+        expected << "00000300007F"
                  << "|"
                  << addCrc("43") << "\n";
         CHECK(out->str() == expected.str());
@@ -987,7 +987,7 @@ SCENARIO("A controlbox Box")
 
         *in << "000003"    // create object
             << "0000"      // ID assigned by box
-            << "FF"        // groups FF
+            << "7F"        // groups 7F
             << "E803"      // type 1000
             << "44444444"; // value 44444444
         *in << crc(in->str()) << "\n";
@@ -1048,12 +1048,12 @@ SCENARIO("A controlbox Box")
 
             expected << addCrc("000005")
                      << "|" << addCrc("00")
-                     << "," << addCrc("010001FEFF03")
-                     << "," << addCrc("020001E80311111111")
-                     << "," << addCrc("030001E80322222222")
-                     << "," << addCrc("640002E80333333333")
-                     << "," << addCrc("650002E80344444444")
-                     << "," << addCrc("660002E80355555555")
+                     << "," << addCrc("010080FEFF81")
+                     << "," << addCrc("020080E80311111111")
+                     << "," << addCrc("030080E80322222222")
+                     << "," << addCrc("640001E80333333333")
+                     << "," << addCrc("650001E80344444444")
+                     << "," << addCrc("660001E80355555555")
                      << "\n";
             CHECK(out->str() == expected.str());
         }
@@ -1067,9 +1067,9 @@ SCENARIO("A controlbox Box")
 
             expected << addCrc("000007")
                      << "|" << addCrc("00")
-                     << "," << addCrc("640002E80333333333")
-                     << "," << addCrc("650002E80344444444")
-                     << "," << addCrc("660002E80355555555")
+                     << "," << addCrc("640001E80333333333")
+                     << "," << addCrc("650001E80344444444")
+                     << "," << addCrc("660001E80355555555")
                      << "\n";
             CHECK(out->str() == expected.str());
         }

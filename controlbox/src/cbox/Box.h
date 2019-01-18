@@ -44,7 +44,7 @@ private:
     // Box receives commands from connections in the connection pool and streams back the answer to the same connection
     ConnectionPool& connections;
     std::vector<std::unique_ptr<ScanningFactory>> scanners;
-    uint8_t activeGroups = 0x03; // system group and first user group
+    uint8_t activeGroups = 0x81; // system group and first user group
     update_t lastUpdateTime = 0;
 
     // command handlers

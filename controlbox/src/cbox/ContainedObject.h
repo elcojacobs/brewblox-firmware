@@ -107,12 +107,12 @@ public:
         }
 
         if (expectedType == _obj->typeId()) {
-            if ((_groups & 0x01) == 0x01) {
+            if (_groups & 0x80) {
                 // system object, always keep system group flag
-                _groups = newGroups | 0x01;
+                _groups = newGroups | 0x80;
             } else {
                 // user object, don't allow system group flag
-                _groups = newGroups & 0xFE;
+                _groups = newGroups & 0x7F;
             }
 
             return _obj->streamFrom(in);

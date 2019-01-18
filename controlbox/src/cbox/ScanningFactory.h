@@ -47,7 +47,7 @@ public:
     obj_id_t scanAndAdd()
     {
         if (auto newObj = scan()) {
-            return objectsRef.add(newObj, uint8_t(0x02)); // default to first profile
+            return objectsRef.add(newObj, uint8_t(0x01)); // default to first profile
         }
         return 0;
     }
