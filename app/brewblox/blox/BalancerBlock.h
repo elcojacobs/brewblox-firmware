@@ -21,7 +21,7 @@ protected:
         Balancer_t* balancerPtr = reinterpret_cast<Balancer_t*>(*arg);
         for (const auto& requester : balancerPtr->clients()) {
             auto act = blox_Balancer_BalancedActuator();
-            act.id = 0;
+            act.id = requester.id;
             act.requested = cnl::unwrap(requester.requested);
             act.granted = cnl::unwrap(requester.granted);
             if (!pb_encode_tag_for_field(stream, field)) {
