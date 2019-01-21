@@ -25,9 +25,14 @@ public:
     {
     }
 
-    cbox::obj_id_t balancerId()
+    cbox::obj_id_t balancerId() const
     {
         return lookup.getId();
+    }
+
+    uint8_t requesterId() const
+    {
+        return m_balanced.requesterId();
     }
 
     virtual uint8_t id() const override final
@@ -98,6 +103,7 @@ getAnalogConstraints(blox_AnalogConstraints& msg, const ActuatorAnalogConstraine
         } break;
         case blox_AnalogConstraint_balanced_tag: {
             auto obj = reinterpret_cast<CboxBalanced*>((*it).get());
+            msg.constraints[i].constraint.balanced.id = obj->requesterId();
             msg.constraints[i].constraint.balanced.balancerId = obj->balancerId();
             msg.constraints[i].constraint.balanced.granted = cnl::unwrap(obj->granted());
         } break;

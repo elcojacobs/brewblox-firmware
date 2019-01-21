@@ -37,7 +37,7 @@ private:
     using Balanced = AAConstraints::Balanced<ID>;
 
     struct Request {
-        const Balanced* requester;
+        uint8_t id;
         value_t requested;
         value_t granted;
     };
@@ -50,20 +50,31 @@ public:
     Balancer() = default;
     virtual ~Balancer() = default;
 
-    void registerEntry(const Balanced* req)
+    uint8_t registerEntry()
     {
-        requesters.push_back(Request{req, available, 0});
+        for (uint8_t id = 1; id < 255; id++) {
+            // find free id
+            auto match = find_if(requesters.begin(), requesters.end(), [&id](const Request& r) {
+                return r.id == id;
+            });
+
+            if (match == requesters.end()) {
+                requesters.push_back(Request{id, available, 0});
+                return id;
+            }
+        };
+        return 0;
     }
 
-    void unregisterEntry(const Balanced* req)
+    void unregisterEntry(const uint8_t& requester_id)
     {
-        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [req](const Request& r) { return r.requester == req; }));
+        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }));
     }
 
-    value_t constrain(const Balanced* req, const value_t& val)
+    value_t constrain(const uint8_t& requester_id, const value_t& val)
     {
-        auto match = find_if(requesters.begin(), requesters.end(), [&req](const Request& r) {
-            return r.requester == req;
+        auto match = find_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) {
+            return r.id == requester_id;
         });
 
         if (match != requesters.end()) {
@@ -74,10 +85,10 @@ public:
         return 0; // not found. Should not be possible because Balanced registers in constructor
     }
 
-    value_t granted(const Balanced* req) const
+    value_t granted(const uint8_t& requester_id) const
     {
-        auto match = find_if(requesters.begin(), requesters.end(), [&req](const Request& r) {
-            return r.requester == req;
+        auto match = find_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) {
+            return r.id == requester_id;
         });
 
         if (match == requesters.end()) {
@@ -126,6 +137,7 @@ template <uint8_t ID>
 class Balanced : public Base {
 private:
     const std::function<std::shared_ptr<Balancer<ID>>()> m_balancer;
+    uint8_t m_req_id;
 
 public:
     explicit Balanced(
@@ -133,7 +145,7 @@ public:
         : m_balancer(balancer)
     {
         if (auto balancerPtr = m_balancer()) {
-            balancerPtr->registerEntry(this);
+            m_req_id = balancerPtr->registerEntry();
         }
     }
 
@@ -145,14 +157,14 @@ public:
     ~Balanced()
     {
         if (auto balancerPtr = m_balancer()) {
-            balancerPtr->unregisterEntry(this);
+            balancerPtr->unregisterEntry(m_req_id);
         }
     }
 
     virtual value_t constrain(const value_t& val) const override final
     {
         if (auto balancerPtr = m_balancer()) {
-            return balancerPtr->constrain(this, val);
+            return balancerPtr->constrain(m_req_id, val);
         }
         return val;
     }
@@ -162,10 +174,15 @@ public:
         return ID;
     }
 
+    uint8_t requesterId() const
+    {
+        return m_req_id;
+    }
+
     value_t granted() const
     {
         if (auto balancerPtr = m_balancer()) {
-            return balancerPtr->granted(this);
+            return balancerPtr->granted(m_req_id);
         }
         return 0;
     }

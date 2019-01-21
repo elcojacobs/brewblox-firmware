@@ -159,8 +159,8 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
         auto decoded = blox::Balancer();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "clients { requested: 327680 granted: 204800 } "  // 80*4096, 50*4096
-                                            "clients { requested: 327680 granted: 204800 }"); // 80*4096, 50*4096
+        CHECK(decoded.ShortDebugString() == "clients { id: 1 requested: 327680 granted: 204800 } "  // 80*4096, 50*4096
+                                            "clients { id: 2 requested: 327680 granted: 204800 }"); // 80*4096, 50*4096
     }
 
     // read mutex
@@ -212,7 +212,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
                                             "period: 4000 setting: 204800 "
                                             "constrainedBy { "
                                             "constraints { "
-                                            "balanced { balancerId: 100 granted: 204800 } "
+                                            "balanced { balancerId: 100 granted: 204800 id: 1 } "
                                             "limiting: true } "
                                             "unconstrained: 327680 }");
     }
@@ -230,7 +230,7 @@ SCENARIO("Two PWM actuators can be constrained by a balancer", "[balancer]")
                                             "period: 4000 setting: 204800 "
                                             "constrainedBy { "
                                             "constraints { "
-                                            "balanced { balancerId: 100 granted: 204800 } "
+                                            "balanced { balancerId: 100 granted: 204800 id: 2 } "
                                             "limiting: true } "
                                             "unconstrained: 327680 }");
     }
