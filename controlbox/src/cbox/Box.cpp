@@ -554,15 +554,15 @@ Box::discoverNewObjects(DataIn& in, HexCrcDataOut& out)
             if (newId) {
                 auto cobj = objects.fetchContained(newId);
 
+                out.writeListSeparator();
+                out.put(newId);
                 if (cobj != nullptr) { // always true,  but just in case
+                    out.put(cobj->object()->typeId());
                     auto storeContained = [&cobj](DataOut& out) -> CboxError {
                         return cobj->streamPersistedTo(out);
                     };
                     storage.storeObject(newId, storeContained);
                 }
-
-                out.writeListSeparator();
-                out.put(newId);
             }
         } while (newId);
     }
