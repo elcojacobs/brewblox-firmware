@@ -1032,9 +1032,9 @@ SCENARIO("A controlbox Box")
         {
             expected << addCrc("00000C") << "|"
                      << addCrc("00")          // status
-                     << "," << addCrc("6400") // new object id 100
-                     << "," << addCrc("6500") // new object id 101
-                     << "," << addCrc("6600") // new object id 102
+                     << "," << addCrc("6400E803") // new object id 100
+                     << "," << addCrc("6500E803") // new object id 101
+                     << "," << addCrc("6600E803") // new object id 102
                      << "\n";
             CHECK(out->str() == expected.str());
         }
