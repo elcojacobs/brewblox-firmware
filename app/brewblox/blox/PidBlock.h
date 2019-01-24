@@ -78,6 +78,9 @@ public:
             }
             if (ptr->settingValid()) {
                 message.outputSetting = cnl::unwrap(ptr->setting());
+                if(pid.enabled()){
+                    message.drivenOutputId = message.outputId;
+                }
             } else {
                 stripped.add(blox_Pid_outputSetting_tag);
             }
