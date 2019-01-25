@@ -59,6 +59,7 @@ public:
         }
         if (constrained.settingValid()) {
             message.setting = cnl::unwrap(constrained.setting());
+            message.drivenActuatorId = message.actuatorId;
         } else {
             stripped.add(blox_ActuatorPwm_setting_tag);
         };

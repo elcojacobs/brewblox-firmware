@@ -157,7 +157,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         CHECK(testBox.lastReplyHasStatusOk());
         CHECK(decoded.ShortDebugString() == "targetId: 102 referenceId: 105 "
                                             "setting: 49152 value: 4096 " // setting is 12 (setpoint difference), value is 1 (21 - 20)
-                                            "constrainedBy { unconstrained: 49152 }");
+                                            "constrainedBy { unconstrained: 49152 } "
+                                            "drivenTargetId: 102");
     }
 
     // read reference pair
@@ -184,5 +185,38 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         CHECK(testBox.lastReplyHasStatusOk());
         CHECK(decoded.ShortDebugString() == "setpointId: 104 sensorId: 103 "
                                             "setpointValue: 81920 sensorValue: 110592"); // 20, 27 (unaffected)
+    }
+
+    AND_WHEN("The reference setpoint is invalid"){
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(cbox::obj_id_t(104));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(SetpointSimpleBlock::staticTypeId());
+
+        auto newSetpoint2 = blox::SetpointSimple();
+        newSetpoint2.set_setpoint(cnl::unwrap(temp_t(20.0)));
+        newSetpoint2.set_enabled(false);
+        testBox.put(newSetpoint2);
+
+        testBox.processInput();
+        CHECK(testBox.lastReplyHasStatusOk());
+
+        testBox.update(1000);
+
+        THEN("The actuator is not driving the target setpoint and setting and value are stripped"){
+            // read actuator
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::READ_OBJECT);
+            testBox.put(cbox::obj_id_t(106));
+            {
+                auto decoded = blox::ActuatorOffset();
+                testBox.processInputToProto(decoded);
+                CHECK(testBox.lastReplyHasStatusOk());
+                CHECK(decoded.ShortDebugString() == "targetId: 102 referenceId: 105 "
+                                                    "constrainedBy { unconstrained: 49152 } "
+                                                    "strippedFields: 7 strippedFields: 6");
+            }
+        }        
     }
 }
