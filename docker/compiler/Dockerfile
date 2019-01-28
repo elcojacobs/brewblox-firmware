@@ -44,7 +44,7 @@ RUN echo "tzdata tzdata/Areas select Europe" > /tmp/preseed.txt; \
 
 # install various packages needed for the build, testing, or for building the dependencies
 RUN apt-get update -q \
-  && apt-get install -qy --no-install-recommends tzdata git bash dfu-util python python-pip gdb lcov valgrind \ 
+  && apt-get install -qy --no-install-recommends tzdata git bash dfu-util python python-pip gdb lcov rsync \ 
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -54,7 +54,8 @@ RUN rm -rf /etc/timezone \
   && dpkg-reconfigure --frontend noninteractive tzdata
 
 # and install protobuf python package (used by nanopb), and pyserial (used by program-dfu)
-RUN pip install --upgrade pip  && pip install protobuf pyserial
+RUN pip install --upgrade pip
+RUN pip install protobuf pyserial
 
 # download and compile boost and install as system includes (/usr/local)
 RUN mkdir -p /boost && curl -sSL http://downloads.sourceforge.net/project/boost/boost/1.65.0/boost_1_65_0.tar.gz | tar -xz -C /boost \
