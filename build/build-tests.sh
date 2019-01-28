@@ -12,7 +12,7 @@ fi
 
 pushd "$MY_DIR/../app/brewblox/test" > /dev/null
 echo "Building BrewBlox app unit tests"
-make -s runner;
+make -j -s runner;
 (( result = $? ))
 status $result
 (( exit_status = exit_status || result ))
@@ -20,7 +20,7 @@ popd > /dev/null
 
 pushd "$MY_DIR/../controlbox" > /dev/null
 echo "Building controlbox unit tests"
-make -s runner;
+make -j -s runner;
 (( result = $? ))
 status $result
 (( exit_status = exit_status || result ))

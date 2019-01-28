@@ -12,10 +12,10 @@ docker run \
         rm -rf /firmware/docker/simulator/target
         bash compile-proto.sh
         make clean APP=brewblox PLATFORM=p1
-        make APP=brewblox PLATFORM=p1
+        make -j APP=brewblox PLATFORM=p1
         cp /firmware/build/target/brewblox-p1/brewblox.bin /firmware/docker/flasher/brewblox-p1.bin
         make clean APP=brewblox PLATFORM=photon
-        make APP=brewblox PLATFORM=photon
+        make -j APP=brewblox PLATFORM=photon
         cp /firmware/build/target/brewblox-photon/brewblox.bin /firmware/docker/flasher/brewblox-photon.bin
     '
 
