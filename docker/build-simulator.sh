@@ -6,7 +6,7 @@ docker-compose exec compiler \
         set -e        
         rm -rf ../docker/simulator/target
         bash compile-proto.sh
-        make -j APP=brewblox PLATFORM=gcc
+        make $MAKE_ARGS APP=brewblox PLATFORM=gcc
         cp -r target ../docker/simulator/target
     '
 

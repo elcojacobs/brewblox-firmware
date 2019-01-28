@@ -5,9 +5,9 @@ docker-compose exec compiler \
     bash -c '
         set -e        
         bash compile-proto.sh
-        make -j APP=brewblox PLATFORM=p1
+        make $MAKE_ARGS APP=brewblox PLATFORM=p1
         cp target/brewblox-p1/brewblox.bin ../docker/flasher/brewblox-p1.bin
-        make -j APP=brewblox PLATFORM=photon
+        make $MAKE_ARGS APP=brewblox PLATFORM=photon
         cp target/brewblox-photon/brewblox.bin ../docker/flasher/brewblox-photon.bin
     '
 
