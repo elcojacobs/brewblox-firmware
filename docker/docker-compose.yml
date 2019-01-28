@@ -6,7 +6,7 @@ services:
     privileged: true
     environment:
         - MOUNTDIR=/firmware
-        - MAKE_ARGS=
+        - MAKE_ARGS
     volumes:
         - ../:${MOUNTDIR}
     working_dir: ${MOUNTDIR}/build         
