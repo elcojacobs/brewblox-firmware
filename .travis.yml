@@ -18,7 +18,8 @@ env:
 
 script:
   - cd ./docker
-  - docker-compose run --rm compiler bash run-ci.sh
+  - bash start-compiler.sh
+  - docker-compose exec compiler bash run-ci.sh
 
 notifications:
   slack:
