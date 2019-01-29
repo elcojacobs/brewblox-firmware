@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from time import sleep
 
 import serial
 
@@ -25,6 +26,7 @@ try:
     ser.close()
     ser = serial.Serial(args.port, args.neutral_baud_rate)
     ser.close()
+    sleep(3)
 
 except Exception:
     pass

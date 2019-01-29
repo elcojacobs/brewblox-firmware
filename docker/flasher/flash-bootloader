@@ -7,7 +7,8 @@ if [[ -n $(lsusb -d 2b04:c006) ]]; then
     echo "Triggering listening mode"
     ./trigger-listening
     echo "Flashing Photon bootloader..."
-    ${SERIAL_FLASH} bootloader-photon.bin
+    # We've already triggered listening mode. Automatically press enter at the prompt
+    echo -ne '\n' | ${SERIAL_FLASH} bootloader-photon.bin
     exit
 fi
 
@@ -15,7 +16,8 @@ if [[ -n $(lsusb -d 2b04:c008) ]]; then
     echo "Triggering listening mode"
     ./trigger-listening
     echo "Flashing P1 bootloader..."
-    ${SERIAL_FLASH} bootloader-p1.bin
+    # We've already triggered listening mode. Automatically press enter at the prompt
+    echo -ne '\n' | ${SERIAL_FLASH} bootloader-p1.bin
     exit
 fi
 
