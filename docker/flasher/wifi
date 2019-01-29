@@ -2,5 +2,5 @@
 set -e
 
 ./trigger-listening
-# Automatically select "no" when prompted to scan for networks
-echo -ne 'n\n' | node_modules/.bin/particle serial wifi
+echo "Important: Select no when asked to scan for Wi-Fi networks"
+node_modules/.bin/particle serial wifi
