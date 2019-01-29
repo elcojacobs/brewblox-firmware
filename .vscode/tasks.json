@@ -4,230 +4,229 @@
     "version": "2.0.0",
     "tasks": [
         {
-            {
-                "label": "build_p1",
-                "command": "docker-compose",
-                "args": [
-                    "exec",
-                    "compiler",
-                    "../wrapped_make.sh",
-                    "APP=brewblox",
-                    "PLATFORM=p1"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": "$gcc"
+            "label": "build_p1",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "../wrapped_make.sh",
+                "APP=brewblox",
+                "PLATFORM=p1"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
             },
-            {
-                "label": "flash_p1",
-                "command": "docker-compose",
-                "args": [
-                    "exec",
-                    "compiler",
-                    "../wrapped_make.sh",
-                    "APP=brewblox",
-                    "PLATFORM=p1",
-                    "program-dfu"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": "$gcc",
-                "dependsOn": [
-                    "trigger_dfu_p1",
-                    "restart_compiler",
-                ]
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
             },
-            {
-                "label": "trigger_dfu_p1",
-                "command": "docker",
-                "args": [
-                    "run",
-                    "--rm",
-                    "--privileged",
-                    "brewblox/firmware-flasher:develop",
-                    "trigger-dfu"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": "$gcc"
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "flash_p1",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "../wrapped_make.sh",
+                "APP=brewblox",
+                "PLATFORM=p1",
+                "program-dfu"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
             },
-            {
-                "label": "restart_compiler",
-                "command": "docker-compose",
-                "args": [
-                    "restart",
-                    "compiler",
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": "$gcc"
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
             },
-            {
-                "label": "touch_gcc",
-                "type": "shell",
-                "command": "touch",
-                "args": [
-                    "device_key.der",
-                    "server_key.der",
-                    "eeprom.bin"
-                ],
-                "options": {
-                    "cwd": "${workspaceFolder}/build/target/brewblox-gcc"
-                },
-                "presentation": {
-                    "echo": false,
-                    "reveal": "never",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                }
+            "problemMatcher": "$gcc",
+            "dependsOn": [
+                "trigger_dfu_p1",
+                "restart_compiler",
+            ]
+        },
+        {
+            "label": "trigger_dfu_p1",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "--privileged",
+                "brewblox/firmware-flasher:develop",
+                "trigger-dfu"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
             },
-            {
-                "label": "build_and_touch_gcc",
-                "dependsOn": [
-                    "build_gcc",
-                    "touch_gcc"
-                ]
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
             },
-            {
-                "label": "compile proto",
-                "type": "shell",
-                "command": "docker-compose",
-                "args": [
-                    "exec",
-                    "compiler",
-                    "bash",
-                    "compile-proto.sh"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": true
-                },
-                "problemMatcher": []
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "restart_compiler",
+            "command": "docker-compose",
+            "args": [
+                "restart",
+                "compiler",
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
             },
-            {
-                "label": "build app tests",
-                "type": "shell",
-                "command": "docker-compose",
-                "args": [
-                    "exec",
-                    "compiler",
-                    "../wrapped_make.sh",
-                    "-C",
-                    "../app/brewblox/test"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": true
-                },
-                "problemMatcher": "$gcc"
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
             },
-            {
-                "label": "build lib tests",
-                "type": "shell",
-                "command": "docker-compose",
-                "args": [
-                    "exec",
-                    "compiler",
-                    "../wrapped_make.sh",
-                    "-C",
-                    "../lib/test_catch"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": true
-                },
-                "problemMatcher": "$gcc"
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "touch_gcc",
+            "type": "shell",
+            "command": "touch",
+            "args": [
+                "device_key.der",
+                "server_key.der",
+                "eeprom.bin"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build/target/brewblox-gcc"
             },
-            {
-                "label": "build cbox tests",
-                "type": "shell",
-                "command": "docker-compose",
-                "args": [
-                    "exec",
-                    "compiler",
-                    "../wrapped_make.sh",
-                    "-C",
-                    "../controlbox"
-                ],
-                "group": "build",
-                "options": {
-                    "cwd": "${workspaceFolder}/docker"
-                },
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": true,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": true
-                },
-                "problemMatcher": "$gcc"
+            "presentation": {
+                "echo": false,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            }
+        },
+        {
+            "label": "build_and_touch_gcc",
+            "dependsOn": [
+                "build_gcc",
+                "touch_gcc"
+            ]
+        },
+        {
+            "label": "compile proto",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "bash",
+                "compile-proto.sh"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
             },
-        ]
-    }
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build app tests",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "../wrapped_make.sh",
+                "-C",
+                "../app/brewblox/test"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "build lib tests",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "../wrapped_make.sh",
+                "-C",
+                "../lib/test_catch"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "build cbox tests",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "../wrapped_make.sh",
+                "-C",
+                "../controlbox"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$gcc"
+        },
+    ]
+}
