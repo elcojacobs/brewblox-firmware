@@ -10,7 +10,7 @@ RM = rm -f
 RMDIR = rm -f -r
 MKDIR = mkdir -p
 
-TARGETDIR=build/
+TARGETDIR=build
 TARGET=brewblox_test_runner
 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -18,7 +18,7 @@ mkfile_dir := $(dir $(mkfile_path))
 remove_slash = $(patsubst %/,%,$1)
 SOURCE_PATH = $(call remove_slash,$(abspath $(mkfile_dir)/../../..))
 
-BUILD_PATH=$(TARGETDIR)test
+BUILD_PATH=$(TARGETDIR)/test
 # Define the target directories. Nest 2 levels deep since we also include
 # sources from libraries via ../core-common-lib
 
@@ -142,9 +142,9 @@ ALLDEPS += $(addprefix $(BUILD_PATH), $(CPPSRC:.cpp=.o.d))
 
 all: runner
 
-runner: $(TARGETDIR)$(TARGET)
+runner: $(TARGETDIR)/$(TARGET)
 
-$(TARGETDIR)$(TARGET) : $(BUILD_PATH) $(ALLOBJ)
+$(TARGETDIR)/$(TARGET) : $(BUILD_PATH) $(ALLOBJ)
 	@echo Building target: $@
 	$(MKDIR) $(dir $@)
 	$(LD) $(CFLAGS) $(ALLOBJ) --output $@ $(LDFLAGS)
@@ -170,7 +170,7 @@ $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.cpp
 
 # Other Targets
 clean:	
-	$(RM) $(ALLOBJ) $(ALLDEPS) $(TARGETDIR)$(TARGET)
+	$(RM) $(ALLOBJ) $(ALLDEPS) $(TARGETDIR)/$(TARGET)
 	$(RMDIR) $(TARGETDIR)
 	$(RMDIR) $(SOURCE_PATH)/app/brewblox/proto/cpp
 	$(RMDIR) $(SOURCE_PATH)/app/brewblox/proto/test

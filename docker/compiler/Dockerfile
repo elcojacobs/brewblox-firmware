@@ -54,8 +54,8 @@ RUN rm -rf /etc/timezone \
   && dpkg-reconfigure --frontend noninteractive tzdata
 
 # and install protobuf python package (used by nanopb), and pyserial (used by program-dfu)
-RUN pip install --upgrade pip
-RUN pip install protobuf pyserial
+RUN pip install --upgrade pip setuptools
+RUN pip install protobuf pyserial compiledb
 
 # download and compile boost and install as system includes (/usr/local)
 RUN mkdir -p /boost && curl -sSL http://downloads.sourceforge.net/project/boost/boost/1.65.0/boost_1_65_0.tar.gz | tar -xz -C /boost \
