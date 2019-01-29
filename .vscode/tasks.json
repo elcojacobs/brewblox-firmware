@@ -228,5 +228,28 @@
             },
             "problemMatcher": "$gcc"
         },
+        {
+            "label": "ci",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "bash",
+                "run-ci.sh",
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
     ]
 }
