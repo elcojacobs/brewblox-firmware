@@ -58,3 +58,5 @@ test_results/\.vscode/
 build/coverage/
 
 \.vscode/cquery_cached_index/
+compile_commands.json
+docker/.env

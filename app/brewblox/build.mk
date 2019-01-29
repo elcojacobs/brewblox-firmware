@@ -89,7 +89,7 @@ ifeq ($(BOOST_ROOT),)
 $(error BOOST_ROOT not set. Download boost and add BOOST_ROOT to your environment variables.)
 endif
 # cannot use -isystem. The arm compiler doesn't like it
-CPPFLAGS += -I $(BOOST_ROOT)
+CPPFLAGS += -I$(BOOST_ROOT)
 
 # the following warnings can help find opportunities for impromevent in virtual functions
 # they are disabled in the default build, because the dependencies (particle firmware, flashee) have many violations 

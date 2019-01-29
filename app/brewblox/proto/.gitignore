@@ -1,4 +1,5 @@
 cpp
+tmp_cpp
 test
 .pb.h
 .build.*

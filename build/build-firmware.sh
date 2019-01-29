@@ -4,7 +4,7 @@ MY_DIR=$(dirname $(readlink -f $0))
 function makeit()
 {
 	echo "building $*"
-    make -s all $*
+    make $MAKE_ARGS -s all $*
 		(( result = $? ))
 if [[ "$result" -eq 0 ]]; then
   echo "✓ SUCCESS"

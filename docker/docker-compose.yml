@@ -4,8 +4,12 @@ services:
     image: brewblox/firmware-compiler
     container_name: firmware-compiler
     privileged: true
+    environment:
+        - MOUNTDIR=/firmware
+        - MAKE_ARGS
     volumes:
-        - ../:/firmware
+        - ../:${MOUNTDIR}
+    working_dir: ${MOUNTDIR}/build         
     command: tail -f /dev/null
 
   simulator:
@@ -24,10 +28,13 @@ services:
   coverage-simulator:
     image: brewblox/firmware-compiler
     container_name: firmware-coverage-simulator
+    environment:
+        - MOUNTDIR=/firmware
     volumes:
-        - ../:/firmware
+        - ../:${MOUNTDIR}
         - "/etc/timezone:/etc/timezone:ro"
         - "/etc/localtime:/etc/localtime:ro"
+    working_dir: ${MOUNTDIR}/build
     ports:
         # brewblox protocol
         - "8332:8332"
