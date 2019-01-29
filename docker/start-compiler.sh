@@ -16,7 +16,7 @@ if [ -z "$ENV_MAKE_ARGS" ]; then
     echo "detected over 10GB ram, using parallel build"
     MAKE_ARGS=-j
   else
-    MAKE_ARGS=-j
+    MAKE_ARGS=
   fi
   echo "Using '$MAKE_ARGS' as MAKE_ARGS"
   echo "MAKE_ARGS=$MAKE_ARGS" >> .env

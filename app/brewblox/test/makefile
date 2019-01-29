@@ -134,11 +134,11 @@ CSRC := $(filter-out $(CEXCLUDES),$(CSRC))
 CPPSRC := $(filter-out $(CPPEXCLUDES),$(CPPSRC)) 
 
 # Collect all object and dep files
-ALLOBJ += $(addprefix $(BUILD_PATH), $(CSRC:.c=.o))
-ALLOBJ += $(addprefix $(BUILD_PATH), $(CPPSRC:.cpp=.o))
+ALLOBJ += $(addprefix $(BUILD_PATH)/, $(CSRC:.c=.o))
+ALLOBJ += $(addprefix $(BUILD_PATH)/, $(CPPSRC:.cpp=.o))
 
-ALLDEPS += $(addprefix $(BUILD_PATH), $(CSRC:.c=.o.d))
-ALLDEPS += $(addprefix $(BUILD_PATH), $(CPPSRC:.cpp=.o.d))
+ALLDEPS += $(addprefix $(BUILD_PATH)/, $(CSRC:.c=.o.d))
+ALLDEPS += $(addprefix $(BUILD_PATH)/, $(CPPSRC:.cpp=.o.d))
 
 all: runner
 
@@ -156,14 +156,14 @@ $(BUILD_PATH):
 # Tool invocations
 
 # C compiler to build .o from .c in $(BUILD_DIR)
-$(BUILD_PATH)%.o : $(SOURCE_PATH)/%.c
+$(BUILD_PATH)%.o : $(SOURCE_PATH)%.c
 	@echo Building file: $<
 	$(MKDIR) $(dir $@)
 	$(CCC) $(CCFLAGS) -c -o $@ $<
 
 # CPP compiler to build .o from .cpp in $(BUILD_DIR)
 # Note: Calls standard $(CC) - gcc will invoke g++ as appropriate
-$(BUILD_PATH)%.o : $(SOURCE_PATH)/%.cpp
+$(BUILD_PATH)%.o : $(SOURCE_PATH)%.cpp
 	@echo Building file: $<
 	$(MKDIR) $(dir $@)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
