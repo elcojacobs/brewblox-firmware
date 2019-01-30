@@ -33,14 +33,14 @@ before_deploy:
   bash build-flasher.sh;
 
 deploy:
-  # Deploy stable and version tag to Docker Hub on tagged commits
+  # Deploy "newest-tag" and version tag to Docker Hub on tagged commits
   - provider: script
     script:
-      bash push-local.sh ${SIM_REPO} stable;
+      bash push-local.sh ${SIM_REPO} newest-tag;
       bash push-local.sh ${SIM_REPO} ${TAG_VERSION};
-      bash push-local.sh ${FLASH_REPO} stable;
+      bash push-local.sh ${FLASH_REPO} newest-tag;
       bash push-local.sh ${FLASH_REPO} ${TAG_VERSION};
-      bash push-rpi-local.sh ${FLASH_REPO} rpi-stable;
+      bash push-rpi-local.sh ${FLASH_REPO} rpi-newest-tag;
       bash push-rpi-local.sh ${FLASH_REPO} rpi-${TAG_VERSION};
     skip_cleanup: true
     on:
@@ -57,4 +57,3 @@ deploy:
       tags: false
       repo: ${GITHUB_REPO}
       all_branches: true
-      condition: ${TRAVIS_BRANCH} != master
