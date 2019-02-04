@@ -11,7 +11,6 @@ IirFilter::IirFilter(const uint8_t& idx, const int32_t& threshold)
     , yv{0}
     , paramsIdx(idx)
     , fastStepThreshold(threshold)
-    , fastStepsRemaining(FILTER_ORDER + 1)
 {
 }
 

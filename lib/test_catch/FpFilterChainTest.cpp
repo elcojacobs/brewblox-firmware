@@ -195,4 +195,29 @@ SCENARIO("Fixed point filterchain using temp_t")
             CHECK(findStepResponseDelay(chains[6], 0.9) == 2496);
         }
     }
+
+    WHEN("A different filterchain spec is chosen when the filter is in steady state")
+    {
+        auto chain = FpFilterChain<temp_t>(0);
+
+        chain.setParams(3, temp_t(10)); // 5min
+        uint32_t count = 0;
+        while (count++ < 210) {
+            chain.add(temp_t(2));
+        }
+        REQUIRE(chain.read() == Approx(temp_t(1)).margin(1));
+
+        chain.setParams(5, temp_t(10)); // 20min
+        REQUIRE(chain.read() == Approx(temp_t(1)).margin(1));
+
+        THEN("The filter output stays between expected boundaries")
+        {
+            uint32_t count = 0;
+            while (count++ < 100) {
+                chain.add(temp_t(2));
+                CHECK(chain.read() <= temp_t(2));
+                CHECK(chain.read() >= temp_t(0.99));
+            }
+        }
+    }
 }

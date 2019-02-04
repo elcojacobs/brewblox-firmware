@@ -1,7 +1,7 @@
 #pragma once
 
-#include <limits>
 #include <cstdint>
+#include <limits>
 
 #define FILTER_ORDER 6
 
@@ -20,7 +20,6 @@ private:
     int64_t yv[FILTER_ORDER + 1];
     uint8_t paramsIdx;
     int32_t fastStepThreshold;
-    uint8_t fastStepsRemaining;
 
     FilterParams const& params() const;
     int64_t shift(const int64_t val) const;
