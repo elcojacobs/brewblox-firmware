@@ -169,7 +169,7 @@ public:
         return val;
     }
 
-    virtual uint8_t id() const
+    virtual uint8_t id() const override final
     {
         return ID;
     }

@@ -1031,7 +1031,7 @@ SCENARIO("A controlbox Box")
         THEN("A list of IDs of newly created objects is returned")
         {
             expected << addCrc("00000C") << "|"
-                     << addCrc("00")          // status
+                     << addCrc("00")              // status
                      << "," << addCrc("6400E803") // new object id 100
                      << "," << addCrc("6500E803") // new object id 101
                      << "," << addCrc("6600E803") // new object id 102

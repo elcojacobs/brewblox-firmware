@@ -584,8 +584,6 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         setpoint->setting(20);
         sensor->value(21);
 
-        temp_t mockVal;
-
         auto start = now;
         while (now <= start + 1000'000) {
             if (now >= nextPwmUpdate) {
@@ -625,8 +623,6 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         setpoint->setting(20);
         sensor->value(25);
-
-        temp_t mockVal;
 
         auto start = now;
         while (now <= start + 1000'000) {

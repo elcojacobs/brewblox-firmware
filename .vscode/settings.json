@@ -93,7 +93,6 @@
   "cquery.highlighting.enabled.staticMemberVariables": true,
   "cquery.highlighting.enabled.globalVariables": true,
   "cquery.cacheDirectory": "${workspaceFolder}/.vscode/cquery_cached_index/",
-  "cquery.formatting.enabled": true,
   "C_Cpp.autocomplete": "Disabled",
   "C_Cpp.formatting": "Disabled",
   "C_Cpp.errorSquiggles": "Disabled",
@@ -101,5 +100,8 @@
   "C_Cpp.default.cppStandard": "c++14",
   "C_Cpp.intelliSenseEngineFallback": "Disabled",
   "C_Cpp.default.intelliSenseMode": "clang-x64",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "cquery.formatting.enabled": false,
+  "cquery.diagnostics.onType": false,
+  "cquery.misc.discoverSystemIncludes": false,
 }

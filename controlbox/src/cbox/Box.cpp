@@ -723,7 +723,7 @@ Box::reloadStoredObject(const obj_id_t& id)
     }
 
     bool handlerCalled = false;
-    auto streamHandler = [this, &cobj, &handlerCalled](RegionDataIn& objInStorage) -> CboxError {
+    auto streamHandler = [&cobj, &handlerCalled](RegionDataIn& objInStorage) -> CboxError {
         handlerCalled = true;
         RegionDataIn objWithoutCrc(objInStorage, objInStorage.available() - 1);
 
