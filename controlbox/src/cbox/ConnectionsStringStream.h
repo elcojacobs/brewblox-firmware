@@ -87,7 +87,7 @@ public:
         }
         std::unique_ptr<Connection> retval = std::move(connectionQueue.front());
         connectionQueue.pop();
-        return std::move(retval);
+        return retval;
     }
 };
 } // end namespace cbox

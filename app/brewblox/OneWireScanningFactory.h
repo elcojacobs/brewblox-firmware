@@ -64,7 +64,6 @@ public:
 
     virtual std::shared_ptr<cbox::Object> scan() override final
     {
-        auto newAddr = OneWireAddress();
         while (true) {
             if (auto newAddr = next()) {
                 bool found = false;

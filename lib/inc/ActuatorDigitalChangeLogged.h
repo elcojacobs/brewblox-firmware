@@ -66,7 +66,7 @@ public:
         state(val, lastUpdateTime);
     };
 
-    State state() const
+    State state() const override
     {
         return actuator.state();
     };
