@@ -82,10 +82,9 @@
         },
         {
             "label": "restart_compiler",
-            "command": "docker-compose",
+            "command": "bash",
             "args": [
-                "restart",
-                "compiler",
+                "start-compiler.sh",
             ],
             "group": "build",
             "options": {
