@@ -29,6 +29,7 @@ public:
     {
         blox_Mutex message = blox_Mutex_init_zero;
         message.differentActuatorWait = m_mutex.differentActuatorWait();
+        message.waitRemaining = m_mutex.waitRemaining();
 
         return streamProtoTo(out, &message, blox_Mutex_fields, blox_Mutex_size);
     }
@@ -42,7 +43,9 @@ public:
     virtual cbox::update_t
     update(const cbox::update_t& now) override final
     {
-        return update_never(now);
+        // ensure mutex always has recent system time
+        m_mutex.update(now);
+        return now + 1;
     }
 
     virtual void*

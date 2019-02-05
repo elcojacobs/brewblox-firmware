@@ -163,6 +163,26 @@ SCENARIO("Mutex contraint", "[constraints]")
             }
             CHECK(now == 1002);
         }
+
+        THEN("Toggling actuator 1 again resets the wait time")
+        {
+            constrained2.state(State::Active, ++now);
+            CHECK(constrained2.state() == State::Inactive);
+
+            while (constrained2.state() != State::Active && now < 500) {
+                constrained2.state(State::Active, ++now);
+            }
+
+            constrained1.state(State::Active, ++now);
+            constrained1.state(State::Inactive, ++now);
+
+            while (constrained2.state() != State::Active && now < 2000) {
+                constrained2.state(State::Active, ++now);
+                constrained2.state(State::Active, ++now);
+            }
+
+            CHECK(now == 1502);
+        }
     }
 
     WHEN("The state is changed without providing the current time, it is applied using the last update time")
