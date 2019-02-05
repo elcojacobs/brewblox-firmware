@@ -141,24 +141,29 @@ SCENARIO("Mutex contraint", "[constraints]")
     WHEN("A minimum switch time of 1000 is set on the mutex and actuator 1 was active before")
     {
         mut->differentActuatorWait(1000);
+        mut->update(now);
         constrained1.state(State::Active, ++now);
         CHECK(constrained1.state() == State::Active);
 
+        mut->update(now);
         constrained1.state(State::Inactive, ++now);
         CHECK(constrained1.state() == State::Inactive);
 
         THEN("Actuator 1 can go active again immediately")
         {
+            mut->update(now);
             constrained1.state(State::Active, ++now);
             CHECK(constrained1.state() == State::Active);
         }
 
         THEN("Actuator 2 has to wait until no actuator has been active for 1000ms")
         {
+            mut->update(now);
             constrained2.state(State::Active, ++now);
             CHECK(constrained2.state() == State::Inactive);
 
             while (constrained2.state() != State::Active && now < 2000) {
+                mut->update(now);
                 constrained2.state(State::Active, ++now);
             }
             CHECK(now == 1002);
@@ -166,17 +171,21 @@ SCENARIO("Mutex contraint", "[constraints]")
 
         THEN("Toggling actuator 1 again resets the wait time")
         {
+            mut->update(now);
             constrained2.state(State::Active, ++now);
             CHECK(constrained2.state() == State::Inactive);
 
             while (constrained2.state() != State::Active && now < 500) {
+                mut->update(now);
                 constrained2.state(State::Active, ++now);
             }
 
+            mut->update(now);
             constrained1.state(State::Active, ++now);
             constrained1.state(State::Inactive, ++now);
 
             while (constrained2.state() != State::Active && now < 2000) {
+                mut->update(now);
                 constrained2.state(State::Active, ++now);
                 constrained2.state(State::Active, ++now);
             }
