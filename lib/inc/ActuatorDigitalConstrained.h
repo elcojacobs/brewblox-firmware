@@ -32,26 +32,35 @@ class TimedMutex {
 private:
     std::mutex m_mutex;
     duration_millis_t m_differentActuatorWait = 0;
+    duration_millis_t m_waitRemaining = 0;
     ticks_millis_t lastActive = 0;
+
+    ticks_millis_t lastUpdate = 0;
     const ActuatorDigitalChangeLogged* lastActuator = nullptr;
 
 public:
     TimedMutex() = default;
     ~TimedMutex() = default;
 
-    bool try_lock(const duration_millis_t& now, const ActuatorDigitalChangeLogged& act)
+    bool try_lock(const ActuatorDigitalChangeLogged& act)
     {
-        if (lastActuator == nullptr || lastActuator == &act || (now - lastActive) >= m_differentActuatorWait) {
-            return m_mutex.try_lock();
+        auto allowed = m_mutex.try_lock();
+        if (allowed && lastActuator != &act && lastActuator != nullptr) {
+            // also check minimum wait time if last actuator that was active was not requester
+            if (m_waitRemaining) {
+                m_mutex.unlock();
+                allowed = false;
+            }
         }
-        return false;
+        return allowed;
     }
 
-    void unlock(const duration_millis_t& now, const ActuatorDigitalChangeLogged& act)
+    void unlock(const ActuatorDigitalChangeLogged& act)
     {
         if (act.state() == ActuatorDigital::State::Active) {
-            lastActive = now;
+            lastActive = lastUpdate;
             lastActuator = &act;
+            update(lastUpdate);
         }
         m_mutex.unlock();
     }
@@ -61,9 +70,25 @@ public:
         return m_differentActuatorWait;
     }
 
+    duration_millis_t waitRemaining() const
+    {
+        return m_waitRemaining;
+    }
+
     void differentActuatorWait(const duration_millis_t& v)
     {
         m_differentActuatorWait = v;
+    }
+
+    void update(const ticks_millis_t& now)
+    {
+        lastUpdate = now;
+        auto elapsed = now - lastActive;
+        if (lastActuator == nullptr || elapsed > m_differentActuatorWait) {
+            m_waitRemaining = 0;
+        } else {
+            m_waitRemaining = m_differentActuatorWait - elapsed;
+        }
     }
 };
 
@@ -174,7 +199,7 @@ public:
             // always allow switching OFF, but release mutex
             if (act.state() == State::Active || hasLock) {
                 if (auto mutPtr = m_mutex()) {
-                    mutPtr->unlock(now, act);
+                    mutPtr->unlock(act);
                     hasLock = false;
                 }
             }
@@ -189,7 +214,7 @@ public:
             if (auto mutPtr = m_mutex()) {
                 if (act.state() != State::Active && newState == State::Active) {
                     // if turning on, try to acquire mutex
-                    hasLock = mutPtr->try_lock(now, act);
+                    hasLock = mutPtr->try_lock(act);
                     return hasLock;
                 }
             }
@@ -270,6 +295,7 @@ public:
 
     virtual void state(const State& val, const ticks_millis_t& now) override final
     {
+        lastUpdateTime = now; // always update fallback time for state setter without time
         m_unconstrained = val;
         m_limiting = checkConstraints(val, now);
         if (m_limiting == 0) {

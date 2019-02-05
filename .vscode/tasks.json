@@ -251,5 +251,49 @@
             },
             "problemMatcher": "$gcc"
         },
+        {
+            "label": "build lib tests local",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "../lib/test_catch"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "build app tests local",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-C",
+                "../app/brewblox/test"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$gcc"
+        },
     ]
 }
