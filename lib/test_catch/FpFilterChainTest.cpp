@@ -196,16 +196,17 @@ SCENARIO("Fixed point filterchain using temp_t")
         }
     }
 
-    WHEN("A different filterchain spec is chosen when the filter is in steady state")
+    WHEN("A different filterchain spec is chosen that is longer")
     {
         auto chain = FpFilterChain<temp_t>(0);
 
         chain.setParams(3, temp_t(10)); // 5min
+        // generate noisy input with average value 2
         uint32_t count = 0;
         while (count++ < 210) {
-            chain.add(temp_t(2));
+            chain.add(temp_t(count % 2) + temp_t(count % 3) / 2 + temp_t(count % 5) / 4 + temp_t(count % 7) / 6);
         }
-        REQUIRE(chain.read() == Approx(temp_t(1)).margin(1));
+        REQUIRE(chain.read() == Approx(temp_t(1)).margin(0.01));
 
         chain.setParams(5, temp_t(10)); // 20min
         REQUIRE(chain.read() == Approx(temp_t(1)).margin(1));
@@ -213,9 +214,9 @@ SCENARIO("Fixed point filterchain using temp_t")
         THEN("The filter output stays between expected boundaries")
         {
             uint32_t count = 0;
-            while (count++ < 100) {
+            while (count++ < 2000) {
                 chain.add(temp_t(2));
-                CHECK(chain.read() <= temp_t(2));
+                CHECK(chain.read() <= temp_t(2.01));
                 CHECK(chain.read() >= temp_t(0.99));
             }
         }
