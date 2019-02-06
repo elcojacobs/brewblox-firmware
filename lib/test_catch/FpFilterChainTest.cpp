@@ -211,26 +211,24 @@ SCENARIO("Fixed point filterchain using temp_t")
 
     WHEN("A different filterchain spec is chosen that is longer")
     {
-        auto chain = FpFilterChain<temp_t>(0);
+        auto chain = FpFilterChain<temp_t>(3); // 5 min
 
-        chain.setParams(3, temp_t(10)); // 5min
-        // generate noisy input with average value 2
+        // generate noisy input with average value 10
         uint32_t count = 0;
-        while (count++ < 210) {
-            chain.add(temp_t(count % 2) + temp_t(count % 3) / 2 + temp_t(count % 5) / 4 + temp_t(count % 7) / 6);
+        while (count++ < 600) {
+            chain.add(temp_t(8) + temp_t(count % 2) + temp_t(count % 3) / 2 + temp_t(count % 5) / 4 + temp_t(count % 7) / 6);
         }
-        REQUIRE(chain.read() == Approx(temp_t(1)).margin(0.01));
+        REQUIRE(chain.read() == Approx(temp_t(10)).epsilon(0.01));
 
-        chain.setParams(5, temp_t(10)); // 20min
-        REQUIRE(chain.read() == Approx(temp_t(1)).margin(1));
+        chain.setParams(5, temp_t(100)); // 20min
+        REQUIRE(chain.read() == Approx(temp_t(10)).epsilon(0.01));
 
         THEN("The filter output stays between expected boundaries")
         {
             uint32_t count = 0;
             while (count++ < 2000) {
-                chain.add(temp_t(2));
-                CHECK(chain.read() <= temp_t(2.01));
-                CHECK(chain.read() >= temp_t(0.99));
+                chain.add(temp_t(8) + temp_t(count % 2) + temp_t(count % 3) / 2 + temp_t(count % 5) / 4 + temp_t(count % 7) / 6);
+                CHECK(chain.read() == Approx(temp_t(10)).epsilon(0.01));
             }
         }
     }
