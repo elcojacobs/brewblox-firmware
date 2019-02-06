@@ -9,6 +9,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "APP=brewblox",
                 "PLATFORM=p1"
@@ -55,6 +56,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "APP=brewblox",
                 "PLATFORM=p1",
@@ -181,6 +183,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "-C",
                 "../app/brewblox/test"
@@ -206,6 +209,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "-C",
                 "../lib/test_catch"
@@ -231,6 +235,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "-C",
                 "../controlbox"
