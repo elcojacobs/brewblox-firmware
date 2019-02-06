@@ -29,7 +29,7 @@ WiFiSettingsBlock::streamTo(cbox::DataOut& out) const
     blox_WiFiSettings message = blox_WiFiSettings_init_zero;
 
     printWiFiIp(message.ip);
-
+    printWifiSSID(message.ssid, sizeof(message.ssid));
     message.signal = wifiSignal();
 
     return streamProtoTo(out, &message, blox_WiFiSettings_fields, blox_WiFiSettings_size);

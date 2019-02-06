@@ -74,7 +74,7 @@ FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uin
     auto itP = params.begin();
     auto itS = stages.begin();
     auto itI = intervals.begin();
-    auto newFilterInitVal = int32_t(0);
+    auto newFilterInitVal = read();
     // reconfigure already existing filters
     for (; itS != stages.end() && itP != params.end(); ++itP, ++itS) {
         if (*itP != itS->filter.getParamsIdx()) {
@@ -88,7 +88,6 @@ FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uin
         } else {
             itS->interval = IirFilter::FilterDefinition(*itP).downsample;
         }
-        newFilterInitVal = itS->filter.read();
     }
     // append new filters
     for (; itP != params.end(); ++itP) {
@@ -99,11 +98,10 @@ FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uin
         } else {
             interval = IirFilter::FilterDefinition(*itP).downsample;
         }
-        auto newFilter = IirFilter(*itP, stepThreshold);
-        newFilter.reset(newFilterInitVal);
-        stages.emplace_back(Stage{std::move(newFilter), std::move(interval)});
+        stages.emplace_back(Stage{IirFilter(*itP, stepThreshold), std::move(interval)});
     }
     stages.shrink_to_fit(); // remove filters if params is shorter than before
+    reset(newFilterInitVal);
 }
 
 void
@@ -196,7 +194,11 @@ FilterChain::readLastInput() const
 }
 
 IirFilter::DerivativeResult
-FilterChain::readDerivative(uint8_t filterIdx) const
+FilterChain::readDerivative() const
 {
-    return (filterIdx < length()) ? stages[filterIdx].filter.readDerivative() : IirFilter::DerivativeResult{0, 0};
+    auto retv = stages[stages.size() - 1].filter.readDerivative();
+    // The last filter is updated less frequenctly, so the derivative needs to be scaled back to the input sample interval
+    auto inputSamplesPerOutputChange = minSampleInterval();
+    retv.result = retv.result / inputSamplesPerOutputChange;
+    return retv;
 }

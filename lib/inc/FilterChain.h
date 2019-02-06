@@ -19,10 +19,11 @@
 
 #pragma once
 #include "IirFilter.h"
+#include <cstdint>
 #include <limits>
 #include <memory>
-#include <cstdint>
 #include <vector>
+
 
 class FilterChain {
 private:
@@ -64,6 +65,6 @@ public:
     int64_t readWithNFractionBits(uint8_t filterNr, uint8_t bits) const;
     int64_t readWithNFractionBits(uint8_t bits) const;
     int32_t readLastInput() const;
-    IirFilter::DerivativeResult readDerivative(uint8_t filterIdx = 0) const;
+    IirFilter::DerivativeResult readDerivative() const;
     void reset(const int32_t& value);
 };

@@ -9,6 +9,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "APP=brewblox",
                 "PLATFORM=p1"
@@ -28,11 +29,34 @@
             "problemMatcher": "$gcc"
         },
         {
+            "label": "build_gcc_local",
+            "command": "bash",
+            "args": [
+                "../wrapped_make.sh",
+                "APP=brewblox",
+                "PLATFORM=gcc"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
             "label": "flash_p1",
             "command": "docker-compose",
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "APP=brewblox",
                 "PLATFORM=p1",
@@ -82,10 +106,9 @@
         },
         {
             "label": "restart_compiler",
-            "command": "docker-compose",
+            "command": "bash",
             "args": [
-                "restart",
-                "compiler",
+                "start-compiler.sh",
             ],
             "group": "build",
             "options": {
@@ -160,6 +183,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "-C",
                 "../app/brewblox/test"
@@ -185,6 +209,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "-C",
                 "../lib/test_catch"
@@ -210,6 +235,7 @@
             "args": [
                 "exec",
                 "compiler",
+                "bash",
                 "../wrapped_make.sh",
                 "-C",
                 "../controlbox"

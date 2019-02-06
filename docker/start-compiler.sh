@@ -1,4 +1,6 @@
 #! /usr/bin/env bash
+
+docker-compose down
 touch .env
 ENV_MOUNTDIR="$(grep MOUNTDIR .env)"
 

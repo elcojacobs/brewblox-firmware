@@ -10,6 +10,14 @@ else
 fi
 }
 
+pushd "$MY_DIR/../lib/test_catch" > /dev/null
+echo "Building lib unit tests"
+make $MAKE_ARGS -s runner;
+(( result = $? ))
+status $result
+(( exit_status = exit_status || result ))
+popd > /dev/null
+
 pushd "$MY_DIR/../app/brewblox/test" > /dev/null
 echo "Building BrewBlox app unit tests"
 make $MAKE_ARGS -s runner;

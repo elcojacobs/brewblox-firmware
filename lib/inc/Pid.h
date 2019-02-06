@@ -150,8 +150,12 @@ public:
 
     void configureFilter(const uint8_t& choice, const in_t& threshold)
     {
-        m_filterChoice = choice;
-        m_filter.setParams(choice, threshold);
+        if (m_filterChoice != choice) {
+            m_filterChoice = choice;
+            m_filter.setParams(choice, threshold);
+        } else {
+            m_filter.setStepThreshold(threshold);
+        }
     }
 
     void enabled(bool state)

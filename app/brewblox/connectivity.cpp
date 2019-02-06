@@ -55,3 +55,9 @@ setWifiCredentials(const char* ssid, const char* password, uint8_t security, uin
 {
     return WiFi.setCredentials(ssid, password, security, cipher);
 };
+
+void
+printWifiSSID(char* dest, const uint8_t& maxLen)
+{
+    strncpy(dest, WiFi.SSID(), maxLen);
+}
