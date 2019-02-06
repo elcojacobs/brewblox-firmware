@@ -102,28 +102,41 @@ SCENARIO("Fixed point filterchain using temp_t")
                 FpFilterChain<temp_t>({2, 2, 2, 2, 0}, {4, 4, 4, 3, 1}),   // 2729
             };
 
-        auto findGainAtPeriod = [&sine](FpFilterChain<temp_t>& c, const uint32_t& period) {
+        auto findGainAtPeriod = [&sine](FpFilterChain<temp_t>& c, const uint32_t& period, bool checkMaxDerivative = true) {
+            using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
             const temp_t amplIn = 10;
             temp_t max = 0;
+            derivative_t maxDerivative = 0;
             c.reset(0);
             for (uint32_t t = 0; t < period * 10; ++t) {
                 auto wave = sine(t, period, amplIn);
                 c.add(wave);
-                auto filterOutput = c.read();
                 if (t > 4 * period) { // ignore start
+                    auto filterOutput = c.read();
+                    auto derivative = c.readDerivative<derivative_t>();
                     max = std::max(cnl::abs(filterOutput), max);
+                    maxDerivative = std::max(cnl::abs(derivative), maxDerivative);
                 }
             }
-            return double(max) / amplIn;
+            auto gain = double(max) / amplIn;
+            if (checkMaxDerivative) {
+                // derivative should be filtered as much as the amplitude
+                auto maxDerivativeIn = double(amplIn) * 2 * M_PI / period;
+                auto maxDerivativeDouble = double(maxDerivative);
+                auto derivativeGain = maxDerivativeDouble / maxDerivativeIn;
+                CHECK(derivativeGain <= gain * 1.1);
+                CHECK(derivativeGain >= gain * 0.9);
+            }
+            return gain;
         };
 
         auto findHalfAmplitudePeriod = [&findGainAtPeriod](FpFilterChain<temp_t>& c) {
             uint32_t period = 10;
             while (true) {
-                auto gain = findGainAtPeriod(c, period);
+                auto gain = findGainAtPeriod(c, period, false);
                 if (gain >= temp_t(0.5)) {
                     // std::cout << "\n"
-                    //          << "Period of square wave that is decreased by 0.5: "
+                    //          << "Period of sine wave that is decreased by 0.5: "
                     //          << period << "\n";
                     return period;
                 }

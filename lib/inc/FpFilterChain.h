@@ -124,9 +124,9 @@ public:
 
     // get the derivative from the chain with max precision and convert to the requested FP precision
     template <typename U>
-    U readDerivative(uint8_t filterIdx = 0) const
+    U readDerivative() const
     {
-        auto derivative = chain.readDerivative(filterIdx);
+        auto derivative = chain.readDerivative();
         uint8_t destFractionBits = -U::exponent;
         uint8_t filterFactionBits = -T::exponent + derivative.fractionBits;
         int64_t result;

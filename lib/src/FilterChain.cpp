@@ -196,7 +196,11 @@ FilterChain::readLastInput() const
 }
 
 IirFilter::DerivativeResult
-FilterChain::readDerivative(uint8_t filterIdx) const
+FilterChain::readDerivative() const
 {
-    return (filterIdx < length()) ? stages[filterIdx].filter.readDerivative() : IirFilter::DerivativeResult{0, 0};
+    auto retv = stages[stages.size() - 1].filter.readDerivative();
+    // The last filter is updated less frequenctly, so the derivative needs to be scaled back to the input sample interval
+    auto inputSamplesPerOutputChange = minSampleInterval();
+    retv.result = retv.result / inputSamplesPerOutputChange;
+    return retv;
 }
