@@ -18,12 +18,8 @@ steps:
   displayName: export build variables
 
 - bash: |
-    export COMPOSE_INTERACTIVE_NO_CLI=1
-  displayName: Implement fix for docker-compose exec error "input device is not a TTY"
-
-- bash: |
     bash start-compiler.sh
-    docker-compose exec compiler bash run-ci.sh
+    docker-compose exec -T compiler bash run-ci.sh
     bash build-simulator.sh
     bash build-flasher.sh
   workingDirectory: docker

@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -e
 
-docker-compose exec compiler \
+docker-compose exec -T compiler \
     bash -c '
         set -e        
         rm -rf ../docker/simulator/target
