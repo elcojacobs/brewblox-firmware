@@ -27,13 +27,13 @@ TempSensorWidget::TempSensorWidget(WidgetWrapper& myWrapper, const cbox::obj_id_
 }
 
 void
-TempSensorWidget::update()
+TempSensorWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
         setConnected();
         char icons[2] = {0};
         if (ptr->valid()) {
-            setValue(temp_to_string(ptr->value(), 1).c_str());
+            setValue(temp_to_string(ptr->value(), 1, settings.tempUnit).c_str());
             icons[0] = 0x29;
         } else {
             setValue(nullptr);

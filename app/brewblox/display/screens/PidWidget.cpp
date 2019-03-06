@@ -131,7 +131,7 @@ PidWidget::drawPidRects(const Pid& pid)
 }
 
 void
-PidWidget::update()
+PidWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
         auto pid = ptr->get();
@@ -140,24 +140,24 @@ PidWidget::update()
         setConnected();
         auto input = inputLookup.const_lock();
         if (input && input->valueValid()) {
-            setAndEnable(&inputValue, temp_to_string(input->value(), 1).c_str());
+            setAndEnable(&inputValue, temp_to_string(input->value(), 1, settings.tempUnit).c_str());
         } else {
             setAndEnable(&inputValue, nullptr);
         }
         if (input && input->settingValid()) {
-            setAndEnable(&inputTarget, temp_to_string(input->setting(), 1).c_str());
+            setAndEnable(&inputTarget, temp_to_string(input->setting(), 1, settings.tempUnit).c_str());
         } else {
             setAndEnable(&inputTarget, nullptr);
         }
 
         auto output = outputLookup.const_lock();
         if (output && output->valueValid()) {
-            setAndEnable(&outputValue, temp_to_string(output->value(), 1).c_str());
+            setAndEnable(&outputValue, to_string_dec(output->value(), 1).c_str());
         } else {
             setAndEnable(&outputValue, nullptr);
         }
         if (output && output->settingValid()) {
-            setAndEnable(&outputTarget, temp_to_string(output->setting(), 1).c_str());
+            setAndEnable(&outputTarget, to_string_dec(output->setting(), 1).c_str());
         } else {
             setAndEnable(&outputTarget, nullptr);
         }

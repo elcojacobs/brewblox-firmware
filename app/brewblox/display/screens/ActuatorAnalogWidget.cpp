@@ -29,7 +29,7 @@ ActuatorAnalogWidget::ActuatorAnalogWidget(WidgetWrapper& myWrapper, const cbox:
 }
 
 void
-ActuatorAnalogWidget::update()
+ActuatorAnalogWidget::update(const WidgetSettings& settings)
 {
     if (auto pAct = lookup.const_lock()) {
         setConnected();
