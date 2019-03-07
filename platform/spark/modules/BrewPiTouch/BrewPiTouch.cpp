@@ -43,7 +43,7 @@ BrewPiTouch::~BrewPiTouch()
 }
 
 void
-BrewPiTouch::init(uint8_t configuration)
+BrewPiTouch::init()
 {
     // default is:
     // 12bit (mode=0)
@@ -80,54 +80,63 @@ BrewPiTouch::set12bit()
 }
 
 bool
-BrewPiTouch::is8bit()
+BrewPiTouch::is8bit() const
 {
     return (config & MODE) ? 1 : 0;
 }
 
 bool
-BrewPiTouch::is12bit()
+BrewPiTouch::is12bit() const
 {
     return (config & MODE) ? 0 : 1;
 }
 
 uint16_t
-BrewPiTouch::readChannel(uint8_t channel)
+BrewPiTouch::readChannel(uint8_t channel, bool singleEnded) const
 {
-    uint16_t data;
-    _spi.begin();                               // will drive CS pin low, needed for conversion timing
-    _spi.transfer((config & CHMASK) | channel); // select channel x/y
-    delayMicroseconds(1);                       // make sure conversion is complete, without checking busy pin
-    data = _spi.transfer(0);
-    if (is12bit()) {
-        data = data << 8;
-        data += _spi.transfer(0);
-        data = data >> 4;
-    }
+    _spi.begin();                                                                             // will drive CS pin low, needed for conversion timing
+    _spi.transfer((config & CHMASK) | channel | singleEnded ? controlBits::SER : uint8_t(0)); // select channel x/y and set SER/DFR
+    delayMicroseconds(2);                                                                     // make sure conversion is complete, without checking busy pin
+    uint16_t data = _spi.transfer(0);
+    data = data << 8;
+    data += _spi.transfer(0);
+    data = is12bit() ? data >> 4 : data >> 8;
     _spi.end(); // will drive CS pin high again
     return data;
 }
 
+uint16_t
+BrewPiTouch::read5V() const
+{
+    return readChannel(CHBAT, true);
+}
+
+uint16_t
+BrewPiTouch::read12V() const
+{
+    return readChannel(CHAUX, true);
+}
+
 bool
-BrewPiTouch::isTouched()
+BrewPiTouch::isTouched() const
 {
     return (digitalRead(pinIRQ) == HIGH ? 0 : 1);
 }
 
 int16_t
-BrewPiTouch::getXRaw()
+BrewPiTouch::getXRaw() const
 {
     return filterX.readInput();
 }
 
 int16_t
-BrewPiTouch::getYRaw()
+BrewPiTouch::getYRaw() const
 {
     return filterY.readInput();
 }
 
 int16_t
-BrewPiTouch::getX()
+BrewPiTouch::getX() const
 {
     int32_t val = getXRaw();      // create room for multiplication
     val -= xOffset;               // remove offset
@@ -136,7 +145,7 @@ BrewPiTouch::getX()
 }
 
 int16_t
-BrewPiTouch::getY()
+BrewPiTouch::getY() const
 {
     int32_t val = getYRaw();        // create room for multiplication
     val -= yOffset;                 // remove offset
@@ -165,8 +174,8 @@ BrewPiTouch::update(uint16_t numSamples)
             valid = false;
             break;
         }
-        samplesX.push_back(readChannel(CHX));
-        samplesY.push_back(readChannel(CHY));
+        samplesX.push_back(readChannel(CHX, false));
+        samplesY.push_back(readChannel(CHY, false));
     }
     if (valid) {
         // get median
@@ -190,7 +199,7 @@ BrewPiTouch::setStabilityThreshold(int16_t threshold)
  * a low pass filtered value of past samples is under a certain threshold
  */
 bool
-BrewPiTouch::isStable()
+BrewPiTouch::isStable() const
 {
     if (abs(filterX.readInput() - filterX.readOutput()) > stabilityThreshold) {
         return false;
@@ -200,75 +209,3 @@ BrewPiTouch::isStable()
     }
     return true;
 }
-
-/*
-void BrewPiTouch::calibrate(Adafruit_ILI9341 * tft) {
-    int32_t xTouch[3];
-    int32_t yTouch[3];
-
-    tftWidth = tft->width();
-    tftHeight = tft->height();
-
-    int32_t xDisplay[3] = {CALIBRATE_FROM_EDGE, CALIBRATE_FROM_EDGE, tftWidth - CALIBRATE_FROM_EDGE};
-    int32_t yDisplay[3] = {CALIBRATE_FROM_EDGE, tftHeight - CALIBRATE_FROM_EDGE, tftHeight / 2};
-
-    volatile int16_t samples;
-
-    const int16_t requiredSamples = 1024;
-    tft->fillScreen(ILI9341_BLACK);
-    for (uint8_t i = 0; i < 3; i++) {
-        tft->drawCrossHair(xDisplay[i], yDisplay[i], 10, ILI9341_GREEN);
-        while (!isTouched()); // wait for touch
-        do {
-            samples = 0;
-            xTouch[i] = 0;
-            yTouch[i] = 0;
-            tft->drawFastHLine(0, 0, tftWidth, ILI9341_RED);
-            while (isTouched()) {
-                update();
-                if (!isStable()) {
-                    // update is not valid, reset
-                    break;
-                }
-                int32_t xSample = getXRaw();
-                int32_t ySample = getYRaw();
-
-                xTouch[i] += xSample;
-                yTouch[i] += ySample;
-                samples++;
-
-                int32_t xAverage = xTouch[i] / samples;
-                int32_t yAverage = yTouch[i] / samples;
-
-                int16_t xCalibrated = getX();
-                int16_t yCalibrated = getY();
-                tft->fillCircle(xCalibrated, yCalibrated, 2, ILI9341_WHITE);
-
-                // print progress line
-                uint16_t progress = samples * tftWidth / requiredSamples;
-                tft->drawFastHLine(0, 0, progress, ILI9341_BLUE);
-
-                // stop when required number of samples is reached
-                if (samples >= requiredSamples) {
-                    tft->drawFastHLine(0, 0, tftWidth, ILI9341_GREEN);
-                    tft->fillCircle(xDisplay[i], yDisplay[i], 8, ILI9341_BLUE);
-                    while (isTouched()); // wait until released
-                    break;
-                }
-
-                if (abs(xSample - xAverage) > 50 || abs(ySample - yAverage) > 50) {
-                    // if new sample deviates too much from average, reset
-                    break;
-                }
-            }
-        } while (samples < requiredSamples || isTouched());
-        xTouch[i] = xTouch[i] / samples;
-        yTouch[i] = yTouch[i] / samples;
-    }
-
-    width = tftWidth * (xTouch[2] - xTouch[0]) / (xDisplay[2] - xDisplay[0]);
-    height = tftHeight * (yTouch[1] - yTouch[0]) / (yDisplay[1] - yDisplay[0]);
-    xOffset = xTouch[0] - xDisplay[0] * width / tftWidth;
-    yOffset = yTouch[0] - yDisplay[0] * height / tftHeight;
-}
- */

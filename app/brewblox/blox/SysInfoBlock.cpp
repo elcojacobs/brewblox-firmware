@@ -27,6 +27,11 @@
 #error GIT_VERSION not set
 #endif
 
+#if PLATFORM_ID != 3
+#include "BrewPiTouch.h"
+extern BrewPiTouch touch;
+#endif
+
 cbox::CboxError
 SysInfoBlock::streamTo(cbox::DataOut& out) const
 {
@@ -51,7 +56,10 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
         break;
     }
     message.hardware = hw;
-
+#if PLATFORM_ID != 3
+    message.voltage5 = touch.read5V();
+    message.voltage12 = touch.read12V();
+#endif
     return streamProtoTo(out, &message, blox_SysInfo_fields, blox_SysInfo_size);
 }
 
