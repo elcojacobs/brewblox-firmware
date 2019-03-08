@@ -18,7 +18,12 @@
  */
 
 #pragma once
+#include "Temperature.h"
 #include "WidgetWrapper.h"
+
+struct WidgetSettings {
+    TempUnit tempUnit;
+};
 
 class WidgetBase {
 protected:
@@ -57,5 +62,5 @@ public:
         D4D_EnableObject(obj, false);
     }
 
-    virtual void update() = 0;
+    virtual void update(const WidgetSettings& settings) = 0;
 };

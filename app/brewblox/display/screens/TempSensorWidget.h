@@ -30,5 +30,5 @@ public:
     TempSensorWidget(WidgetWrapper& myWrapper, const cbox::obj_id_t& id);
     virtual ~TempSensorWidget() = default;
 
-    virtual void update() override final;
+    virtual void update(const WidgetSettings& settings) override final;
 };

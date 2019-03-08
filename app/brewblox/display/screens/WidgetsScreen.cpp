@@ -92,6 +92,9 @@ D4D_DECLARE_STD_SCREEN_BEGIN(widgets_screen, scrWidgets_)
     D4D_DECLARE_SCREEN_END();
 
 std::vector<std::unique_ptr<WidgetBase>> WidgetsScreen::widgets;
+WidgetSettings WidgetsScreen::widgetSettings = {
+    TempUnit::Celsius,
+};
 
 void
 WidgetsScreen::loadSettings()
@@ -100,6 +103,7 @@ WidgetsScreen::loadSettings()
     if (settings.name[0] != 0) {
         D4D_SetText(&scrWidgets_title, settings.name);
     }
+    widgetSettings.tempUnit = TempUnit(settings.tempUnit);
 
     widgets.clear();
     pb_size_t numWidgets = std::min(settings.widgets_count, pb_size_t(sizeof(settings.widgets) / sizeof(settings.widgets[0])));
@@ -178,7 +182,7 @@ WidgetsScreen::updateWidgets()
 {
     for (auto& w : widgets) {
         if (w) {
-            w->update();
+            w->update(widgetSettings);
         }
     }
 }
