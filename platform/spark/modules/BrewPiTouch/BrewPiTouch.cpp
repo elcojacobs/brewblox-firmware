@@ -94,13 +94,19 @@ BrewPiTouch::is12bit() const
 uint16_t
 BrewPiTouch::readChannel(uint8_t channel, bool singleEnded) const
 {
-    _spi.begin();                                                                             // will drive CS pin low, needed for conversion timing
-    _spi.transfer((config & CHMASK) | channel | singleEnded ? controlBits::SER : uint8_t(0)); // select channel x/y and set SER/DFR
-    delayMicroseconds(2);                                                                     // make sure conversion is complete, without checking busy pin
+    _spi.begin(); // will drive CS pin low, needed for conversion timing
+    _spi.transfer((config & CHMASK)
+                  | channel                                                            // select channel
+                  | (singleEnded ? controlBits::SER | controlBits::PD1 : uint8_t(0))); // enable internal reference and apply single ended conversion
+    delayMicroseconds(2);                                                              // make sure aquisition is complete, without checking busy pin
     uint16_t data = _spi.transfer(0);
     data = data << 8;
     data += _spi.transfer(0);
-    data = is12bit() ? data >> 4 : data >> 8;
+    uint8_t shift = is12bit() ? 4 : 8;
+    if (singleEnded) {
+        shift = shift - 1; // single ended conversions are delayed by 1 cycle
+    }
+    data = data >> shift;
     _spi.end(); // will drive CS pin high again
     return data;
 }
