@@ -46,12 +46,12 @@ H(z) = 2^-a * -------------------------------------------------
 
 #include <inttypes.h>
 // defines for a filter optimal step response without overshoot: a,b
-#define SETTLING_TIME_25_SAMPLES	0x0601
-#define SETTLING_TIME_50_SAMPLES	0x0802
-#define SETTLING_TIME_100_SAMPLES	0x0A03
-#define SETTLING_TIME_200_SAMPLES	0x0C04
-#define SETTLING_TIME_400_SAMPLES	0x0E05
-#define SETTLING_TIME_800_SAMPLES	0x1006
+#define SETTLING_TIME_25_SAMPLES 0x0601
+#define SETTLING_TIME_50_SAMPLES 0x0802
+#define SETTLING_TIME_100_SAMPLES 0x0A03
+#define SETTLING_TIME_200_SAMPLES 0x0C04
+#define SETTLING_TIME_400_SAMPLES 0x0E05
+#define SETTLING_TIME_800_SAMPLES 0x1006
 
 class LowPassFilter {
 public:
@@ -69,10 +69,10 @@ public:
     void setCoefficients(uint16_t ab);
     int16_t add(int16_t val); // adds a value and returns the most recent filter output
     int32_t addDoublePrecision(int32_t val);
-    int16_t readInput(void); // returns the most recent filter input
-    int16_t readOutput(void); // returns the most recent filter output
-    int32_t readOutputDoublePrecision(void);
-    int32_t readPrevOutputDoublePrecision(void);
+    int16_t readInput(void) const;  // returns the most recent filter input
+    int16_t readOutput(void) const; // returns the most recent filter output
+    int32_t readOutputDoublePrecision(void) const;
+    int32_t readPrevOutputDoublePrecision(void) const;
 };
 
 #endif /* LOWPASSFILTER_H */
