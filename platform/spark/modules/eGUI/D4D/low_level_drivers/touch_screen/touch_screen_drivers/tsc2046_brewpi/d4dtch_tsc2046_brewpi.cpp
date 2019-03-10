@@ -29,7 +29,8 @@
  * and the GNU Lesser General Public License along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
- ***************************************************************************//*!
+ ***************************************************************************/
+/*!
 *
 * @file      d4dtch_tsc2046_brewpi.c
 *
@@ -44,9 +45,10 @@
 ******************************************************************************/
 
 extern "C" {
-#include "d4d.h"            // include of all public items (types, function etc) of D4D driver
-#include "common_files/d4d_lldapi.h"     // include non public low level driver interface header file (types, function prototypes, enums etc. )
-#include "common_files/d4d_private.h"    // include the private header file that contains perprocessor macros as D4D_MK_STR"
+#include "d4d.h" // include of all public items (types, function etc) of D4D driver
+
+#include "common_files/d4d_lldapi.h"  // include non public low level driver interface header file (types, function prototypes, enums etc. )
+#include "common_files/d4d_private.h" // include the private header file that contains perprocessor macros as D4D_MK_STR"
 }
 
 #include "BrewPiTouch.h"
@@ -59,7 +61,6 @@ extern "C" {
 // it will be included into whole project only in case that this driver is selected in main D4D configuration file
 #include "low_level_drivers/touch_screen/touch_screen_drivers/tsc2046_brewpi/d4dtch_tsc2046_brewpi.h"
 
-
 /******************************************************************************
  * Macros
  ******************************************************************************/
@@ -68,13 +69,17 @@ extern "C" {
  * Internal function prototypes
  ******************************************************************************/
 
-static unsigned char D4DTCH_Init_Tsc2046_brewpi(void);
-static unsigned char D4DTCH_DeInit_Tsc2046_brewpi(void);
-static D4D_TOUCHSCREEN_LIMITS* D4DTCH_GetRawLimits_Tsc2046_brewpi(void);
-static unsigned char D4DTCH_GetPositionRaw_Tsc2046_brewpi(unsigned short *TouchPositionX,
-        unsigned short *TouchPositionY);
+static unsigned char
+D4DTCH_Init_Tsc2046_brewpi(void);
+static unsigned char
+D4DTCH_DeInit_Tsc2046_brewpi(void);
+static D4D_TOUCHSCREEN_LIMITS*
+D4DTCH_GetRawLimits_Tsc2046_brewpi(void);
+static unsigned char
+D4DTCH_GetPositionRaw_Tsc2046_brewpi(unsigned short* TouchPositionX,
+                                     unsigned short* TouchPositionY);
 
-/**************************************************************//*!
+/**************************************************************/ /*!
   *
   * Global variables
   *
@@ -87,18 +92,16 @@ const D4DTCH_FUNCTIONS d4dtch_tsc2046_brewpi = {
     D4DTCH_Init_Tsc2046_brewpi,
     D4DTCH_GetPositionRaw_Tsc2046_brewpi,
     D4DTCH_GetRawLimits_Tsc2046_brewpi,
-    D4DTCH_DeInit_Tsc2046_brewpi
-};
+    D4DTCH_DeInit_Tsc2046_brewpi};
 
-const D4D_TOUCHSCREEN_LIMITS d4dtchhw_tsc2046_brewpi_limits ={
+const D4D_TOUCHSCREEN_LIMITS d4dtchhw_tsc2046_brewpi_limits = {
     D4DTCH_FULL_SCALE,
     D4DTCH_X_TOUCH_MIN,
     D4DTCH_Y_TOUCH_MIN,
     D4DTCH_X_TOUCH_OFFMAX,
-    D4DTCH_Y_TOUCH_OFFMAX
-};
+    D4DTCH_Y_TOUCH_OFFMAX};
 
-/**************************************************************//*!
+/**************************************************************/ /*!
   *
   * Local variables
   *
@@ -106,7 +109,7 @@ const D4D_TOUCHSCREEN_LIMITS d4dtchhw_tsc2046_brewpi_limits ={
 
 BrewPiTouch touch(GlobalSPIArbiter, D4DTCH_CS, D4DTCH_IRQ);
 
-/**************************************************************//*!
+/**************************************************************/ /*!
   *
   * Functions bodies
   *
@@ -123,13 +126,15 @@ BrewPiTouch touch(GlobalSPIArbiter, D4DTCH_CS, D4DTCH_IRQ);
 //                      0 - Failed
 //-----------------------------------------------------------------------------
 
-static unsigned char D4DTCH_Init_Tsc2046_brewpi(void) {
+static unsigned char
+D4DTCH_Init_Tsc2046_brewpi(void)
+{
 #ifdef D4DTCH_MCU_USER_INIT
     D4DTCH_MCU_USER_INIT
 #endif
-            // assume SPI is already initialized, just initialize CS pin and interrupt
+    // assume SPI is already initialized, just initialize CS pin and interrupt
 
-            touch.init();
+    touch.init();
     return 1;
 }
 
@@ -144,7 +149,9 @@ static unsigned char D4DTCH_Init_Tsc2046_brewpi(void) {
 //                      0 - Failed
 //-----------------------------------------------------------------------------
 
-static unsigned char D4DTCH_DeInit_Tsc2046_brewpi(void) {
+static unsigned char
+D4DTCH_DeInit_Tsc2046_brewpi(void)
+{
     return 1;
 }
 
@@ -159,7 +166,9 @@ static unsigned char D4DTCH_DeInit_Tsc2046_brewpi(void) {
 //
 //-----------------------------------------------------------------------------
 
-static D4D_TOUCHSCREEN_LIMITS* D4DTCH_GetRawLimits_Tsc2046_brewpi(void) {
+static D4D_TOUCHSCREEN_LIMITS*
+D4DTCH_GetRawLimits_Tsc2046_brewpi(void)
+{
     return (D4D_TOUCHSCREEN_LIMITS*)&d4dtchhw_tsc2046_brewpi_limits;
 }
 
@@ -174,17 +183,20 @@ static D4D_TOUCHSCREEN_LIMITS* D4DTCH_GetRawLimits_Tsc2046_brewpi(void) {
 //              1   screen touch,
 //-----------------------------------------------------------------------------
 
-static unsigned char D4DTCH_GetPositionRaw_Tsc2046_brewpi(unsigned short *TouchPositionX,
-    unsigned short *TouchPositionY) {
-    if(touch.update()){
-#if PLATFORM_ID == 8 // y coordinate is flipped on V3
-        *TouchPositionX = D4DTCH_FULL_SCALE - touch.getXRaw();
+static unsigned char
+D4DTCH_GetPositionRaw_Tsc2046_brewpi(unsigned short* TouchPositionX,
+                                     unsigned short* TouchPositionY)
+{
+    if (touch.update()) {
+#if PLATFORM_ID == 8 // coordinates are flipped on V3
+        *TouchPositionX = D4DTCH_FULL_SCALE - touch.getX();
+        *TouchPositionY = D4DTCH_FULL_SCALE - touch.getY();
 #else
-        *TouchPositionX = touch.getXRaw();
+        *TouchPositionX = touch.getX();
+        *TouchPositionY = touch.getY();
 #endif
-        *TouchPositionY = touch.getYRaw();
         return 1;
-    }   
+    }
     return 0;
 }
 

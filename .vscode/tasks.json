@@ -29,6 +29,31 @@
             "problemMatcher": "$gcc"
         },
         {
+            "label": "build_photon",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "bash",
+                "../wrapped_make.sh",
+                "APP=brewblox",
+                "PLATFORM=photon"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
             "label": "build_gcc_local",
             "command": "bash",
             "args": [
@@ -76,12 +101,42 @@
             },
             "problemMatcher": "$gcc",
             "dependsOn": [
-                "trigger_dfu_p1",
+                "trigger_dfu",
                 "restart_compiler",
             ]
         },
         {
-            "label": "trigger_dfu_p1",
+            "label": "flash_photon",
+            "command": "docker-compose",
+            "args": [
+                "exec",
+                "compiler",
+                "bash",
+                "../wrapped_make.sh",
+                "APP=brewblox",
+                "PLATFORM=photon",
+                "program-dfu"
+            ],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc",
+            "dependsOn": [
+                "trigger_dfu",
+                "restart_compiler",
+            ]
+        },
+        {
+            "label": "trigger_dfu",
             "command": "docker",
             "args": [
                 "run",
