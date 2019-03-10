@@ -23,9 +23,9 @@ Please send pull requests against the develop branch. We can only accept your pu
 
 ## Development Tools 
 We recommend Visual Studio Code for development.
-Microsoft Intellisense doesn't work well for this codebase, so we recommend cquery instead.
+Microsoft Intellisense doesn't work well for this codebase, so we recommend ccls instead.
 Follow the install instructions here:
 
-https://github.com/cquery-project/cquery/wiki/Building-cquery
+https://github.com/MaskRay/ccls
 
 For automatic formatting, we use clang-format. Install it on your system and install the clang-format plugin in vscode.
