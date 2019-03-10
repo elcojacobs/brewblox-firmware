@@ -21,7 +21,7 @@
 
 #include "IirFilter.h"
 #include "SPIArbiter.h"
-#include <inttypes.h>
+#include <cstdint>
 
 class BrewPiTouch final {
 public:

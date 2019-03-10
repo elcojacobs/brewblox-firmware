@@ -20,6 +20,7 @@
 #include "BrewPiTouch.h"
 #include "spark_wiring.h"
 #include <algorithm>
+#include <cstdint>
 #include <limits.h>
 #include <vector>
 
