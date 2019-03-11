@@ -21,7 +21,7 @@
 #pragma once
 
 #include "OneWireLowLevelInterface.h"
-#include <inttypes.h>
+#include <cstdint>
 
 #define DS248X_CONFIG_APU (0x1 << 0)
 #define DS248X_CONFIG_PPM (0x1 << 1)

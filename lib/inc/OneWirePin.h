@@ -2,7 +2,7 @@
 #define OneWire_h
 
 #include "spark_wiring.h"
-#include <inttypes.h>
+#include <cstdint>
 
 // Platform specific I/O definitions
 

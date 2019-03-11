@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <inttypes.h>
+#include <cstdint>
 
 #include "OneWireDevice.h"
 
