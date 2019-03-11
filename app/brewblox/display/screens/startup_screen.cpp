@@ -85,12 +85,10 @@ void
 StartupScreen::calibrateTouch()
 {
 #if PLATFORM_ID != 3
-    touch.setStabilityThreshold(5); // require extra stable reading
     static auto timeoutTimer = Timer(20000, D4D_InterruptCalibrationScreen, true);
 #endif
     D4D_CalibrateTouchScreen();
 #if PLATFORM_ID != 3
-    touch.setStabilityThreshold(); // reset to default
 #endif
     if (D4D_TCH_GetCalibrationStatus()) {
         brewbloxBox().storeUpdatedObject(2); // save system object
