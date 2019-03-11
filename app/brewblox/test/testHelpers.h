@@ -19,11 +19,17 @@
 
 #pragma once
 
-#include "BrewBlox.h"
 #include "cbox/DataStream.h"
 #include "cbox/DataStreamConverters.h"
 #include "cbox/DataStreamIo.h"
-#include <google/protobuf/message.h>
+// #include <google/protobuf/message.h>
+#include <sstream>
+
+namespace google {
+namespace protobuf {
+    class Message;
+}
+};
 
 class ProtoDataOut {
 public:
@@ -33,29 +39,8 @@ public:
     {
     }
 
-    void put(const ::google::protobuf::Message& message)
-    {
-        for (auto& c : message.SerializeAsString()) {
-            out.write(c);
-        }
-        out.write(0); // zero terminate protobuf message
-    }
+    void put(const ::google::protobuf::Message& message);
 };
 
-inline void
-decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message)
-{
-    cbox::IStreamDataIn hex(ss);
-    cbox::HexTextToBinaryIn decoder(hex);
-    while (hex.next() != '|') { // spool command echo
-    }
-    // spool status, id, groups and object type
-    uint8_t header[6];
-    decoder.read(header, 6);
-
-    // pass the rest to the protobuf decoder
-    std::stringstream ssProto;
-    cbox::OStreamDataOut protoData(ssProto);
-    decoder.push(protoData);
-    message.ParseFromIstream(&ssProto);
-};
+void
+decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message);
