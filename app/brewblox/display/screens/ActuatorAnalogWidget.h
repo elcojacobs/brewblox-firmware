@@ -30,7 +30,7 @@ public:
     ActuatorAnalogWidget(WidgetWrapper& myWrapper, const cbox::obj_id_t& id);
     virtual ~ActuatorAnalogWidget() = default;
 
-    virtual void update() override final;
+    virtual void update(const WidgetSettings& settings) override final;
 
     static void
     onClickStatic(void* thisPtr)

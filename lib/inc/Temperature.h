@@ -25,15 +25,13 @@
 
 using temp_t = fp12_t;
 
-enum TempFormat {
-    Celsius,
-    Fahrenheit
+enum class TempUnit : uint8_t {
+    Celsius = 0,
+    Fahrenheit = 1,
 };
 
-extern TempFormat tempFormat;
+std::string
+tempDiff_to_string(const temp_t& t, uint8_t decimals, const TempUnit& unit);
 
 std::string
-tempDiff_to_string(const temp_t& t, uint8_t decimals);
-
-std::string
-temp_to_string(const temp_t& t, uint8_t decimals);
+temp_to_string(const temp_t& t, uint8_t decimals, const TempUnit& unit);

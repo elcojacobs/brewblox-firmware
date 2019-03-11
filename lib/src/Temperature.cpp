@@ -19,23 +19,21 @@
 
 #include "Temperature.h"
 
-TempFormat tempFormat = TempFormat::Celsius;
-
 std::string
-tempDiff_to_string(const temp_t& t, uint8_t decimals)
+tempDiff_to_string(const temp_t& t, uint8_t decimals, const TempUnit& unit)
 {
     fp12_t val = t;
-    if (tempFormat == Fahrenheit) {
+    if (unit == TempUnit::Fahrenheit) {
         val = (t * 9) / 5;
     }
     return to_string_dec(val, decimals);
 }
 
 std::string
-temp_to_string(const temp_t& t, uint8_t decimals)
+temp_to_string(const temp_t& t, uint8_t decimals, const TempUnit& unit)
 {
     fp12_t val = t;
-    if (tempFormat == Fahrenheit) {
+    if (unit == TempUnit::Fahrenheit) {
         val = (t * 9) / 5 + fp12_t(32);
     }
     return to_string_dec(val, decimals);

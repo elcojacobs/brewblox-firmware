@@ -17,11 +17,13 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Temperature.h"
 #include "WidgetBase.h"
 
 class WidgetsScreen {
 private:
     static std::vector<std::unique_ptr<WidgetBase>> widgets;
+    static WidgetSettings widgetSettings;
 
 public:
     WidgetsScreen() = default;

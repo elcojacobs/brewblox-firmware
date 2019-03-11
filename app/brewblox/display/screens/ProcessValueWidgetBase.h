@@ -19,7 +19,6 @@
 
 #pragma once
 #include "ProcessValue.h"
-#include "Temperature.h"
 #include "WidgetBase.h"
 #include "cbox/CboxPtr.h"
 #include "d4d.hpp"
