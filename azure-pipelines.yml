@@ -7,10 +7,10 @@ trigger:
       - refs/heads/*
 
 #########################################################
-# CI
+# Tests
 #########################################################
 jobs:
-- job: CI
+- job: Tests
   pool:
     vmImage: 'Ubuntu-16.04'
 
@@ -100,7 +100,7 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   dependsOn: 
-  - CI
+  - Tests
   - Simulator
   - Flasher
 
@@ -140,9 +140,9 @@ jobs:
       downloadPath: $(System.ArtifactsDirectory)
 
   - bash: |
-      docker load $(System.ArtifactsDirectory)/simulator/simulator.tar
-      docker load $(System.ArtifactsDirectory)/flasher/flasher.tar
-      docker load $(System.ArtifactsDirectory)/flasher/rpi-flasher.tar
+      docker load -i $(System.ArtifactsDirectory)/simulator/simulator.tar
+      docker load -i $(System.ArtifactsDirectory)/flasher/flasher.tar
+      docker load -i $(System.ArtifactsDirectory)/flasher/rpi-flasher.tar
     displayName: Import images
 
   - bash: |
