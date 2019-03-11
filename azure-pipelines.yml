@@ -6,6 +6,9 @@ trigger:
     include:
       - refs/heads/*
 
+#########################################################
+# CI
+#########################################################
 jobs:
 - job: CI
   pool:
@@ -14,11 +17,27 @@ jobs:
   steps:
   - bash: |
       bash start-compiler.sh
-      docker-compose exec -T compiler bash run-ci.sh
     workingDirectory: docker
-    displayName: Build
+    displayName: Start compiler
 
+  - bash: |
+      docker-compose exec -T compiler bash compile-proto.sh
+    workingDirectory: docker
+    displayName: Compile proto
 
+  - bash: |
+      docker-compose exec -T compiler bash build-tests.sh
+    workingDirectory: docker
+    displayName: Build tests
+
+  - bash: |
+      docker-compose exec -T compiler bash run-tests.sh
+    workingDirectory: docker
+    displayName: Run tests
+
+#########################################################
+# Simulator
+#########################################################
 - job: Simulator
   pool:
     vmImage: 'Ubuntu-16.04'
@@ -26,11 +45,28 @@ jobs:
   steps:
   - bash: |
       bash start-compiler.sh
+    workingDirectory: docker
+    displayName: Start compiler
+
+  - bash: |
       bash build-simulator.sh
     workingDirectory: docker
     displayName: Build
 
+  - bash: |
+      docker save brewblox/firmware-simulator:local > $(Build.ArtifactStagingDirectory)/image.tar
+    workingDirectory: docker
+    displayName: Save image
 
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: simulator
+
+
+#########################################################
+# Flasher
+#########################################################
 - job: Flasher
   pool:
     vmImage: 'Ubuntu-16.04'
@@ -38,11 +74,28 @@ jobs:
   steps:
   - bash: |
       bash start-compiler.sh
+    workingDirectory: docker
+    displayName: Start compiler
+
+  - bash: |
       bash build-flasher.sh
     workingDirectory: docker
     displayName: Build
 
+  - bash: |
+      docker save brewblox/firmware-flasher:local > $(Build.ArtifactStagingDirectory)/flasher.tar
+      docker save brewblox/firmware-flasher:rpi-local > $(Build.ArtifactStagingDirectory)/rpi-flasher.tar
+    workingDirectory: docker
+    displayName: Save image
 
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: flasher
+
+#########################################################
+# Deployment
+#########################################################
 - job: Deploy
   pool:
     vmImage: 'Ubuntu-16.04'
@@ -71,6 +124,17 @@ jobs:
       echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin
     displayName: Docker login
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: current
+      downloadType: single
+      artifactName: simulator
+      downloadPath: $(System.ArtifactsDirectory)
+
+  - bash: |
+      ls $(System.ArtifactsDirectory)
+    displayName: Testey
 
   - bash: |
       bash push-local.sh ${SIM_REPO} newest-tag
