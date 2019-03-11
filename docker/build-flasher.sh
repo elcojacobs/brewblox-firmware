@@ -3,7 +3,7 @@ set -e
 
 docker-compose exec -T compiler \
     bash -c '
-        set -e        
+        set -e
         bash compile-proto.sh
         make $MAKE_ARGS APP=brewblox PLATFORM=p1
         cp target/brewblox-p1/brewblox.bin ../docker/flasher/brewblox-p1.bin
