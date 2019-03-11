@@ -54,7 +54,7 @@ jobs:
     displayName: Build
 
   - bash: |
-      docker save brewblox/firmware-simulator:local > $(Build.ArtifactStagingDirectory)/image.tar
+      docker save brewblox/firmware-simulator:local > $(Build.ArtifactStagingDirectory)/simulator.tar
     workingDirectory: docker
     displayName: Save image
 
@@ -132,9 +132,18 @@ jobs:
       artifactName: simulator
       downloadPath: $(System.ArtifactsDirectory)
 
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: current
+      downloadType: single
+      artifactName: flasher
+      downloadPath: $(System.ArtifactsDirectory)
+
   - bash: |
-      ls $(System.ArtifactsDirectory)
-    displayName: Testey
+      docker load $(System.ArtifactsDirectory)/simulator/simulator.tar
+      docker load $(System.ArtifactsDirectory)/flasher/flasher.tar
+      docker load $(System.ArtifactsDirectory)/flasher/rpi-flasher.tar
+    displayName: Import images
 
   - bash: |
       bash push-local.sh ${SIM_REPO} newest-tag
