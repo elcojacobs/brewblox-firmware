@@ -262,7 +262,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         for (; now < 5 * pwm.period(); now += std::rand() % 250) {
             pwm.update(now);
         }
-        for (; now < 15 * pwm.period(); now += std::rand() % 250) {
+        for (; now < 50 * pwm.period(); now += std::rand() % 250) {
             pwm.update(now);
             INFO(now);
             CHECK(pwm.value() == Approx(50).margin(2));

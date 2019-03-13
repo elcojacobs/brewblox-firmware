@@ -167,10 +167,10 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 auto maxLowTime = std::max(invDutyTime, previousLowTime) * 3 / 2;
 
                 // make sure that periods following each other do not alternate in low time
-                // if the current period is already longer than the invDuty, diminish it by 25% of the extra time
+                // if the current period is already longer than the invDuty, diminish it by 33% of the extra time
                 // This prevents alternating between 1500 and 2500 when the total of 2 periods should be 4000.
                 if (thisPeriodLowTime > invDutyTime && twoPeriodLowTime < 2 * invDutyTime) {
-                    twoPeriodTargetLowTime -= (thisPeriodLowTime - invDutyTime) / 4;
+                    twoPeriodTargetLowTime -= (thisPeriodLowTime - invDutyTime) / 3;
                 }
 
                 if (thisPeriodLowTime < maxLowTime) {
@@ -181,13 +181,14 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             }
         }
 
+        // calculate achieved duty cycle
         twoPeriodTotalTime += wait;
         if (twoPeriodTotalTime == 0) {
             m_dutyAchieved = 0;
         } else {
             auto dutyAchieved = (value_t(100) * twoPeriodHighTime) / twoPeriodTotalTime;
             if (wait == 0) {
-                // end of period
+                // end of high or low time
                 m_dutyAchieved = dutyAchieved;
             } else if ((currentState == State::Inactive && dutyAchieved < m_dutyAchieved)
                        || (currentState == State::Active && dutyAchieved > m_dutyAchieved)) {
@@ -204,7 +205,6 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 actPtr->state(State::Inactive, now);
             }
         }
-
         return now + std::min(update_t(1000), wait >> 1);
     }
     m_dutyAchieved = 0;
