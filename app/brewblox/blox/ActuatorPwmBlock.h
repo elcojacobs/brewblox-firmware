@@ -21,12 +21,8 @@ public:
     ActuatorPwmBlock(cbox::ObjectContainer& objects)
         : objectsRef(objects)
         , actuator(objects)
-        , pwm(
-              [this]() {
-                  // convert ActuatorDigitalConstrained to base ActuatorDigitalChangeLogged
-                  return std::shared_ptr<ActuatorDigitalChangeLogged>(this->actuator.lock());
-              },
-              4000)
+        // convert ActuatorDigitalConstrained to base ActuatorDigitalChangeLogged
+        , pwm([this]() { return std::shared_ptr<ActuatorDigitalChangeLogged>(this->actuator.lock()); })
         , constrained(pwm)
     {
     }

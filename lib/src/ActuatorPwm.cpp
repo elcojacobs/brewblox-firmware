@@ -1,13 +1,14 @@
 #include "ActuatorPwm.h"
+#include "TimerInterrupts.h"
 #include "future_std.h"
 #include <cstdint>
 
 ActuatorPwm::ActuatorPwm(
-    std::function<std::shared_ptr<ActuatorDigitalChangeLogged>()>&& target,
-    duration_millis_t period)
-    : m_target(target)
-    , m_period(period)
+    std::function<std::shared_ptr<ActuatorDigitalChangeLogged>()>&& target_,
+    duration_millis_t period_)
+    : m_target(target_)
 {
+    period(period_);
 }
 
 void
@@ -26,8 +27,77 @@ ActuatorPwm::value() const
     return m_dutyAchieved;
 }
 
+void
+ActuatorPwm::period(const duration_millis_t& p)
+{
+    m_period = p;
+#if PLATFORM_ID != PLATFORM_GCC
+    if (m_period < 1000) {
+        m_period = 100;
+        if (!timerFuncId) {
+            timerFuncId = TimerInterrupts::add([this]() { timerTask(); });
+        }
+    } else {
+        if (timerFuncId) {
+            TimerInterrupts::remove(timerFuncId);
+            timerFuncId = 0;
+        }
+    }
+#endif
+}
+
+duration_millis_t
+ActuatorPwm::period() const
+{
+#if PLATFORM_ID != PLATFORM_GCC
+    if (m_period < 1000) {
+        return 10; // internally 100 is used for timer based pwm, but return 10ms, the actual period
+    }
+#endif
+    return m_period;
+}
+
+#if PLATFORM_ID != PLATFORM_GCC
+void
+ActuatorPwm::timerTask()
+{
+    // timer clock is 10 kHz, 100 steps at 100Hz
+    if (auto actPtr = m_target()) {
+        if (actPtr->state() != State::Active) {
+            if (m_fastPwmElapsed < m_dutyTime) {
+                actPtr->state(State::Active);
+            }
+            if (m_fastPwmElapsed == 100) {
+                m_dutyAchieved = 0; // never active in cycle
+            }
+        } else {
+            if (m_fastPwmElapsed >= m_dutyTime) {
+                actPtr->state(State::Inactive);
+                m_dutyAchieved = m_fastPwmElapsed;
+            }
+        }
+    }
+    m_fastPwmElapsed = (m_fastPwmElapsed >= 100) ? 0 : m_fastPwmElapsed + 1;
+}
+
 ActuatorPwm::update_t
 ActuatorPwm::update(const update_t& now)
+{
+    if (timerFuncId) {
+        return now + 1000;
+    }
+    return slowPwmUpdate(now);
+}
+#else
+ActuatorPwm::update_t
+ActuatorPwm::update(const update_t& now)
+{
+    return slowPwmUpdate(now);
+}
+#endif
+
+ActuatorPwm::update_t
+ActuatorPwm::slowPwmUpdate(const update_t& now)
 {
     if (auto actPtr = m_target()) {
         auto durations = actPtr->activeDurations(now);

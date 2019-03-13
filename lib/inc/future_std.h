@@ -1,3 +1,5 @@
+#pragma once
+
 #include <functional>
 
 // clamp is C++17, we're on C++14. This is a copy of the std implementation
