@@ -1,7 +1,10 @@
 #include "ActuatorPwm.h"
-#include "TimerInterrupts.h"
 #include "future_std.h"
 #include <cstdint>
+
+#if PLATFORM_ID != PLATFORM_GCC
+#include "TimerInterrupts.h"
+#endif
 
 ActuatorPwm::ActuatorPwm(
     std::function<std::shared_ptr<ActuatorDigitalChangeLogged>()>&& target_,

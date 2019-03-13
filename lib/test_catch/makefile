@@ -69,6 +69,9 @@ LDFLAGS += -lgcov
 # don't generate warnings for system headers
 CFLAGS += -Wno-system-headers
 
+# set platform flag
+CFLAGS += -DPLATFORM_ID=3
+
 # Collect all object and dep files
 ALLOBJ += $(addprefix $(BUILD_PATH), $(CSRC:.c=.o))
 ALLOBJ += $(addprefix $(BUILD_PATH), $(CPPSRC:.cpp=.o))
