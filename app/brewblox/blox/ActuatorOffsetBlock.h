@@ -37,6 +37,7 @@ public:
             actuator.selectedReference(ActuatorOffset::SettingOrValue(newData.referenceSettingOrValue));
             setAnalogConstraints(newData.constrainedBy, constrained, objectsRef);
             constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.setting));
+            actuator.enabled(newData.enabled);
         }
         return result;
     }
@@ -50,6 +51,7 @@ public:
         message.targetId = target.getId();
         message.referenceId = reference.getId();
         message.referenceSettingOrValue = blox_ActuatorOffset_SettingOrValue(actuator.selectedReference());
+        message.enabled = actuator.enabled();
 
         if (constrained.valueValid()) {
             message.value = cnl::unwrap(constrained.value());
@@ -77,6 +79,7 @@ public:
         persisted.targetId = target.getId();
         persisted.referenceId = reference.getId();
         persisted.referenceSettingOrValue = blox_ActuatorOffset_SettingOrValue(actuator.selectedReference());
+        persisted.enabled = actuator.enabled();
 
         persisted.setting = cnl::unwrap(constrained.setting());
         getAnalogConstraints(persisted.constrainedBy, constrained);

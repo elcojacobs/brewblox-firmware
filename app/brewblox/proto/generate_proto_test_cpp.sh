@@ -7,6 +7,8 @@ PROTO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 NANOPB_PATH="$(readlink -f "${PROTO_DIR}/../../../platform/spark/firmware/nanopb/nanopb")"
 pushd "$PROTO_DIR" > /dev/null # .option files are read from execution directory, so have to cd into this dir 
 
+rm -rf "test"
+
 mkdir -p "test/proto"
 mkdir -p "test/cpp"
 mkdir -p "test/tmp_cpp"
