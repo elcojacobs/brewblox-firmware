@@ -70,17 +70,21 @@ ActuatorPwm::timerTask()
             if (m_fastPwmElapsed < m_dutyTime) {
                 actPtr->state(State::Active);
             }
-            if (m_fastPwmElapsed == 100) {
-                m_dutyAchieved = 0; // never active in cycle
+            if (m_fastPwmElapsed == 1) {
+                m_dutyAchieved = 0; // never active in previous cycle
             }
         } else {
             if (m_fastPwmElapsed >= m_dutyTime) {
                 actPtr->state(State::Inactive);
                 m_dutyAchieved = m_fastPwmElapsed;
+            } else {
+                if (m_fastPwmElapsed == 99) {
+                    m_dutyAchieved = 100; // never inactive in this cycle
+                }
             }
         }
     }
-    m_fastPwmElapsed = (m_fastPwmElapsed >= 100) ? 0 : m_fastPwmElapsed + 1;
+    m_fastPwmElapsed = (m_fastPwmElapsed + 1) % 100;
 }
 
 ActuatorPwm::update_t
