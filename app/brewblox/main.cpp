@@ -194,7 +194,9 @@ setup()
     };
 
     WidgetsScreen::activate();
+#if PLATFORM_ID != PLATFORM_GCC
     TimerInterrupts::init();
+#endif
 }
 
 void

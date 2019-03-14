@@ -6,6 +6,9 @@ here_files = $(patsubst $(SOURCE_PATH)/%,%,$(wildcard $(SOURCE_PATH)/$1/$2))
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
 CSRC += $(call target_files,lib/src,*.c)
 CPPSRC += $(call target_files,lib/src,*.cpp)
+ifeq ($(PLATFORM_ID),3)
+CPPEXCLUDES += lib/src/spark/TimerInterrupts.cpp
+endif
 
 # add all controlbox source files
 INCLUDE_DIRS += $(SOURCE_PATH)/controlbox/src/
