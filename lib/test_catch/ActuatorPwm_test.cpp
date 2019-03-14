@@ -245,27 +245,56 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
          "the achieved value is correctly calculated at all moments in the period")
     {
         pwm.setting(50);
-        for (; now < 5 * pwm.period(); now += 250) {
-            pwm.update(now);
+        auto nextUpdateTime = now;
+        for (; now < 5 * pwm.period(); now += 211) {
+            if (now > nextUpdateTime) {
+                nextUpdateTime = pwm.update(now);
+            }
         }
-        for (; now < 15 * pwm.period(); now += 250) {
-            pwm.update(now);
+        for (; now < 50 * pwm.period(); now += 211) {
+            if (now > nextUpdateTime) {
+                nextUpdateTime = pwm.update(now);
+            }
             INFO(now);
             CHECK(pwm.value() == Approx(50).margin(0.1));
         }
+    }
+
+    WHEN("the period is changed, the duty cycle is updated")
+    {
+        pwm.setting(50);
+        pwm.period(30000);
+        auto nextUpdateTime = now;
+        for (; now < 2 * pwm.period(); now += 1) {
+            if (now > nextUpdateTime) {
+                nextUpdateTime = pwm.update(now);
+            }
+        }
+        auto durations = constrained->activeDurations(now);
+        CHECK(durations.previousActive == 2000);
     }
 
     WHEN("the PWM actuator is set to 50, and infrequently and irregularly updated, "
          "the achieved value is correctly calculated at all moments in the period")
     {
         pwm.setting(50);
+        auto nextUpdateTime = now;
         for (; now < 5 * pwm.period(); now += std::rand() % 250) {
-            pwm.update(now);
+            if (now > nextUpdateTime) {
+                nextUpdateTime = pwm.update(now);
+            }
         }
         for (; now < 50 * pwm.period(); now += std::rand() % 250) {
-            pwm.update(now);
+            if (now > nextUpdateTime) {
+                nextUpdateTime = pwm.update(now);
+            }
             INFO(now);
             CHECK(pwm.value() == Approx(50).margin(2));
+            auto durations = constrained->activeDurations(now);
+            CHECK(durations.previousActive >= 2000);
+            CHECK(durations.previousActive <= 2250);
+            CHECK(durations.previousPeriod >= 3500);
+            CHECK(durations.previousPeriod <= 5000);
         }
     }
 

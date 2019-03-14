@@ -105,5 +105,47 @@ SCENARIO("ActuatorDigitalChangeLogged test", "[ActuatorChangeLog]")
             CHECK(durations.previousActive == 1000);
             CHECK(durations.previousPeriod == 2000);
         }
+        THEN("durations are correct immediately after switching")
+        {
+            // toggle a few times to erase history
+            logged.state(State::Active, 1000);
+            logged.state(State::Inactive, 1000);
+            logged.state(State::Active, 1000);
+            logged.state(State::Inactive, 1000);
+            logged.state(State::Active, 1000);
+            auto durations = logged.activeDurations(1000);
+            CHECK(durations.currentActive == 0);
+            CHECK(durations.currentPeriod == 0);
+            CHECK(durations.previousActive == 0);
+            CHECK(durations.previousPeriod == 0);
+
+            logged.state(State::Inactive, 2000);
+            durations = logged.activeDurations(2000);
+            CHECK(durations.currentActive == 1000);
+            CHECK(durations.currentPeriod == 1000);
+            CHECK(durations.previousActive == 0);
+            CHECK(durations.previousPeriod == 0);
+
+            logged.state(State::Active, 3000);
+            durations = logged.activeDurations(3000);
+            CHECK(durations.currentActive == 0);
+            CHECK(durations.currentPeriod == 1000);
+            CHECK(durations.previousActive == 1000);
+            CHECK(durations.previousPeriod == 1000);
+
+            logged.state(State::Inactive, 4000);
+            durations = logged.activeDurations(4000);
+            CHECK(durations.currentActive == 1000);
+            CHECK(durations.currentPeriod == 1000);
+            CHECK(durations.previousActive == 1000);
+            CHECK(durations.previousPeriod == 2000);
+
+            logged.state(State::Active, 5000);
+            durations = logged.activeDurations(5000);
+            CHECK(durations.currentActive == 0);
+            CHECK(durations.currentPeriod == 1000);
+            CHECK(durations.previousActive == 1000);
+            CHECK(durations.previousPeriod == 2000);
+        }
     }
 }
