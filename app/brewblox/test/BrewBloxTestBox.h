@@ -21,16 +21,13 @@
 
 #include "AppTicks.h"
 #include "BrewBlox.h"
-#include "blox/ActuatorPinBlock.h"
 #include "blox/TicksBlock.h"
 #include "cbox/Box.h"
-#include "cbox/CboxPtr.h"
 #include "cbox/DataStream.h"
 #include "cbox/DataStreamIo.h"
 #include "testHelpers.h"
 #include <memory>
 #include <sstream>
-#include <type_traits>
 
 class BrewBloxTestBox {
 public:
@@ -43,70 +40,18 @@ public:
     bool lastReplyOk = false;
     TicksClass& ticks;
 
-    BrewBloxTestBox()
-        : in(std::make_shared<std::stringstream>())
-        , out(std::make_shared<std::stringstream>())
-        , inOs(*in)
-        , toHex(inOs)
-        , inEncoder(toHex)
-        , inProto(inEncoder)
-        , ticks(brewbloxBox().makeCboxPtr<TicksBlock<TicksClass>>(3).lock()->get())
-    {
-        testConnectionSource().add(in, out);
-    }
+    BrewBloxTestBox();
     ~BrewBloxTestBox(){};
 
-    void clearStreams()
-    {
-        in->str("");
-        in->clear();
-        out->str("");
-        out->clear();
-    }
+    void clearStreams();
 
-    void reset()
-    {
-        // reset system objects: pin actuators
-        for (cbox::obj_id_t id = 10; id <= 14; ++id) {
-            auto cbPtr = brewbloxBox().makeCboxPtr<ActuatorPinBlock>(id);
-            if (auto pinObj = cbPtr.lock()) {
-                pinObj->getConstrained().removeAllConstraints();
-                pinObj->getConstrained().resetHistory();
-                pinObj->getConstrained().state(ActuatorDigital::State::Inactive);
-            }
-        }
-        clearStreams();
-        inEncoder.put(uint16_t(0)); // msg id
-        inEncoder.put(cbox::Box::CommandID::CLEAR_OBJECTS);
-        inEncoder.endMessage();
-        brewbloxBox().hexCommunicate();
-        clearStreams();
-        brewbloxBox().update(0);
-    }
+    void reset();
 
-    bool lastReplyHasStatusOk()
-    {
-        return lastReplyOk;
-    }
+    bool lastReplyHasStatusOk();
 
-    std::string processInput()
-    {
-        endInput();
-        brewbloxBox().hexCommunicate();
-        lastReplyOk = out->str().find("|00") != std::string::npos; // no errors
-        auto retv = out->str();
-        clearStreams();
-        return retv;
-    }
+    std::string processInput();
 
-    void processInputToProto(::google::protobuf::Message& message)
-    {
-        endInput();
-        brewbloxBox().hexCommunicate();
-        lastReplyOk = out->str().find("|00") != std::string::npos; // no errors
-        decodeProtoFromReply(*out, message);
-        clearStreams();
-    }
+    void processInputToProto(::google::protobuf::Message& message);
 
     template <typename T>
     void put(const T& t, typename std::enable_if_t<!std::is_base_of<::google::protobuf::Message, T>::value>* = 0)
@@ -114,20 +59,9 @@ public:
         inEncoder.put(t);
     }
 
-    void put(const ::google::protobuf::Message& message)
-    {
-        inProto.put(message);
-    }
+    void put(const ::google::protobuf::Message& message);
 
-    void endInput()
-    {
-        inEncoder.endMessage();
-    }
+    void endInput();
 
-    void update(const cbox::update_t& now)
-    {
-        ticks.ticksImpl().reset(now);
-
-        brewbloxBox().update(now);
-    }
+    void update(const cbox::update_t& now);
 };

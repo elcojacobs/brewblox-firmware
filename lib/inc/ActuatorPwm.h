@@ -26,6 +26,10 @@
 #include <functional>
 #include <memory>
 
+#ifndef PLATFORM_GCC
+#define PLATFORM_GCC 3
+#endif
+
 /**
 	ActuatorPWM drives a (change logged) digital actuator and makes it available as range actuator, by quickly turning it on and off repeatedly.
  */
@@ -42,6 +46,11 @@ private:
     value_t m_dutySetting = 0;
     value_t m_dutyAchieved = 0;
     bool m_valid = true;
+
+#if PLATFORM_ID != PLATFORM_GCC
+    uint8_t timerFuncId = 0;
+    duration_millis_t m_fastPwmElapsed = 0;
+#endif
 
 public:
     /** Constructor.
@@ -78,6 +87,8 @@ public:
      */
     virtual void setting(value_t const& val) override final;
 
+    update_t update(const update_t& now);
+
     //** Calculates whether the m_target should toggle and tries to toggle it if necessary
     /** Each update, the PWM actuator checks whether it should toggle to achieve the set duty cycle.
      * It checks wether the output pin toggled and updates it's internal counters to keep track of
@@ -87,23 +98,26 @@ public:
      target is
      * a time limited actuator with a minimum on and/or off time.
      */
-    update_t update(const update_t& now);
+    update_t slowPwmUpdate(const update_t& now);
+
+#if PLATFORM_ID != PLATFORM_GCC
+    update_t fastUpdate(const update_t& now);
+
+    /**
+    When the period is less than 1000ms, switch to timer interrupt based tasks
+    */
+    void timerTask();
+#endif
 
     /** returns the PWM period
      * @return PWM period in seconds
      */
-    duration_millis_t period() const
-    {
-        return m_period;
-    }
+    duration_millis_t period() const;
 
     /** sets the PWM period
      * @param sec new period in seconds
      */
-    void period(const duration_millis_t& p)
-    {
-        m_period = p;
-    }
+    void period(const duration_millis_t& p);
 
     virtual bool valueValid() const override final;
 

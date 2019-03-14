@@ -129,4 +129,7 @@
   "ccls.highlighting.bold.types": false,
   "ccls.highlighting.bold.templateParameters": false,
   "ccls.highlighting.bold.typeAliases": false,
+  "ccls.clang.pathMappings": [
+    "%h -x c++-header"
+  ]
 }

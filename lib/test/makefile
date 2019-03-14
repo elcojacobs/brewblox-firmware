@@ -45,7 +45,6 @@ CSRC += $(call target_files,lib/src,*.c)
 CPPSRC += $(call target_files,lib/src,*.cpp)
 
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
-INCLUDE_DIRS += $(SOURCE_PATH)/lib/mixins #include empty mixins
 
 ifeq ($(BOOST_ROOT),)
 $(error BOOST_ROOT not set. Download boost and add BOOST_ROOT to your environment variables.)
@@ -63,6 +62,9 @@ CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -DDEBUG_BUILD
 # OSX includes sys/wait.h which defines "wait"
 CFLAGS += -D_SYS_WAIT_H_ -D_SYS_WAIT_H
+
+# set platform flag
+CFLAGS += -DPLATFORM_ID=PLATFORM_GCC
 
 CPPFLAGS += -std=gnu++14
 # doesn't work on osx
