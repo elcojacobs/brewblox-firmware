@@ -1,0 +1,3 @@
+[submodule "lib/cnl"]
+	path = lib/cnl
+	url = https://github.com/johnmcfarlane/cnl.git
