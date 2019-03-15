@@ -1,3 +1,9 @@
+resources:
+  repositories:
+    - repository: self
+      checkoutOptions:
+        submodules: true
+
 trigger:
   tags:
     include:
@@ -10,163 +16,162 @@ trigger:
 # Tests
 #########################################################
 jobs:
-- job: Tests
-  pool:
-    vmImage: 'Ubuntu-16.04'
+  - job: Tests
+    pool:
+      vmImage: "Ubuntu-16.04"
 
-  steps:
-  - bash: |
-      bash start-compiler.sh
-    workingDirectory: docker
-    displayName: Start compiler
+    steps:
+      - bash: |
+          bash start-compiler.sh
+        workingDirectory: docker
+        displayName: Start compiler
 
-  - bash: |
-      docker-compose exec -T compiler bash compile-proto.sh
-    workingDirectory: docker
-    displayName: Compile proto
+      - bash: |
+          docker-compose exec -T compiler bash compile-proto.sh
+        workingDirectory: docker
+        displayName: Compile proto
 
-  - bash: |
-      docker-compose exec -T compiler bash build-tests.sh
-    workingDirectory: docker
-    displayName: Build tests
+      - bash: |
+          docker-compose exec -T compiler bash build-tests.sh
+        workingDirectory: docker
+        displayName: Build tests
 
-  - bash: |
-      docker-compose exec -T compiler bash run-tests.sh
-    workingDirectory: docker
-    displayName: Run tests
+      - bash: |
+          docker-compose exec -T compiler bash run-tests.sh
+        workingDirectory: docker
+        displayName: Run tests
 
-#########################################################
-# Simulator
-#########################################################
-- job: Simulator
-  pool:
-    vmImage: 'Ubuntu-16.04'
+  #########################################################
+  # Simulator
+  #########################################################
+  - job: Simulator
+    pool:
+      vmImage: "Ubuntu-16.04"
 
-  steps:
-  - bash: |
-      bash start-compiler.sh
-    workingDirectory: docker
-    displayName: Start compiler
+    steps:
+      - bash: |
+          bash start-compiler.sh
+        workingDirectory: docker
+        displayName: Start compiler
 
-  - bash: |
-      bash build-simulator.sh
-    workingDirectory: docker
-    displayName: Build
+      - bash: |
+          bash build-simulator.sh
+        workingDirectory: docker
+        displayName: Build
 
-  - bash: |
-      docker save brewblox/firmware-simulator:local > $(Build.ArtifactStagingDirectory)/simulator.tar
-    workingDirectory: docker
-    displayName: Save image
+      - bash: |
+          docker save brewblox/firmware-simulator:local > $(Build.ArtifactStagingDirectory)/simulator.tar
+        workingDirectory: docker
+        displayName: Save image
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: simulator
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: "$(Build.ArtifactStagingDirectory)"
+          artifactName: simulator
 
+  #########################################################
+  # Flasher
+  #########################################################
+  - job: Flasher
+    pool:
+      vmImage: "Ubuntu-16.04"
 
-#########################################################
-# Flasher
-#########################################################
-- job: Flasher
-  pool:
-    vmImage: 'Ubuntu-16.04'
+    steps:
+      - bash: |
+          bash start-compiler.sh
+        workingDirectory: docker
+        displayName: Start compiler
 
-  steps:
-  - bash: |
-      bash start-compiler.sh
-    workingDirectory: docker
-    displayName: Start compiler
+      - bash: |
+          bash build-flasher.sh
+        workingDirectory: docker
+        displayName: Build
 
-  - bash: |
-      bash build-flasher.sh
-    workingDirectory: docker
-    displayName: Build
+      - bash: |
+          docker save brewblox/firmware-flasher:local > $(Build.ArtifactStagingDirectory)/flasher.tar
+          docker save brewblox/firmware-flasher:rpi-local > $(Build.ArtifactStagingDirectory)/rpi-flasher.tar
+        workingDirectory: docker
+        displayName: Save image
 
-  - bash: |
-      docker save brewblox/firmware-flasher:local > $(Build.ArtifactStagingDirectory)/flasher.tar
-      docker save brewblox/firmware-flasher:rpi-local > $(Build.ArtifactStagingDirectory)/rpi-flasher.tar
-    workingDirectory: docker
-    displayName: Save image
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: "$(Build.ArtifactStagingDirectory)"
+          artifactName: flasher
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: flasher
+  #########################################################
+  # Deployment
+  #########################################################
+  - job: Deploy
+    pool:
+      vmImage: "Ubuntu-16.04"
+    dependsOn:
+      - Tests
+      - Simulator
+      - Flasher
 
-#########################################################
-# Deployment
-#########################################################
-- job: Deploy
-  pool:
-    vmImage: 'Ubuntu-16.04'
-  dependsOn: 
-  - Tests
-  - Simulator
-  - Flasher
+    variables:
+      # Variables imported from brewblox group:
+      # DOCKER_USER
+      # DOCKER_PASSWORD
+      # PYPI_USER
+      # PYPI_PASSWORD
+      - group: brewblox
 
-  variables:
-    # Variables imported from brewblox group:
-    # DOCKER_USER
-    # DOCKER_PASSWORD
-    # PYPI_USER
-    # PYPI_PASSWORD
-    - group: brewblox
+    steps:
+      - bash: |
+          BRANCH=$(echo $(Build.SourceBranch) | grep -oP "^refs/heads/\K.*")
+          TAG=$(git describe --tags | grep "^[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]$")
+          echo "##vso[task.setvariable variable=brewblox.branch]$BRANCH"
+          echo "##vso[task.setvariable variable=brewblox.tag]$TAG"
+        displayName: export build variables
 
-  steps:
-  - bash: |
-      BRANCH=$(echo $(Build.SourceBranch) | grep -oP "^refs/heads/\K.*")
-      TAG=$(git describe --tags | grep "^[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]$")
-      echo "##vso[task.setvariable variable=brewblox.branch]$BRANCH"
-      echo "##vso[task.setvariable variable=brewblox.tag]$TAG"
-    displayName: export build variables
+      - bash: |
+          echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin
+        displayName: Docker login
+        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
-  - bash: |
-      echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin
-    displayName: Docker login
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: current
+          downloadType: single
+          artifactName: simulator
+          downloadPath: $(System.ArtifactsDirectory)
 
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: current
-      downloadType: single
-      artifactName: simulator
-      downloadPath: $(System.ArtifactsDirectory)
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: current
+          downloadType: single
+          artifactName: flasher
+          downloadPath: $(System.ArtifactsDirectory)
 
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: current
-      downloadType: single
-      artifactName: flasher
-      downloadPath: $(System.ArtifactsDirectory)
+      - bash: |
+          docker load -i $(System.ArtifactsDirectory)/simulator/simulator.tar
+          docker load -i $(System.ArtifactsDirectory)/flasher/flasher.tar
+          docker load -i $(System.ArtifactsDirectory)/flasher/rpi-flasher.tar
+        displayName: Import images
 
-  - bash: |
-      docker load -i $(System.ArtifactsDirectory)/simulator/simulator.tar
-      docker load -i $(System.ArtifactsDirectory)/flasher/flasher.tar
-      docker load -i $(System.ArtifactsDirectory)/flasher/rpi-flasher.tar
-    displayName: Import images
+      - bash: |
+          bash push-local.sh ${SIM_REPO} newest-tag
+          bash push-local.sh ${SIM_REPO} $(brewblox.tag)
+          bash push-local.sh ${FLASH_REPO} newest-tag
+          bash push-local.sh ${FLASH_REPO} $(brewblox.tag)
+          bash push-rpi-local.sh ${FLASH_REPO} rpi-newest-tag
+          bash push-rpi-local.sh ${FLASH_REPO} rpi-$(brewblox.tag)
+        displayName: Deploy newest-tag and version tag to Docker Hub on tagged commits
+        condition: and(succeeded(), variables['brewblox.tag'])
+        workingDirectory: docker
+        env:
+          SIM_REPO: brewblox/firmware-simulator
+          FLASH_REPO: brewblox/firmware-flasher
 
-  - bash: |
-      bash push-local.sh ${SIM_REPO} newest-tag
-      bash push-local.sh ${SIM_REPO} $(brewblox.tag)
-      bash push-local.sh ${FLASH_REPO} newest-tag
-      bash push-local.sh ${FLASH_REPO} $(brewblox.tag)
-      bash push-rpi-local.sh ${FLASH_REPO} rpi-newest-tag
-      bash push-rpi-local.sh ${FLASH_REPO} rpi-$(brewblox.tag)
-    displayName: Deploy newest-tag and version tag to Docker Hub on tagged commits
-    condition: and(succeeded(), variables['brewblox.tag'])
-    workingDirectory: docker
-    env:
-      SIM_REPO: brewblox/firmware-simulator
-      FLASH_REPO: brewblox/firmware-flasher
-
-  - bash: |
-      CLEAN_BRANCH=$(echo $(brewblox.branch) | tr '/' '-' | tr '[:upper:]' '[:lower:]')
-      bash push-local.sh ${SIM_REPO} ${CLEAN_BRANCH}
-      bash push-local.sh ${FLASH_REPO} ${CLEAN_BRANCH}
-      bash push-rpi-local.sh ${FLASH_REPO} rpi-${CLEAN_BRANCH}
-    displayName: Deploy branch to Docker Hub on any push to the GitHub repository
-    condition: and(succeeded(), variables['brewblox.branch'], not(variables['brewblox.tag']))
-    workingDirectory: docker
-    env:
-      SIM_REPO: brewblox/firmware-simulator
-      FLASH_REPO: brewblox/firmware-flasher
+      - bash: |
+          CLEAN_BRANCH=$(echo $(brewblox.branch) | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          bash push-local.sh ${SIM_REPO} ${CLEAN_BRANCH}
+          bash push-local.sh ${FLASH_REPO} ${CLEAN_BRANCH}
+          bash push-rpi-local.sh ${FLASH_REPO} rpi-${CLEAN_BRANCH}
+        displayName: Deploy branch to Docker Hub on any push to the GitHub repository
+        condition: and(succeeded(), variables['brewblox.branch'], not(variables['brewblox.tag']))
+        workingDirectory: docker
+        env:
+          SIM_REPO: brewblox/firmware-simulator
+          FLASH_REPO: brewblox/firmware-flasher

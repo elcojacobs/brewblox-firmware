@@ -30,7 +30,7 @@ MODULAR?=y
 endif
 
 # add nanopb dependencies
-include $(SOURCE_PATH)/platform/spark/firmware/nanopb/import.mk
+include $(SOURCE_PATH)/platform/spark/device-os/nanopb/import.mk
 ifeq ($(MODULAR),y)
 # include sources that are part of nanopb, but not included in shared libraries of particle
 CSRC += app/brewblox/nanopb_not_in_particle_dynalib.c

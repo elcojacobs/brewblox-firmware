@@ -4,7 +4,7 @@ $(MAKECMDGOALS) : run_make
 
 current_dir := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 APPDIR := $(realpath $(current_dir)/..)
-SPARKDIR := $(APPDIR)/platform/spark/firmware
+SPARKDIR := $(APPDIR)/platform/spark/device-os
 
 APP ?= brewblox
 APP_MAKEFILE := app/$(APP)/build.mk
