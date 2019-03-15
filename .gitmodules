@@ -6,3 +6,6 @@
 	path = platform/spark/device-os
 	url = https://github.com/BrewBlox/particle-device-os.git
 	branch = brewblox
+[submodule "app/brewblox/proto"]
+	path = app/brewblox/proto
+	url = https://github.com/BrewBlox/brewblox-proto.git
