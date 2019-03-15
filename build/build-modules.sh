@@ -10,7 +10,7 @@ else
 fi
 }
 
-pushd "$MY_DIR/../platform/spark/firmware/modules" > /dev/null
+pushd "$MY_DIR/../platform/spark/device-os/modules" > /dev/null
 
 echo "Building system modules for P1"
 make -s all PLATFORM=p1 PARTICLE_DEVELOP=y

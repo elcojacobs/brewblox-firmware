@@ -4,7 +4,7 @@
 # do some renames so the names don't cause conflicts when both are used
 
 PROTO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-NANOPB_PATH="$(readlink -f "${PROTO_DIR}/../../../platform/spark/firmware/nanopb/nanopb")"
+NANOPB_PATH="$(readlink -f "${PROTO_DIR}/../../../platform/spark/device-os/nanopb/nanopb")"
 pushd "$PROTO_DIR" > /dev/null # .option files are read from execution directory, so have to cd into this dir 
 
 mkdir -p "test/proto"
