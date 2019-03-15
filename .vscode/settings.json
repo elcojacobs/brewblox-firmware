@@ -106,7 +106,7 @@
     "**/.git": true,
     ".ccls-cache": true,
     "platform/spark/target": true,
-    "platform/spark/firmware/build": true,
+    "platform/spark/device-os/build": true,
     "**/test/build": true,
     "build/coverage": true,
     "build/target": true,
