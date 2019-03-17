@@ -80,7 +80,6 @@ public:
         persisted.referenceId = reference.getId();
         persisted.referenceSettingOrValue = blox_ActuatorOffset_SettingOrValue(actuator.selectedReference());
         persisted.enabled = actuator.enabled();
-
         persisted.setting = cnl::unwrap(constrained.setting());
         getAnalogConstraints(persisted.constrainedBy, constrained);
 

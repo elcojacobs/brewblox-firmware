@@ -30,12 +30,11 @@ ActuatorPwm::value() const
     return m_dutyAchieved;
 }
 
-void
-ActuatorPwm::period(const duration_millis_t& p)
-{
-    m_period = p;
 #if PLATFORM_ID != PLATFORM_GCC
-    if (m_period < 1000) {
+void
+ActuatorPwm::manageTimerTask()
+{
+    if (m_period < 1000 && m_enabled) {
         m_period = 100;
         if (!timerFuncId) {
             timerFuncId = TimerInterrupts::add([this]() { timerTask(); });
@@ -44,8 +43,18 @@ ActuatorPwm::period(const duration_millis_t& p)
         if (timerFuncId) {
             TimerInterrupts::remove(timerFuncId);
             timerFuncId = 0;
+            m_dutyAchieved = 0;
         }
     }
+}
+#endif
+
+void
+ActuatorPwm::period(const duration_millis_t& p)
+{
+    m_period = p;
+#if PLATFORM_ID != PLATFORM_GCC
+    manageTimerTask();
 #endif
 }
 
@@ -68,14 +77,14 @@ ActuatorPwm::timerTask()
     if (auto actPtr = m_target()) {
         if (actPtr->state() != State::Active) {
             if (m_fastPwmElapsed < m_dutyTime) {
-                actPtr->state(State::Active);
+                actPtr->setStateUnlogged(State::Active);
             }
             if (m_fastPwmElapsed == 1) {
                 m_dutyAchieved = 0; // never active in previous cycle
             }
         } else {
             if (m_fastPwmElapsed >= m_dutyTime) {
-                actPtr->state(State::Inactive);
+                actPtr->setStateUnlogged(State::Inactive);
                 m_dutyAchieved = m_fastPwmElapsed;
             } else {
                 if (m_fastPwmElapsed == 99) {
@@ -106,6 +115,7 @@ ActuatorPwm::update(const update_t& now)
 ActuatorPwm::update_t
 ActuatorPwm::slowPwmUpdate(const update_t& now)
 {
+
     if (auto actPtr = m_target()) {
         auto durations = actPtr->activeDurations(now);
         auto twoPeriodTotalTime = durations.previousPeriod + durations.currentPeriod;
@@ -202,7 +212,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         }
 
         // Toggle actuator if necessary
-        if (wait == 0) {
+        if (m_enabled && wait == 0) {
             if (currentState == State::Inactive) {
                 actPtr->state(State::Active, now);
             } else {
