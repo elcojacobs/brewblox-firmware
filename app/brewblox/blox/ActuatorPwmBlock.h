@@ -45,7 +45,7 @@ public:
             pwm.period(newData.period);
             setAnalogConstraints(newData.constrainedBy, constrained, objectsRef);
             constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.setting));
-            actuator.enabled(newData.enabled);
+            pwm.enabled(newData.enabled);
         }
         return result;
     }
@@ -57,7 +57,7 @@ public:
         message.actuatorId = actuator.getId();
 
         message.period = pwm.period();
-        message.enabled = actuator.enabled();
+        message.enabled = pwm.enabled();
 
         if (constrained.valueValid()) {
             message.value = cnl::unwrap(constrained.value());
@@ -82,7 +82,7 @@ public:
         blox_ActuatorPwm persisted = blox_ActuatorPwm_init_zero;
         persisted.actuatorId = actuator.getId();
         persisted.period = pwm.period();
-        message.enabled = actuator.enabled();
+        persisted.enabled = pwm.enabled();
         persisted.setting = cnl::unwrap(constrained.setting());
         getAnalogConstraints(persisted.constrainedBy, constrained);
 

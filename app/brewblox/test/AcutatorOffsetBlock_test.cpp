@@ -25,10 +25,10 @@
 #include "blox/SetpointSensorPairBlock.h"
 #include "blox/SetpointSimpleBlock.h"
 #include "blox/TempSensorMockBlock.h"
-#include "proto/test/cpp/ActuatorOffset.test.pb.h"
-#include "proto/test/cpp/SetpointSensorPair.test.pb.h"
-#include "proto/test/cpp/SetpointSimple.test.pb.h"
-#include "proto/test/cpp/TempSensorMock.test.pb.h"
+#include "proto/test/cpp/ActuatorOffset_test.pb.h"
+#include "proto/test/cpp/SetpointSensorPair_test.pb.h"
+#include "proto/test/cpp/SetpointSimple_test.pb.h"
+#include "proto/test/cpp/TempSensorMock_test.pb.h"
 
 SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf data")
 {
