@@ -10,7 +10,7 @@ else
 fi
 }
 
-pushd "$MY_DIR/../lib/test_catch" > /dev/null
+pushd "$MY_DIR/../lib/test" > /dev/null
 echo "Building lib unit tests"
 make $MAKE_ARGS -s runner;
 (( result = $? ))

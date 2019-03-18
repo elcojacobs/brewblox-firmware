@@ -269,7 +269,7 @@
                 "bash",
                 "../wrapped_make.sh",
                 "-C",
-                "../lib/test_catch"
+                "../lib/test"
             ],
             "group": "build",
             "options": {
@@ -340,7 +340,7 @@
             "command": "make",
             "args": [
                 "-C",
-                "../lib/test_catch"
+                "../lib/test"
             ],
             "group": "build",
             "options": {

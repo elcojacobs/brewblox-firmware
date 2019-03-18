@@ -31,7 +31,7 @@
             "name": "gdb lib test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/lib/test_catch/build/lib_test_runner",
+            "program": "${workspaceFolder}/lib/test/build/lib_test_runner",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

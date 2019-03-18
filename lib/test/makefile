@@ -32,7 +32,7 @@ target_files = $(patsubst $(SOURCE_PATH)/%,%,$(call rwildcard,$(SOURCE_PATH)/$1,
 here_files = $(patsubst $(SOURCE_PATH)/%,%,$(wildcard $(SOURCE_PATH)/$1/$2))
 
 # add all tests
-CPPSRC += $(call here_files,lib/test_catch,*.cpp)
+CPPSRC += $(call here_files,lib/test,*.cpp)
 
 # add all lib source files
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc

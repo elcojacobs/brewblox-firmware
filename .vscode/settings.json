@@ -74,7 +74,7 @@
   },
   "catch2TestExplorer.executables": [
     "app/brewblox/test/build/brewblox_test_runner",
-    "lib/test_catch/build/lib_test_runner",
+    "lib/test/build/lib_test_runner",
     "controlbox/build/cbox_test_runner",
   ],
   "ccls.highlighting.enabled.types": true,
@@ -112,7 +112,7 @@
     "build/target": true,
     "controlbox/build": true,
     "docs/_build": true,
-    "lib/test_catch/build": true,
+    "lib/test/build": true,
     "**/*.o.d": true,
   },
   "ccls.cache.hierarchicalPath": true,
