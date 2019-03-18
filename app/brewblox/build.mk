@@ -6,6 +6,9 @@ here_files = $(patsubst $(SOURCE_PATH)/%,%,$(wildcard $(SOURCE_PATH)/$1/$2))
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
 CSRC += $(call target_files,lib/src,*.c)
 CPPSRC += $(call target_files,lib/src,*.cpp)
+ifeq ($(PLATFORM_ID),3)
+CPPEXCLUDES += lib/src/spark/TimerInterrupts.cpp
+endif
 
 # add all controlbox source files
 INCLUDE_DIRS += $(SOURCE_PATH)/controlbox/src/
@@ -27,7 +30,7 @@ MODULAR?=y
 endif
 
 # add nanopb dependencies
-include $(SOURCE_PATH)/platform/spark/firmware/nanopb/import.mk
+include $(SOURCE_PATH)/platform/spark/device-os/nanopb/import.mk
 ifeq ($(MODULAR),y)
 # include sources that are part of nanopb, but not included in shared libraries of particle
 CSRC += app/brewblox/nanopb_not_in_particle_dynalib.c

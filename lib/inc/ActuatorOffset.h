@@ -41,6 +41,9 @@ private:
     value_t m_value = 0;
     bool m_settingValid = false;
     bool m_valueValid = false;
+    // separate flag for manually disabling the offset actuator
+    bool m_enabled = true;
+
     SettingOrValue m_selectedReference = SettingOrValue::SETTING;
 
 public:
@@ -84,8 +87,11 @@ public:
 
     virtual void settingValid(bool v) override final
     {
-        if (auto targetPtr = m_target()) {
-            targetPtr->settingValid(v);
+        if (m_enabled) {
+
+            if (auto targetPtr = m_target()) {
+                targetPtr->settingValid(v);
+            }
         }
     }
 
@@ -101,9 +107,12 @@ public:
 
     void update()
     {
-        m_valueValid = false;
         m_settingValid = false;
+        if (!m_enabled) {
+            return;
+        }
 
+        m_valueValid = false;
         if (auto targetPtr = m_target()) {
             if (auto refPtr = m_reference()) {
                 if (m_selectedReference == SettingOrValue::SETTING) {
@@ -133,5 +142,15 @@ public:
             targetPtr->settingValid(false);
             m_value = 0;
         }
+    }
+
+    bool enabled() const
+    {
+        return m_enabled;
+    }
+
+    void enabled(bool v)
+    {
+        m_enabled = v;
     }
 };

@@ -20,6 +20,7 @@
 #include "BrewPiTouch.h"
 #include "spark_wiring.h"
 #include <algorithm>
+#include <cstdint>
 #include <limits.h>
 #include <vector>
 
@@ -27,15 +28,10 @@ BrewPiTouch::BrewPiTouch(SPIArbiter& spia, const uint8_t cs, const uint8_t irq)
     : _spi(spia)
     , pinCS(cs)
     , pinIRQ(irq)
+    , filterX(0)
+    , filterY(0)
 {
     config = BrewPiTouch::START;
-    width = 1600;
-    height = 1600;
-    tftWidth = 320;
-    tftHeight = 240;
-    xOffset = 0;
-    yOffset = 0;
-    stabilityThreshold = 40;
 }
 
 BrewPiTouch::~BrewPiTouch()
@@ -60,10 +56,6 @@ BrewPiTouch::init()
     _spi.transfer(config);
     _spi.end();
 
-    filterX.init(width / 2);
-    filterX.setCoefficients(SETTLING_TIME_25_SAMPLES);
-    filterY.init(height / 2);
-    filterY.setCoefficients(SETTLING_TIME_25_SAMPLES);
     update();
 }
 
@@ -130,33 +122,15 @@ BrewPiTouch::isTouched() const
 }
 
 int16_t
-BrewPiTouch::getXRaw() const
-{
-    return filterX.readInput();
-}
-
-int16_t
-BrewPiTouch::getYRaw() const
-{
-    return filterY.readInput();
-}
-
-int16_t
 BrewPiTouch::getX() const
 {
-    int32_t val = getXRaw();      // create room for multiplication
-    val -= xOffset;               // remove offset
-    val = val * tftWidth / width; //scale
-    return val;
+    return filterX.read();
 }
 
 int16_t
 BrewPiTouch::getY() const
 {
-    int32_t val = getYRaw();        // create room for multiplication
-    val -= yOffset;                 // remove offset
-    val = val * tftHeight / height; //scale
-    return val;
+    return filterY.read();
 }
 
 /*
@@ -165,53 +139,18 @@ BrewPiTouch::getY() const
  *  The result is fed to the low pass filters
  */
 bool
-BrewPiTouch::update(uint16_t numSamples)
+BrewPiTouch::update()
 {
-    std::vector<int16_t> samplesX;
-    std::vector<int16_t> samplesY;
-
-    bool valid = true;
-
     if (!isTouched()) {
         return false; // exit immediately when not touched to prevent claiming SPI
     }
-    for (uint16_t i = 0; i < numSamples; i++) {
+    // read enough samples for settling time of low pass filter
+    for (uint16_t i = 0; i < 20; i++) {
         if (!isTouched()) {
-            valid = false;
-            break;
+            return false;
         }
-        samplesX.push_back(readChannel(CHX, false));
-        samplesY.push_back(readChannel(CHY, false));
-    }
-    if (valid) {
-        // get median
-        size_t middle = samplesX.size() / 2;
-        std::nth_element(samplesX.begin(), samplesX.begin() + middle, samplesX.end());
-        std::nth_element(samplesY.begin(), samplesY.begin() + middle, samplesY.end());
-        // feed to filter to check stability
-        filterX.add(samplesX[middle]);
-        filterY.add(samplesY[middle]);
-    }
-    return valid && isStable();
-}
-
-void
-BrewPiTouch::setStabilityThreshold(int16_t threshold)
-{
-    stabilityThreshold = threshold;
-}
-
-/* isStable() returns true if the difference between the last sample and 
- * a low pass filtered value of past samples is under a certain threshold
- */
-bool
-BrewPiTouch::isStable() const
-{
-    if (abs(filterX.readInput() - filterX.readOutput()) > stabilityThreshold) {
-        return false;
-    }
-    if (abs(filterY.readInput() - filterY.readOutput()) > stabilityThreshold) {
-        return false;
+        filterX.add(readChannel(CHX, false));
+        filterY.add(readChannel(CHX, false));
     }
     return true;
 }

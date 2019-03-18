@@ -21,8 +21,8 @@
 
 #include "BrewBloxTestBox.h"
 #include "blox/ActuatorPinBlock.h"
-#include "proto/test/cpp/ActuatorPin.test.pb.h"
-#include "proto/test/cpp/DigitalConstraints.test.pb.h"
+#include "proto/test/cpp/ActuatorPin_test.pb.h"
+#include "proto/test/cpp/DigitalConstraints_test.pb.h"
 
 using namespace cbox;
 

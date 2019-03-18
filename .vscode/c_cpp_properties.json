@@ -14,16 +14,16 @@
                 "${workspaceFolder}/lib/inc",
                 "${workspaceFolder}/controlbox/test",
                 "${workspaceFolder}/platform/spark/modules",
-                "${workspaceFolder}/platform/spark/firmware/user/inc",
-                "${workspaceFolder}/platform/spark/firmware/system/inc",
-                "${workspaceFolder}/platform/spark/firmware/wiring/inc",
-                "${workspaceFolder}/platform/spark/firmware/hal/inc",
-                "${workspaceFolder}/platform/spark/firmware/hal/shared",
-                "${workspaceFolder}/platform/spark/firmware/hal/src/gcc",
-                "${workspaceFolder}/platform/spark/firmware/services/inc",
-                "${workspaceFolder}/platform/spark/firmware/platform/shared/inc",
-                "${workspaceFolder}/platform/spark/firmware/hal/src/newhal",
-                "${workspaceFolder}/platform/spark/firmware/communication/src"
+                "${workspaceFolder}/platform/spark/device-os/user/inc",
+                "${workspaceFolder}/platform/spark/device-os/system/inc",
+                "${workspaceFolder}/platform/spark/device-os/wiring/inc",
+                "${workspaceFolder}/platform/spark/device-os/hal/inc",
+                "${workspaceFolder}/platform/spark/device-os/hal/shared",
+                "${workspaceFolder}/platform/spark/device-os/hal/src/gcc",
+                "${workspaceFolder}/platform/spark/device-os/services/inc",
+                "${workspaceFolder}/platform/spark/device-os/platform/shared/inc",
+                "${workspaceFolder}/platform/spark/device-os/hal/src/newhal",
+                "${workspaceFolder}/platform/spark/device-os/communication/src"
             ]
         }
     ],

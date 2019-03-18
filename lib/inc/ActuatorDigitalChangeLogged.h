@@ -66,6 +66,11 @@ public:
         state(val, lastUpdateTime);
     };
 
+    void setStateUnlogged(const State& val)
+    {
+        actuator.state(val);
+    }
+
     State state() const override
     {
         return actuator.state();
@@ -127,10 +132,10 @@ public:
             end = start;
             if (h->newState == State::Active) {
                 ++activePeriods;
-                if (result.currentActive == 0) {
+                if (activePeriods == 1) {
                     result.currentActive = duration;
                     result.currentPeriod += duration;
-                } else if (result.previousActive == 0) {
+                } else if (activePeriods == 2) {
                     result.previousActive = duration;
                     result.previousPeriod += duration;
                 } else {

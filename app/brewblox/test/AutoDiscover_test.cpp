@@ -24,7 +24,7 @@
 #include "blox/TempSensorOneWireBlock.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/TempSensorOneWire.test.pb.h"
+#include "proto/test/cpp/TempSensorOneWire_test.pb.h"
 #include <sstream>
 
 SCENARIO("Auto discovery of OneWire devices")

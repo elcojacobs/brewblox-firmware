@@ -22,6 +22,7 @@
 #include "BrewBlox.h"
 #include "Buzzer.h"
 #include "MDNS.h"
+#include "TimerInterrupts.h"
 #include "application.h" // particle stuff
 #include "blox/stringify.h"
 #include "cbox/Object.h"
@@ -193,6 +194,9 @@ setup()
     };
 
     WidgetsScreen::activate();
+#if PLATFORM_ID != PLATFORM_GCC
+    TimerInterrupts::init();
+#endif
 }
 
 void

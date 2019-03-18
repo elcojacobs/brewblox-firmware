@@ -19,7 +19,7 @@
 
 #include "../BrewBlox.h"
 #include "BrewBloxTestBox.h"
-#include "SetpointSimple.test.pb.h"
+#include "SetpointSimple_test.pb.h"
 #include "blox/SetpointSimpleBlock.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"

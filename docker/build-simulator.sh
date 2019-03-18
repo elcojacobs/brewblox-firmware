@@ -3,7 +3,7 @@ set -e
 
 docker-compose exec -T compiler \
     bash -c '
-        set -e        
+        set -e
         rm -rf ../docker/simulator/target
         bash compile-proto.sh
         make $MAKE_ARGS APP=brewblox PLATFORM=gcc

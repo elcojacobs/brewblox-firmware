@@ -24,8 +24,8 @@
 #include "blox/DS2413Block.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/ActuatorDS2413.test.pb.h"
-#include "proto/test/cpp/DS2413.test.pb.h"
+#include "proto/test/cpp/ActuatorDS2413_test.pb.h"
+#include "proto/test/cpp/DS2413_test.pb.h"
 #include <sstream>
 
 SCENARIO("A DS2413 Block")

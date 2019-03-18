@@ -1,4 +1,0 @@
-
-INCLUDE_DIRS += $(SHARED_MODULAR)/inc
-
-LDFLAGS += -L$(COMMON_BUILD)/arm/linker/stm32f2xx

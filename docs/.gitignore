@@ -1,3 +1,2 @@
 _build/
-.cproject
-.project
+_static/doxygen/

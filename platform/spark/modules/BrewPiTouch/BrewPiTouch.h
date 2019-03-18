@@ -19,18 +19,16 @@
 
 #pragma once
 
-#include "LowPassFilter.h"
+#include "IirFilter.h"
 #include "SPIArbiter.h"
-#include <inttypes.h>
+#include <cstdint>
 
 class BrewPiTouch final {
 public:
     BrewPiTouch(SPIArbiter& spia, const uint8_t cs, const uint8_t irq);
     ~BrewPiTouch();
     void init();
-    bool update(uint16_t numSamples = 8);
-    int16_t getXRaw() const;
-    int16_t getYRaw() const;
+    bool update();
     int16_t getX() const;
     int16_t getY() const;
     void set8bit();
@@ -38,9 +36,6 @@ public:
     bool is8bit() const;
     bool is12bit() const;
     bool isTouched() const;
-    bool isStable() const;
-    void setStabilityThreshold(int16_t treshold = 40);
-
     uint16_t read5V() const;
     uint16_t read12V() const;
 
@@ -64,18 +59,11 @@ public:
     const int16_t CALIBRATE_FROM_EDGE = 40;
 
 private:
-    int16_t width;  // can be negative when display is flipped
-    int16_t height; // can be negative when display is flipped
-    int16_t tftWidth;
-    int16_t tftHeight;
-    int16_t xOffset;
-    int16_t yOffset;
     const uint8_t pinCS;
     const uint8_t pinIRQ;
     uint8_t config;
-    int16_t stabilityThreshold;
-    LowPassFilter filterX;
-    LowPassFilter filterY;
+    IirFilter filterX;
+    IirFilter filterY;
 
     void spiWrite(uint8_t c) const;
     uint8_t spiRead(void) const;

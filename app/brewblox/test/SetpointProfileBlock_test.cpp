@@ -22,8 +22,8 @@
 #include "blox/SetpointProfileBlock.h"
 #include "blox/TicksBlock.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/SetpointProfile.test.pb.h"
-#include "proto/test/cpp/Ticks.test.pb.h"
+#include "proto/test/cpp/SetpointProfile_test.pb.h"
+#include "proto/test/cpp/Ticks_test.pb.h"
 #include <catch.hpp>
 #include <sstream>
 

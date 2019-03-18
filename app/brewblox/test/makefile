@@ -61,8 +61,8 @@ INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/modules/Board
 CPPSRC += $(call here_files,platform/spark/modules/Board,*.cpp)
 
 # add nanopb dependencies
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/firmware/nanopb/nanopb
-CSRC += $(call here_files,platform/spark/firmware/nanopb/nanopb,*.c)
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/nanopb/nanopb
+CSRC += $(call here_files,platform/spark/device-os/nanopb/nanopb,*.c)
 # enable message id's
 CFLAGS += -DPB_MSGID=1
 
@@ -74,15 +74,15 @@ CPPSRC += /app/brewblox/BrewBlox.cpp
 CPPSRC += /app/brewblox/AppTicks.cpp
 
 # spark HAL includes
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/firmware/hal/inc
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/firmware/hal/shared
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/firmware/services/inc
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/firmware/hal/src/gcc
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/firmware/hal/src/newhal
-CPPSRC += /platform/spark/firmware/hal/src/gcc/gpio_hal.cpp
-CPPSRC += /platform/spark/firmware/hal/src/gcc/eeprom_hal.cpp
-CPPSRC += /platform/spark/firmware/hal/src/gcc/filesystem.cpp
-CPPSRC += /platform/spark/firmware/communication/tests/catch/hal_stubs.cpp
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/inc
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/shared
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/services/inc
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/src/gcc
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/src/newhal
+CPPSRC += /platform/spark/device-os/hal/src/gcc/gpio_hal.cpp
+CPPSRC += /platform/spark/device-os/hal/src/gcc/eeprom_hal.cpp
+CPPSRC += /platform/spark/device-os/hal/src/gcc/filesystem.cpp
+CPPSRC += /platform/spark/device-os/communication/tests/catch/hal_stubs.cpp
 
 CFLAGS += -DPLATFORM_ID=3
 

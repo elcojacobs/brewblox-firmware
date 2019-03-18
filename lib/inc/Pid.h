@@ -177,8 +177,10 @@ public:
 private:
     void active(bool state)
     {
-        if (auto ptr = m_outputPtr()) {
-            ptr->settingValid(state);
+        if (m_enabled && m_active && !state) {
+            if (auto ptr = m_outputPtr()) {
+                ptr->settingValid(false);
+            }
         }
         m_active = state;
     }
