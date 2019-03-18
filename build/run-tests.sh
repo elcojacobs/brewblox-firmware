@@ -11,7 +11,7 @@ fi
 }
 
 echo "Running lib unit tests"
-pushd "$MY_DIR/../lib/test_catch/build" > /dev/null
+pushd "$MY_DIR/../lib/test/build" > /dev/null
 ./lib_test_runner;
 (( result = $? ))
 status $result
