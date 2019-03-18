@@ -43,7 +43,7 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
     newPwm.set_actuatorid(10); // predefined system object for pin actuator
     newPwm.set_setting(cnl::unwrap(ActuatorAnalog::value_t(20)));
     newPwm.set_period(4000);
-
+    newPwm.set_enabled(true);
     auto c = newPwm.mutable_constrainedby()->add_constraints();
     c->set_min(cnl::unwrap(ActuatorAnalog::value_t(10)));
 
@@ -65,5 +65,6 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
                                         "period: 4000 setting: 81920 "
                                         "constrainedBy { constraints { min: 40960 } "
                                         "unconstrained: 81920 } "
-                                        "drivenActuatorId: 10");
+                                        "drivenActuatorId: 10 "
+                                        "enabled: true");
 }
