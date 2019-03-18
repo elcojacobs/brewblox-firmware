@@ -22,6 +22,7 @@
 
 #include "Logger.h"
 #include "OneWireDevice.h"
+#include <inttypes.h>
 
 #define DS2413_FAMILY_ID 0x3A
 
