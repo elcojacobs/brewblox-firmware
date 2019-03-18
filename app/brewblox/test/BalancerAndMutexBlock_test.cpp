@@ -24,10 +24,10 @@
 #include "blox/ActuatorPwmBlock.h"
 #include "blox/BalancerBlock.h"
 #include "blox/MutexBlock.h"
-#include "proto/test/cpp/ActuatorPin.test.pb.h"
-#include "proto/test/cpp/ActuatorPwm.test.pb.h"
-#include "proto/test/cpp/Balancer.test.pb.h"
-#include "proto/test/cpp/Mutex.test.pb.h"
+#include "proto/test/cpp/ActuatorPin_test.pb.h"
+#include "proto/test/cpp/ActuatorPwm_test.pb.h"
+#include "proto/test/cpp/Balancer_test.pb.h"
+#include "proto/test/cpp/Mutex_test.pb.h"
 
 SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
 {
@@ -234,6 +234,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             newPwm.set_actuatorid(10);
             newPwm.set_setting(cnl::unwrap(ActuatorAnalog::value_t(80)));
             newPwm.set_period(4000);
+            newPwm.set_enabled(true);
 
             auto c = newPwm.mutable_constrainedby()->add_constraints();
             auto balanced = new blox::AnalogConstraint_Balanced();
@@ -257,6 +258,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             newPwm.set_actuatorid(11);
             newPwm.set_setting(cnl::unwrap(ActuatorAnalog::value_t(80)));
             newPwm.set_period(4000);
+            newPwm.set_enabled(true);
 
             auto c = newPwm.mutable_constrainedby()->add_constraints();
             auto balanced = new blox::AnalogConstraint_Balanced();
@@ -301,7 +303,8 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                                                 "balanced { balancerId: 100 granted: 204800 id: 1 } "
                                                 "limiting: true } "
                                                 "unconstrained: 327680 } "
-                                                "drivenActuatorId: 10");
+                                                "drivenActuatorId: 10 "
+                                                "enabled: true");
         }
 
         // read a pwm actuator 2
@@ -320,7 +323,8 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                                                 "balanced { balancerId: 100 granted: 204800 id: 2 } "
                                                 "limiting: true } "
                                                 "unconstrained: 327680 } "
-                                                "drivenActuatorId: 11");
+                                                "drivenActuatorId: 11 "
+                                                "enabled: true");
         }
 
         // run for a while

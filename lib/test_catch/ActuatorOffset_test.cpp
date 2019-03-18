@@ -137,7 +137,7 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(targetSetpoint->valid() == false);
     }
 
-    WHEN("the reference value is and valid, "
+    WHEN("the reference value is used and valid, "
          "but the reference setpoint is invalid, then "
          "target setpoint will be valid and actuator is fully valid")
     {
@@ -152,5 +152,56 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(act->value() == 1.0); // ref sensor value is 19, target sensor is 20
         CHECK(act->setting() == 12.0);
         CHECK(targetSetpoint->valid() == true);
+    }
+
+    WHEN("The offset actuator is disabled")
+    {
+        act->setting(10.0);
+        CHECK(referenceSetpoint->setting() == 20.0);
+        CHECK(targetSetpoint->setting() == 30.0);
+        act->update();
+        CHECK(act->setting() == 10.0); // difference between setpoints is 10
+
+        act->enabled(false);
+        act->update();
+
+        THEN("This action doesn't change the target")
+        {
+            CHECK(targetSetpoint->setting() == 30.0);
+            CHECK(act->setting() == 10.0); // difference between setpoints is 10
+        }
+
+        THEN("The actuator setting is invalid")
+        {
+            CHECK(act->settingValid() == false);
+        }
+
+        THEN("Changing the setting of the actuator doesn't affect the target")
+        {
+            act->setting(50);
+            act->update();
+            CHECK(targetSetpoint->setting() == 30.0); // still 20
+            AND_THEN("the target can be changed externally")
+            {
+                targetSetpoint->setting(40);
+                act->setting(50);
+                act->update();
+                CHECK(targetSetpoint->setting() == 40.0);
+            }
+
+            AND_WHEN("the offset actuator is enabled again")
+            {
+                targetSetpoint->setting(40);
+                act->enabled(true);
+                act->update();
+                THEN("The actuator setting affects the target again")
+                {
+                    act->setting(50);
+                    act->update();
+                    CHECK(targetSetpoint->valid() == true);
+                    CHECK(targetSetpoint->setting() == 70.0);
+                }
+            }
+        }
     }
 }

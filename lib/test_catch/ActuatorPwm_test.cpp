@@ -346,9 +346,8 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         CHECK(randomIntervalTest(10, pwm, mock, 96.0, 500, now) == Approx(96.0).margin(0.5));
     }
 
-    WHEN("PWM actuator is set to invalid, the output pin is low")
+    WHEN("PWM actuator is set to invalid, the output pin is set low")
     {
-        // values typical for a fridge compressor
         pwm.setting(100);
         pwm.update(now);
 
@@ -357,6 +356,15 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         pwm.settingValid(false);
 
         CHECK(mock.state() == State::Inactive);
+    }
+
+    WHEN("The target actuator returns an unknown state, the value is marked invalid")
+    {
+        pwm.setting(10);
+        mock.state(State::Unknown);
+        pwm.update(now);
+
+        CHECK(pwm.valueValid() == false);
     }
 }
 

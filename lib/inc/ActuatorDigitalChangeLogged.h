@@ -66,6 +66,11 @@ public:
         state(val, lastUpdateTime);
     };
 
+    void setStateUnlogged(const State& val)
+    {
+        actuator.state(val);
+    }
+
     State state() const override
     {
         return actuator.state();

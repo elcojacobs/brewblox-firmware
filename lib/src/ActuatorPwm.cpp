@@ -17,10 +17,9 @@ ActuatorPwm::ActuatorPwm(
 void
 ActuatorPwm::setting(value_t const& val)
 {
-    if (settingValid()) {
-        m_dutySetting = std::clamp(val, value_t(0), value_t(100));
-        m_dutyTime = duration_millis_t((m_dutySetting * m_period) / value_t(100));
-    }
+    m_dutySetting = std::clamp(val, value_t(0), value_t(100));
+    m_dutyTime = duration_millis_t((m_dutySetting * m_period) / value_t(100));
+    settingValid(true);
 }
 
 // returns the actual achieved PWM value, not the set value
@@ -30,12 +29,11 @@ ActuatorPwm::value() const
     return m_dutyAchieved;
 }
 
-void
-ActuatorPwm::period(const duration_millis_t& p)
-{
-    m_period = p;
 #if PLATFORM_ID != PLATFORM_GCC
-    if (m_period < 1000) {
+void
+ActuatorPwm::manageTimerTask()
+{
+    if (m_period < 1000 && m_enabled) {
         m_period = 100;
         if (!timerFuncId) {
             timerFuncId = TimerInterrupts::add([this]() { timerTask(); });
@@ -44,8 +42,18 @@ ActuatorPwm::period(const duration_millis_t& p)
         if (timerFuncId) {
             TimerInterrupts::remove(timerFuncId);
             timerFuncId = 0;
+            m_dutyAchieved = 0;
         }
     }
+}
+#endif
+
+void
+ActuatorPwm::period(const duration_millis_t& p)
+{
+    m_period = p;
+#if PLATFORM_ID != PLATFORM_GCC
+    manageTimerTask();
 #endif
 }
 
@@ -68,14 +76,14 @@ ActuatorPwm::timerTask()
     if (auto actPtr = m_target()) {
         if (actPtr->state() != State::Active) {
             if (m_fastPwmElapsed < m_dutyTime) {
-                actPtr->state(State::Active);
+                actPtr->setStateUnlogged(State::Active);
             }
             if (m_fastPwmElapsed == 1) {
                 m_dutyAchieved = 0; // never active in previous cycle
             }
         } else {
             if (m_fastPwmElapsed >= m_dutyTime) {
-                actPtr->state(State::Inactive);
+                actPtr->setStateUnlogged(State::Inactive);
                 m_dutyAchieved = m_fastPwmElapsed;
             } else {
                 if (m_fastPwmElapsed == 99) {
@@ -148,6 +156,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                     }
                 }
             }
+            m_valueValid = true;
         } else if (currentState == State::Inactive) {
             if (m_dutySetting == value_t(0)) {
                 m_dutyAchieved = 0;
@@ -183,6 +192,9 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                     }
                 }
             }
+            m_valueValid = true;
+        } else {
+            m_valueValid = false;
         }
 
         // calculate achieved duty cycle
@@ -202,42 +214,38 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         }
 
         // Toggle actuator if necessary
-        if (wait == 0) {
+        if (m_enabled && m_settingValid && wait == 0) {
             if (currentState == State::Inactive) {
                 actPtr->state(State::Active, now);
             } else {
                 actPtr->state(State::Inactive, now);
             }
         }
+
         return now + std::min(update_t(1000), wait >> 1);
     }
-    m_dutyAchieved = 0;
     return now + 1000;
 }
 
 bool
 ActuatorPwm::valueValid() const
 {
-    if (auto actPtr = m_target()) {
-        return m_valid && actPtr->state() != State::Unknown;
-    }
-    return false;
+    return m_valueValid;
 }
 
 bool
 ActuatorPwm::settingValid() const
 {
-    return valueValid();
+    return m_settingValid;
 }
 
 void
 ActuatorPwm::settingValid(bool v)
 {
-    if (!v) {
+    if (!v && m_enabled) {
         if (auto actPtr = m_target()) {
             actPtr->state(State::Inactive);
         }
-        setting(0);
     }
-    m_valid = v;
+    m_settingValid = v;
 }

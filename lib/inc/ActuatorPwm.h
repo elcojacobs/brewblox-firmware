@@ -45,7 +45,11 @@ private:
     duration_millis_t m_dutyTime = 0;
     value_t m_dutySetting = 0;
     value_t m_dutyAchieved = 0;
-    bool m_valid = true;
+    bool m_settingValid = true;
+    bool m_valueValid = true;
+
+    // separate flag for manually disabling the pwm actuator
+    bool m_enabled = true;
 
 #if PLATFORM_ID != PLATFORM_GCC
     uint8_t timerFuncId = 0;
@@ -107,6 +111,8 @@ public:
     When the period is less than 1000ms, switch to timer interrupt based tasks
     */
     void timerTask();
+
+    void manageTimerTask();
 #endif
 
     /** returns the PWM period
@@ -124,4 +130,20 @@ public:
     virtual bool settingValid() const override final;
 
     virtual void settingValid(bool v) override final;
+
+    bool enabled() const
+    {
+        return m_enabled;
+    }
+
+    void enabled(bool v)
+    {
+        if (!v && m_enabled) {
+            settingValid(false);
+        }
+        m_enabled = v;
+#if PLATFORM_ID != PLATFORM_GCC
+        manageTimerTask();
+#endif
+    }
 };
