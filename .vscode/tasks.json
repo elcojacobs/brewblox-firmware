@@ -85,6 +85,7 @@
                 "../wrapped_make.sh",
                 "APP=brewblox",
                 "PLATFORM=p1",
+                "all",
                 "program-dfu"
             ],
             "group": "build",
@@ -115,6 +116,7 @@
                 "../wrapped_make.sh",
                 "APP=brewblox",
                 "PLATFORM=photon",
+                "all",
                 "program-dfu"
             ],
             "group": "build",

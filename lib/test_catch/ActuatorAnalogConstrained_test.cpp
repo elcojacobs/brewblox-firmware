@@ -74,6 +74,16 @@ SCENARIO("ActuatorAnalogConstrained test", "[constraints]")
                 }
             }
         }
+
+        WHEN("The actuator setting is set to invalid")
+        {
+            cAct.settingValid(false);
+            THEN("The setting value can still be written")
+            {
+                cAct.setting(50);
+                CHECK(cAct.setting() == 50);
+            }
+        }
     }
 }
 

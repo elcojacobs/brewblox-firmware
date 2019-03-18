@@ -60,7 +60,9 @@ public:
         }
         if (constrained.settingValid()) {
             message.setting = cnl::unwrap(constrained.setting());
-            message.drivenTargetId = message.targetId;
+            if (offset.enabled()) {
+                message.drivenTargetId = message.targetId;
+            }
         } else {
             stripped.add(blox_ActuatorOffset_setting_tag);
         };

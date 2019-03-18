@@ -36,10 +36,10 @@ public:
         cbox::CboxError res = streamProtoFrom(in, &newData, blox_Pid_fields, blox_Pid_size);
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
+            pid.enabled(newData.enabled);
             input.setId(newData.inputId);
             output.setId(newData.outputId);
             pid.configureFilter(uint8_t(newData.filter), cnl::wrap<Pid::in_t>(newData.filterThreshold));
-            pid.enabled(newData.enabled);
             pid.kp(cnl::wrap<Pid::in_t>(newData.kp));
             pid.ti(newData.ti);
             pid.td(newData.td);
@@ -78,7 +78,7 @@ public:
             }
             if (ptr->settingValid()) {
                 message.outputSetting = cnl::unwrap(ptr->setting());
-                if(pid.enabled()){
+                if (pid.enabled()) {
                     message.drivenOutputId = message.outputId;
                 }
             } else {

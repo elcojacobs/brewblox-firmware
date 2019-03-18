@@ -45,7 +45,8 @@ private:
     duration_millis_t m_dutyTime = 0;
     value_t m_dutySetting = 0;
     value_t m_dutyAchieved = 0;
-    bool m_valid = true;
+    bool m_settingValid = true;
+    bool m_valueValid = true;
 
     // separate flag for manually disabling the pwm actuator
     bool m_enabled = true;
@@ -137,6 +138,9 @@ public:
 
     void enabled(bool v)
     {
+        if (!v && m_enabled) {
+            settingValid(false);
+        }
         m_enabled = v;
 #if PLATFORM_ID != PLATFORM_GCC
         manageTimerTask();

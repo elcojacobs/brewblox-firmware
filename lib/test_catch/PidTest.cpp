@@ -417,6 +417,32 @@ SCENARIO("PID Test with offset actuator", "[pid]")
             CHECK(targetSetpoint->valid() == true);
         }
     }
+
+    WHEN("The PID is disabled")
+    {
+        pid.enabled(false);
+        pid.update();
+
+        THEN("The target setpoint is set to invalid")
+        {
+            CHECK(targetSetpoint->valid() == false);
+        }
+
+        WHEN("Something else sets the target setpoint later")
+        {
+            CHECK(targetSetpoint->valid() == false);
+            targetSetpoint->setting(20.0);
+            targetSetpoint->valid(true);
+            CHECK(targetSetpoint->valid() == true);
+            pid.update();
+
+            THEN("The already disabled PID doesn't affect it")
+            {
+                CHECK(targetSetpoint->valid() == true);
+                CHECK(targetSetpoint->setting() == 20.0);
+            }
+        }
+    }
 }
 
 SCENARIO("PID Test with PWM actuator", "[pid]")
@@ -693,6 +719,32 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             CHECK(pid.d() == Approx(0.0).margin(0.01));
 
             CHECK(pid.p() + pid.i() + pid.d() != actuator->setting());
+        }
+    }
+
+    WHEN("The PID is disabled")
+    {
+        pid.enabled(false);
+        pid.update();
+
+        THEN("The pwm setting is set to invalid")
+        {
+            CHECK(actuator->settingValid() == false);
+        }
+
+        AND_WHEN("It is set manually later")
+        {
+            actuator->setting(50);
+            actuator->settingValid(true);
+            CHECK(actuator->settingValid() == true);
+            CHECK(actuator->setting() == 50);
+            pid.update();
+
+            THEN("The disabled PID doesn't affect it")
+            {
+                CHECK(actuator->settingValid() == true);
+                CHECK(actuator->setting() == 50.0);
+            }
         }
     }
 }
