@@ -34,7 +34,6 @@
 #include "blox/PidBlock.h"
 #include "blox/SetpointProfileBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
-#include "blox/SetpointSimpleBlock.h"
 #include "blox/SysInfoBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "blox/TempSensorOneWireBlock.h"
@@ -125,7 +124,6 @@ makeBrewBloxBox()
 
     static cbox::ObjectFactory objectFactory = {
         {TempSensorOneWireBlock::staticTypeId(), std::make_shared<TempSensorOneWireBlock>},
-        {SetpointSimpleBlock::staticTypeId(), std::make_shared<SetpointSimpleBlock>},
         {SetpointSensorPairBlock::staticTypeId(), []() { return std::make_shared<SetpointSensorPairBlock>(objects); }},
         {TempSensorMockBlock::staticTypeId(), std::make_shared<TempSensorMockBlock>},
         {ActuatorAnalogMockBlock::staticTypeId(), []() { return std::make_shared<ActuatorAnalogMockBlock>(objects); }},
@@ -134,7 +132,7 @@ makeBrewBloxBox()
         {ActuatorOffsetBlock::staticTypeId(), []() { return std::make_shared<ActuatorOffsetBlock>(objects); }},
         {BalancerBlock::staticTypeId(), std::make_shared<BalancerBlock>},
         {MutexBlock::staticTypeId(), std::make_shared<MutexBlock>},
-        {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(bootTimeRef()); }},
+        {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(objects, bootTimeRef()); }},
         {DS2413Block::staticTypeId(), std::make_shared<DS2413Block>},
         {ActuatorDS2413Block::staticTypeId(), []() { return std::make_shared<ActuatorDS2413Block>(objects); }}};
 

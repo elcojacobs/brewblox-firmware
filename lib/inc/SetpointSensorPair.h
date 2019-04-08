@@ -30,9 +30,9 @@
  */
 class SetpointSensorPair : public ProcessValue<temp_t> {
 private:
-    temp_t m_setpoint = 20;
+    temp_t m_setting = 20;
     bool m_settingEnabled = false;
-    bool m_setpointValid = true;
+    bool m_settingValid = true;
     const std::function<std::shared_ptr<TempSensor>()> m_sensor;
 
 public:
@@ -46,12 +46,12 @@ public:
 
     virtual void setting(temp_t const& setting) override final
     {
-        m_setpoint = setting;
+        m_setting = setting;
     }
 
     virtual temp_t setting() const override final
     {
-        return m_setpoint;
+        return m_setting;
     }
 
     virtual temp_t value() const override final
@@ -73,12 +73,12 @@ public:
 
     bool settingValid() const override final
     {
-        return m_settingEnabled && m_setpointValid;
+        return m_settingEnabled && m_settingValid;
     }
 
     virtual void settingValid(bool v) override final
     {
-        m_setpointValid = v;
+        m_settingValid = v;
     }
 
     bool settingEnabled() const

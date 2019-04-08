@@ -24,12 +24,10 @@
 #include "blox/ActuatorAnalogMockBlock.h"
 #include "blox/PidBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
-#include "blox/SetpointSimpleBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "proto/test/cpp/ActuatorAnalogMock_test.pb.h"
 #include "proto/test/cpp/Pid_test.pb.h"
 #include "proto/test/cpp/SetpointSensorPair_test.pb.h"
-#include "proto/test/cpp/SetpointSimple_test.pb.h"
 #include "proto/test/cpp/TempSensorMock_test.pb.h"
 
 SCENARIO("A Blox Pid object can be created from streamed protobuf data")
@@ -53,20 +51,6 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
 
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
-
-    // create setpoint
-    testBox.put(uint16_t(0)); // msg id
-    testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(101));
-    testBox.put(uint8_t(0xFF));
-    testBox.put(SetpointSimpleBlock::staticTypeId());
-
-    blox::SetpointSimple newSetpoint;
-    newSetpoint.set_setpoint(cnl::unwrap(temp_t(21.0)));
-    newSetpoint.set_enabled(true);
-    testBox.put(newSetpoint);
-
-    testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
 
     // create pair
@@ -78,7 +62,8 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
 
     blox::SetpointSensorPair newPair;
     newPair.set_sensorid(100);
-    newPair.set_setpointid(101);
+    newPair.set_setting(cnl::unwrap(temp_t(21)));
+    newPair.set_settingenabled(true);
     testBox.put(newPair);
 
     testBox.processInput();

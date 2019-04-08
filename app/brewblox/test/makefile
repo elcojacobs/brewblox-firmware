@@ -159,14 +159,14 @@ $(BUILD_PATH):
 $(BUILD_PATH)%.o : $(SOURCE_PATH)%.c
 	@echo Building file: $<
 	$(MKDIR) $(dir $@)
-	$(CCC) $(CCFLAGS) -c -o $@ $<
+	$(CCC) $(CCFLAGS) -s -c -o $@ $<
 
 # CPP compiler to build .o from .cpp in $(BUILD_DIR)
 # Note: Calls standard $(CC) - gcc will invoke g++ as appropriate
 $(BUILD_PATH)%.o : $(SOURCE_PATH)%.cpp
 	@echo Building file: $<
 	$(MKDIR) $(dir $@)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -s -c -o $@ $<
 
 # Other Targets
 clean:	

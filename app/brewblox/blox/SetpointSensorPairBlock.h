@@ -11,15 +11,13 @@ using std::placeholders::_1;
 class SetpointSensorPairBlock : public Block<BrewbloxOptions_BlockType_SetpointSensorPair> {
 private:
     cbox::CboxPtr<TempSensor> sensor;
-    cbox::CboxPtr<Setpoint> setpoint;
     SetpointSensorPair pair;
 
 public
     :
     SetpointSensorPairBlock(cbox::ObjectContainer& objects)
         : sensor(objects)
-        , setpoint(objects)
-        , pair(setpoint.lockFunctor(), sensor.lockFunctor())
+        , pair(sensor.lockFunctor())
     {
     }
 
@@ -32,7 +30,8 @@ public
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             sensor.setId(newData.sensorId);
-            setpoint.setId(newData.setpointId);
+            pair.setting(cnl::wrap<temp_t>(newData.setting));
+            pair.settingEnabled(newData.settingEnabled);
         }
         return res;
     }
@@ -42,16 +41,16 @@ public
         blox_SetpointSensorPair message = blox_SetpointSensorPair_init_zero;
         FieldTags stripped;
         message.sensorId = sensor.getId();
-        message.setpointId = setpoint.getId();
+        message.settingEnabled = pair.settingEnabled();
         if (pair.valueValid()) {
-            message.sensorValue = cnl::unwrap(pair.value());
+            message.value = cnl::unwrap(pair.value());
         } else {
-            stripped.add(blox_SetpointSensorPair_sensorValue_tag);
+            stripped.add(blox_SetpointSensorPair_value_tag);
         }
         if (pair.settingValid()) {
-            message.setpointValue = cnl::unwrap(pair.setting());
+            message.setting = cnl::unwrap(pair.setting());
         } else {
-            stripped.add(blox_SetpointSensorPair_setpointValue_tag);
+            stripped.add(blox_SetpointSensorPair_setting_tag);
         };
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 2);
@@ -63,7 +62,8 @@ public
     {
         blox_SetpointSensorPair message = blox_SetpointSensorPair_init_zero;
         message.sensorId = sensor.getId();
-        message.setpointId = setpoint.getId();
+        message.setting = cnl::unwrap(pair.setting());
+        message.settingEnabled = pair.settingEnabled();
 
         return streamProtoTo(out, &message, blox_SetpointSensorPair_fields, blox_SetpointSensorPair_size);
     }
