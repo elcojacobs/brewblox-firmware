@@ -60,9 +60,9 @@ public:
 
     void update(const ticks_millis_t& now)
     {
-        struct TimeStampLess {
-            bool operator()(const Point& p, const ticks_seconds_t& time) const { return p.time < time; }
-            bool operator()(const ticks_seconds_t& time, const Point& p) const { return time < p.time; }
+        struct TimeStampLessEqual {
+            bool operator()(const Point& p, const ticks_seconds_t& time) const { return p.time <= time; }
+            bool operator()(const ticks_seconds_t& time, const Point& p) const { return time <= p.time; }
         };
 
         if (!m_enabled) {
@@ -70,26 +70,25 @@ public:
         }
 
         auto newTemp = temp_t(0);
-        bool valid = false;
 
         if (!m_points.empty() && m_deviceStartTime != 0) {
 
             auto nowSeconds = ticks_seconds_t(now / 1000) + m_deviceStartTime;
-            auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), nowSeconds, TimeStampLess{});
+            auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), nowSeconds, TimeStampLessEqual{});
             if (upper == m_points.cend()) { // every point is in the past, use the last point
                 newTemp = m_points.back().temp;
-                valid = true;
             } else if (upper != m_points.cbegin()) { // first point is not in the future
                 auto lower = upper - 1;
                 auto segmentElapsed = nowSeconds - lower->time;
                 auto segmentDuration = upper->time - lower->time;
                 auto interpolated = lower->temp + segmentElapsed * (upper->temp - lower->temp) / (segmentDuration);
                 newTemp = interpolated;
-                valid = true;
+            } else {
+                return;
             }
             if (auto targetPtr = m_target()) {
                 targetPtr->setting(newTemp);
-                targetPtr->settingValid(valid);
+                targetPtr->settingValid(true);
             }
         }
     }
