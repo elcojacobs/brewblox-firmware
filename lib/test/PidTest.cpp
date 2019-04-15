@@ -62,6 +62,25 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(10).margin(0.01));
     }
 
+    WHEN("Only Kp is zero, the output is zero.")
+    {
+        pid.kp(0);
+        pid.ti(2000);
+        pid.td(100);
+
+        setpoint->setting(21);
+        sensor->value(20);
+
+        for (int32_t i = 0; i < 1000; ++i) {
+            pid.update();
+        }
+
+        CHECK(pid.p() == 0);
+        CHECK(pid.i() == 0);
+        CHECK(pid.d() == 0);
+        CHECK(actuator->setting() == 0);
+    }
+
     WHEN("Proportional gain and integrator are enabled, the output value is correct")
     {
         pid.kp(10);

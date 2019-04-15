@@ -79,31 +79,32 @@ Pid::update()
                 auto outputSetting = output->setting();
 
                 if (m_ti != 0) { // 0 has been chosen to indicate that the integrator is disabled. This also prevents divide by zero.
-                    // update integral with anti-windup back calculation
-                    // pidResult - output is zero when actuator is not saturated
+                                 // update integral with anti-windup back calculation
+                                 // pidResult - output is zero when actuator is not saturated
 
                     auto antiWindup = out_t(0);
+                    if (m_kp != 0) { // prevent divide by zero
+                        if (pidResult != outputSetting) {
+                            // clipped to actuator min or max set in target actuator
+                            // calculate anti-windup from setting instead of actual value, so it doesn't dip under the maximum
+                            // make sure anti-windup is at least m_error when clipping to prevent further windup, with extra anti-windup to scale back integral
+                            antiWindup = m_error + fp12_t(3 * (pidResult - outputSetting)) / m_kp; // anti windup gain is 3
+                        } else {
+                            // Actuator could be not reaching set value due to physics or limits in its target actuator
+                            // Get the actual achieved value in actuator. This could differ due to slowness time/mutex limits
+                            if (output->valueValid()) {
+                                auto achievedValue = output->value();
 
-                    if (pidResult != outputSetting) {
-                        // clipped to actuator min or max set in target actuator
-                        // calculate anti-windup from setting instead of actual value, so it doesn't dip under the maximum
-                        // make sure anti-windup is at least m_error when clipping to prevent further windup, with extra anti-windup to scale back integral
-                        antiWindup = m_error + fp12_t(3 * (pidResult - outputSetting)) / m_kp; // anti windup gain is 3
-                    } else {
-                        // Actuator could be not reaching set value due to physics or limits in its target actuator
-                        // Get the actual achieved value in actuator. This could differ due to slowness time/mutex limits
-                        if (output->valueValid()) {
-                            auto achievedValue = output->value();
+                                // Anti windup gain is 3
+                                antiWindup = fp12_t(3 * (pidResult - achievedValue)) / m_kp;
 
-                            // Anti windup gain is 3
-                            antiWindup = fp12_t(3 * (pidResult - achievedValue)) / m_kp;
-
-                            // Disable anti-windup if integral part dominates. But only if it counteracts p.
-                            if (m_i < 0 && m_p < 0 && m_i < 3 * m_p) {
-                                antiWindup = 0;
-                            }
-                            if (m_i > 0 && m_p > 0 && m_i > 3 * m_p) {
-                                antiWindup = 0;
+                                // Disable anti-windup if integral part dominates. But only if it counteracts p.
+                                if (m_i < 0 && m_p < 0 && m_i < 3 * m_p) {
+                                    antiWindup = 0;
+                                }
+                                if (m_i > 0 && m_p > 0 && m_i > 3 * m_p) {
+                                    antiWindup = 0;
+                                }
                             }
                         }
                     }
