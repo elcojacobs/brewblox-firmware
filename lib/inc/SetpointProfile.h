@@ -58,6 +58,11 @@ public:
         m_points.clear();
     }
 
+    bool isDriving() const
+    {
+        return (m_enabled && !m_points.empty() && m_deviceStartTime != 0);
+    }
+
     void update(const ticks_millis_t& now)
     {
         struct TimeStampLessEqual {
@@ -65,7 +70,7 @@ public:
             bool operator()(const ticks_seconds_t& time, const Point& p) const { return time <= p.time; }
         };
 
-        if (!m_enabled) {
+        if (!isDriving()) {
             return;
         }
 

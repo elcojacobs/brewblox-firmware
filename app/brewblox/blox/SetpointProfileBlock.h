@@ -77,6 +77,9 @@ public:
         message.points.arg = const_cast<std::vector<Point>*>(&profile.points());
         message.enabled = profile.enabled();
         message.targetId = target.getId();
+        if (profile.isDriving()) {
+            message.drivenTargetId = target.getId();
+        }
 
         cbox::CboxError result = streamProtoTo(out, &message, blox_SetpointProfile_fields, std::numeric_limits<size_t>::max() - 1);
         return result;
