@@ -34,10 +34,10 @@ public:
         if (result == cbox::CboxError::OK) {
             target.setId(newData.targetId);
             reference.setId(newData.referenceId);
+            offset.enabled(newData.enabled);
             offset.selectedReference(ActuatorOffset::SettingOrValue(newData.referenceSettingOrValue));
             setAnalogConstraints(newData.constrainedBy, constrained, objectsRef);
             constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.setting));
-            offset.enabled(newData.enabled);
         }
         return result;
     }
