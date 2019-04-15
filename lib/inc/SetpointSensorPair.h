@@ -20,7 +20,6 @@
 #pragma once
 
 #include "ProcessValue.h"
-#include "Setpoint.h"
 #include "TempSensor.h"
 #include "Temperature.h"
 #include <functional>
@@ -31,15 +30,15 @@
  */
 class SetpointSensorPair : public ProcessValue<temp_t> {
 private:
-    const std::function<std::shared_ptr<Setpoint>()> setpoint;
-    const std::function<std::shared_ptr<TempSensor>()> sensor;
+    temp_t m_setting = 20;
+    bool m_settingEnabled = false;
+    bool m_settingValid = true;
+    const std::function<std::shared_ptr<TempSensor>()> m_sensor;
 
 public:
     explicit SetpointSensorPair(
-        std::function<std::shared_ptr<Setpoint>()>&& _setpoint,
         std::function<std::shared_ptr<TempSensor>()>&& _sensor)
-        : setpoint(_setpoint)
-        , sensor(_sensor)
+        : m_sensor(_sensor)
     {
     }
 
@@ -47,23 +46,17 @@ public:
 
     virtual void setting(temp_t const& setting) override final
     {
-        if (auto sp = setpoint()) {
-            sp->setting(setting);
-        }
+        m_setting = setting;
     }
 
     virtual temp_t setting() const override final
     {
-        if (auto sp = setpoint()) {
-            return sp->setting();
-        } else {
-            return 0;
-        }
+        return m_setting;
     }
 
     virtual temp_t value() const override final
     {
-        if (auto sPtr = sensor()) {
+        if (auto sPtr = m_sensor()) {
             return sPtr->value();
         } else {
             return 0;
@@ -72,7 +65,7 @@ public:
 
     bool valueValid() const override final
     {
-        if (auto sens = sensor()) {
+        if (auto sens = m_sensor()) {
             return sens->valid();
         }
         return false;
@@ -80,16 +73,21 @@ public:
 
     bool settingValid() const override final
     {
-        if (auto sp = setpoint()) {
-            return sp->valid();
-        }
-        return false;
+        return m_settingEnabled && m_settingValid;
     }
 
     virtual void settingValid(bool v) override final
     {
-        if (auto sp = setpoint()) {
-            sp->valid(v);
-        }
+        m_settingValid = v;
+    }
+
+    bool settingEnabled() const
+    {
+        return m_settingEnabled;
+    }
+
+    virtual void settingEnabled(bool v)
+    {
+        m_settingEnabled = v;
     }
 };

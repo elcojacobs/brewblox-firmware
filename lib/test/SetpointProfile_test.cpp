@@ -20,172 +20,179 @@
 #include <catch.hpp>
 
 #include "../inc/SetpointProfile.h"
+#include "../inc/SetpointSensorPair.h"
+#include "../inc/TempSensorMock.h"
 #include "../inc/Temperature.h"
 #include <cstdint>
 
 SCENARIO("SetpointProfile test", "[SetpointProfile]")
 {
     auto deviceStartTime = ticks_seconds_t(10);
-    auto sp = SetpointProfile(deviceStartTime);
+    auto sensor = std::make_shared<TempSensorMock>(20.0);
+    auto sspair = std::make_shared<SetpointSensorPair>([sensor]() { return sensor; });
+    sspair->setting(99);
+    sspair->settingEnabled(true);
+    auto profile = SetpointProfile([sspair]() { return sspair; }, deviceStartTime);
 
-    WHEN("the profile has no values, it is not valid and returns 0")
+    WHEN("the profile has no values, it does not change the setpoint")
     {
-        CHECK(sp.setting() == temp_t(0));
-        CHECK(sp.valid() == false);
+        CHECK(sspair->setting() == temp_t(99));
 
-        sp.update(0);
+        profile.update(0);
 
-        CHECK(sp.setting() == temp_t(0));
-        CHECK(sp.valid() == false);
+        CHECK(sspair->setting() == temp_t(99));
     }
 
-    WHEN("the profile contains a single temp, it is always used")
+    WHEN("the profile contains a single temp")
     {
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
 
-        sp.update(0);
-        CHECK(sp.setting() == temp_t(10));
+        AND_WHEN("the timestamp is in the future")
+        {
 
-        sp.update(500);
-        CHECK(sp.setting() == temp_t(10));
-
-        sp.update(1000);
-        CHECK(sp.setting() == temp_t(10));
-
-        sp.update(1500);
-        CHECK(sp.setting() == temp_t(10));
+            THEN("The profile doesn't change the setpoint")
+            {
+                profile.update(0);
+                CHECK(sspair->setting() == temp_t(99));
+                profile.update(999);
+                CHECK(sspair->setting() == temp_t(99));
+            }
+        }
+        AND_WHEN("the timestamp is in the past")
+        {
+            profile.update(2000);
+            THEN("The profile sets the setpoint to this value")
+            {
+                CHECK(sspair->setting() == temp_t(10));
+            }
+        }
     }
 
     WHEN("the profile contains two temperatures")
     {
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
 
-        AND_WHEN("The time is before the first point, the first temp is used")
+        AND_WHEN("The time is before the first point, it doesn't change the setpoint")
         {
-            sp.update(500);
-            CHECK(sp.setting() == temp_t(10));
+            profile.update(500);
+            CHECK(sspair->setting() == temp_t(99));
         }
 
         AND_WHEN("The time is after the last point, the last temp is used")
         {
-            sp.update(12000);
-            CHECK(sp.setting() == temp_t(20));
+            profile.update(12000);
+            CHECK(sspair->setting() == temp_t(20));
         }
 
         AND_WHEN("The time between the 2 points, it is correctly interpolated")
         {
-            sp.update(2000);
-            CHECK(sp.setting() == temp_t(11));
+            profile.update(2000);
+            CHECK(sspair->setting() == temp_t(11));
 
-            sp.update(6000);
-            CHECK(sp.setting() == temp_t(15));
+            profile.update(6000);
+            CHECK(sspair->setting() == temp_t(15));
         }
 
         AND_WHEN("The time is exactly at a point, that temp is used")
         {
-            sp.update(1000);
-            CHECK(sp.setting() == temp_t(10));
+            profile.update(1000);
+            CHECK(sspair->setting() == temp_t(10));
 
-            sp.update(11000);
-            CHECK(sp.setting() == temp_t(20));
+            profile.update(11000);
+            CHECK(sspair->setting() == temp_t(20));
         }
     }
 
     WHEN("the profile contains multiple temperatures")
     {
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(31), temp_t(40)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(31), temp_t(40)});
 
-        AND_WHEN("The time is before the first point, the first temp is used")
+        AND_WHEN("The time is before the first point, it doesn't change the setpoint")
         {
-            sp.update(500);
-            CHECK(sp.setting() == temp_t(10));
+            profile.update(500);
+            CHECK(sspair->setting() == temp_t(99));
         }
 
         AND_WHEN("The time is after the last point, the last temp is used")
         {
-            sp.update(22000);
-            CHECK(sp.setting() == temp_t(40));
+            profile.update(22000);
+            CHECK(sspair->setting() == temp_t(40));
         }
 
         AND_WHEN("The time between the 2 points, it is correctly interpolated")
         {
-            sp.update(2000);
-            CHECK(sp.setting() == temp_t(11));
+            profile.update(2000);
+            CHECK(sspair->setting() == temp_t(11));
 
-            sp.update(6000);
-            CHECK(sp.setting() == temp_t(15));
+            profile.update(6000);
+            CHECK(sspair->setting() == temp_t(15));
 
-            sp.update(12000);
-            CHECK(sp.setting() == temp_t(22));
+            profile.update(12000);
+            CHECK(sspair->setting() == temp_t(22));
 
-            sp.update(20000);
-            CHECK(sp.setting() == temp_t(38));
+            profile.update(20000);
+            CHECK(sspair->setting() == temp_t(38));
         }
 
         AND_WHEN("The time is exactly at a point, that temp is used")
         {
-            sp.update(1000);
-            CHECK(sp.setting() == temp_t(10));
+            profile.update(1000);
+            CHECK(sspair->setting() == temp_t(10));
 
-            sp.update(11000);
-            CHECK(sp.setting() == temp_t(20));
+            profile.update(11000);
+            CHECK(sspair->setting() == temp_t(20));
 
-            sp.update(21000);
-            CHECK(sp.setting() == temp_t(40));
+            profile.update(21000);
+            CHECK(sspair->setting() == temp_t(40));
         }
     }
 
     WHEN("the profile contains two temperatures with the same time")
     {
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(30)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(31), temp_t(40)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(30)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(31), temp_t(40)});
 
         AND_WHEN("The time is before the step, it is correctly interpolated with the first point of the step")
         {
-            sp.update(2000);
-            CHECK(sp.setting() == temp_t(11));
+            profile.update(2000);
+            CHECK(sspair->setting() == temp_t(11));
 
-            sp.update(6000);
-            CHECK(sp.setting() == temp_t(15));
+            profile.update(6000);
+            CHECK(sspair->setting() == temp_t(15));
         }
 
-        AND_WHEN("The time is at the step (rounded down to whole seconds), it is equal to the first point of the step")
+        AND_WHEN("The time is at the step (rounded down to whole seconds), it is equal to the last point of the step")
         {
-            sp.update(11000);
-            CHECK(sp.setting() == temp_t(20));
-
-            sp.update(11500);
-            CHECK(sp.setting() == temp_t(20));
+            profile.update(11000);
+            CHECK(sspair->setting() == temp_t(30));
         }
 
         AND_WHEN("The time is after the step, it is correctly interpolated with the second point of the step")
         {
 
-            sp.update(12000);
-            CHECK(sp.setting() == temp_t(31));
+            profile.update(12000);
+            CHECK(sspair->setting() == temp_t(31));
 
-            sp.update(21000);
-            CHECK(sp.setting() == temp_t(40));
+            profile.update(21000);
+            CHECK(sspair->setting() == temp_t(40));
         }
     }
 
-    WHEN("The device start time is still at 0, the setpoint is invalid")
+    WHEN("The device start time is still at 0, the setpoint is unchanged")
     {
         deviceStartTime = 0;
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        sp.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
 
-        sp.update(1000);
-        CHECK(sp.valid() == false);
-        CHECK(sp.setting() == 0);
+        profile.update(1000);
+        CHECK(sspair->setting() == temp_t(99));
 
-        sp.update(10000);
-        CHECK(sp.valid() == false);
-        CHECK(sp.setting() == 0);
+        profile.update(10000);
+        CHECK(sspair->setting() == temp_t(99));
     }
 }

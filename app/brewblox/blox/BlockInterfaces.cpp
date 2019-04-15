@@ -27,7 +27,6 @@
 #include "OneWireDevice.h"
 #include "Pid.h"
 #include "ProcessValue.h"
-#include "Setpoint.h"
 #include "SetpointSensorPair.h"
 #include "TempSensor.h"
 #include "brewblox.pb.h"
@@ -54,13 +53,6 @@ const obj_type_t
 interfaceIdImpl<SetpointSensorPair>()
 {
     return BrewbloxOptions_BlockType_SetpointSensorPairInterface;
-}
-
-template <>
-const obj_type_t
-interfaceIdImpl<Setpoint>()
-{
-    return BrewbloxOptions_BlockType_SetpointInterface;
 }
 
 template <>
