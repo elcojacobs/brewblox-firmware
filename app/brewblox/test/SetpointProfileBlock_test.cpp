@@ -170,7 +170,8 @@ SCENARIO("A SetpointProfile block")
                 CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } "
                                                     "points { time: 20020 temperature: 86016 } "
                                                     "enabled: true "
-                                                    "targetId: 101");
+                                                    "targetId: 101 "
+                                                    "drivenTargetId: 101");
             }
         }
     }

@@ -68,7 +68,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(100);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
 
         for (int32_t i = 0; i < 1000; ++i) {
