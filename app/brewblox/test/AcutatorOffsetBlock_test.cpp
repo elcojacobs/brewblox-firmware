@@ -59,7 +59,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
 
     auto newPair1 = blox::SetpointSensorPair();
     newPair1.set_sensorid(100);
-    newPair1.set_setting(cnl::unwrap(temp_t(20.0)));
+    newPair1.set_storedsetting(cnl::unwrap(temp_t(20.0)));
     newPair1.set_settingenabled(true);
     testBox.put(newPair1);
 
@@ -90,7 +90,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
 
     auto newPair2 = blox::SetpointSensorPair();
     newPair2.set_sensorid(102);
-    newPair2.set_setting(cnl::unwrap(temp_t(20.0)));
+    newPair2.set_storedsetting(cnl::unwrap(temp_t(20.0)));
     newPair2.set_settingenabled(true);
     testBox.put(newPair2);
 
@@ -144,7 +144,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         CHECK(decoded.ShortDebugString() == "sensorId: 100 "
                                             "setting: 131072 "
                                             "value: 86016 "
-                                            "settingEnabled: true"); // 32, 21 (setpoint adjusted to 20 + 12)
+                                            "settingEnabled: true "
+                                            "storedSetting: 131072"); // setting 32, value 21 (setpoint adjusted to 20 + 12)
     }
 
     // read target pair
@@ -159,7 +160,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         CHECK(decoded.ShortDebugString() == "sensorId: 102 "
                                             "setting: 81920 "
                                             "value: 110592 "
-                                            "settingEnabled: true"); // 20, 27 (unaffected)
+                                            "settingEnabled: true "
+                                            "storedSetting: 81920"); // 20, 27 (unaffected)
     }
 
     AND_WHEN("The reference setpoint is disabled")

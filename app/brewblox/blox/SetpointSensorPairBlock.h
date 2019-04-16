@@ -30,8 +30,8 @@ public
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             sensor.setId(newData.sensorId);
-            pair.setting(cnl::wrap<temp_t>(newData.setting));
-            pair.settingEnabled(newData.settingEnabled);
+            pair.setting(cnl::wrap<temp_t>(newData.storedSetting));
+            pair.settingValid(newData.settingEnabled);
         }
         return res;
     }
@@ -41,7 +41,8 @@ public
         blox_SetpointSensorPair message = blox_SetpointSensorPair_init_zero;
         FieldTags stripped;
         message.sensorId = sensor.getId();
-        message.settingEnabled = pair.settingEnabled();
+        message.settingEnabled = pair.settingValid();
+        message.storedSetting = cnl::unwrap(pair.setting());
         if (pair.valueValid()) {
             message.value = cnl::unwrap(pair.value());
         } else {
@@ -62,8 +63,8 @@ public
     {
         blox_SetpointSensorPair message = blox_SetpointSensorPair_init_zero;
         message.sensorId = sensor.getId();
-        message.setting = cnl::unwrap(pair.setting());
-        message.settingEnabled = pair.settingEnabled();
+        message.storedSetting = cnl::unwrap(pair.setting());
+        message.settingEnabled = pair.settingValid();
 
         return streamProtoTo(out, &message, blox_SetpointSensorPair_fields, blox_SetpointSensorPair_size);
     }

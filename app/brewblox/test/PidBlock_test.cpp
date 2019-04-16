@@ -62,7 +62,7 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
 
     blox::SetpointSensorPair newPair;
     newPair.set_sensorid(100);
-    newPair.set_setting(cnl::unwrap(temp_t(21)));
+    newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     newPair.set_settingenabled(true);
     testBox.put(newPair);
 

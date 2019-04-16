@@ -29,10 +29,10 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
     auto referenceSensor = std::make_shared<TempSensorMock>(19.0);
 
     auto target = std::make_shared<SetpointSensorPair>([targetSensor]() { return targetSensor; });
-    target->settingEnabled(true);
+    target->settingValid(true);
 
     auto reference = std::make_shared<SetpointSensorPair>([referenceSensor]() { return referenceSensor; });
-    reference->settingEnabled(true);
+    reference->settingValid(true);
 
     auto act = std::make_shared<ActuatorOffset>(
         [target]() { return target; },
