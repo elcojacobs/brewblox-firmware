@@ -67,7 +67,7 @@ SCENARIO("A SetpointProfile block")
 
             blox::SetpointSensorPair newPair;
             newPair.set_sensorid(100);
-            newPair.set_setting(cnl::unwrap(temp_t(99)));
+            newPair.set_storedsetting(cnl::unwrap(temp_t(99)));
             newPair.set_settingenabled(true);
             testBox.put(newPair);
 

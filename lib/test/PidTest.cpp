@@ -37,7 +37,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
     auto input = std::make_shared<SetpointSensorPair>([&sensor]() { return sensor; });
     input->setting(20);
-    input->settingEnabled(true);
+    input->settingValid(true);
 
     auto actuator = std::make_shared<ActuatorAnalogMock>();
 
@@ -376,12 +376,12 @@ SCENARIO("PID Test with offset actuator", "[pid]")
     auto target = std::make_shared<SetpointSensorPair>(
         [targetSensor]() { return targetSensor; });
     target->setting(65);
-    target->settingEnabled(true);
+    target->settingValid(true);
 
     auto reference = std::make_shared<SetpointSensorPair>(
         [referenceSensor]() { return referenceSensor; });
     reference->setting(67);
-    reference->settingEnabled(true);
+    reference->settingValid(true);
 
     auto actuator = std::make_shared<ActuatorOffset>(
         [target]() { return target; },
@@ -469,7 +469,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
     auto input = std::make_shared<SetpointSensorPair>(
         [&sensor]() { return sensor; });
-    input->settingEnabled(true);
+    input->settingValid(true);
     input->setting(20);
 
     auto mock = ActuatorDigitalMock();
