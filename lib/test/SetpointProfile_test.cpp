@@ -31,7 +31,7 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     auto sensor = std::make_shared<TempSensorMock>(20.0);
     auto sspair = std::make_shared<SetpointSensorPair>([sensor]() { return sensor; });
     sspair->setting(99);
-    sspair->settingEnabled(true);
+    sspair->settingValid(true);
     auto profile = SetpointProfile([sspair]() { return sspair; }, deviceStartTime);
 
     WHEN("the profile has no values, it does not change the setpoint")

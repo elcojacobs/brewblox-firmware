@@ -67,7 +67,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     blox::SetpointSensorPair newPair;
     newPair.set_sensorid(100);
     newPair.set_settingenabled(true);
-    newPair.set_setting(cnl::unwrap(temp_t(21)));
+    newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     testBox.put(newPair);
 
     testBox.processInput();
@@ -84,7 +84,8 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     CHECK(decoded.ShortDebugString() == "sensorId: 100 "
                                         "setting: 86016 "
                                         "value: 81920 "
-                                        "settingEnabled: true");
+                                        "settingEnabled: true "
+                                        "storedSetting: 86016");
 
     WHEN("The sensor is invalid")
     {
@@ -110,6 +111,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
             CHECK(decoded.ShortDebugString() == "sensorId: 100 "
                                                 "setting: 86016 "
                                                 "settingEnabled: true "
+                                                "storedSetting: 86016 "
                                                 "strippedFields: 6");
         }
     }
