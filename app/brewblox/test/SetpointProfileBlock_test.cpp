@@ -84,19 +84,20 @@ SCENARIO("A SetpointProfile block")
 
             // create setpoint profile
             auto message = blox::SetpointProfile();
+            message.set_targetid(101);
+            message.set_enabled(true);
+            message.set_start(20'000);
             {
                 auto newPoint = message.add_points();
-                newPoint->set_time(20'010);
+                newPoint->set_time(10);
                 newPoint->set_temperature(cnl::unwrap(temp_t(20)));
             }
 
             {
                 auto newPoint = message.add_points();
-                newPoint->set_time(20'020);
+                newPoint->set_time(20);
                 newPoint->set_temperature(cnl::unwrap(temp_t(21)));
             }
-            message.set_targetid(101);
-            message.set_enabled(true);
 
             testBox.put(message);
 
@@ -167,11 +168,12 @@ SCENARIO("A SetpointProfile block")
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
                 // 20.5 * 4096 = 83968
-                CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } "
-                                                    "points { time: 20020 temperature: 86016 } "
+                CHECK(decoded.ShortDebugString() == "points { time: 10 temperature: 81920 } "
+                                                    "points { time: 20 temperature: 86016 } "
                                                     "enabled: true "
                                                     "targetId: 101 "
-                                                    "drivenTargetId: 101");
+                                                    "drivenTargetId: 101 "
+                                                    "start: 20000");
             }
         }
     }

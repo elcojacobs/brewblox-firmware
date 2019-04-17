@@ -64,6 +64,7 @@ public:
         if (result == cbox::CboxError::OK) {
             profile.points(std::move(newPoints));
             profile.enabled(newData.enabled);
+            profile.startTime(newData.start);
             target.setId(newData.targetId);
         }
         return result;
@@ -76,6 +77,7 @@ public:
         message.points.funcs.encode = &streamPointsOut;
         message.points.arg = const_cast<std::vector<Point>*>(&profile.points());
         message.enabled = profile.enabled();
+        message.start = profile.startTime();
         message.targetId = target.getId();
         if (profile.isDriving()) {
             message.drivenTargetId = target.getId();
