@@ -35,6 +35,7 @@ public:
 private:
     const std::function<std::shared_ptr<SetpointSensorPair>()> m_target;
     const ticks_seconds_t& m_deviceStartTime;
+    ticks_seconds_t m_profileStartTime = 0;
     bool m_enabled = true;
 
     std::vector<Point> m_points;
@@ -79,12 +80,13 @@ public:
         if (!m_points.empty() && m_deviceStartTime != 0) {
 
             auto nowSeconds = ticks_seconds_t(now / 1000) + m_deviceStartTime;
-            auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), nowSeconds, TimeStampLessEqual{});
+            auto elapsed = nowSeconds - m_profileStartTime;
+            auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), elapsed, TimeStampLessEqual{});
             if (upper == m_points.cend()) { // every point is in the past, use the last point
                 newTemp = m_points.back().temp;
             } else if (upper != m_points.cbegin()) { // first point is not in the future
                 auto lower = upper - 1;
-                auto segmentElapsed = nowSeconds - lower->time;
+                auto segmentElapsed = elapsed - lower->time;
                 auto segmentDuration = upper->time - lower->time;
                 auto interpolated = lower->temp + segmentElapsed * (upper->temp - lower->temp) / (segmentDuration);
                 newTemp = interpolated;
@@ -116,5 +118,15 @@ public:
     void points(std::vector<Point>&& newPoints)
     {
         m_points = newPoints;
+    }
+
+    ticks_seconds_t startTime() const
+    {
+        return m_profileStartTime;
+    }
+
+    void startTime(ticks_seconds_t v)
+    {
+        m_profileStartTime = v;
     }
 };

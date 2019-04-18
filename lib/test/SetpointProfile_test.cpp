@@ -47,7 +47,8 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
 
     WHEN("the profile contains a single temp")
     {
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
+        profile.startTime(10);
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
 
         AND_WHEN("the timestamp is in the future")
         {
@@ -75,8 +76,9 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
 
     WHEN("the profile contains two temperatures")
     {
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
+        profile.startTime(10);
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
 
         AND_WHEN("The time is before the first point, it doesn't change the setpoint, but it is shown as driving")
         {
@@ -117,9 +119,10 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
 
     WHEN("the profile contains multiple temperatures")
     {
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(31), temp_t(40)});
+        profile.startTime(10);
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(40)});
 
         AND_WHEN("The time is before the first point, it doesn't change the setpoint but is indicated as driving")
         {
@@ -172,10 +175,11 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
 
     WHEN("the profile contains two temperatures with the same time")
     {
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(30)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(31), temp_t(40)});
+        profile.startTime(10);
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(30)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(40)});
 
         AND_WHEN("The time is before the step, it is correctly interpolated with the first point of the step")
         {
@@ -211,8 +215,9 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     WHEN("The device start time is still at 0, the setpoint is unchanged")
     {
         deviceStartTime = 0;
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(20)});
+        profile.startTime(10);
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
 
         profile.update(1000);
         CHECK(sspair->setting() == temp_t(99));

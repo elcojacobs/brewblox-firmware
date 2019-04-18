@@ -84,19 +84,20 @@ SCENARIO("A SetpointProfile block")
 
             // create setpoint profile
             auto message = blox::SetpointProfile();
+            message.set_targetid(101);
+            message.set_enabled(true);
+            message.set_start(20'000);
             {
                 auto newPoint = message.add_points();
-                newPoint->set_time(20'010);
+                newPoint->set_time(10);
                 newPoint->set_temperature(cnl::unwrap(temp_t(20)));
             }
 
             {
                 auto newPoint = message.add_points();
-                newPoint->set_time(20'020);
+                newPoint->set_time(20);
                 newPoint->set_temperature(cnl::unwrap(temp_t(21)));
             }
-            message.set_targetid(101);
-            message.set_enabled(true);
 
             testBox.put(message);
 
@@ -167,12 +168,54 @@ SCENARIO("A SetpointProfile block")
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
                 // 20.5 * 4096 = 83968
-                CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } "
-                                                    "points { time: 20020 temperature: 86016 } "
+                CHECK(decoded.ShortDebugString() == "points { time: 10 temperature: 81920 } "
+                                                    "points { time: 20 temperature: 86016 } "
                                                     "enabled: true "
                                                     "targetId: 101 "
-                                                    "drivenTargetId: 101");
+                                                    "drivenTargetId: 101 "
+                                                    "start: 20000");
             }
+        }
+
+        WHEN("A point at 0s and temp 0.0 is written, it does not disappear")
+        {
+            testBox.put(uint16_t(0));
+            testBox.put(commands::WRITE_OBJECT);
+            testBox.put(cbox::obj_id_t(102));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(SetpointProfileBlock::staticTypeId());
+
+            auto message = blox::SetpointProfile();
+            message.set_targetid(101);
+            message.set_enabled(true);
+            message.set_start(20'000);
+            {
+                auto newPoint = message.add_points();
+                newPoint->set_time(0);
+                newPoint->set_temperature(cnl::unwrap(temp_t(0)));
+            }
+
+            {
+                auto newPoint = message.add_points();
+                newPoint->set_time(20);
+                newPoint->set_temperature(cnl::unwrap(temp_t(21)));
+            }
+
+            testBox.put(message);
+
+            CHECK(testBox.lastReplyHasStatusOk());
+
+            auto decoded = blox::SetpointProfile();
+            testBox.processInputToProto(decoded);
+            CHECK(testBox.lastReplyHasStatusOk());
+            // 20.5 * 4096 = 83968
+
+            CHECK(decoded.ShortDebugString() == "points { temperature: 0 } "
+                                                "points { time: 20 temperature: 86016 } "
+                                                "enabled: true "
+                                                "targetId: 101 "
+                                                "drivenTargetId: 101 "
+                                                "start: 20000");
         }
     }
 }
