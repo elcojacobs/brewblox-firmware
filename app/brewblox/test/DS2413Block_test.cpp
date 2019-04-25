@@ -20,17 +20,17 @@
 #include <catch.hpp>
 
 #include "BrewBloxTestBox.h"
-#include "blox/ActuatorDS2408Block.h"
-#include "blox/DS2408Block.h"
+#include "blox/ActuatorOneWireBlock.h"
+#include "blox/DS2413Block.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/ActuatorDS2408.test.pb.h"
-#include "proto/test/cpp/DS2408.test.pb.h"
+#include "proto/test/cpp/ActuatorOneWire_test.pb.h"
+#include "proto/test/cpp/DS2413_test.pb.h"
 #include <sstream>
 
-SCENARIO("A DS2408 Block")
+SCENARIO("A DS2413 Block")
 {
-    WHEN("a DS2408 object is created")
+    WHEN("a DS2413 object is created")
     {
         BrewBloxTestBox testBox;
         using commands = cbox::Box::CommandID;
@@ -41,9 +41,9 @@ SCENARIO("A DS2408 Block")
         testBox.put(commands::CREATE_OBJECT);
         testBox.put(cbox::obj_id_t(100));
         testBox.put(uint8_t(0xFF));
-        testBox.put(DS2408Block::staticTypeId());
+        testBox.put(DS2413Block::staticTypeId());
 
-        auto message = blox::DS2408();
+        auto message = blox::DS2413();
         message.set_address(12345678);
 
         testBox.put(message);
@@ -54,7 +54,7 @@ SCENARIO("A DS2408 Block")
         testBox.put(commands::READ_OBJECT);
         testBox.put(cbox::obj_id_t(100));
 
-        auto decoded = blox::DS2408();
+        auto decoded = blox::DS2413();
         testBox.processInputToProto(decoded);
 
         THEN("The returned protobuf data is as expected")
@@ -67,23 +67,23 @@ SCENARIO("A DS2408 Block")
 
         THEN("The writable settings match what was sent")
         {
-            auto lookup = brewbloxBox().makeCboxPtr<DS2408Block>(100);
+            auto lookup = brewbloxBox().makeCboxPtr<DS2413Block>(100);
             auto devicePtr = lookup.lock();
             REQUIRE(devicePtr);
             CHECK(devicePtr->get().getDeviceAddress() == 12345678);
         }
 
-        AND_WHEN("A DS2408Actuator is created that uses one of the channels")
+        AND_WHEN("A DS2413Actuator is created that uses one of the channels")
         {
             testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::CREATE_OBJECT);
             testBox.put(cbox::obj_id_t(101));
             testBox.put(uint8_t(0xFF));
-            testBox.put(ActuatorDS2408Block::staticTypeId());
+            testBox.put(ActuatorOneWireBlock::staticTypeId());
 
-            auto message = blox::ActuatorDS2408();
+            auto message = blox::ActuatorOneWire();
             message.set_hwdevice(100);
-            message.set_channel(blox::ActuatorDS2408_Channel_A);
+            message.set_channel(blox::ActuatorOneWire_Channel_A);
             message.set_state(blox::AD_State::AD_State_Active);
 
             testBox.put(message);
@@ -97,7 +97,7 @@ SCENARIO("A DS2408 Block")
                 testBox.put(commands::READ_OBJECT);
                 testBox.put(cbox::obj_id_t(101));
 
-                auto decoded = blox::ActuatorDS2408();
+                auto decoded = blox::ActuatorOneWire();
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown

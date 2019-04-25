@@ -28,18 +28,18 @@
  * An actuator or sensor that operates by communicating with a DS2413 device.
  *
  */
-class ActuatorDS2413 final : public ActuatorDigital {
+class ActuatorOneWire final : public ActuatorDigital {
 private:
     const std::function<std::shared_ptr<DS2413>()> m_device;
     bool m_invert = true;
     DS2413::Pio m_channel = DS2413::Pio::UNSET;
 
 public:
-    explicit ActuatorDS2413(std::function<std::shared_ptr<DS2413>()>&& device)
+    explicit ActuatorOneWire(std::function<std::shared_ptr<DS2413>()>&& device)
         : m_device(device)
     {
     }
-    ~ActuatorDS2413() = default;
+    ~ActuatorOneWire() = default;
 
     virtual void state(const State& state) override final
     {
