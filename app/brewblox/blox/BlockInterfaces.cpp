@@ -92,9 +92,9 @@ interfaceIdImpl<OneWireDevice>()
 
 template <>
 const obj_type_t
-interfaceIdImpl<DS2413>()
+interfaceIdImpl<OneWireIO>()
 {
-    return BrewbloxOptions_BlockType_DS2413Interface;
+    return BrewbloxOptions_BlockType_OneWireIOInterface;
 }
 
 } // end namespace cbox

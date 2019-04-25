@@ -54,9 +54,9 @@ public:
         if (iface == BrewbloxOptions_BlockType_DS2413) {
             return this; // me!
         }
-        if (iface == cbox::interfaceId<DS2413>()) {
+        if (iface == cbox::interfaceId<OneWireIO>()) {
             // return the member that implements the interface in this case
-            DS2413* ptr = &device;
+            OneWireIO* ptr = &device;
             return ptr;
         }
         if (iface == cbox::interfaceId<OneWireDevice>()) {

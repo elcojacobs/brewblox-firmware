@@ -21,7 +21,7 @@
 #pragma once
 
 #include "Logger.h"
-#include "OneWireDevice.h"
+#include "OneWireIO.h"
 #include <inttypes.h>
 
 #define DS2413_FAMILY_ID 0x3A
@@ -34,7 +34,7 @@
  * channelRead/channelWrite reads and writes the channel latch state to turn the output transistor on or off
  * channelSense senses if the channel is pulled high.
  */
-class DS2413 : public OneWireDevice {
+class DS2413 : public OneWireIO {
 public:
     enum class Pio : uint8_t {
         UNSET,
@@ -43,8 +43,8 @@ public:
     };
 
 private:
-    uint8_t m_cachedState; // last value of read
-    bool m_connected;      // stores whether last read was succesful
+    mutable uint8_t m_cachedState; // last value of read
+    mutable bool m_connected;      // stores whether last read was succesful
 
     static const uint8_t ACCESS_READ = 0xF5;
     static const uint8_t ACCESS_WRITE = 0x5A;
@@ -57,7 +57,7 @@ public:
      */
 
     DS2413(OneWire& oneWire, OneWireAddress address = 0)
-        : OneWireDevice(oneWire, address)
+        : OneWireIO(oneWire, address)
         , m_cachedState(0xff)
         , m_connected(false)
     {
@@ -66,7 +66,7 @@ public:
     /**
      * Destructor is default
      */
-    ~DS2413() = default;
+    virtual ~DS2413() = default;
 
     /**
      *  The DS2413 returns data in the last 4 bits, the upper 4 bits are the complement.
@@ -93,9 +93,8 @@ public:
      * @param useCached         do not read current pin state from device, but use cached state
      * @return					true on success
      */
-    bool readLatchBit(Pio pio, bool& result, bool useCached);
+    bool readLatchBit(Pio pio, bool& result, bool useCached) const;
 
-    bool latchReadCached(Pio pio, bool& result) const;
     /**
      * Periodic update to make sure the cache is valid.
      * Performs a simultaneous read of both channels and saves value to the cache.
@@ -103,14 +102,14 @@ public:
      *
      * @return					true on successful communication
      */
-    bool update();
+    bool update() const;
 
     /**
      * Reads the output state of a given channel, defaulting to a given value on error.
      * Note that for a read to make sense the channel must be off (value written is 1).
      * @return true on success
      */
-    bool sense(Pio pio, bool& result);
+    bool sense(Pio pio, bool& result, bool useCache) const;
 
     /**
      * Return cached state. Upper nibble is equal to lower nibble if valid
@@ -149,7 +148,7 @@ private:
      * Read all values at once, both current state and sensed values for the DS2413.
      * Output state of 8 pins for the DS2408.
      */
-    uint8_t accessRead();
+    uint8_t accessRead() const;
 
     /**
      * Writes the state of all PIOs in one operation.
@@ -166,5 +165,30 @@ private:
     uint8_t senseMask(Pio pio) const
     {
         return pio == Pio::A ? 0x1 : 0x4; // assumes pio is either 0 or 1, which translates to masks 0x1 and 0x4
+    }
+
+    // generic OneWireIO interface
+    virtual bool sensePin(uint8_t channel, bool& result, bool useCache) const override final
+    {
+        if (channel >= 1 && channel <= 2) {
+            return sense(Pio(channel), result, useCache);
+        }
+        return false;
+    }
+
+    virtual bool writeLatch(uint8_t channel, bool value, bool useCache) override final
+    {
+        if (channel >= 1 && channel <= 2) {
+            return writeLatchBit(Pio(channel), value, useCache);
+        }
+        return false;
+    }
+
+    virtual bool readLatch(uint8_t channel, bool value, bool useCache) const override final
+    {
+        if (channel >= 1 && channel <= 2) {
+            return readLatchBit(Pio(channel), value, useCache);
+        }
+        return false;
     }
 };

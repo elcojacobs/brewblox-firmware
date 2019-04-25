@@ -77,18 +77,12 @@ DS2413::writeLatchBit(Pio pio,
 }
 
 bool
-DS2413::readLatchBit(Pio pio, bool& result, bool useCached)
+DS2413::readLatchBit(Pio pio, bool& result, bool useCached) const
 {
     if (!useCached || !cacheIsValid()) {
         update();
     }
 
-    return latchReadCached(pio, result);
-}
-
-bool
-DS2413::latchReadCached(Pio pio, bool& result) const
-{
     if (cacheIsValid()) {
         result = ((m_cachedState & latchReadMask(pio)) == 0);
         return true;
@@ -99,7 +93,7 @@ DS2413::latchReadCached(Pio pio, bool& result) const
 }
 
 bool
-DS2413::update()
+DS2413::update() const
 {
     m_cachedState = accessRead();
     bool success = cacheIsValid();
@@ -129,9 +123,11 @@ DS2413::writeByteFromCache()
 }
 
 bool
-DS2413::sense(Pio pio, bool& result)
+DS2413::sense(Pio pio, bool& result, bool useCache) const
 {
-    update();
+    if (!useCache) {
+        update();
+    };
     if (cacheIsValid()) {
         return false;
     } else {
@@ -145,7 +141,7 @@ DS2413::sense(Pio pio, bool& result)
  * @return
  */
 uint8_t
-DS2413::accessRead() /* const */
+DS2413::accessRead() const
 {
     oneWire.reset();
     oneWire.select(address.asUint8ptr());

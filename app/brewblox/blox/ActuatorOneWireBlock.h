@@ -13,7 +13,7 @@
 class ActuatorOneWireBlock : public Block<BrewbloxOptions_BlockType_ActuatorOneWire> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
-    cbox::CboxPtr<DS2413> hwDevice;
+    cbox::CboxPtr<OneWireIO> hwDevice;
     ActuatorOneWire actuator;
     ActuatorDigitalConstrained constrained;
 
@@ -34,7 +34,7 @@ public:
 
         if (result == cbox::CboxError::OK) {
             hwDevice.setId(message.hwDevice);
-            actuator.channel(DS2413::Pio(message.channel));
+            actuator.channel(message.channel);
             actuator.invert(message.invert);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
             constrained.state(ActuatorDigital::State(message.state));
@@ -56,7 +56,7 @@ public:
         }
 
         message.hwDevice = hwDevice.getId();
-        message.channel = blox_ActuatorOneWire_Channel(actuator.channel());
+        message.channel = actuator.channel();
         message.invert = actuator.invert();
         getDigitalConstraints(message.constrainedBy, constrained);
 
@@ -71,7 +71,6 @@ public:
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
-        actuator.update();
         constrained.update(now);
         return now + 1000;
     }

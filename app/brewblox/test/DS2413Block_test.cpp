@@ -83,7 +83,7 @@ SCENARIO("A DS2413 Block")
 
             auto message = blox::ActuatorOneWire();
             message.set_hwdevice(100);
-            message.set_channel(blox::ActuatorOneWire_Channel_A);
+            message.set_channel(1);
             message.set_state(blox::AD_State::AD_State_Active);
 
             testBox.put(message);
@@ -101,7 +101,7 @@ SCENARIO("A DS2413 Block")
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: A constrainedBy { unconstrained: Active } strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 constrainedBy { unconstrained: Active } strippedFields: 3");
             }
         }
     }

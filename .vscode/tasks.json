@@ -8,6 +8,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -33,6 +34,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -80,6 +82,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -111,6 +114,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -215,6 +219,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "compile-proto.sh"
@@ -239,6 +244,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -265,6 +271,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -291,6 +298,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "../wrapped_make.sh",
@@ -316,6 +324,7 @@
             "command": "docker-compose",
             "args": [
                 "exec",
+                "-it",
                 "compiler",
                 "bash",
                 "run-ci.sh",
