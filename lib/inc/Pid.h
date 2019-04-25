@@ -179,6 +179,7 @@ private:
     {
         if (m_enabled && m_active && !state) {
             if (auto ptr = m_outputPtr()) {
+                ptr->setting(0);
                 ptr->settingValid(false);
             }
         }

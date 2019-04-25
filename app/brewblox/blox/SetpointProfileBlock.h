@@ -1,14 +1,17 @@
 #pragma once
 
 #include "SetpointProfile.h"
+#include "SetpointSensorPair.h"
 #include "blox/Block.h"
 #include "blox/FieldTags.h"
+#include "cbox/CboxPtr.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "proto/cpp/SetpointProfile.pb.h"
 
 class SetpointProfileBlock : public Block<BrewbloxOptions_BlockType_SetpointProfile> {
 private:
+    cbox::CboxPtr<SetpointSensorPair> target;
     SetpointProfile profile;
     using Point = SetpointProfile::Point;
 
@@ -17,7 +20,10 @@ protected:
     {
         const std::vector<Point>* points = reinterpret_cast<std::vector<Point>*>(*arg);
         for (const auto& p : *points) {
-            auto submsg = blox_SetpointProfile_Point{p.time, cnl::unwrap(p.temp)};
+            auto submsg = blox_SetpointProfile_Point();
+            submsg.time = p.time;
+            submsg.temperature_oneof.temperature = cnl::unwrap(p.temp);
+            submsg.which_temperature_oneof = blox_SetpointProfile_Point_temperature_tag;
             if (!pb_encode_tag_for_field(stream, field)) {
                 return false;
             }
@@ -37,16 +43,18 @@ protected:
             if (!pb_decode(stream, blox_SetpointProfile_Point_fields, &submsg)) {
                 return false;
             }
-            newPoints->push_back(Point{submsg.time, cnl::wrap<decltype(Point::temp)>(submsg.temperature)});
+            newPoints->push_back(Point{submsg.time, cnl::wrap<decltype(Point::temp)>(submsg.temperature_oneof.temperature)});
         }
         return true;
     }
 
 public:
-    SetpointProfileBlock(const ticks_millis_t& bootTimeRef)
-        : profile(bootTimeRef)
+    SetpointProfileBlock(cbox::ObjectContainer& objects, const ticks_millis_t& bootTimeRef)
+        : target(objects)
+        , profile(target.lockFunctor(), bootTimeRef)
     {
     }
+
     virtual ~SetpointProfileBlock() = default;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
@@ -58,6 +66,9 @@ public:
         cbox::CboxError result = streamProtoFrom(in, &newData, blox_SetpointProfile_fields, std::numeric_limits<size_t>::max() - 1);
         if (result == cbox::CboxError::OK) {
             profile.points(std::move(newPoints));
+            profile.enabled(newData.enabled);
+            profile.startTime(newData.start);
+            target.setId(newData.targetId);
         }
         return result;
     }
@@ -68,14 +79,13 @@ public:
         FieldTags stripped;
         message.points.funcs.encode = &streamPointsOut;
         message.points.arg = const_cast<std::vector<Point>*>(&profile.points());
-
         message.enabled = profile.enabled();
-        if (profile.valid()) {
-            message.setting = cnl::unwrap(profile.setting());
-        } else {
-            stripped.add(blox_SetpointProfile_setting_tag);
-        };
-        stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
+        message.start = profile.startTime();
+        message.targetId = target.getId();
+        if (profile.isDriving()) {
+            message.drivenTargetId = target.getId();
+        }
+
         cbox::CboxError result = streamProtoTo(out, &message, blox_SetpointProfile_fields, std::numeric_limits<size_t>::max() - 1);
         return result;
     }
@@ -96,11 +106,7 @@ public:
         if (iface == BrewbloxOptions_BlockType_SetpointProfile) {
             return this; // me!
         }
-        if (iface == cbox::interfaceId<Setpoint>()) {
-            // return the member that implements the interface in this case
-            Setpoint* ptr = &profile;
-            return ptr;
-        }
+
         return nullptr;
     }
 

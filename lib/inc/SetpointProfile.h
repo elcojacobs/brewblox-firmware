@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include "Setpoint.h"
+#include "SetpointSensorPair.h"
 #include "Temperature.h"
 #include "TicksTypes.h"
 #include <algorithm>
 #include <vector>
 
-class SetpointProfile : public Setpoint {
+class SetpointProfile {
 public:
     struct Point {
         ticks_seconds_t time;
@@ -33,16 +33,19 @@ public:
     };
 
 private:
-    temp_t m_current = 0;
-    bool m_valid = false;
-    bool m_enabled = true;
+    const std::function<std::shared_ptr<SetpointSensorPair>()> m_target;
     const ticks_seconds_t& m_deviceStartTime;
+    ticks_seconds_t m_profileStartTime = 0;
+    bool m_enabled = true;
 
     std::vector<Point> m_points;
 
 public:
-    SetpointProfile(const ticks_seconds_t& deviceStartTimeRef)
-        : m_deviceStartTime(deviceStartTimeRef)
+    explicit SetpointProfile(
+        std::function<std::shared_ptr<SetpointSensorPair>()>&& target, // process value to manipulate setpoint of
+        const ticks_seconds_t& deviceStartTimeRef)
+        : m_target(target)
+        , m_deviceStartTime(deviceStartTimeRef)
     {
     }
 
@@ -56,50 +59,45 @@ public:
         m_points.clear();
     }
 
+    bool isDriving() const
+    {
+        return (m_enabled && !m_points.empty() && m_deviceStartTime != 0);
+    }
+
     void update(const ticks_millis_t& now)
     {
-        struct TimeStampLess {
-            bool operator()(const Point& p, const ticks_seconds_t& time) const { return p.time < time; }
-            bool operator()(const ticks_seconds_t& time, const Point& p) const { return time < p.time; }
+        struct TimeStampLessEqual {
+            bool operator()(const Point& p, const ticks_seconds_t& time) const { return p.time <= time; }
+            bool operator()(const ticks_seconds_t& time, const Point& p) const { return time <= p.time; }
         };
 
-        if (m_points.empty() || m_deviceStartTime == 0) {
-            m_current = 0;
-            m_valid = false;
+        if (!isDriving()) {
             return;
         }
 
-        auto nowSeconds = ticks_seconds_t(now / 1000) + m_deviceStartTime;
-        auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), nowSeconds, TimeStampLess{});
-        if (upper == m_points.cbegin()) {
-            m_current = m_points.front().temp;
-            m_valid = false;
-            return;
+        auto newTemp = temp_t(0);
+
+        if (!m_points.empty() && m_deviceStartTime != 0) {
+
+            auto nowSeconds = ticks_seconds_t(now / 1000) + m_deviceStartTime;
+            auto elapsed = nowSeconds - m_profileStartTime;
+            auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), elapsed, TimeStampLessEqual{});
+            if (upper == m_points.cend()) { // every point is in the past, use the last point
+                newTemp = m_points.back().temp;
+            } else if (upper != m_points.cbegin()) { // first point is not in the future
+                auto lower = upper - 1;
+                auto segmentElapsed = elapsed - lower->time;
+                auto segmentDuration = upper->time - lower->time;
+                auto interpolated = lower->temp + segmentElapsed * (upper->temp - lower->temp) / (segmentDuration);
+                newTemp = interpolated;
+            } else {
+                return;
+            }
+            if (auto targetPtr = m_target()) {
+                targetPtr->setting(newTemp);
+                targetPtr->settingValid(true);
+            }
         }
-        if (upper == m_points.cend()) {
-            m_current = m_points.back().temp;
-            m_valid = false;
-            return;
-        }
-        auto lower = upper - 1;
-
-        auto segmentElapsed = nowSeconds - lower->time;
-        auto segmentDuration = upper->time - lower->time;
-        auto interpolated = lower->temp + segmentElapsed * (upper->temp - lower->temp) / (segmentDuration);
-        m_current = interpolated;
-        m_valid = true;
-    }
-
-    virtual temp_t
-    setting() const override final
-    {
-        return m_current;
-    }
-
-    virtual void
-    setting(const temp_t& val) override final
-    {
-        // setting cannot be set using Setpoint base class
     }
 
     bool enabled() const
@@ -112,18 +110,6 @@ public:
         m_enabled = v;
     }
 
-    virtual bool
-    valid() const override final
-    {
-        return m_enabled && m_valid;
-    }
-
-    virtual void
-    valid(bool v) override final
-    {
-        m_enabled = v;
-    }
-
     const std::vector<Point>& points() const
     {
         return m_points;
@@ -132,5 +118,15 @@ public:
     void points(std::vector<Point>&& newPoints)
     {
         m_points = newPoints;
+    }
+
+    ticks_seconds_t startTime() const
+    {
+        return m_profileStartTime;
+    }
+
+    void startTime(ticks_seconds_t v)
+    {
+        m_profileStartTime = v;
     }
 };

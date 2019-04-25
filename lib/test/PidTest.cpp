@@ -26,7 +26,6 @@
 #include "ActuatorOffset.h"
 #include "ActuatorPwm.h"
 #include "Pid.h"
-#include "Setpoint.h"
 #include "SetpointSensorPair.h"
 #include "TempSensorMock.h"
 #include <iostream>
@@ -34,17 +33,16 @@
 
 SCENARIO("PID Test with mock actuator", "[pid]")
 {
-    auto setpoint = std::make_shared<SetpointSimple>(20.0);
     auto sensor = std::make_shared<TempSensorMock>(20.0);
 
-    auto pair = std::make_shared<SetpointSensorPair>(
-        [&setpoint]() { return setpoint; },
-        [&sensor]() { return sensor; });
+    auto input = std::make_shared<SetpointSensorPair>([&sensor]() { return sensor; });
+    input->setting(20);
+    input->settingValid(true);
 
     auto actuator = std::make_shared<ActuatorAnalogMock>();
 
     auto pid = Pid(
-        [&pair]() { return pair; },
+        [&input]() { return input; },
         [&actuator]() { return actuator; });
 
     pid.enabled(true);
@@ -55,7 +53,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(0);
         pid.td(0);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
 
         for (int32_t i = 0; i < 100; ++i) {
@@ -64,13 +62,32 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(10).margin(0.01));
     }
 
+    WHEN("Only Kp is zero, the output is zero.")
+    {
+        pid.kp(0);
+        pid.ti(2000);
+        pid.td(100);
+
+        input->setting(21);
+        sensor->value(20);
+
+        for (int32_t i = 0; i < 1000; ++i) {
+            pid.update();
+        }
+
+        CHECK(pid.p() == 0);
+        CHECK(pid.i() == 0);
+        CHECK(pid.d() == 0);
+        CHECK(actuator->setting() == 0);
+    }
+
     WHEN("Proportional gain and integrator are enabled, the output value is correct")
     {
         pid.kp(10);
         pid.ti(2000);
         pid.td(0);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
 
         for (int32_t i = 0; i < 1000; ++i) {
@@ -99,7 +116,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(30);
+        input->setting(30);
         sensor->value(20);
 
         temp_t mockVal;
@@ -127,7 +144,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(20);
+        input->setting(20);
         sensor->value(30);
 
         temp_t mockVal;
@@ -155,7 +172,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
         actuator->minSetting(0);
         actuator->maxSetting(20);
@@ -175,7 +192,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         CHECK(actuator->setting() == Approx(20).epsilon(0.01));
 
-        setpoint->setting(19);
+        input->setting(19);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             pid.update();
@@ -198,7 +215,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(19);
+        input->setting(19);
         sensor->value(20);
         actuator->minSetting(0);
         actuator->maxSetting(20);
@@ -217,7 +234,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         CHECK(actuator->setting() == Approx(20).epsilon(0.01));
 
-        setpoint->setting(21);
+        input->setting(21);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             pid.update();
@@ -240,7 +257,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
         actuator->minValue(5);
         actuator->maxValue(20);
@@ -260,7 +277,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         CHECK(actuator->setting() == Approx(23.33).epsilon(0.01));
 
-        setpoint->setting(19);
+        input->setting(19);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             pid.update();
@@ -282,7 +299,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(19);
+        input->setting(19);
         sensor->value(20);
         actuator->minValue(5);
         actuator->maxValue(20);
@@ -301,7 +318,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         CHECK(actuator->setting() == Approx(23.33).epsilon(0.01));
 
-        setpoint->setting(21);
+        input->setting(21);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             pid.update();
@@ -323,7 +340,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
 
         int32_t i = 0;
@@ -352,19 +369,19 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
 SCENARIO("PID Test with offset actuator", "[pid]")
 {
-    auto targetSetpoint = std::make_shared<SetpointSimple>(65.0);
     auto targetSensor = std::make_shared<TempSensorMock>(65.0);
 
     auto referenceSensor = std::make_shared<TempSensorMock>(65.0);
-    auto referenceSetpoint = std::make_shared<SetpointSimple>(67.0);
 
     auto target = std::make_shared<SetpointSensorPair>(
-        [targetSetpoint]() { return targetSetpoint; },
         [targetSensor]() { return targetSensor; });
+    target->setting(65);
+    target->settingValid(true);
 
     auto reference = std::make_shared<SetpointSensorPair>(
-        [referenceSetpoint]() { return referenceSetpoint; },
         [referenceSensor]() { return referenceSensor; });
+    reference->setting(67);
+    reference->settingValid(true);
 
     auto actuator = std::make_shared<ActuatorOffset>(
         [target]() { return target; },
@@ -387,7 +404,7 @@ SCENARIO("PID Test with offset actuator", "[pid]")
     WHEN("The PID has updated, the target setpoint is set correctly")
     {
         CHECK(actuator->setting() == Approx(4.0).margin(0.01));
-        CHECK(targetSetpoint->setting() == Approx(71.0).margin(0.01));
+        CHECK(target->setting() == Approx(71.0).margin(0.01));
         CHECK(actuator->settingValid() == true);
     }
 
@@ -400,12 +417,12 @@ SCENARIO("PID Test with offset actuator", "[pid]")
         {
             for (uint8_t i = 0; i < 10; ++i) {
                 CHECK(pid.active() == true);
-                CHECK(targetSetpoint->valid() == true);
+                CHECK(target->settingValid() == true);
                 pid.update();
             }
 
             CHECK(pid.active() == false);
-            CHECK(targetSetpoint->valid() == false);
+            CHECK(target->settingValid() == false);
         }
 
         AND_WHEN("The sensor comes back alive, the pid and setpoint are active/valid again")
@@ -414,7 +431,7 @@ SCENARIO("PID Test with offset actuator", "[pid]")
             pid.update();
 
             CHECK(pid.active() == true);
-            CHECK(targetSetpoint->valid() == true);
+            CHECK(target->settingValid() == true);
         }
     }
 
@@ -425,21 +442,21 @@ SCENARIO("PID Test with offset actuator", "[pid]")
 
         THEN("The target setpoint is set to invalid")
         {
-            CHECK(targetSetpoint->valid() == false);
+            CHECK(target->settingValid() == false);
         }
 
         WHEN("Something else sets the target setpoint later")
         {
-            CHECK(targetSetpoint->valid() == false);
-            targetSetpoint->setting(20.0);
-            targetSetpoint->valid(true);
-            CHECK(targetSetpoint->valid() == true);
+            CHECK(target->settingValid() == false);
+            target->setting(20.0);
+            target->settingValid(true);
+            CHECK(target->settingValid() == true);
             pid.update();
 
             THEN("The already disabled PID doesn't affect it")
             {
-                CHECK(targetSetpoint->valid() == true);
-                CHECK(targetSetpoint->setting() == 20.0);
+                CHECK(target->settingValid() == true);
+                CHECK(target->setting() == 20.0);
             }
         }
     }
@@ -448,12 +465,12 @@ SCENARIO("PID Test with offset actuator", "[pid]")
 SCENARIO("PID Test with PWM actuator", "[pid]")
 {
     auto now = ticks_millis_t(0);
-    auto setpoint = std::make_shared<SetpointSimple>(20.0);
     auto sensor = std::make_shared<TempSensorMock>(20.0);
 
-    auto pair = std::make_shared<SetpointSensorPair>(
-        [&setpoint]() { return setpoint; },
+    auto input = std::make_shared<SetpointSensorPair>(
         [&sensor]() { return sensor; });
+    input->settingValid(true);
+    input->setting(20);
 
     auto mock = ActuatorDigitalMock();
     auto constrainedDigital = std::make_shared<ActuatorDigitalConstrained>(mock);
@@ -465,7 +482,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     auto actuator = std::make_shared<ActuatorAnalogConstrained>(pwm);
 
     auto pid = Pid(
-        [&pair]() { return pair; },
+        [&input]() { return input; },
         [&actuator]() { return actuator; });
 
     pid.enabled(true);
@@ -495,7 +512,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(0);
         pid.td(0);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
 
         run1000seconds();
@@ -509,7 +526,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(2000);
         pid.td(0);
 
-        setpoint->setting(21);
+        input->setting(21);
         sensor->value(20);
 
         run1000seconds();
@@ -533,7 +550,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(30);
+        input->setting(30);
         sensor->value(20);
 
         temp_t mockVal;
@@ -570,7 +587,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(20);
+        input->setting(20);
         sensor->value(30);
 
         temp_t mockVal;
@@ -607,7 +624,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(20);
+        input->setting(20);
         sensor->value(21);
 
         auto start = now;
@@ -647,7 +664,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        setpoint->setting(20);
+        input->setting(20);
         sensor->value(25);
 
         auto start = now;

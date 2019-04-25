@@ -26,14 +26,12 @@
 #include "BrewBloxTestBox.h"
 #include "Temperature.h"
 #include "blox/SetpointSensorPairBlock.h"
-#include "blox/SetpointSimpleBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "cbox/Box.h"
 #include "cbox/DataStream.h"
 #include "cbox/DataStreamIo.h"
 #include "cbox/Object.h"
 #include "proto/test/cpp/SetpointSensorPair_test.pb.h"
-#include "proto/test/cpp/SetpointSimple_test.pb.h"
 #include "proto/test/cpp/TempSensorMock_test.pb.h"
 #include "testHelpers.h"
 
@@ -59,31 +57,17 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
 
-    // create setpoint
-    testBox.put(uint16_t(0)); // msg id
-    testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(101));
-    testBox.put(uint8_t(0xFF));
-    testBox.put(SetpointSimpleBlock::staticTypeId());
-
-    blox::SetpointSimple newSetpoint;
-    newSetpoint.set_setpoint(cnl::unwrap(temp_t(21.0)));
-    newSetpoint.set_enabled(true);
-    testBox.put(newSetpoint);
-
-    testBox.processInput();
-    CHECK(testBox.lastReplyHasStatusOk());
-
     // create pair
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(102));
+    testBox.put(cbox::obj_id_t(101));
     testBox.put(uint8_t(0xFF));
     testBox.put(SetpointSensorPairBlock::staticTypeId());
 
     blox::SetpointSensorPair newPair;
     newPair.set_sensorid(100);
-    newPair.set_setpointid(101);
+    newPair.set_settingenabled(true);
+    newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     testBox.put(newPair);
 
     testBox.processInput();
@@ -92,13 +76,16 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     // read pair
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
-    testBox.put(cbox::obj_id_t(102));
+    testBox.put(cbox::obj_id_t(101));
 
     auto decoded = blox::SetpointSensorPair();
     testBox.processInputToProto(decoded);
     CHECK(testBox.lastReplyHasStatusOk());
-    CHECK(decoded.ShortDebugString() == "setpointId: 101 sensorId: 100 "
-                                        "setpointValue: 86016 sensorValue: 81920");
+    CHECK(decoded.ShortDebugString() == "sensorId: 100 "
+                                        "setting: 86016 "
+                                        "value: 81920 "
+                                        "settingEnabled: true "
+                                        "storedSetting: 86016");
 
     WHEN("The sensor is invalid")
     {
@@ -108,18 +95,23 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
 
         ptr->get().connected(false);
 
+        testBox.update(1000);
+
         THEN("The input value is flagged as stripped field")
         {
             // read pair
             testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::READ_OBJECT);
-            testBox.put(cbox::obj_id_t(102));
+            testBox.put(cbox::obj_id_t(101));
 
             auto decoded = blox::SetpointSensorPair();
             testBox.processInputToProto(decoded);
+
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "setpointId: 101 sensorId: 100 "
-                                                "setpointValue: 86016 "
+            CHECK(decoded.ShortDebugString() == "sensorId: 100 "
+                                                "setting: 86016 "
+                                                "settingEnabled: true "
+                                                "storedSetting: 86016 "
                                                 "strippedFields: 6");
         }
     }

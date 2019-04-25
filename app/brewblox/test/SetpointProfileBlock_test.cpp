@@ -20,9 +20,13 @@
 #include "BrewBloxTestBox.h"
 #include "MockTicks.h"
 #include "blox/SetpointProfileBlock.h"
+#include "blox/SetpointSensorPairBlock.h"
+#include "blox/TempSensorMockBlock.h"
 #include "blox/TicksBlock.h"
 #include "cbox/DataStreamIo.h"
 #include "proto/test/cpp/SetpointProfile_test.pb.h"
+#include "proto/test/cpp/SetpointSensorPair_test.pb.h"
+#include "proto/test/cpp/TempSensorMock_test.pb.h"
 #include "proto/test/cpp/Ticks_test.pb.h"
 #include <catch.hpp>
 #include <sstream>
@@ -37,42 +41,86 @@ SCENARIO("A SetpointProfile block")
         using commands = cbox::Box::CommandID;
 
         testBox.reset();
-        testBox.put(uint16_t(0));
-        testBox.put(commands::CREATE_OBJECT);
-        testBox.put(cbox::obj_id_t(100));
-        testBox.put(uint8_t(0xFF));
-        testBox.put(SetpointProfileBlock::staticTypeId());
 
-        auto message = blox::SetpointProfile();
         {
-            auto newPoint = message.add_points();
-            newPoint->set_time(20'010);
-            newPoint->set_temperature(cnl::unwrap(temp_t(20)));
+            // create mock sensor
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::CREATE_OBJECT);
+            testBox.put(cbox::obj_id_t(100));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(TempSensorMockBlock::staticTypeId());
+
+            auto newSensor = blox::TempSensorMock();
+            newSensor.set_value(cnl::unwrap(temp_t(20.0)));
+            newSensor.set_connected(true);
+            testBox.put(newSensor);
+
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
+
+            // create pair
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::CREATE_OBJECT);
+            testBox.put(cbox::obj_id_t(101));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(SetpointSensorPairBlock::staticTypeId());
+
+            blox::SetpointSensorPair newPair;
+            newPair.set_sensorid(100);
+            newPair.set_storedsetting(cnl::unwrap(temp_t(99)));
+            newPair.set_settingenabled(true);
+            testBox.put(newPair);
+
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
         }
 
         {
-            auto newPoint = message.add_points();
-            newPoint->set_time(20'020);
-            newPoint->set_temperature(cnl::unwrap(temp_t(21)));
+            testBox.put(uint16_t(0));
+            testBox.put(commands::CREATE_OBJECT);
+            testBox.put(cbox::obj_id_t(102));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(SetpointProfileBlock::staticTypeId());
+
+            // create setpoint profile
+            auto message = blox::SetpointProfile();
+            message.set_targetid(101);
+            message.set_enabled(true);
+            message.set_start(20'000);
+            {
+                auto newPoint = message.add_points();
+                newPoint->set_time(10);
+                newPoint->set_temperature(cnl::unwrap(temp_t(20)));
+            }
+
+            {
+                auto newPoint = message.add_points();
+                newPoint->set_time(20);
+                newPoint->set_temperature(cnl::unwrap(temp_t(21)));
+            }
+
+            testBox.put(message);
+
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
         }
-
-        testBox.put(message);
-
-        testBox.processInput();
-        CHECK(testBox.lastReplyHasStatusOk());
 
         testBox.update(10'000);
 
-        auto lookup = brewbloxBox().makeCboxPtr<SetpointProfileBlock>(100);
-        auto spPtr = lookup.lock();
-        REQUIRE(spPtr);
+        auto pairLookup = brewbloxBox().makeCboxPtr<SetpointSensorPairBlock>(101);
+        auto pairPtr = pairLookup.lock();
+        auto profileLookup = brewbloxBox().makeCboxPtr<SetpointProfileBlock>(102);
+        auto profilePtr = profileLookup.lock();
+
+        REQUIRE(profilePtr);
+        REQUIRE(pairPtr);
 
         WHEN("The box has not received the current time (in seconds since epoch")
         {
-            THEN("The profile setpoint is invalid")
+            THEN("It does not change the setpoint")
             {
-                CHECK(spPtr->get().setting() == 0);
-                CHECK(spPtr->get().valid() == false);
+                CHECK(pairPtr->get().setting() == temp_t(99));
+                CHECK(pairPtr->get().settingValid() == true);
             }
         }
 
@@ -96,48 +144,78 @@ SCENARIO("A SetpointProfile block")
             THEN("The system time is updated correctly")
             {
                 CHECK(testBox.lastReplyHasStatusOk());
-
                 CHECK(reply.millissinceboot() == 10'000);
                 CHECK(reply.secondssinceepoch() == 20'000);
             }
 
             testBox.update(25000); // system is running for 25 seconds, so seconds since epoch should be 20.015 now
 
-            THEN("The profile setpoint is valid")
+            THEN("The setpoint is valid")
             {
-                CHECK(spPtr->get().valid() == true);
+                CHECK(pairPtr->get().settingValid() == true);
             }
             AND_THEN("The setting is correctly interpolated")
             {
-                CHECK(spPtr->get().setting() == temp_t(20.5)); // halfway between points
+                CHECK(pairPtr->get().setting() == temp_t(20.5)); // halfway between points
             }
             AND_WHEN("The SetpointProfile block streams out protobuf settings, the data is as expected")
             {
                 testBox.put(uint16_t(0));
                 testBox.put(commands::READ_OBJECT);
-                testBox.put(cbox::obj_id_t(100));
+                testBox.put(cbox::obj_id_t(102));
 
                 auto decoded = blox::SetpointProfile();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
                 // 20.5 * 4096 = 83968
-                CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } points { time: 20020 temperature: 86016 } setting: 83968 enabled: true");
-
-                AND_WHEN("The current time lies outside of the profile, the setting field is stripped")
-                {
-                    testBox.update(35000); // system is running for 25 seconds, so seconds since epoch should be 20.035 now
-
-                    testBox.put(uint16_t(0));
-                    testBox.put(commands::READ_OBJECT);
-                    testBox.put(cbox::obj_id_t(100));
-
-                    auto decoded = blox::SetpointProfile();
-                    testBox.processInputToProto(decoded);
-                    CHECK(testBox.lastReplyHasStatusOk());
-
-                    CHECK(decoded.ShortDebugString() == "points { time: 20010 temperature: 81920 } points { time: 20020 temperature: 86016 } enabled: true strippedFields: 2");
-                }
+                CHECK(decoded.ShortDebugString() == "points { time: 10 temperature: 81920 } "
+                                                    "points { time: 20 temperature: 86016 } "
+                                                    "enabled: true "
+                                                    "targetId: 101 "
+                                                    "drivenTargetId: 101 "
+                                                    "start: 20000");
             }
+        }
+
+        WHEN("A point at 0s and temp 0.0 is written, it does not disappear")
+        {
+            testBox.put(uint16_t(0));
+            testBox.put(commands::WRITE_OBJECT);
+            testBox.put(cbox::obj_id_t(102));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(SetpointProfileBlock::staticTypeId());
+
+            auto message = blox::SetpointProfile();
+            message.set_targetid(101);
+            message.set_enabled(true);
+            message.set_start(20'000);
+            {
+                auto newPoint = message.add_points();
+                newPoint->set_time(0);
+                newPoint->set_temperature(cnl::unwrap(temp_t(0)));
+            }
+
+            {
+                auto newPoint = message.add_points();
+                newPoint->set_time(20);
+                newPoint->set_temperature(cnl::unwrap(temp_t(21)));
+            }
+
+            testBox.put(message);
+
+            CHECK(testBox.lastReplyHasStatusOk());
+
+            auto decoded = blox::SetpointProfile();
+            testBox.processInputToProto(decoded);
+            CHECK(testBox.lastReplyHasStatusOk());
+            // 20.5 * 4096 = 83968
+
+            CHECK(decoded.ShortDebugString() == "points { temperature: 0 } "
+                                                "points { time: 20 temperature: 86016 } "
+                                                "enabled: true "
+                                                "targetId: 101 "
+                                                "drivenTargetId: 101 "
+                                                "start: 20000");
         }
     }
 }
