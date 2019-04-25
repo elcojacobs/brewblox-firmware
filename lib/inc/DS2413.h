@@ -82,19 +82,16 @@ public:
      * @param useCached     do not read the pin states from the device
      * @return              true on success
      */
-    bool writeLatchBit(Pio pio,
-                       bool set,
-                       bool useCached);
+    bool writeLatchBit(Pio pio, bool set);
 
     /**
      * Read the latch state of an output. True means latch is active
      * @param pio               pin number to read
      * @param defaultValue      value to return when the read fails
-     * @param useCached         do not read current pin state from device, but use cached state
      * @return					true on success
      */
-    bool readLatchBit(Pio pio, bool& result, bool useCached) const;
 
+    bool readLatchBit(Pio pio, bool& result) const;
     /**
      * Periodic update to make sure the cache is valid.
      * Performs a simultaneous read of both channels and saves value to the cache.
@@ -109,7 +106,7 @@ public:
      * Note that for a read to make sense the channel must be off (value written is 1).
      * @return true on success
      */
-    bool sense(Pio pio, bool& result, bool useCache) const;
+    bool sense(Pio pio, bool& result) const;
 
     /**
      * Return cached state. Upper nibble is equal to lower nibble if valid
@@ -168,26 +165,26 @@ private:
     }
 
     // generic OneWireIO interface
-    virtual bool sensePin(uint8_t channel, bool& result, bool useCache) const override final
+    virtual bool sensePin(uint8_t channel, bool& result) const override final
     {
         if (channel >= 1 && channel <= 2) {
-            return sense(Pio(channel), result, useCache);
+            return sense(Pio(channel), result);
         }
         return false;
     }
 
-    virtual bool writeLatch(uint8_t channel, bool value, bool useCache) override final
+    virtual bool writeLatch(uint8_t channel, bool value) override final
     {
         if (channel >= 1 && channel <= 2) {
-            return writeLatchBit(Pio(channel), value, useCache);
+            return writeLatchBit(Pio(channel), value);
         }
         return false;
     }
 
-    virtual bool readLatch(uint8_t channel, bool value, bool useCache) const override final
+    virtual bool readLatch(uint8_t channel, bool value) const override final
     {
         if (channel >= 1 && channel <= 2) {
-            return readLatchBit(Pio(channel), value, useCache);
+            return readLatchBit(Pio(channel), value);
         }
         return false;
     }

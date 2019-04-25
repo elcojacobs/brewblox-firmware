@@ -38,14 +38,12 @@ DS2413::cachedState() const
 }
 
 bool
-DS2413::writeLatchBit(Pio pio,
-                      bool set,
-                      bool useCached)
+DS2413::writeLatchBit(Pio pio, bool set)
 {
     bool ok = false;
-    uint8_t retries = 5;
+    uint8_t retries = 2;
 
-    if (!useCached || !cacheIsValid()) {
+    if (!cacheIsValid()) {
         // read a fresh value form the device
         do {
             update();
@@ -77,11 +75,11 @@ DS2413::writeLatchBit(Pio pio,
 }
 
 bool
-DS2413::readLatchBit(Pio pio, bool& result, bool useCached) const
+DS2413::readLatchBit(Pio pio, bool& result) const
 {
-    if (!useCached || !cacheIsValid()) {
+    if (!cacheIsValid()) {
         update();
-    }
+    };
 
     if (cacheIsValid()) {
         result = ((m_cachedState & latchReadMask(pio)) == 0);
@@ -123,9 +121,9 @@ DS2413::writeByteFromCache()
 }
 
 bool
-DS2413::sense(Pio pio, bool& result, bool useCache) const
+DS2413::sense(Pio pio, bool& result) const
 {
-    if (!useCache) {
+    if (!cacheIsValid()) {
         update();
     };
     if (cacheIsValid()) {

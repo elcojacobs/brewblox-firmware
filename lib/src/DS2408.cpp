@@ -64,7 +64,7 @@ DS2408::accessWrite(uint8_t b,
 }
 
 void
-DS2408::update()
+DS2408::update() const
 {
     oneWire.reset();
     oneWire.select(address.asUint8ptr());

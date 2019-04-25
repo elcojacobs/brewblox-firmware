@@ -42,7 +42,7 @@ public:
     }
     virtual ~OneWireIO() = default;
 
-    virtual bool sensePin(uint8_t channel, bool& result, bool useCache) const = 0;
-    virtual bool readLatch(uint8_t channel, bool value, bool useCache) const = 0;
-    virtual bool writeLatch(uint8_t channel, bool value, bool useCache) = 0;
+    virtual bool sensePin(uint8_t channel, bool& result) const = 0;
+    virtual bool readLatch(uint8_t channel, bool value) const = 0;
+    virtual bool writeLatch(uint8_t channel, bool value) = 0;
 };

@@ -43,7 +43,7 @@ ValveController::write(uint8_t newAction)
 {
     m_desiredAction = newAction;
     if (auto devPtr = m_device()) {
-        uint8_t latch = devPtr->getLatchCache();
+        uint8_t latch = devPtr->readLatches();
         devPtr->update();
 
         newAction = newAction & 0b11; // make sure action only has lower 2 bits non-zero
@@ -65,7 +65,7 @@ ValveController::position() const
 {
     if (auto devPtr = m_device()) {
         if (devPtr->connected()) {
-            uint8_t states = devPtr->readPios(true);
+            uint8_t states = devPtr->readPios();
             if (m_output == 'A') {
                 states = states >> 4;
             }
@@ -79,7 +79,7 @@ uint8_t
 ValveController::action() const
 {
     if (auto devPtr = m_device()) {
-        uint8_t latches = devPtr->readLatches(true);
+        uint8_t latches = devPtr->readLatches();
         if (m_output == 'A') { // A is on upper bits
             latches = latches >> 4;
         }

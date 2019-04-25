@@ -45,7 +45,7 @@ public:
     {
         bool bitVal = (state == State::Active) ^ m_invert;
         if (auto devPtr = m_device()) {
-            devPtr->writeLatch(m_channel, bitVal, true);
+            devPtr->writeLatch(m_channel, bitVal);
         }
     }
 
@@ -53,7 +53,7 @@ public:
     {
         bool result = false;
         if (auto devPtr = m_device()) {
-            if (devPtr->readLatch(m_channel, result, true)) {
+            if (devPtr->readLatch(m_channel, result)) {
                 return (result ^ m_invert) ? State::Active : State::Inactive;
             }
         }
