@@ -1,10 +1,13 @@
 #! /usr/bin/env bash
 
 MY_DIR=$(dirname "$(readlink -f "$0")")
-
 shopt -s globstar
-# shellcheck disable=SC2068,SC2086
-compiledb make $MAKE_ARGS $@
+if [ -x "$(command -v colormake)" ]; then
+    # shellcheck disable=SC2068,SC2086
+    compiledb make --cmd colormake $MAKE_ARGS $@
+    else
+    compiledb make $MAKE_ARGS $@
+fi
 rm -f "$MY_DIR/compile_commands.json"
 pushd "$MY_DIR" > /dev/null
 cat ./**/compile_commands.json > compile_commands.json
