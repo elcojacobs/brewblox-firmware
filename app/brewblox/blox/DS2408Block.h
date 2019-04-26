@@ -33,8 +33,8 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.getDeviceAddress();
-        message.pins = device.getPioCache();
-        message.latches = device.getLatchCache();
+        message.pins = device.readPios();
+        message.latches = device.readLatches();
         message.claimed = device.claimed();
 
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
@@ -45,7 +45,7 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.getDeviceAddress();
-        message.latches = device.getLatchCache();
+        message.latches = device.readLatches();
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
     }
 
@@ -60,9 +60,9 @@ public:
         if (iface == BrewbloxOptions_BlockType_DS2408) {
             return this; // me!
         }
-        if (iface == cbox::interfaceId<DS2408>()) {
+        if (iface == cbox::interfaceId<OneWireIO>()) {
             // return the member that implements the interface in this case
-            DS2408* ptr = &device;
+            OneWireIO* ptr = &device;
             return ptr;
         }
         if (iface == cbox::interfaceId<OneWireDevice>()) {

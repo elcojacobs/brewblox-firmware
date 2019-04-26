@@ -48,7 +48,6 @@ private:
 
     } m_regCache;
     mutable bool m_connected = false;
-    mutable bool cacheValid = false;
     uint8_t m_claimed = 0x00;
 
     static const uint8_t READ_PIO_REG = 0xF0;
@@ -67,12 +66,12 @@ public:
      * Constructor initializes both caches to 0xFF.
      * This means the output latches are disabled and all pins are sensed high
      */
-    DS2408(OneWire& oneWire, const OneWireAddress& address)
+    DS2408(OneWire& oneWire, OneWireAddress address = 0)
         : OneWireIO(oneWire, address)
     {
         m_regCache.pio = 0xFF;
         m_regCache.latch = 0xFF;
-        cacheValid = false;
+        m_connected = false;
     }
 
     /**
@@ -127,7 +126,7 @@ public:
      */
     uint8_t readPios() const
     {
-        if (!cacheValid) {
+        if (!m_connected) {
             update(); // use update instead of accessRead(), because it has error checking
         }
         return m_regCache.pio;
@@ -151,7 +150,7 @@ public:
      */
     uint8_t readLatches() const
     {
-        if (!cacheValid) {
+        if (!m_connected) {
             update(); // use update instead of accessRead(), because it has error checking
         }
         return m_regCache.latch;
@@ -167,15 +166,13 @@ public:
     {
         uint8_t retries = 2;
 
-        if (!cacheValid) {
+        while (!m_connected && (retries-- > 0)) {
             // read a fresh value form the device
-            do {
-                update();
-            } while (!cacheValid && (retries-- > 0));
+            update();
+        }
 
-            if (cacheValid) {
-                return false; // cannot read from device successfully
-            }
+        if (!m_connected) {
+            return false; // cannot read from device successfully
         }
         uint8_t newValues = setBit(m_regCache.latch, pos, set);
         bool success = writeLatches(newValues);
@@ -187,7 +184,8 @@ public:
      * @param values new state for all latches as a bitfield. 0 = pull down latch enabled.
      * @return true on success
      */
-    bool writeLatches(uint8_t values)
+    bool
+    writeLatches(uint8_t values)
     {
         bool success = accessWrite(values);
         if (success) {
@@ -202,7 +200,8 @@ public:
      * If the pull down latch is disabled (written as 1), this can be used to read an input switch
      * @return bit field with all 8 pio pin states
      */
-    uint8_t accessRead();
+    uint8_t
+    accessRead();
 
     /**
      * Writes the state of all PIOs in one operation.
@@ -210,28 +209,33 @@ public:
      * @param maxTries the maximum number of attempts before giving up.
      * @return true on success
      */
-    bool accessWrite(uint8_t latches, uint8_t maxTries = 3);
+    bool
+    accessWrite(uint8_t latches, uint8_t maxTries = 3);
 
     /**
      * Updates all cache registers by reading them from the device.
      * Performs CRC checking on communication and sets the connect state to false on CRC error or to true on success.
      */
-    void update() const;
+    void
+    update() const;
 
     /**
      * @return true if connected (hardware DS2408 is found)
      */
-    bool connected()
+    bool
+    connected()
     {
         return m_connected;
     }
 
-    uint8_t claimed()
+    uint8_t
+    claimed() const
     {
         return m_claimed;
     }
 
-    bool claim(const uint8_t& v)
+    bool
+    claim(const uint8_t& v)
     {
         if ((m_claimed & v) == 0) {
             m_claimed |= v;
@@ -240,13 +244,15 @@ public:
         return false;
     }
 
-    void unclaim(const uint8_t& v)
+    void
+    unclaim(const uint8_t& v)
     {
         m_claimed &= ~v;
     }
 
     // generic OneWireIO interface
-    virtual bool sensePin(uint8_t channel, bool& result) const override final
+    virtual bool
+    sensePin(uint8_t channel, bool& result) const override final
     {
         if (channel >= 1 && channel <= 8) {
             return false; // TODO sense(channel, result);
@@ -254,7 +260,8 @@ public:
         return false;
     }
 
-    virtual bool writeLatch(uint8_t channel, bool value) override final
+    virtual bool
+    writeLatch(uint8_t channel, bool value) override final
     {
         if (channel >= 1 && channel <= 8) {
             return writeLatchBit(channel - 1, value);
@@ -262,10 +269,12 @@ public:
         return false;
     }
 
-    virtual bool readLatch(uint8_t channel, bool value) const override final
+    virtual bool
+    readLatch(uint8_t channel, bool& result) const override final
     {
-        if (channel >= 1 && channel <= 8) {
-            return readLatchBit(channel - 1);
+        if (m_connected && channel >= 1 && channel <= 8) {
+            result = readLatchBit(channel - 1);
+            return true;
         }
         return false;
     }

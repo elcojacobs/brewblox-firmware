@@ -93,6 +93,4 @@ DS2408::update() const
         }
         m_connected = success;
     }
-
-    oneWire.reset();
 }

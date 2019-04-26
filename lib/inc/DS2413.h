@@ -167,7 +167,7 @@ private:
     // generic OneWireIO interface
     virtual bool sensePin(uint8_t channel, bool& result) const override final
     {
-        if (channel >= 1 && channel <= 2) {
+        if (m_connected && channel >= 1 && channel <= 2) {
             return sense(Pio(channel), result);
         }
         return false;
@@ -175,16 +175,16 @@ private:
 
     virtual bool writeLatch(uint8_t channel, bool value) override final
     {
-        if (channel >= 1 && channel <= 2) {
+        if (m_connected && channel >= 1 && channel <= 2) {
             return writeLatchBit(Pio(channel), value);
         }
         return false;
     }
 
-    virtual bool readLatch(uint8_t channel, bool value) const override final
+    virtual bool readLatch(uint8_t channel, bool& result) const override final
     {
-        if (channel >= 1 && channel <= 2) {
-            return readLatchBit(Pio(channel), value);
+        if (m_connected && channel >= 1 && channel <= 2) {
+            return readLatchBit(Pio(channel), result);
         }
         return false;
     }

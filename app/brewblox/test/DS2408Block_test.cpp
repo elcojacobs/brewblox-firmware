@@ -18,14 +18,14 @@
  */
 
 #include <catch.hpp>
-/*
+
 #include "BrewBloxTestBox.h"
-#include "blox/ActuatorDS2408Block.h"
+#include "blox/ActuatorOneWireBlock.h"
 #include "blox/DS2408Block.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/ActuatorDS2408.test.pb.h"
-#include "proto/test/cpp/DS2408.test.pb.h"
+#include "proto/test/cpp/ActuatorOneWire_test.pb.h"
+#include "proto/test/cpp/DS2408_test.pb.h"
 #include <sstream>
 
 SCENARIO("A DS2408 Block")
@@ -61,8 +61,8 @@ SCENARIO("A DS2408 Block")
         {
             CHECK(testBox.lastReplyHasStatusOk());
 
-            // the channels are not in use yet, so only the address is sent
-            CHECK(decoded.ShortDebugString() == "address: 12345678");
+            // the channels are not in use yet, so all latches are high
+            CHECK(decoded.ShortDebugString() == "address: 12345678 pins: 255 latches: 255");
         }
 
         THEN("The writable settings match what was sent")
@@ -79,11 +79,11 @@ SCENARIO("A DS2408 Block")
             testBox.put(commands::CREATE_OBJECT);
             testBox.put(cbox::obj_id_t(101));
             testBox.put(uint8_t(0xFF));
-            testBox.put(ActuatorDS2408Block::staticTypeId());
+            testBox.put(ActuatorOneWireBlock::staticTypeId());
 
-            auto message = blox::ActuatorDS2408();
+            auto message = blox::ActuatorOneWire();
             message.set_hwdevice(100);
-            message.set_channel(blox::ActuatorDS2408_Channel_A);
+            message.set_channel(1);
             message.set_state(blox::AD_State::AD_State_Active);
 
             testBox.put(message);
@@ -97,13 +97,12 @@ SCENARIO("A DS2408 Block")
                 testBox.put(commands::READ_OBJECT);
                 testBox.put(cbox::obj_id_t(101));
 
-                auto decoded = blox::ActuatorDS2408();
+                auto decoded = blox::ActuatorOneWire();
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: A constrainedBy { unconstrained: Active } strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 constrainedBy { unconstrained: Active } strippedFields: 3");
             }
         }
     }
 }
-    */
