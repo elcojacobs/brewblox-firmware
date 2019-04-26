@@ -35,14 +35,6 @@ SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
 STARTUP(System.enableFeature(FEATURE_RESET_INFO));
 
-auto mdns = MDNS();
-auto mdns_started = bool(false);
-#if PLATFORM_ID == PLATFORM_GCC
-auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with instructions
-#else
-auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
-#endif
-
 #if PLATFORM_ID == PLATFORM_GCC
 #include <csignal>
 void
@@ -82,37 +74,7 @@ displayTick()
 }
 
 void
-manageConnections()
-{
-    if (!WiFi.ready() || WiFi.listening()) {
-        if (!WiFi.connecting()) {
-            WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
-        }
-    } else {
-#if PLATFORM_ID != PLATFORM_GCC
-        Particle.connect();
-#endif
-        if (!mdns_started) {
-            mdns_started = mdns.begin(true);
-        } else {
-            mdns.processQueries();
-        }
-        TCPClient client = httpserver.available();
-        if (client) {
-            while (client.read() != -1) {
-            }
-
-            client.write("HTTP/1.1 200 Ok\n\n<html><body>Your BrewBlox Spark is online but it does not run it's own web server.\n"
-                         "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</body></html>\n\n");
-            client.flush();
-            delay(5);
-            client.stop();
-        }
-    }
-}
-
-void
-initMdns()
+initMdns(MDNS& mdns)
 {
     bool success = mdns.setHostname(System.deviceID());
     success = success && mdns.addService("tcp", "http", 80, System.deviceID());
@@ -134,6 +96,61 @@ initMdns()
         mdns.addTXTEntry("ID", System.deviceID());
         mdns.addTXTEntry("PLATFORM", stringify(PLATFORM_ID));
         mdns.addTXTEntry("HW", hw);
+    }
+}
+
+void
+processMdns()
+{
+    static auto mdns = MDNS();
+    static bool mdns_started = false;
+
+    if (!mdns_started) {
+        mdns_started = mdns.begin(true);
+        if (mdns_started) {
+            initMdns(mdns);
+        };
+    } else {
+        mdns.processQueries();
+    }
+}
+
+void
+processHttp()
+{
+#if PLATFORM_ID == PLATFORM_GCC
+    static auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with instructions
+#else
+    static auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
+#endif
+
+    TCPClient client = httpserver.available();
+    if (client) {
+        while (client.read() != -1) {
+        }
+
+        client.write("HTTP/1.1 200 Ok\n\n<html><body>Your BrewBlox Spark is online but it does not run it's own web server.\n"
+                     "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</body></html>\n\n");
+        client.flush();
+        delay(5);
+        client.stop();
+    }
+}
+
+void
+manageConnections()
+{
+    if (!WiFi.ready() || WiFi.listening()) {
+        if (!WiFi.connecting()) {
+            WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
+        }
+    } else {
+#if PLATFORM_ID != PLATFORM_GCC
+        Particle.connect();
+#endif
+        processHttp();
+
+        processMdns();
     }
 }
 
@@ -176,11 +193,6 @@ setup()
     StartupScreen::setProgress(80);
     StartupScreen::setStep("Loading objects");
     brewbloxBox().loadObjectsFromStorage(); // init box and load stored objects
-    StartupScreen::setProgress(90);
-
-    StartupScreen::setStep("Init mDNS");
-    initMdns();
-
     StartupScreen::setProgress(100);
 
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
