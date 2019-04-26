@@ -36,6 +36,7 @@ public:
         message.pins = device.readPios();
         message.latches = device.readLatches();
         message.claimed = device.claimed();
+        message.connected = device.connected();
 
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
     }

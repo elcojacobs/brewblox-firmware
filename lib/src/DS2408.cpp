@@ -85,7 +85,7 @@ DS2408::update() const
         std::memcpy(&m_regCache, &buf[3], sizeof(m_regCache));
     }
 
-    if (success != m_connected) {
+    if (success != connected()) {
         if (success) {
             CL_LOG_INFO("DS2408 connected ") << address.toString();
         } else {

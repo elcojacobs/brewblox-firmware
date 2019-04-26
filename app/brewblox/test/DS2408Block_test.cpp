@@ -61,8 +61,7 @@ SCENARIO("A DS2408 Block")
         {
             CHECK(testBox.lastReplyHasStatusOk());
 
-            // the channels are not in use yet, so all latches are high
-            CHECK(decoded.ShortDebugString() == "address: 12345678 pins: 255 latches: 255");
+            CHECK(decoded.ShortDebugString() == "address: 12345678 pins: 255");
         }
 
         THEN("The writable settings match what was sent")

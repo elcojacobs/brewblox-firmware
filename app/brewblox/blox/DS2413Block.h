@@ -24,6 +24,7 @@ public:
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             device.setDeviceAddress(OneWireAddress(newData.address));
+            device.latches(newData.latches);
         }
         return res;
     }
@@ -33,14 +34,20 @@ public:
         blox_DS2413 message = blox_DS2413_init_zero;
 
         message.address = device.getDeviceAddress();
-        message.state = device.cachedState();
+        message.latches = device.latches();
+        message.pins = device.pins();
+        message.claimed = device.claimed();
+        message.connected = device.connected();
 
         return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
     }
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
-        return streamTo(out);
+        blox_DS2413 message = blox_DS2413_init_zero;
+
+        message.address = device.getDeviceAddress();
+        return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
     }
 
     virtual cbox::update_t update(const cbox::update_t& now) override final

@@ -31,27 +31,19 @@ DS2413::cacheIsValid() const
     return upperInverted == lower;
 }
 
-uint8_t
-DS2413::cachedState() const
-{
-    return m_cachedState & 0x0f;
-}
-
 bool
 DS2413::writeLatchBit(Pio pio, bool set)
 {
     bool ok = false;
     uint8_t retries = 2;
 
-    if (!cacheIsValid()) {
+    while (!connected() && (retries-- > 0)) {
         // read a fresh value form the device
-        do {
-            update();
-        } while (!cacheIsValid() && (retries-- > 0));
+        update();
+    }
 
-        if (!cacheIsValid()) {
-            return false; // cannot read from device successfully
-        }
+    if (!connected()) {
+        return false; // cannot read from device successfully
     }
 
     uint8_t mask = latchWriteMask(pio);
@@ -77,11 +69,11 @@ DS2413::writeLatchBit(Pio pio, bool set)
 bool
 DS2413::readLatchBit(Pio pio, bool& result) const
 {
-    if (!cacheIsValid()) {
+    if (!connected()) {
         update();
     };
 
-    if (cacheIsValid()) {
+    if (connected()) {
         result = ((m_cachedState & latchReadMask(pio)) == 0);
         return true;
     } else {
@@ -95,13 +87,12 @@ DS2413::update() const
 {
     m_cachedState = accessRead();
     bool success = cacheIsValid();
-    if (m_connected && !success) {
-        m_connected = false;
+    if (connected() && !success) {
         CL_LOG_WARN("DS2413 disconnected: ") << getDeviceAddress().toString();
-    } else if (!m_connected && success) {
-        m_connected = true;
+    } else if (!connected() && success) {
         CL_LOG_INFO("DS2413 connected: ") << getDeviceAddress().toString();
     }
+    m_connected = success;
     return success;
 }
 
@@ -123,10 +114,10 @@ DS2413::writeByteFromCache()
 bool
 DS2413::sense(Pio pio, bool& result) const
 {
-    if (!cacheIsValid()) {
+    if (!connected()) {
         update();
     };
-    if (cacheIsValid()) {
+    if (!connected()) {
         return false;
     } else {
         result = ((m_cachedState & senseMask(pio)) != 0);

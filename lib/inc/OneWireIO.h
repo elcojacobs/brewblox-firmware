@@ -42,7 +42,44 @@ public:
     }
     virtual ~OneWireIO() = default;
 
-    virtual bool sensePin(uint8_t channel, bool& result) const = 0;
-    virtual bool readLatch(uint8_t channel, bool& result) const = 0;
-    virtual bool writeLatch(uint8_t channel, bool value) = 0;
+    virtual bool sensePin(uint8_t channel, bool& isHigh) const = 0;
+    virtual bool readLatch(uint8_t channel, bool& isEnabled) const = 0;
+    virtual bool writeLatch(uint8_t channel, bool enabled) = 0;
+
+    /**
+     * @return true if connected (hardware DS2408 is found)
+     */
+    bool
+    connected() const
+    {
+        return m_connected;
+    }
+
+    uint8_t
+    claimed() const
+    {
+        return m_claimed;
+    }
+
+    bool
+    claim(const uint8_t& v)
+    {
+        if ((m_claimed & v) == 0) {
+            m_claimed |= v;
+            return true;
+        }
+        return false;
+    }
+
+    void
+    unclaim(const uint8_t& v)
+    {
+        m_claimed &= ~v;
+    }
+
+protected:
+    mutable bool m_connected = false;
+
+private:
+    uint8_t m_claimed = 0x00;
 };

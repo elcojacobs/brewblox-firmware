@@ -44,8 +44,6 @@ public:
 
 private:
     mutable uint8_t m_cachedState; // last value of read
-    mutable bool m_connected;      // stores whether last read was succesful
-
     static const uint8_t ACCESS_READ = 0xF5;
     static const uint8_t ACCESS_WRITE = 0x5A;
     static const uint8_t ACK_SUCCESS = 0xAA;
@@ -59,7 +57,6 @@ public:
     DS2413(OneWire& oneWire, OneWireAddress address = 0)
         : OneWireIO(oneWire, address)
         , m_cachedState(0xff)
-        , m_connected(false)
     {
     }
 
@@ -102,8 +99,8 @@ public:
     bool update() const;
 
     /**
-     * Reads the output state of a given channel, defaulting to a given value on error.
-     * Note that for a read to make sense the channel must be off (value written is 1).
+     * Reads the pin state of a given channel.
+     * Note that for a read to make sense the latch of the channel must be off.
      * @return true on success
      */
     bool sense(Pio pio, bool& result) const;
@@ -112,7 +109,29 @@ public:
      * Return cached state. Upper nibble is equal to lower nibble if valid
      */
 
-    uint8_t cachedState() const;
+    uint8_t latches() const
+    {
+        bool A = 0;
+        bool B = 0;
+        readLatchBit(Pio::A, A);
+        readLatchBit(Pio::B, B);
+        return uint8_t(A) | uint8_t(B) << 1;
+    }
+
+    void latches(uint8_t newState)
+    {
+        writeLatchBit(Pio::A, newState & 0x1);
+        writeLatchBit(Pio::B, newState & 0x2);
+    }
+
+    uint8_t pins() const
+    {
+        bool A = 0;
+        bool B = 0;
+        sense(Pio::A, A);
+        sense(Pio::B, B);
+        return uint8_t(A) | uint8_t(B) << 1;
+    }
 
 private:
     // assumes pio is either 0 or 1, which translates to masks 0x8 and 0x2
@@ -165,26 +184,26 @@ private:
     }
 
     // generic OneWireIO interface
-    virtual bool sensePin(uint8_t channel, bool& result) const override final
+    virtual bool sensePin(uint8_t channel, bool& isHigh) const override final
     {
-        if (m_connected && channel >= 1 && channel <= 2) {
-            return sense(Pio(channel), result);
+        if (connected() && channel >= 1 && channel <= 2) {
+            return sense(Pio(channel), isHigh);
         }
         return false;
     }
 
-    virtual bool writeLatch(uint8_t channel, bool value) override final
+    virtual bool writeLatch(uint8_t channel, bool enabled) override final
     {
-        if (m_connected && channel >= 1 && channel <= 2) {
-            return writeLatchBit(Pio(channel), value);
+        if (connected() && channel >= 1 && channel <= 2) {
+            return writeLatchBit(Pio(channel), enabled);
         }
         return false;
     }
 
-    virtual bool readLatch(uint8_t channel, bool& result) const override final
+    virtual bool readLatch(uint8_t channel, bool& isEnabled) const override final
     {
-        if (m_connected && channel >= 1 && channel <= 2) {
-            return readLatchBit(Pio(channel), result);
+        if (connected() && channel >= 1 && channel <= 2) {
+            return readLatchBit(Pio(channel), isEnabled);
         }
         return false;
     }
