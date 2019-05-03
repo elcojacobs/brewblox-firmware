@@ -39,4 +39,16 @@ public:
 
     // no bool return type offered, because this forces classes to implement handling the Unknown state
     virtual State state() const = 0;
+
+    static State invertState(State s)
+    {
+        switch (s) {
+        case State::Active:
+            return State::Inactive;
+        case State::Inactive:
+            return State::Active;
+        default:
+            return State::Unknown;
+        }
+    }
 };

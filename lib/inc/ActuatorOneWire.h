@@ -21,7 +21,8 @@
 #pragma once
 
 #include "ActuatorDigital.h"
-#include "DS2413.h"
+#include "IoArray.h"
+#include <functional>
 #include <memory>
 
 /*
@@ -30,31 +31,38 @@
  */
 class ActuatorOneWire final : public ActuatorDigital {
 private:
-    const std::function<std::shared_ptr<OneWireIO>()> m_device;
+    const std::function<std::shared_ptr<IoArray>()> m_target;
     bool m_invert = true;
     uint8_t m_channel = 0;
 
 public:
-    explicit ActuatorOneWire(std::function<std::shared_ptr<OneWireIO>()>&& device)
-        : m_device(device)
+    explicit ActuatorOneWire(std::function<std::shared_ptr<IoArray>()>&& target)
+        : m_target(target)
     {
     }
     ~ActuatorOneWire() = default;
 
     virtual void state(const State& state) override final
     {
-        bool bitVal = (state == State::Active) ^ m_invert;
-        if (auto devPtr = m_device()) {
-            devPtr->writeLatch(m_channel, bitVal);
+        if (auto devPtr = m_target()) {
+            auto newState = state;
+            if (m_invert) {
+                newState = invertState(state);
+            }
+            IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_HIGH;
+            devPtr->writeChannel(m_channel, config);
         }
     }
 
     virtual State state() const override final
     {
-        bool result = false;
-        if (auto devPtr = m_device()) {
-            if (devPtr->readLatch(m_channel, result)) {
-                return (result ^ m_invert) ? State::Active : State::Inactive;
+        if (auto devPtr = m_target()) {
+            State result;
+            if (devPtr->senseChannel(m_channel, result)) {
+                if (m_invert) {
+                    result = invertState(result);
+                }
+                return result;
             }
         }
 

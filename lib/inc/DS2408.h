@@ -22,7 +22,8 @@
 
 #include <cstdint>
 
-#include "OneWireIO.h"
+#include "IoArray.h"
+#include "OneWireDevice.h"
 
 #define DS2408_FAMILY_ID 0x29
 
@@ -34,7 +35,7 @@
  * When the output latch is disabled, the pio can be read as digital input (sense).
  * This is the power on-default if a reset signal is pulled low. Without reset, the state is random.
  */
-class DS2408 : public OneWireIO {
+class DS2408 : public OneWireDevice, public IoArray {
 
 private:
     // cache of all of the DS2408 status registers
@@ -65,7 +66,8 @@ public:
      * This means the output latches are disabled and all pins are sensed high
      */
     DS2408(OneWire& oneWire, OneWireAddress address = 0)
-        : OneWireIO(oneWire, address)
+        : OneWireDevice(oneWire, address)
+        , IoArray(8)
     {
         m_regCache.pio = 0xFF;
         m_regCache.latch = 0xFF;
@@ -209,41 +211,30 @@ public:
      * @param maxTries the maximum number of attempts before giving up.
      * @return true on success
      */
-    bool
-    accessWrite(uint8_t latches, uint8_t maxTries = 3);
+    bool accessWrite(uint8_t latches, uint8_t maxTries = 3);
 
     /**
      * Updates all cache registers by reading them from the device.
      * Performs CRC checking on communication and sets the connect state to false on CRC error or to true on success.
      */
-    void
-    update() const;
+    void update() const;
 
     // generic OneWireIO interface
-    virtual bool
-    sensePin(uint8_t channel, bool& isHigh) const override final
+    virtual bool senseChannelImpl(uint8_t channel, ActuatorDigital::State& result) const override final
     {
-        if (channel >= 1 && channel <= 8) {
-            return false; // TODO sense(channel, result);
-        }
-        return false;
-    }
-
-    virtual bool
-    writeLatch(uint8_t channel, bool enabled) override final
-    {
-        if (channel >= 1 && channel <= 8) {
-            return writeLatchBit(channel - 1, !enabled);
-        }
-        return false;
-    }
-
-    virtual bool
-    readLatch(uint8_t channel, bool& isEnabled) const override final
-    {
+        // TODO
         if (connected() && channel >= 1 && channel <= 8) {
-            isEnabled = !readLatchBit(channel - 1);
-            return true;
+            result = ActuatorDigital::State::Unknown;
+            return true; // valid channel
+        }
+        return false;
+    }
+
+    virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
+    {
+        if (channel >= 1 && channel <= 8) {
+            bool latchEnabled = config != ChannelConfig::ACTIVE_HIGH;
+            return writeLatchBit(channel - 1, latchEnabled);
         }
         return false;
     }

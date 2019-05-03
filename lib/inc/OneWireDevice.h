@@ -37,4 +37,12 @@ public:
 protected:
     OneWire& oneWire;
     OneWireAddress address;
+
+    mutable bool m_connected = false;
+
+    bool
+    connected() const
+    {
+        return m_connected;
+    }
 };

@@ -17,6 +17,8 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0
+
 #include "ValveController.h"
 
 void
@@ -135,3 +137,4 @@ ValveController::read(bool doUpdate)
     }
     return (action() << 2 | action());
 }
+#endif
