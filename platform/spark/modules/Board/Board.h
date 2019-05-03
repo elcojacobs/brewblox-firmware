@@ -25,6 +25,7 @@
 #else
 #include "pinmap_impl.h"
 #endif
+#include <array>
 #include <stdint.h>
 
 // Most pins are only conditionally defined here, allowing definitions to be provided in Config.h for
@@ -38,6 +39,8 @@ enum class SparkVersion : uint8_t {
 #if !defined(PLATFORM_ID)
 #error
 #endif
+
+std::array<uint8_t, 5> BoardIoPins;
 
 #if PLATFORM_ID == 8 // P1
 #define PIN_V3_BOTTOM1 P1S1

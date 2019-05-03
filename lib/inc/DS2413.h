@@ -56,7 +56,7 @@ public:
 
     DS2413(OneWire& oneWire, OneWireAddress address = 0)
         : OneWireDevice(oneWire, address)
-        , IoArray(8)
+        , IoArray(2)
         , m_cachedState(0xff)
     {
     }

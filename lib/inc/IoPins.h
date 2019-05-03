@@ -1,6 +1,5 @@
 /*
- * Copyright 2013 Matthew McGowan 
- * Copyright 2013 BrewPi/Elco Jacobs.
+ * Copyright 2019 Matthew McGowan 
  *
  * This file is part of BrewBlox.
  * 
@@ -23,9 +22,6 @@
 #include <cstdint>
 
 #include "IoArray.h"
-#include "OneWireDevice.h"
-
-#define DS2408_FAMILY_ID 0x29
 
 /**
  * Provides access to a OneWire-addressable 8-channel I/O device.
@@ -35,39 +31,9 @@
  * When the output latch is disabled, the pio can be read as digital input (sense).
  * This is the power on-default if a reset signal is pulled low. Without reset, the state is random.
  */
-class DS2408 : public OneWireDevice, public IoArray {
-
-private:
-    // cache of all of the DS2408 status registers
-    mutable struct {              // bass address 0x0088 on chip
-        uint8_t pio;              // 0 = pio logic state
-        uint8_t latch;            // 1 = output latch state
-        uint8_t activity;         // 2 = activity latch state
-        uint8_t cond_search_mask; // 3 = conditional search channel selection mask
-        uint8_t cond_search_pol;  // 4 = conditional search channel polarity selection
-        uint8_t status;           // 5 = control/status register
-
-    } m_regCache;
-
-    static const uint8_t READ_PIO_REG = 0xF0;
-    static const uint8_t ACCESS_READ = 0xF5;
-    static const uint8_t ACCESS_WRITE = 0x5A;
-    static const uint8_t ACK_SUCCESS = 0xAA;
-    static const uint8_t ACK_ERROR = 0xFF;
-
-    // all addresses have upper bits 0x00
-    static const uint8_t ADDRESS_UPPER = 0x00;
-    static const uint8_t ADDRESS_PIO_STATE_LOWER = 0x88;
-    static const uint8_t ADDRESS_LATCH_STATE_LOWER = 0x89;
-
+class IoPins : public IoArray {
 public:
-    /**
-     * Constructor initializes both caches to 0xFF.
-     * This means the output latches are disabled and all pins are sensed high
-     */
-    DS2408(OneWire& oneWire, OneWireAddress address = 0)
-        : OneWireDevice(oneWire, address)
-        , IoArray(8)
+    IoPins(), IoArray(8)
     {
         m_regCache.pio = 0xFF;
         m_regCache.latch = 0xFF;
