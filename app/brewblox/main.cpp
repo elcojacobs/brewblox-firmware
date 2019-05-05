@@ -102,7 +102,7 @@ manageConnections()
             while (client.read() != -1) {
             }
 
-            client.write("HTTP/1.1 200 Ok\n\n<html><body>Your BrewBlox Spark is online but it does not run it's own web server.\n"
+            client.write("HTTP/1.1 200 Ok\n\n<html><body>Your BrewBlox Spark is online but it does not run its own web server.\n"
                          "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</body></html>\n\n");
             client.flush();
             delay(5);
