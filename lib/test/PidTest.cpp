@@ -21,10 +21,11 @@
 
 #include "ActuatorAnalogConstrained.h"
 #include "ActuatorAnalogMock.h"
+#include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
-#include "ActuatorDigitalMock.h"
 #include "ActuatorOffset.h"
 #include "ActuatorPwm.h"
+#include "MockIoArray.h"
 #include "Pid.h"
 #include "SetpointSensorPair.h"
 #include "TempSensorMock.h"
@@ -472,7 +473,9 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     input->settingValid(true);
     input->setting(20);
 
-    auto mock = ActuatorDigitalMock();
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; },
+                                1);
     auto constrainedDigital = std::make_shared<ActuatorDigitalConstrained>(mock);
 
     auto pwm = ActuatorPwm(

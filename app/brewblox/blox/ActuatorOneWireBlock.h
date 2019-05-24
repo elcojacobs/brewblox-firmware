@@ -2,7 +2,6 @@
 
 #include "ActuatorDigitalConstrained.h"
 #include "ActuatorDigitalConstraintsProto.h"
-#include "ActuatorOneWire.h"
 #include "FieldTags.h"
 #include "blox/Block.h"
 #include "blox/DS2413Block.h"
@@ -10,27 +9,27 @@
 #include "proto/cpp/ActuatorOneWire.pb.h"
 #include <cstdint>
 
-class ActuatorOneWireBlock : public Block<BrewbloxOptions_BlockType_ActuatorOneWire> {
+class ActuatorDigitalBlock : public Block<BrewbloxOptions_BlockType_ActuatorDigital> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
-    cbox::CboxPtr<OneWireIO> hwDevice;
-    ActuatorOneWire actuator;
+    cbox::CboxPtr<IoArray> hwDevice;
+    ActuatorDigital actuator;
     ActuatorDigitalConstrained constrained;
 
 public:
-    ActuatorOneWireBlock(cbox::ObjectContainer& objects)
+    ActuatorDigitalBlock(cbox::ObjectContainer& objects)
         : objectsRef(objects)
         , hwDevice(objects)
         , actuator(hwDevice.lockFunctor())
         , constrained(actuator)
     {
     }
-    virtual ~ActuatorOneWireBlock() = default;
+    virtual ~ActuatorDigitalBlock() = default;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& dataIn) override final
     {
-        blox_ActuatorOneWire message = blox_ActuatorOneWire_init_zero;
-        cbox::CboxError result = streamProtoFrom(dataIn, &message, blox_ActuatorOneWire_fields, blox_ActuatorOneWire_size);
+        blox_ActuatorDigital message = blox_ActuatorDigital_init_zero;
+        cbox::CboxError result = streamProtoFrom(dataIn, &message, blox_ActuatorDigital_fields, blox_ActuatorDigital_size);
 
         if (result == cbox::CboxError::OK) {
             hwDevice.setId(message.hwDevice);
@@ -45,12 +44,12 @@ public:
 
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
     {
-        blox_ActuatorOneWire message = blox_ActuatorOneWire_init_zero;
+        blox_ActuatorDigital message = blox_ActuatorDigital_init_zero;
         FieldTags stripped;
 
         auto state = actuator.state();
         if (state == ActuatorDigital::State::Unknown) {
-            stripped.add(blox_ActuatorOneWire_state_tag);
+            stripped.add(blox_ActuatorDigital_state_tag);
         } else {
             message.state = blox_AD_State(actuator.state());
         }
@@ -61,7 +60,7 @@ public:
         getDigitalConstraints(message.constrainedBy, constrained);
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
-        return streamProtoTo(out, &message, blox_ActuatorOneWire_fields, blox_ActuatorOneWire_size);
+        return streamProtoTo(out, &message, blox_ActuatorDigital_fields, blox_ActuatorDigital_size);
     }
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
@@ -77,7 +76,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_ActuatorOneWire) {
+        if (iface == BrewbloxOptions_BlockType_ActuatorDigital) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<ActuatorDigitalConstrained>()) {
@@ -86,11 +85,6 @@ public:
             return ptr;
         }
         return nullptr;
-    }
-
-    ActuatorOneWire& getPin()
-    {
-        return actuator;
     }
 
     ActuatorDigitalConstrained& getConstrained()

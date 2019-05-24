@@ -220,11 +220,11 @@ public:
     void update() const;
 
     // generic OneWireIO interface
-    virtual bool senseChannelImpl(uint8_t channel, ActuatorDigital::State& result) const override final
+    virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {
         // TODO
         if (connected() && channel >= 1 && channel <= 8) {
-            result = ActuatorDigital::State::Unknown;
+            result = State::Unknown;
             return true; // valid channel
         }
         return false;

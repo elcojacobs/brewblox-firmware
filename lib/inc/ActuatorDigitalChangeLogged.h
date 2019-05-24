@@ -31,7 +31,7 @@
 // uneven length makes last entry equal to first for toggling (PWM) behavior
 const uint8_t historyLength = 5;
 
-class ActuatorDigitalChangeLogged : public ActuatorDigital {
+class ActuatorDigitalChangeLogged {
 public:
     using State = ActuatorDigital::State;
 
@@ -53,15 +53,15 @@ public:
     {
         resetHistory();
     };
-    virtual ~ActuatorDigitalChangeLogged() = default;
+    ~ActuatorDigitalChangeLogged() = default;
 
-    virtual void state(const State& val, const ticks_millis_t& now)
+    void state(const State& val, const ticks_millis_t& now)
     {
         actuator.state(val);
         update(now);
     };
 
-    virtual void state(const State& val) override
+    void state(const State& val)
     {
         state(val, lastUpdateTime);
     };
@@ -71,7 +71,7 @@ public:
         actuator.state(val);
     }
 
-    State state() const override
+    State state() const
     {
         return actuator.state();
     };

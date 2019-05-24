@@ -185,15 +185,15 @@ private:
     }
 
     // generic OneWireIO interface
-    virtual bool senseChannelImpl(uint8_t channel, ActuatorDigital::State& result) const override final
+    virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {
         if (connected() && channel >= 1 && channel <= 2) {
             bool isHigh;
             bool success = sense(Pio(channel), isHigh);
             if (success) {
-                result = isHigh ? ActuatorDigital::State::Active : ActuatorDigital::State::Inactive;
+                result = isHigh ? State::Active : State::Inactive;
             } else {
-                result = ActuatorDigital::State::Unknown;
+                result = State::Unknown;
             }
             return true;
         }

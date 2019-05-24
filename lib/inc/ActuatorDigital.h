@@ -1,7 +1,8 @@
 /*
- * Copyright 2018 BrewPi B.V.
+ * Copyright 2013 BrewPi/Elco Jacobs.
+ * Copyright 2013 Matthew McGowan
  *
- * This file is part of the BrewBlox Control Library.
+ * This file is part of BrewPi.
  *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,26 +20,17 @@
 
 #pragma once
 
-#include <cstdint>
+#include "IoArray.h"
+#include <functional>
+#include <memory>
 
 /*
- * An ActuatorDigital simply turns something on or off.
+ * A digital actuator that toggles a channel of an ArrayIo object.
+ *
  */
 class ActuatorDigital {
 public:
-    enum State : uint8_t {
-        Inactive = 0,
-        Active = 1,
-        Unknown = 2,
-    };
-
-    ActuatorDigital() = default;
-    virtual ~ActuatorDigital() = default;
-
-    virtual void state(const State& state) = 0;
-
-    // no bool return type offered, because this forces classes to implement handling the Unknown state
-    virtual State state() const = 0;
+    using State = IoArray::State;
 
     static State invertState(State s)
     {
@@ -49,6 +41,78 @@ public:
             return State::Active;
         default:
             return State::Unknown;
+        }
+    }
+
+private:
+    const std::function<std::shared_ptr<IoArray>()> m_target;
+    bool m_invert = false;
+    uint8_t m_channel = 0;
+
+public:
+    explicit ActuatorDigital(std::function<std::shared_ptr<IoArray>()>&& target, uint8_t chan = 0)
+        : m_target(target)
+    {
+        channel(chan);
+    }
+    ~ActuatorDigital() = default;
+
+    void state(const State& state)
+    {
+        if (auto devPtr = m_target()) {
+            auto newState = state;
+            if (m_invert) {
+                newState = invertState(state);
+            }
+            IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_LOW;
+            devPtr->writeChannelConfig(m_channel, config);
+        }
+    }
+
+    State state() const
+    {
+        if (auto devPtr = m_target()) {
+            State result;
+            if (devPtr->senseChannel(m_channel, result)) {
+                if (m_invert) {
+                    result = invertState(result);
+                }
+                return result;
+            }
+        }
+
+        return State::Unknown;
+    }
+
+    bool invert() const
+    {
+        return m_invert;
+    }
+
+    void invert(bool inv)
+    {
+        auto active = state();
+        m_invert = inv;
+        state(active);
+    }
+
+    uint8_t channel() const
+    {
+        return m_channel;
+    }
+
+    void channel(uint8_t newChannel)
+    {
+        if (newChannel != m_channel) {
+            if (auto devPtr = m_target()) {
+                if (devPtr->releaseChannel(m_channel)) {
+                    if (devPtr->claimChannel(newChannel, IoArray::ChannelConfig::ACTIVE_LOW)) {
+                        m_channel = newChannel;
+                    } else {
+                        m_channel = 0;
+                    }
+                }
+            }
         }
     }
 };

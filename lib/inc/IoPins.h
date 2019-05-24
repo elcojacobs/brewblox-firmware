@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Matthew McGowan 
+ * Copyright 2019 Elco Jacobs
  *
  * This file is part of BrewBlox.
  * 
@@ -24,16 +24,11 @@
 #include "IoArray.h"
 
 /**
- * Provides access to a OneWire-addressable 8-channel I/O device.
- * Each output has a pull-down transistor, which can be enabled by writing 0 to the pio output latch.
- * This pulls the output pin to GND.
- *
- * When the output latch is disabled, the pio can be read as digital input (sense).
- * This is the power on-default if a reset signal is pulled low. Without reset, the state is random.
+ * Bundles IO pins of the microcontroller into an array object.
  */
 class IoPins : public IoArray {
 public:
-    IoPins(), IoArray(8)
+    IoPins(), IoArray(5)
     {
         m_regCache.pio = 0xFF;
         m_regCache.latch = 0xFF;
@@ -42,147 +37,8 @@ public:
     /**
      * Destructor is default.
      */
-    ~DS2408() = default;
+    ~IoPins() = default;
 
-    /**
-     * extracts a single bit from a byte
-     *
-     * @param target input byte to extract a bit from
-     * @param pos position of the byte with the rightmost bit being A.
-     * @returns extracted bit as bool
-     */
-    inline bool getBit(const uint8_t& target, const uint8_t& pos) const
-    {
-        return ((0b1 << pos) & target) != 0x0;
-    }
-
-    /**
-     * sets a single bit in a byte
-     * @param input byte to change a bit in
-     * @param pos position of bit in the byte
-     * @param state new state for the bit, 1 or 0
-     * @returns new byte with the bit at position pos changed to state
-     */
-    inline uint8_t setBit(const uint8_t& input, const uint8_t& pos, bool state) const
-    {
-        uint8_t mask = (0b1 << pos);
-        if (state) {
-            return input | mask;
-        } else {
-            return input & ~mask;
-        }
-    }
-
-    /**
-     * Reads the pin state of a given channel.
-     * Note that for a read to make sense the latch must be off (value written is 1).
-     * @param pio channel number 0-7
-     * @returns state of the output pin for the given channel
-     */
-    bool readPioBit(uint8_t pos)
-    {
-        return getBit(readPios(), pos);
-    }
-
-    /**
-     * Performs a simultaneous read of all I/O pins.
-     * @returns bit field with all pio states
-     */
-    uint8_t readPios() const
-    {
-        if (!connected()) {
-            update(); // use update instead of accessRead(), because it has error checking
-        }
-        return m_regCache.pio;
-    }
-
-    /**
-     * Reads the latch state of a given channel.
-     * @param channel number 0-7
-     * @returns state of the latch for the given channel
-     */
-    bool readLatchBit(uint8_t pos) const
-    {
-        return getBit(readLatches(), pos);
-    }
-
-    /**
-     * Performs a simultaneous read of all latches.
-     * @returns bit field with all pio states
-     */
-    uint8_t readLatches() const
-    {
-        if (!connected()) {
-            update(); // use update instead of accessRead(), because it has error checking
-        }
-        return m_regCache.latch;
-    }
-
-    /**
-     * Change a single bit in the output latch register. Uses the cached value for the other bits
-     * @param pio The bit position to write
-     * @param set The value of the bit (1 or 0)
-     * @returns true on success
-     */
-    bool writeLatchBit(uint8_t pos, bool set)
-    {
-        uint8_t retries = 2;
-
-        while (!connected() && (retries-- > 0)) {
-            // read a fresh value form the device
-            update();
-        }
-
-        if (!connected()) {
-            return false; // cannot read from device successfully
-        }
-        uint8_t newValues = setBit(m_regCache.latch, pos, set);
-        bool success = writeLatches(newValues);
-        return success;
-    }
-
-    // return enabled state of all latches
-    uint8_t latches() const
-    {
-        return ~readLatches(); // invert because latches are active low
-    }
-
-    /**
-     * Write a new state to all output latches.
-     * @param values new state for all latches as a bitfield. 1 = pull down latch enabled.
-     * @return true on success
-     */
-    bool
-    writeLatches(uint8_t values)
-    {
-        bool success = accessWrite(~values);
-        if (success) {
-            m_regCache.latch = values;
-        }
-        return success;
-    }
-
-    /**
-     * Reads the pio state of all pins and returns them as a single byte.
-     * Note that the state that is returned is the actual pin state, not the state of the latch register.
-     * If the pull down latch is disabled (written as 1), this can be used to read an input switch
-     * @return bit field with all 8 pio pin states
-     */
-    uint8_t
-    accessRead();
-
-    /**
-     * Writes the state of all PIOs in one operation.
-     * @param latches pio data - a bit field with new values for the output latch
-     * @param maxTries the maximum number of attempts before giving up.
-     * @return true on success
-     */
-    bool accessWrite(uint8_t latches, uint8_t maxTries = 3);
-
-    /**
-     * Updates all cache registers by reading them from the device.
-     * Performs CRC checking on communication and sets the connect state to false on CRC error or to true on success.
-     */
     void update() const;
 
     // generic OneWireIO interface
@@ -198,7 +54,7 @@ public:
 
     virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
-        if (channel >= 1 && channel <= 8) {
+        if (channel >= 1 && channel <= 5) {
             bool latchEnabled = config != ChannelConfig::ACTIVE_HIGH;
             return writeLatchBit(channel - 1, latchEnabled);
         }

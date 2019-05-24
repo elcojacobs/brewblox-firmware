@@ -92,7 +92,7 @@ interfaceIdImpl<OneWireDevice>()
 
 template <>
 const obj_type_t
-interfaceIdImpl<OneWireIO>()
+interfaceIdImpl<IoArray>()
 {
     return BrewbloxOptions_BlockType_OneWireIOInterface;
 }

@@ -19,14 +19,17 @@
 
 #include <catch.hpp>
 
+#include "ActuatorDigital.h"
 #include "ActuatorDigitalChangeLogged.h"
-#include "ActuatorDigitalMock.h"
+#include "MockIoArray.h"
 
 SCENARIO("ActuatorDigitalChangeLogged test", "[ActuatorChangeLog]")
 {
     using State = ActuatorDigital::State;
 
-    auto mock = ActuatorDigitalMock();
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; },
+                                1);
     auto logged = ActuatorDigitalChangeLogged(mock);
     ticks_millis_t now = 1000;
 

@@ -293,7 +293,7 @@ public:
         return m_limiting;
     }
 
-    virtual void state(const State& val, const ticks_millis_t& now) override final
+    void state(const State& val, const ticks_millis_t& now)
     {
         lastUpdateTime = now; // always update fallback time for state setter without time
         m_unconstrained = val;
@@ -303,12 +303,12 @@ public:
         }
     }
 
-    virtual void state(const State& val) override final
+    void state(const State& val)
     {
         state(val, lastUpdateTime);
     }
 
-    virtual State state() const override
+    State state() const
     {
         return ActuatorDigitalChangeLogged::state();
     }

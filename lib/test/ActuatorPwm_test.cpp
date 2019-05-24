@@ -23,10 +23,11 @@
 #include <time.h>   /* time, to seed rand */
 
 #include "ActuatorAnalogConstrained.h"
+#include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
-#include "ActuatorDigitalMock.h"
 #include "ActuatorPwm.h"
 #include "Balancer.h"
+#include "MockIoArray.h"
 #include <cmath> // for sin
 #include <cstring>
 #include <fstream>
@@ -120,7 +121,10 @@ randomIntervalTest(const int& numPeriods,
 SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
 {
     auto now = ticks_millis_t(0);
-    auto mock = ActuatorDigitalMock();
+
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
+
     auto constrained = std::make_shared<ActuatorDigitalConstrained>(mock);
     auto pwm = ActuatorPwm(
         [constrained]() { return constrained; },
@@ -361,7 +365,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
     WHEN("The target actuator returns an unknown state, the value is marked invalid")
     {
         pwm.setting(10);
-        mock.state(State::Unknown);
+        mockIo->setChannelError(1, true);
         pwm.update(now);
 
         CHECK(pwm.valueValid() == false);
@@ -372,14 +376,16 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 {
     auto now = ticks_millis_t(0);
     auto period = duration_millis_t(4000);
-    auto mock1 = ActuatorDigitalMock();
+
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock1 = ActuatorDigital([mockIo]() { return mockIo; }, 1);
+
     auto constrainedMock1 = std::make_shared<ActuatorDigitalConstrained>(mock1);
     auto pwm1 = ActuatorPwm(
         [constrainedMock1]() { return constrainedMock1; },
         4000);
     auto constrainedPwm1 = ActuatorAnalogConstrained(pwm1);
-
-    auto mock2 = ActuatorDigitalMock();
+    auto mock2 = ActuatorDigital([mockIo]() { return mockIo; }, 2);
     auto constrainedMock2 = std::make_shared<ActuatorDigitalConstrained>(mock2);
     auto pwm2 = ActuatorPwm(
         [constrainedMock2]() { return constrainedMock2; },

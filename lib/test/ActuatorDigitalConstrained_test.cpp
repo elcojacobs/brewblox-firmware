@@ -19,15 +19,19 @@
 
 #include <catch.hpp>
 
+#include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
-#include "ActuatorDigitalMock.h"
+#include "MockIoArray.h"
 
 using State = ActuatorDigital::State;
 
 SCENARIO("ActuatorDigitalConstrained", "[constraints]")
 {
     auto now = ticks_millis_t(0);
-    auto mock = ActuatorDigitalMock();
+
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; },
+                                1);
     auto constrained = ActuatorDigitalConstrained(mock);
 
     WHEN("A minimum ON time constrained is added, the actuator cannot turn off before it has passed")
@@ -38,12 +42,12 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
         CHECK(mock.state() == State::Active);
 
         now += 1499;
-        constrained.state(ActuatorDigital::Inactive, now);
+        constrained.state(State::Inactive, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
 
         now += 1;
-        constrained.state(ActuatorDigital::Inactive, now);
+        constrained.state(State::Inactive, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
     }
@@ -56,12 +60,12 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
         CHECK(mock.state() == State::Inactive);
 
         now += 1499;
-        constrained.state(ActuatorDigital::Active, now);
+        constrained.state(State::Active, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
 
         now += 1;
-        constrained.state(ActuatorDigital::Active, now);
+        constrained.state(State::Active, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
     }
@@ -90,9 +94,12 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
 SCENARIO("Mutex contraint", "[constraints]")
 {
     auto now = ticks_millis_t(0);
-    auto mock1 = ActuatorDigitalMock();
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock1 = ActuatorDigital([mockIo]() { return mockIo; },
+                                 1);
     auto constrained1 = ActuatorDigitalConstrained(mock1);
-    auto mock2 = ActuatorDigitalMock();
+    auto mock2 = ActuatorDigital([mockIo]() { return mockIo; },
+                                 2);
     auto constrained2 = ActuatorDigitalConstrained(mock2);
     auto mut = std::make_shared<TimedMutex>();
 
