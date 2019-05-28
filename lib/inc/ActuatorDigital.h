@@ -50,19 +50,19 @@ private:
     uint8_t m_channel = 0;
 
 public:
-    explicit ActuatorDigital(std::function<std::shared_ptr<IoArray>()>&& target, uint8_t chan = 0)
+    explicit ActuatorDigital(std::function<std::shared_ptr<IoArray>()>&& target, uint8_t chan)
         : m_target(target)
     {
         channel(chan);
     }
     ~ActuatorDigital() = default;
 
-    void state(const State& state)
+    void state(const State& v)
     {
         if (auto devPtr = m_target()) {
-            auto newState = state;
+            auto newState = v;
             if (m_invert) {
-                newState = invertState(state);
+                newState = invertState(v);
             }
             IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_LOW;
             devPtr->writeChannelConfig(m_channel, config);

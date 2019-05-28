@@ -7,7 +7,7 @@
 #endif
 
 ActuatorPwm::ActuatorPwm(
-    std::function<std::shared_ptr<ActuatorDigitalChangeLogged>()>&& target_,
+    std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target_,
     duration_millis_t period_)
     : m_target(target_)
 {

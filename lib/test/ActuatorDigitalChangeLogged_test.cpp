@@ -28,8 +28,7 @@ SCENARIO("ActuatorDigitalChangeLogged test", "[ActuatorChangeLog]")
     using State = ActuatorDigital::State;
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock = ActuatorDigital([mockIo]() { return mockIo; },
-                                1);
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
     auto logged = ActuatorDigitalChangeLogged(mock);
     ticks_millis_t now = 1000;
 

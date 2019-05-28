@@ -474,8 +474,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     input->setting(20);
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock = ActuatorDigital([mockIo]() { return mockIo; },
-                                1);
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
     auto constrainedDigital = std::make_shared<ActuatorDigitalConstrained>(mock);
 
     auto pwm = ActuatorPwm(

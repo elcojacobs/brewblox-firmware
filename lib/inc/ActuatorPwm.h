@@ -20,7 +20,7 @@
 #pragma once
 
 #include "ActuatorAnalog.h"
-#include "ActuatorDigitalChangeLogged.h"
+#include "ActuatorDigitalConstrained.h"
 #include "FixedPoint.h"
 #include <cstdint>
 #include <functional>
@@ -40,7 +40,7 @@ public:
     using update_t = ticks_millis_t;
 
 private:
-    const std::function<std::shared_ptr<ActuatorDigitalChangeLogged>()> m_target;
+    const std::function<std::shared_ptr<ActuatorDigitalConstrained>()> m_target;
     duration_millis_t m_period;
     duration_millis_t m_dutyTime = 0;
     value_t m_dutySetting = 0;
@@ -64,7 +64,7 @@ public:
      *  @sa getPeriod(), setPeriod(), getTarget(), setTarget()
      */
     explicit ActuatorPwm(
-        std::function<std::shared_ptr<ActuatorDigitalChangeLogged>()>&& target,
+        std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target,
         duration_millis_t period = 4000);
 
     ~ActuatorPwm() = default;
