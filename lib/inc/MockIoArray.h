@@ -79,6 +79,11 @@ public:
         }
     }
 
+    virtual bool supportsFastIo() const override final
+    {
+        return true;
+    }
+
 private:
     uint8_t static getMask(uint8_t channel)
     {

@@ -257,7 +257,9 @@ public:
     // ActuatorDigitalChangeLogged is inherited privately to prevent bypassing constraints.
     // explicitly make functions available that should be in public interface here.
     using ActuatorDigitalChangeLogged::activeDurations;
+    using ActuatorDigitalChangeLogged::getLastStartEndTime;
     using ActuatorDigitalChangeLogged::supportsFastIo;
+    
 
     void addConstraint(std::unique_ptr<Constraint>&& newConstraint)
     {
