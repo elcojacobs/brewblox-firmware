@@ -184,10 +184,10 @@ private:
         return pio == Pio::A ? 0x1 : 0x4; // assumes pio is either 0 or 1, which translates to masks 0x1 and 0x4
     }
 
-    // generic OneWireIO interface
+    // generic ArrayIO interface
     virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {
-        if (connected() && channel >= 1 && channel <= 2) {
+        if (connected() && validChannel(channel)) {
             bool isHigh;
             bool success = sense(Pio(channel), isHigh);
             if (success) {
@@ -202,10 +202,15 @@ private:
 
     virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
-        if (channel >= 1 && channel <= 8) {
+        if (connected() && validChannel(channel)) {
             bool latchEnabled = config != ChannelConfig::ACTIVE_HIGH;
             return writeLatchBit(Pio(channel), latchEnabled);
         }
+        return false;
+    }
+
+    virtual bool supportsFastIo() const override final
+    {
         return false;
     }
 };

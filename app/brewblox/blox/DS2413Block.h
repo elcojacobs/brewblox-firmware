@@ -1,6 +1,26 @@
+/*
+ * Copyright 2018 BrewPi B.V.
+ *
+ * This file is part of BrewBlox
+ *
+ * BrewBlox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include "DS2413.h"
+#include "IoArrayHelpers.h"
 #include "blox/Block.h"
 #include "proto/cpp/DS2413.pb.h"
 
@@ -24,7 +44,8 @@ public:
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             device.setDeviceAddress(OneWireAddress(newData.address));
-            device.latches(newData.latches);
+            writeIoConfig(device, 1, newData.channels[0].config);
+            writeIoConfig(device, 2, newData.channels[1].config);
         }
         return res;
     }
@@ -34,10 +55,10 @@ public:
         blox_DS2413 message = blox_DS2413_init_zero;
 
         message.address = device.getDeviceAddress();
-        message.latches = device.latches();
-        message.pins = device.pins();
-        message.claimed = device.claimed();
         message.connected = device.connected();
+
+        readIoConfig(device, 1, message.channels[0].config);
+        readIoConfig(device, 2, message.channels[1].config);
 
         return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
     }
@@ -61,9 +82,9 @@ public:
         if (iface == BrewbloxOptions_BlockType_DS2413) {
             return this; // me!
         }
-        if (iface == cbox::interfaceId<OneWireIO>()) {
+        if (iface == cbox::interfaceId<IoArray>()) {
             // return the member that implements the interface in this case
-            OneWireIO* ptr = &device;
+            IoArray* ptr = &device;
             return ptr;
         }
         if (iface == cbox::interfaceId<OneWireDevice>()) {

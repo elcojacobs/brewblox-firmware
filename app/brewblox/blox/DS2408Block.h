@@ -1,6 +1,26 @@
+/*
+ * Copyright 2019 BrewPi B.V.
+ *
+ * This file is part of BrewBlox
+ *
+ * BrewBlox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include "DS2408.h"
+#include "IoArrayHelpers.h"
 #include "blox/Block.h"
 #include "proto/cpp/DS2408.pb.h"
 
@@ -24,6 +44,10 @@ public:
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             device.setDeviceAddress(OneWireAddress(newData.address));
+
+            for (uint8_t i = 0; i < 8; i++) {
+                writeIoConfig(device, i + 1, newData.channels[i].config);
+            }
         }
         return res;
     }
@@ -33,10 +57,10 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.getDeviceAddress();
-        message.pins = device.readPios();
-        message.latches = device.readLatches();
-        message.claimed = device.claimed();
-        message.connected = device.connected();
+
+        for (uint8_t i = 0; i < 8; i++) {
+            readIoConfig(device, i + 1, message.channels[i].config);
+        }
 
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
     }
@@ -46,7 +70,6 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.getDeviceAddress();
-        message.latches = device.readLatches();
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
     }
 
@@ -61,9 +84,9 @@ public:
         if (iface == BrewbloxOptions_BlockType_DS2408) {
             return this; // me!
         }
-        if (iface == cbox::interfaceId<ArrayIo>()) {
+        if (iface == cbox::interfaceId<IoArray>()) {
             // return the member that implements the interface in this case
-            OneWireIO* ptr = &device;
+            IoArray* ptr = &device;
             return ptr;
         }
         if (iface == cbox::interfaceId<OneWireDevice>()) {

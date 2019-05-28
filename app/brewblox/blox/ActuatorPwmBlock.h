@@ -4,7 +4,7 @@
 #include "ActuatorAnalogConstraintsProto.h"
 #include "ActuatorDigitalConstrained.h"
 #include "ActuatorPwm.h"
-#include "blox/ActuatorPinBlock.h"
+#include "DigitalActuatorBlock.h"
 #include "blox/Block.h"
 #include "blox/FieldTags.h"
 #include "cbox/CboxPtr.h"
@@ -22,8 +22,7 @@ public:
     ActuatorPwmBlock(cbox::ObjectContainer& objects)
         : objectsRef(objects)
         , actuator(objects)
-        // convert ActuatorDigitalConstrained to base ActuatorDigitalChangeLogged
-        , pwm([this]() { return std::shared_ptr<ActuatorDigitalChangeLogged>(this->actuator.lock()); })
+        , pwm(actuator.lockFunctor())
         , constrained(pwm)
     {
     }
@@ -35,13 +34,6 @@ public:
         cbox::CboxError result = streamProtoFrom(dataIn, &newData, blox_ActuatorPwm_fields, blox_ActuatorPwm_size);
         if (result == cbox::CboxError::OK) {
             actuator.setId(newData.actuatorId);
-            if (newData.period < 1000) {
-                if (actuator.lock_as<ActuatorPinBlock>() == nullptr) {
-                    // for actuators that are not digital pins, set a mimimum period of 1000
-                    // OneWire is too slow for fast PWM.
-                    newData.period = 1000;
-                }
-            }
             pwm.period(newData.period);
             setAnalogConstraints(newData.constrainedBy, constrained, objectsRef);
             constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.setting));

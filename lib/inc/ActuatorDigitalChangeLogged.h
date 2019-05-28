@@ -169,4 +169,9 @@ public:
         history[0] = {actuator.state(), 0};
         lastUpdateTime = 0;
     }
+
+    bool supportsFastIo() const
+    {
+        return actuator.supportsFastIo();
+    }
 };

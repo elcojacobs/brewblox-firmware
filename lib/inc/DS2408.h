@@ -219,11 +219,11 @@ public:
      */
     void update() const;
 
-    // generic OneWireIO interface
+    // generic ArrayIo interface
     virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {
         // TODO
-        if (connected() && channel >= 1 && channel <= 8) {
+        if (connected() && validChannel(channel)) {
             result = State::Unknown;
             return true; // valid channel
         }
@@ -232,10 +232,15 @@ public:
 
     virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
-        if (channel >= 1 && channel <= 8) {
+        if (connected() && validChannel(channel)) {
             bool latchEnabled = config != ChannelConfig::ACTIVE_HIGH;
             return writeLatchBit(channel - 1, latchEnabled);
         }
+        return false;
+    }
+
+    virtual bool supportsFastIo() const override final
+    {
         return false;
     }
 };

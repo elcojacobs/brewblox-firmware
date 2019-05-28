@@ -40,8 +40,6 @@ enum class SparkVersion : uint8_t {
 #error
 #endif
 
-std::array<uint8_t, 5> BoardIoPins;
-
 #if PLATFORM_ID == 8 // P1
 #define PIN_V3_BOTTOM1 P1S1
 #define PIN_V3_BOTTOM2 P1S0

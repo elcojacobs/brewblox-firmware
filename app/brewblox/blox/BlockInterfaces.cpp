@@ -24,6 +24,7 @@
 #include "DS2413.h"
 #include "DigitalConstraints.pb.h"
 #include "FixedPoint.h"
+#include "IoArray.h"
 #include "OneWireDevice.h"
 #include "Pid.h"
 #include "ProcessValue.h"
@@ -94,7 +95,7 @@ template <>
 const obj_type_t
 interfaceIdImpl<IoArray>()
 {
-    return BrewbloxOptions_BlockType_OneWireIOInterface;
+    return BrewbloxOptions_BlockType_IoArrayInterface;
 }
 
 } // end namespace cbox

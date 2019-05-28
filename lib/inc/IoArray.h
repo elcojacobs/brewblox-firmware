@@ -119,16 +119,14 @@ public:
         return channels.size();
     }
 
-protected:
     // virtual functions to be implemented by super class that perform actual hardware IO.
-    // values are cached in this class.
-
+    // most data and/or caching is stored in this class.
     // the super class can choose to apply/read immediately or to implement no-op functions and sync in an update function
-    virtual bool
-    senseChannelImpl(uint8_t channel, State& result) const = 0;
-    virtual bool
-    writeChannelImpl(uint8_t channel, const ChannelConfig& config)
-        = 0;
+    virtual bool supportsFastIo() const = 0;
+
+protected:
+    virtual bool senseChannelImpl(uint8_t channel, State& result) const = 0;
+    virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) = 0;
 
     struct Channel {
         ChannelConfig config;

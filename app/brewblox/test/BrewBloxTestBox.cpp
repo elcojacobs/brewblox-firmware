@@ -18,7 +18,7 @@
  */
 
 #include "BrewBloxTestBox.h"
-#include "blox/ActuatorPinBlock.h"
+#include "blox/Spark3PinsBlock.h"
 #include "cbox/CboxPtr.h"
 
 BrewBloxTestBox::BrewBloxTestBox()
@@ -45,15 +45,6 @@ BrewBloxTestBox::clearStreams()
 void
 BrewBloxTestBox::reset()
 {
-    // reset system objects: pin actuators
-    for (cbox::obj_id_t id = 10; id <= 14; ++id) {
-        auto cbPtr = brewbloxBox().makeCboxPtr<ActuatorPinBlock>(id);
-        if (auto pinObj = cbPtr.lock()) {
-            pinObj->getConstrained().removeAllConstraints();
-            pinObj->getConstrained().resetHistory();
-            pinObj->getConstrained().state(ActuatorDigital::State::Inactive);
-        }
-    }
     clearStreams();
     inEncoder.put(uint16_t(0)); // msg id
     inEncoder.put(cbox::Box::CommandID::CLEAR_OBJECTS);

@@ -115,4 +115,12 @@ public:
             }
         }
     }
+
+    bool supportsFastIo() const
+    {
+        if (auto devPtr = m_target()) {
+            return devPtr->supportsFastIo();
+        }
+        return false;
+    }
 };
