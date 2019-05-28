@@ -34,6 +34,7 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
 
     auto actId = cbox::obj_id_t(100);
     auto pwmId = cbox::obj_id_t(101);
+    auto sparkPinsId = cbox::obj_id_t(19); // system object 19 is Spark IO pins
 
     // create digital actuator with Spark pin as target
     testBox.put(uint16_t(0)); // msg id
@@ -43,7 +44,7 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
     testBox.put(DigitalActuatorBlock::staticTypeId());
 
     auto message = blox::DigitalActuator();
-    message.set_hwdevice(19); // system object 19 is Spark IO pins
+    message.set_hwdevice(sparkPinsId);
     message.set_channel(1);
     message.set_state(blox::DigitalState::Inactive);
 
@@ -60,7 +61,7 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
     testBox.put(ActuatorPwmBlock::staticTypeId());
 
     blox::ActuatorPwm newPwm;
-    newPwm.set_actuatorid(10); // predefined system object for pin actuator
+    newPwm.set_actuatorid(actId); // predefined system object for pin actuator
     newPwm.set_setting(cnl::unwrap(ActuatorAnalog::value_t(20)));
     newPwm.set_period(4000);
     newPwm.set_enabled(true);
@@ -85,6 +86,6 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
                                         "period: 4000 setting: 81920 "
                                         "constrainedBy { constraints { min: 40960 } "
                                         "unconstrained: 81920 } "
-                                        "drivenActuatorId: 10 "
+                                        "drivenActuatorId: 100 "
                                         "enabled: true");
 }

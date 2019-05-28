@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include "ActuatorDigital.h"
 #include "ActuatorDigitalChangeLogged.h"
 #include "TicksTypes.h"
 #include <algorithm>
@@ -235,7 +234,7 @@ public:
 
 } // end namespace ADConstraints
 
-class ActuatorDigitalConstrained : public ActuatorDigitalChangeLogged {
+class ActuatorDigitalConstrained : private ActuatorDigitalChangeLogged {
 public:
     using Constraint = ADConstraints::Base;
 
@@ -254,6 +253,11 @@ public:
     ActuatorDigitalConstrained& operator=(ActuatorDigitalConstrained&&) = default;
 
     virtual ~ActuatorDigitalConstrained() = default;
+
+    // ActuatorDigitalChangeLogged is inherited privately to prevent bypassing constraints.
+    // explicitly make functions available that should be in public interface here.
+    using ActuatorDigitalChangeLogged::activeDurations;
+    using ActuatorDigitalChangeLogged::supportsFastIo;
 
     void addConstraint(std::unique_ptr<Constraint>&& newConstraint)
     {

@@ -24,9 +24,9 @@
 #include "blox/BalancerBlock.h"
 #include "blox/DigitalActuatorBlock.h"
 #include "blox/MutexBlock.h"
-#include "proto/test/cpp/ActuatorPin_test.pb.h"
 #include "proto/test/cpp/ActuatorPwm_test.pb.h"
 #include "proto/test/cpp/Balancer_test.pb.h"
+#include "proto/test/cpp/DigitalActuator_test.pb.h"
 #include "proto/test/cpp/Mutex_test.pb.h"
 
 SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
@@ -54,21 +54,23 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
 
-    // create digital actuator
+    // create/set digital actuator helper
 
-    auto setPin = [&testBox](cbox::obj_id_t id, blox::AD_State state, bool firstCreate = false) {
+    auto setPin = [&testBox, mutexId, pin1Id, pin2Id](uint8_t chan, blox::DigitalState state, bool firstCreate = false) {
         // configure digital actuator by writing to the object
         testBox.put(uint16_t(0)); // msg id
         testBox.put(firstCreate ? commands::CREATE_OBJECT : commands::WRITE_OBJECT);
-        testBox.put(id);
+        testBox.put(chan == 1 ? pin1Id : pin2Id);
         testBox.put(uint8_t(0xFF));
         testBox.put(DigitalActuatorBlock::staticTypeId());
 
-        auto pinMsg = blox::ActuatorPin();
+        auto pinMsg = blox::DigitalActuator();
         pinMsg.set_state(state);
         pinMsg.set_invert(false);
+        pinMsg.set_hwdevice(19);
+        pinMsg.set_channel(chan);
         auto constraintPtr = pinMsg.mutable_constrainedby()->add_constraints();
-        constraintPtr->set_mutex(101);
+        constraintPtr->set_mutex(mutexId);
         testBox.put(pinMsg);
 
         testBox.processInput();
@@ -76,9 +78,9 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
     };
 
     // configure pin actuator 1
-    setPin(100, blox::AD_State_Active);
+    setPin(1, blox::DigitalState::Active, true);
     // configure pin actuator 2
-    setPin(101, blox::AD_State_Active);
+    setPin(2, blox::DigitalState::Active, true);
 
     THEN("The objects read back as expected")
     {
@@ -100,10 +102,10 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         testBox.put(pin1Id);
 
         {
-            auto decoded = blox::ActuatorPin();
+            auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "state: Active constrainedBy { constraints { mutex: 101 } unconstrained: Active }");
+            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 1 state: Active constrainedBy { constraints { mutex: 101 } unconstrained: Active }");
         }
 
         // read a pin actuator 2, which is constrained and inactive
@@ -112,10 +114,10 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         testBox.put(pin2Id);
 
         {
-            auto decoded = blox::ActuatorPin();
+            auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "constrainedBy { constraints { mutex: 101 limiting: true } unconstrained: Active }");
+            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 2 constrainedBy { constraints { mutex: 101 limiting: true } unconstrained: Active }");
         }
     }
 
@@ -126,99 +128,102 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             testBox.put(commands::READ_OBJECT);
             testBox.put(id);
 
-            auto decoded = blox::ActuatorPin();
+            auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
 
             return decoded.state();
         };
-        setPin(pin1Id, blox::AD_State_Active);
-        setPin(pin2Id, blox::AD_State_Inactive);
+        setPin(1, blox::DigitalState::Active);
+        setPin(2, blox::DigitalState::Inactive);
         testBox.update(1);
 
-        setPin(pin2Id, blox::AD_State_Active);
-        CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+        setPin(2, blox::DigitalState::Active);
+        CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
         testBox.update(2);
 
-        setPin(pin2Id, blox::AD_State_Active);
-        CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+        setPin(2, blox::DigitalState::Active);
+        CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
-        setPin(pin2Id, blox::AD_State_Inactive);
-        CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+        setPin(2, blox::DigitalState::Inactive);
+        CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
         testBox.update(3);
 
-        setPin(pin2Id, blox::AD_State_Active);
-        CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+        setPin(2, blox::DigitalState::Active);
+        CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
         testBox.update(4);
 
         AND_WHEN("Actuator 1 is turned OFF")
         {
-            setPin(pin1Id, blox::AD_State_Inactive);
-            CHECK(readPin(pin1Id) == blox::AD_State_Inactive);
+            setPin(1, blox::DigitalState::Inactive);
+            CHECK(readPin(pin1Id) == blox::DigitalState::Inactive);
             testBox.update(5);
 
             THEN("Actuator 2 can only turn on after the minimum wait time has passed")
             {
                 testBox.update(6);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(10);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(103);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(104);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Active);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Active);
             }
 
             THEN("Activating actuator 1 resets the wait time")
             {
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(pin1Id);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(50);
-                setPin(pin1Id, blox::AD_State_Active);
-                CHECK(readPin(pin1Id) == blox::AD_State_Active);
+                setPin(1, blox::DigitalState::Active);
+                CHECK(readPin(pin1Id) == blox::DigitalState::Active);
 
                 testBox.update(60);
-                setPin(pin1Id, blox::AD_State_Inactive);
-                CHECK(readPin(pin1Id) == blox::AD_State_Inactive);
+                setPin(1, blox::DigitalState::Inactive);
+                CHECK(readPin(pin1Id) == blox::DigitalState::Inactive);
 
                 testBox.update(61);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(120);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(155);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Inactive);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
                 testBox.update(160);
-                setPin(pin2Id, blox::AD_State_Active);
-                CHECK(readPin(pin2Id) == blox::AD_State_Active);
+                setPin(2, blox::DigitalState::Active);
+                CHECK(readPin(pin2Id) == blox::DigitalState::Active);
             }
         }
     }
 
     WHEN("The pins are driven by 2 balanced PWM actuators")
     {
+        auto balancerId = cbox::obj_id_t(200);
+        auto pwm1Id = cbox::obj_id_t(201);
+        auto pwm2Id = cbox::obj_id_t(202);
 
         // create balancer
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::CREATE_OBJECT);
-        testBox.put(cbox::obj_id_t(100));
+        testBox.put(balancerId);
         testBox.put(uint8_t(0xFF));
         testBox.put(BalancerBlock::staticTypeId());
         {
@@ -231,7 +236,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // create pwm actuator 1
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::CREATE_OBJECT);
-        testBox.put(cbox::obj_id_t(201));
+        testBox.put(pwm1Id);
         testBox.put(uint8_t(0xFF));
         testBox.put(ActuatorPwmBlock::staticTypeId());
 
@@ -244,7 +249,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
 
             auto c = newPwm.mutable_constrainedby()->add_constraints();
             auto balanced = new blox::AnalogConstraint_Balanced();
-            balanced->set_balancerid(100);
+            balanced->set_balancerid(balancerId);
             c->set_allocated_balanced(balanced);
 
             testBox.put(newPwm);
@@ -255,7 +260,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // create pwm actuator 2
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::CREATE_OBJECT);
-        testBox.put(cbox::obj_id_t(301));
+        testBox.put(pwm2Id);
         testBox.put(uint8_t(0xFF));
         testBox.put(ActuatorPwmBlock::staticTypeId());
 
@@ -268,7 +273,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
 
             auto c = newPwm.mutable_constrainedby()->add_constraints();
             auto balanced = new blox::AnalogConstraint_Balanced();
-            balanced->set_balancerid(100);
+            balanced->set_balancerid(balancerId);
             c->set_allocated_balanced(balanced);
 
             testBox.put(newPwm);
@@ -283,7 +288,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // read balancer
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
-        testBox.put(cbox::obj_id_t(100));
+        testBox.put(balancerId);
 
         {
             auto decoded = blox::Balancer();
@@ -296,7 +301,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // read a pwm actuator 1
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
-        testBox.put(cbox::obj_id_t(201));
+        testBox.put(pwm1Id);
 
         {
             auto decoded = blox::ActuatorPwm();
@@ -316,7 +321,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // read a pwm actuator 2
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
-        testBox.put(cbox::obj_id_t(301));
+        testBox.put(pwm2Id);
 
         {
             auto decoded = blox::ActuatorPwm();
@@ -341,7 +346,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // read a pwm actuator 1
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
-        testBox.put(cbox::obj_id_t(201));
+        testBox.put((pwm1Id));
 
         {
             auto decoded = blox::ActuatorPwm();
@@ -352,7 +357,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         // read a pwm actuator 2
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
-        testBox.put(cbox::obj_id_t(301));
+        testBox.put((pwm2Id));
 
         {
             auto decoded = blox::ActuatorPwm();

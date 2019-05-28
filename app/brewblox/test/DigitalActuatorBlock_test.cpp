@@ -103,7 +103,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: ds2413Id channel: 1 constrainedBy { unconstrained: Active } strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 constrainedBy { unconstrained: Active } strippedFields: 3");
             }
         }
     }
