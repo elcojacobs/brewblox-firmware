@@ -55,7 +55,10 @@ public:
     {
         channel(chan);
     }
-    ~ActuatorDigital() = default;
+    ~ActuatorDigital()
+    {
+        channel(0); // release channel before destruction
+    }
 
     void state(const State& v)
     {
