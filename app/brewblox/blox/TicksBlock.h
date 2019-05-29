@@ -52,6 +52,11 @@ public:
         message.secondsSinceEpoch = ticks.getNow();
         message.millisSinceBoot = ticks.millis();
 
+        message.avgCommunicationTask = ticks.taskTimers()[0];
+        message.avgBlocksUpdateTask = ticks.taskTimers()[1];
+        message.avgDisplayTask = ticks.taskTimers()[2];
+        message.avgSystemTask = ticks.taskTimers()[3];
+
         return streamProtoTo(out, &message, blox_Ticks_fields, blox_Ticks_size);
     }
 

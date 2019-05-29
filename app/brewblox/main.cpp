@@ -202,15 +202,18 @@ setup()
 void
 loop()
 {
+    ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!WiFi.listening()) {
         manageConnections();
         brewbloxBox().hexCommunicate();
     }
-
+    ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
     updateBrewbloxBox();
 
+    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
     displayTick();
 
+    ticks.switchTaskTimer(TicksClass::TaskId::System);
     watchdogCheckin();
 }
 
