@@ -50,33 +50,71 @@ public:
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
     {
-        return cbox::CboxError::OK; // not directly writable
+        blox_Spark3Pins message = blox_Spark3Pins_init_zero;
+        cbox::CboxError result = streamProtoFrom(in, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
+
+        if (result == cbox::CboxError::OK) {
+            // io pins are not writable through this block. They are configured by creating Digital Actuators
+            HAL_GPIO_Write(PIN_LCD_BACKLIGHT, message.enableLcdBacklight);
+            HAL_GPIO_Write(PIN_ALARM, message.soundAlarm);
+#if defined(PIN_5V_ENABLE)
+            HAL_GPIO_Write(PIN_5V_ENABLE, message.enableIoSupply5V);
+#endif
+#if defined(PIN_12V_ENABLE)
+            HAL_GPIO_Write(PIN_12V_ENABLE, message.enableIoSupply12V);
+#endif
+        }
+        return result;
     }
 
-    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
+    virtual cbox::CboxError
+    streamTo(cbox::DataOut& out) const override final
     {
         blox_Spark3Pins message = blox_Spark3Pins_init_zero;
 
-        readIoConfig(*this, 1, message.top1.config);
-        readIoConfig(*this, 2, message.top2.config);
-        readIoConfig(*this, 3, message.top3.config);
-        readIoConfig(*this, 4, message.bottom1.config);
-        readIoConfig(*this, 5, message.bottom2.config);
+        readIoConfig(*this, 1, message.io.top1.config);
+        readIoConfig(*this, 2, message.io.top2.config);
+        readIoConfig(*this, 3, message.io.top3.config);
+        readIoConfig(*this, 4, message.io.bottom1.config);
+        readIoConfig(*this, 5, message.io.bottom2.config);
+
+        message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
+        message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
+#if defined(PIN_5V_ENABLE)
+        message.enableIoSupply5V = HAL_GPIO_Read(PIN_5V_ENABLE);
+#endif
+#if defined(PIN_12V_ENABLE)
+        message.enableIoSupply12V = HAL_GPIO_Read(PIN_12V_ENABLE);
+#endif
 
         return streamProtoTo(out, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
     }
 
-    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
+    virtual cbox::CboxError
+    streamPersistedTo(cbox::DataOut& out) const override final
     {
-        return cbox::CboxError::OK;
+        blox_Spark3Pins message = blox_Spark3Pins_init_zero;
+
+        message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
+        message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
+#if defined(PIN_5V_ENABLE)
+        message.enableIoSupply5V = HAL_GPIO_Read(PIN_5V_ENABLE);
+#endif
+#if defined(PIN_12V_ENABLE)
+        message.enableIoSupply12V = HAL_GPIO_Read(PIN_12V_ENABLE);
+#endif
+
+        return streamProtoTo(out, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
     }
 
-    virtual cbox::update_t update(const cbox::update_t& now) override final
+    virtual cbox::update_t
+    update(const cbox::update_t& now) override final
     {
         return update_never(now);
     }
 
-    virtual void* implements(const cbox::obj_type_t& iface) override final
+    virtual void*
+    implements(const cbox::obj_type_t& iface) override final
     {
         if (iface == BrewbloxOptions_BlockType_Spark3Pins) {
             return this; // me!
@@ -90,7 +128,8 @@ public:
     }
 
     // generic ArrayIO interface
-    virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
+    virtual bool
+    senseChannelImpl(uint8_t channel, State& result) const override final
     {
         if (validChannel(channel)) {
             result = HAL_GPIO_Read(pins[channel - 1]) != 0 ? State::Active : State::Inactive;
@@ -99,23 +138,33 @@ public:
         return false;
     }
 
-    virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
+    virtual bool
+    writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
         if (validChannel(channel)) {
             auto pin = pins[channel - 1];
+#ifdef PIN_V3_TOP1_DIR
+            if (pin == PIN_V3_TOP1) {
+                bool isOutput = config == ChannelConfig::ACTIVE_HIGH || config == ChannelConfig::ACTIVE_LOW;
+                HAL_GPIO_Write(PIN_V3_TOP1_DIR, isOutput);
+            }
+#endif
+#ifdef PIN_V3_TOP1_DIR
+            if (pin == PIN_V3_TOP2) {
+                bool isOutput = config == ChannelConfig::ACTIVE_HIGH || config == ChannelConfig::ACTIVE_LOW;
+                HAL_GPIO_Write(PIN_V3_TOP2_DIR, isOutput);
+            }
+#endif
             switch (config) {
             case ChannelConfig::ACTIVE_HIGH:
-                HAL_Pin_Mode(pin, OUTPUT);
                 HAL_GPIO_Write(pin, true);
                 break;
             case ChannelConfig::ACTIVE_LOW:
-                HAL_Pin_Mode(pin, OUTPUT);
                 HAL_GPIO_Write(pin, false);
                 break;
             case ChannelConfig::INPUT:
             case ChannelConfig::UNUSED:
             case ChannelConfig::UNKNOWN:
-                HAL_Pin_Mode(pin, INPUT);
                 break;
             }
             return true;
@@ -123,7 +172,8 @@ public:
         return false;
     }
 
-    virtual bool supportsFastIo() const override final
+    virtual bool
+    supportsFastIo() const override final
     {
         return true;
     }
