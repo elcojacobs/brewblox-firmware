@@ -183,7 +183,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                 setPin(2, blox::DigitalState::Active);
                 CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
-                testBox.update(pin1Id);
+                testBox.update(10);
                 setPin(2, blox::DigitalState::Active);
                 CHECK(readPin(pin2Id) == blox::DigitalState::Inactive);
 
@@ -311,7 +311,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                                                 "period: 4000 setting: 204800 "
                                                 "constrainedBy { "
                                                 "constraints { "
-                                                "balanced { balancerId: 100 granted: 204800 id: 1 } "
+                                                "balanced { balancerId: 200 granted: 204800 id: 1 } "
                                                 "limiting: true } "
                                                 "unconstrained: 327680 } "
                                                 "drivenActuatorId: 102 "
@@ -331,7 +331,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                                                 "period: 4000 setting: 204800 "
                                                 "constrainedBy { "
                                                 "constraints { "
-                                                "balanced { balancerId: 100 granted: 204800 id: 2 } "
+                                                "balanced { balancerId: 200 granted: 204800 id: 2 } "
                                                 "limiting: true } "
                                                 "unconstrained: 327680 } "
                                                 "drivenActuatorId: 103 "
