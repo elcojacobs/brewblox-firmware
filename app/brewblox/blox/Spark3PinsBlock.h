@@ -1,14 +1,5 @@
-#pragma once
-
-#include "Board.h"
-#include "IoArray.h"
-#include "IoArrayHelpers.h"
-#include "blox/Block.h"
-#include "proto/cpp/Spark3Pins.pb.h"
-
 /*
- * Copyright 2015 BrewPi/Elco Jacobs.
- * Copyright 2015 Matthew McGowan.
+ * Copyright 2019 BrewPi B.V.
  *
  * This file is part of BrewPi.
  *
@@ -29,8 +20,13 @@
 #pragma once
 
 #include "ActuatorDigital.h"
+#include "Board.h"
+#include "IoArray.h"
+#include "IoArrayHelpers.h"
+#include "blox/Block.h"
 #include "gpio_hal.h"
 #include "pinmap_hal.h"
+#include "proto/cpp/Spark3Pins.pb.h"
 
 class Spark3PinsBlock : public IoArray, public Block<BrewbloxOptions_BlockType_Spark3Pins> {
 private:
@@ -72,11 +68,12 @@ public:
     {
         blox_Spark3Pins message = blox_Spark3Pins_init_zero;
 
-        readIoConfig(*this, 1, message.io.top1.config);
-        readIoConfig(*this, 2, message.io.top2.config);
-        readIoConfig(*this, 3, message.io.top3.config);
-        readIoConfig(*this, 4, message.io.bottom1.config);
-        readIoConfig(*this, 5, message.io.bottom2.config);
+        for (uint8_t i = 0; i < 5; ++i) {
+            // all pins have the same structure, so interpret the union as top1 for all
+            uint8_t chan = i + 1;
+            message.pins[i].which_Pin = chan;
+            readIoConfig(*this, chan, message.pins[i].Pin.top1.config);
+        }
 
         message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
