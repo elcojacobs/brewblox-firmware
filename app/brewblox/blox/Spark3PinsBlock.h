@@ -34,13 +34,13 @@
 
 class Spark3PinsBlock : public IoArray, public Block<BrewbloxOptions_BlockType_Spark3Pins> {
 private:
-    std::array<uint8_t, 5> pins = {
+    std::array<uint8_t, 5> pins{{
         PIN_V3_TOP1,
         PIN_V3_TOP2,
         PIN_V3_TOP3,
         PIN_V3_BOTTOM1,
         PIN_V3_BOTTOM2,
-    };
+    }};
 
 public:
     Spark3PinsBlock()
