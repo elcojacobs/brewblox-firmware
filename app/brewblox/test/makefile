@@ -61,8 +61,8 @@ INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/modules/Board
 CPPSRC += $(call here_files,platform/spark/modules/Board,*.cpp)
 
 # add nanopb dependencies
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/nanopb/nanopb
-CSRC += $(call here_files,platform/spark/device-os/nanopb/nanopb,*.c)
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/nanopb/nanopb
+CSRC += $(call here_files,platform/spark/device-os/third_party/nanopb/nanopb,*.c)
 # enable message id's
 CFLAGS += -DPB_MSGID=1
 
