@@ -1,5 +1,3 @@
-#include "application.h"
-
 #ifndef _INCL_LABEL
 #define _INCL_LABEL
 
@@ -7,6 +5,7 @@
 #include "Record.h"
 #include <map>
 #include <vector>
+#include "spark_wiring_string.h"
 
 #define DOT '.'
 
@@ -20,126 +19,122 @@
 
 class Label {
 private:
-
-  class Iterator;
+    class Iterator;
 
 public:
-  class Matcher {
-  public:
-    Label * match(std::map<String, Label *> labels, Buffer * buffer);
-  };
+    class Matcher {
+    public:
+        Label* match(std::map<String, Label*> labels, Buffer* buffer);
+    };
 
-  Label(String name, Label * nextLabel = NULL, bool caseSensitive = false);
+    Label(String name, Label* nextLabel = NULL, bool caseSensitive = false);
 
-  uint8_t getSize();
+    uint8_t getSize();
 
-  uint8_t getWriteSize();
+    uint8_t getWriteSize();
 
-  void write(Buffer * buffer);
+    void write(Buffer* buffer);
 
-  virtual void matched(uint16_t type, uint16_t cls);
+    virtual void matched(uint16_t type, uint16_t cls);
 
-  void reset();
+    void reset();
 
 private:
-  class Reader {
-  public:
-    Reader(Buffer * buffer);
+    class Reader {
+    public:
+        Reader(Buffer* buffer);
 
-    bool hasNext();
+        bool hasNext();
 
-    uint8_t next();
+        uint8_t next();
 
-    bool endOfName();
-  private:
-    Buffer * buffer;
-    uint8_t c = 1;
-  };
+        bool endOfName();
 
-  class Iterator {
-  public:
-    Iterator(Label * label);
+    private:
+        Buffer* buffer;
+        uint8_t c = 1;
+    };
 
-    bool match(uint8_t c);
+    class Iterator {
+    public:
+        Iterator(Label* label);
 
-    bool matched();
+        bool match(uint8_t c);
 
-    Label * getStartLabel();
+        bool matched();
 
-  private:
-    Label * startLabel;
-    Label * label;
-    uint8_t size;
-    uint8_t offset = 0;
-    bool matches = true;
+        Label* getStartLabel();
 
-    bool equalsIgnoreCase(uint8_t c);
-  };
+    private:
+        Label* startLabel;
+        Label* label;
+        uint8_t size;
+        uint8_t offset = 0;
+        bool matches = true;
 
-  uint8_t * EMPTY_DATA = { END_OF_NAME };
-  uint8_t * data;
-  bool caseSensitive;
-  Label * nextLabel;
-  int16_t writeOffset = INVALID_OFFSET;
+        bool equalsIgnoreCase(uint8_t c);
+    };
+
+    uint8_t* EMPTY_DATA = {END_OF_NAME};
+    uint8_t* data;
+    bool caseSensitive;
+    Label* nextLabel;
+    int16_t writeOffset = INVALID_OFFSET;
 };
 
 class HostLabel : public Label {
 
 public:
+    HostLabel(Record* aRecord, Record* nsecRecord, String name, Label* nextLabel = NULL, bool caseSensitive = false);
 
-  HostLabel(Record * aRecord, Record * nsecRecord, String name, Label * nextLabel = NULL, bool caseSensitive = false);
-
-  virtual void matched(uint16_t type, uint16_t cls);
+    virtual void matched(uint16_t type, uint16_t cls);
 
 private:
-  Record * aRecord;
-  Record * nsecRecord;
+    Record* aRecord;
+    Record* nsecRecord;
 };
 
 class ServiceLabel : public Label {
 
 public:
+    ServiceLabel(Record* aRecord, String name, Label* nextLabel = NULL, bool caseSensitive = false);
 
-  ServiceLabel(Record * aRecord, String name, Label * nextLabel = NULL, bool caseSensitive = false);
+    void addInstance(Record* ptrRecord, Record* srvRecord, Record* txtRecord);
 
-  void addInstance(Record * ptrRecord, Record * srvRecord, Record * txtRecord);
-
-  virtual void matched(uint16_t type, uint16_t cls);
+    virtual void matched(uint16_t type, uint16_t cls);
 
 private:
-  Record * aRecord;
-  std::vector<Record *> ptrRecords;
-  std::vector<Record *> srvRecords;
-  std::vector<Record *> txtRecords;
+    Record* aRecord;
+    std::vector<Record*> ptrRecords;
+    std::vector<Record*> srvRecords;
+    std::vector<Record*> txtRecords;
 };
 
 class InstanceLabel : public Label {
 
 public:
+    InstanceLabel(Record* srvRecord, Record* txtRecord, Record* nsecRecord, Record* aRecord, String name, Label* nextLabel = NULL, bool caseSensitive = false);
 
-  InstanceLabel(Record * srvRecord, Record * txtRecord, Record * nsecRecord, Record * aRecord, String name, Label * nextLabel = NULL, bool caseSensitive = false);
-
-  virtual void matched(uint16_t type, uint16_t cls);
+    virtual void matched(uint16_t type, uint16_t cls);
 
 private:
-  Record * srvRecord;
-  Record * txtRecord;
-  Record * nsecRecord;
-  Record * aRecord;
+    Record* srvRecord;
+    Record* txtRecord;
+    Record* nsecRecord;
+    Record* aRecord;
 };
 
 class MetaLabel : public Label {
 
 public:
+    MetaLabel(String name, Label* nextLabel);
 
-  MetaLabel(String name, Label * nextLabel);
+    void addService(Record* ptrRecord);
 
-  void addService(Record * ptrRecord);
-
-  virtual void matched(uint16_t type, uint16_t cls);
+    virtual void matched(uint16_t type, uint16_t cls);
 
 private:
-  std::vector<Record *> records;
+    std::vector<Record*> records;
 };
 
 #endif

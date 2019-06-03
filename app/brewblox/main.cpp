@@ -28,6 +28,8 @@
 #include "d4d.hpp"
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/startup_screen.h"
+#include "eeprom_hal.h"
+#include "spark_wiring_startup.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_timer.h"
 
@@ -84,11 +86,7 @@ displayTick()
 void
 manageConnections()
 {
-    if (!WiFi.ready() || WiFi.listening()) {
-        if (!WiFi.connecting()) {
-            WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
-        }
-    } else {
+    if (spark::WiFi.ready() && !spark::WiFi.listening()) {
 #if PLATFORM_ID != PLATFORM_GCC
         Particle.connect();
 #endif
@@ -108,6 +106,8 @@ manageConnections()
             delay(5);
             client.stop();
         }
+    } else if (!spark::WiFi.connecting()) {
+        spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
     }
 }
 
@@ -148,7 +148,7 @@ setup()
     Buzzer.beep(2, 50);
 
     System.disable(SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS);
-    WiFi.setListenTimeout(30);
+    spark::WiFi.setListenTimeout(30);
     System.on(setup_update, watchdogCheckin);
 
 #if PLATFORM_ID == PLATFORM_GCC
@@ -185,7 +185,7 @@ setup()
 
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
     // This avoids having to do it later when writing to EEPROM
-    EEPROM.performPendingErase();
+    HAL_EEPROM_Perform_Pending_Erase();
 
     StartupScreen::setStep("Ready!");
 
@@ -203,7 +203,7 @@ void
 loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::Communication);
-    if (!WiFi.listening()) {
+    if (!spark::WiFi.listening()) {
         manageConnections();
         brewbloxBox().hexCommunicate();
     }

@@ -1,9 +1,8 @@
-#include "application.h"
-
 #ifndef _INCL_RECORD
 #define _INCL_RECORD
 
 #include "Buffer.h"
+#include "spark_wiring_string.h"
 #include <vector>
 
 #define IN_CLASS 1
@@ -28,128 +27,114 @@ class Label;
 class Record {
 
 public:
+    void setLabel(Label* label);
 
-  void setLabel(Label * label);
+    void announceRecord();
 
-  void announceRecord();
+    void setAnswerRecord();
 
-  void setAnswerRecord();
+    bool isAnswerRecord();
 
-  bool isAnswerRecord();
+    void setAdditionalRecord();
 
-  void setAdditionalRecord();
+    bool isAdditionalRecord();
 
-  bool isAdditionalRecord();
+    void setKnownRecord();
 
-  void setKnownRecord();
+    void write(Buffer* buffer);
 
-  void write(Buffer * buffer);
-
-  void reset();
+    void reset();
 
 protected:
+    Record(uint16_t type, uint16_t cls, uint32_t ttl, bool announce = true);
 
-  Record(uint16_t type, uint16_t cls, uint32_t ttl, bool announce = true);
+    Label* getLabel();
 
-  Label * getLabel();
-
-  virtual void writeSpecific(Buffer * buffer) = 0;
+    virtual void writeSpecific(Buffer* buffer) = 0;
 
 private:
-
-  Label * label;
-  uint16_t type;
-  uint16_t cls;
-  uint32_t ttl;
-  bool announce;
-  bool answerRecord = false;
-  bool additionalRecord = false;
-  bool knownRecord = false;
+    Label* label;
+    uint16_t type;
+    uint16_t cls;
+    uint32_t ttl;
+    bool announce;
+    bool answerRecord = false;
+    bool additionalRecord = false;
+    bool knownRecord = false;
 };
 
 class ARecord : public Record {
 
 public:
+    ARecord();
 
-  ARecord();
-
-  virtual void writeSpecific(Buffer * buffer);
+    virtual void writeSpecific(Buffer* buffer);
 };
 
 class NSECRecord : public Record {
 
 public:
+    NSECRecord();
 
-  NSECRecord();
-
-  virtual void writeSpecific(Buffer * buffer) = 0;
+    virtual void writeSpecific(Buffer* buffer) = 0;
 };
 
 class HostNSECRecord : public NSECRecord {
 
 public:
+    HostNSECRecord();
 
-  HostNSECRecord();
-
-  virtual void writeSpecific(Buffer * buffer);
+    virtual void writeSpecific(Buffer* buffer);
 };
 
 class InstanceNSECRecord : public NSECRecord {
 
 public:
+    InstanceNSECRecord();
 
-  InstanceNSECRecord();
-
-  virtual void writeSpecific(Buffer * buffer);
+    virtual void writeSpecific(Buffer* buffer);
 };
 
 class PTRRecord : public Record {
 
 public:
+    PTRRecord(bool meta = false);
 
-  PTRRecord(bool meta = false);
+    virtual void writeSpecific(Buffer* buffer);
 
-  virtual void writeSpecific(Buffer * buffer);
-
-  void setTargetLabel(Label * label);
+    void setTargetLabel(Label* label);
 
 private:
-
-  Label * targetLabel;
-
+    Label* targetLabel;
 };
 
 class SRVRecord : public Record {
 
 public:
+    SRVRecord();
 
-  SRVRecord();
+    virtual void writeSpecific(Buffer* buffer);
 
-  virtual void writeSpecific(Buffer * buffer);
+    void setHostLabel(Label* label);
 
-  void setHostLabel(Label * label);
-
-  void setPort(uint16_t port);
+    void setPort(uint16_t port);
 
 private:
-
-  Label * hostLabel;
-  uint16_t port;
+    Label* hostLabel;
+    uint16_t port;
 };
 
 class TXTRecord : public Record {
 
 public:
+    TXTRecord();
 
-  TXTRecord();
+    virtual void writeSpecific(Buffer* buffer);
 
-  virtual void writeSpecific(Buffer * buffer);
-
-  void addEntry(String key, String value = "");
+    void addEntry(String key, String value = "");
 
 private:
-
-  std::vector<String> data;
+    std::vector<String> data;
 };
 
 #endif
