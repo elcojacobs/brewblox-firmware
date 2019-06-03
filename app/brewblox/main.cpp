@@ -23,12 +23,12 @@
 #include "Buzzer.h"
 #include "MDNS.h"
 #include "TimerInterrupts.h"
-#include "application.h" // particle stuff
 #include "blox/stringify.h"
 #include "cbox/Object.h"
 #include "d4d.hpp"
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/startup_screen.h"
+#include "spark_wiring_system.h"
 #include "spark_wiring_timer.h"
 
 SYSTEM_THREAD(ENABLED);

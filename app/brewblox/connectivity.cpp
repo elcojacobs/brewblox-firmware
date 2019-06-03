@@ -18,28 +18,26 @@
  */
 
 #include "connectivity.h"
-#include "application.h"
+#include "spark_wiring_usbserial.h"
+#include "spark_wiring_wifi.h"
+#include <cstdio>
 
 void
 printWiFiIp(char dest[16])
 {
-    IPAddress ip = WiFi.localIP();
+    IPAddress ip = spark::WiFi.localIP();
     snprintf(dest, 16, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 }
 
 int8_t
 wifiSignal()
 {
-    if (!WiFi.ready()) {
+    if (!spark::WiFi.ready()) {
         return 2;
     }
+    auto rssi = wlan_connected_rssi();
 
-    wlan_connected_info_t info = {0};
-    info.size = sizeof(info);
-    int r = wlan_connected_info(nullptr, &info, nullptr);
-    if (r == 0) {
-        return info.rssi != std::numeric_limits<int32_t>::min() ? info.rssi / 100 : 2;
-    }
+    return rssi != std::numeric_limits<decltype(rssi)>::min() ? rssi / 100 : 2;
 
     return 2;
 }
@@ -47,17 +45,21 @@ wifiSignal()
 bool
 serialConnected()
 {
-    return Serial.isConnected();
+    return _fetch_usbserial().isConnected();
 }
 
 bool
 setWifiCredentials(const char* ssid, const char* password, uint8_t security, uint8_t cipher)
 {
-    return WiFi.setCredentials(ssid, password, security, cipher);
+    return spark::WiFi.setCredentials(ssid, password, security, cipher);
 };
 
 void
 printWifiSSID(char* dest, const uint8_t& maxLen)
 {
-    strncpy(dest, WiFi.SSID(), maxLen);
+    if (spark::WiFi.ready()) {
+        strncpy(dest, spark::WiFi.SSID(), maxLen);
+    } else {
+        dest[0] = 0;
+    }
 }

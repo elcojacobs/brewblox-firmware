@@ -50,8 +50,7 @@ public:
 
     std::unique_ptr<Connection> newConnection() override final
     {
-        using namespace spark;
-        if (WiFi.ready() && !WiFi.listening()) {
+        if (spark::WiFi.ready() && !spark::WiFi.listening()) {
             TCPClient newClient = server.available();
             if (newClient.connected()) {
                 return std::make_unique<TcpConnection>(std::move(newClient));
