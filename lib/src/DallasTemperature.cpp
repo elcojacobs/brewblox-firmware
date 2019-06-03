@@ -616,7 +616,7 @@ DallasTemperature::getTempRaw(const uint8_t* deviceAddress)
     }
     // return DEVICE_DISCONNECTED when a reset has been detected to force it to be reconfigured
     if (detectedReset(scratchPad)) {
-        return DEVICE_DISCONNECTED_RAW;
+        return RESET_DETECTED_RAW;
     }
     return calculateTemperature(deviceAddress, scratchPad);
 }
