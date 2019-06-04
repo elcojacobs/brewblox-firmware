@@ -160,21 +160,19 @@ WidgetsScreen::updateWiFi()
     auto signal = wifiSignal();
     printWiFiIp(wifi_ip);
 
+    bool connected = true;
     if (signal >= 0) {
         wifi_icon[0] = 0x22;
-        D4D_EnableObject(&scrWidgets_wifi_icon, false);
-        D4D_EnableObject(&scrWidgets_wifi_ip, false);
-        return;
-    }
-    if (signal >= -65) {
+        connected = false;
+    } else if (signal >= -65) {
         wifi_icon[0] = 0x25;
     } else if (signal >= -70) {
         wifi_icon[0] = 0x24;
     } else {
         wifi_icon[0] = 0x23;
     }
-    D4D_EnableObject(&scrWidgets_wifi_icon, true);
-    D4D_EnableObject(&scrWidgets_wifi_ip, true);
+    D4D_EnableObject(&scrWidgets_wifi_icon, connected);
+    D4D_EnableObject(&scrWidgets_wifi_ip, connected);
 }
 
 void

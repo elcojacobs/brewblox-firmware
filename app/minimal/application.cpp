@@ -1,33 +1,61 @@
 /* Includes ------------------------------------------------------------------*/
 #include "application.h"
+#include <vector>
 
+SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
-// Define the pins we're going to call pinMode on
-int act1 = A0;
-int act2 = A1;
-int act3 = A6;
-int act4 = A7;
 int buzz = A2;
-const bool invertBuzzer = false;
 
-void setup() {
-    pinMode(act1, OUTPUT);
-    pinMode(act2, OUTPUT);
-    pinMode(act3, OUTPUT);
-    pinMode(act4, OUTPUT);
-    pinMode(buzz, OUTPUT);
-    digitalWrite(buzz, !invertBuzzer);
-    delay(200);
-    digitalWrite(buzz, invertBuzzer);
+IPAddress ip = uint32_t(0);
+bool connected = false;
+
+void
+printWiFiIp(char dest[16])
+{
+    snprintf(dest, 16, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 }
 
-void loop(){
-    int actuators[4] = {act1, act2, act3, act4};
-    for(int i=0;i<4;i++){
-        digitalWrite(actuators[i], HIGH);
-        delay(500);
-        digitalWrite(actuators[i], LOW);
-        delay(500);
+std::vector<system_event_t> events;
+
+void
+handleNetworkEvent(system_event_t event, int param)
+{
+    switch (param) {
+    case network_status_connected:
+        ip = WiFi.localIP();
+        connected = true;
+        Particle.connect();
+        break;
+    default:
+        ip = uint32_t(0);
+        connected = false;
+        break;
+    }
+    events.push_back(param);
+}
+
+void
+setup()
+{
+    pinMode(buzz, OUTPUT);
+    digitalWrite(buzz, HIGH);
+    delay(200);
+    digitalWrite(buzz, LOW);
+    Serial.begin();
+}
+
+void
+loop()
+{
+    char ipString[16];
+    printWiFiIp(ipString);
+    Serial.println();
+    Serial.print("IP: ");
+    Serial.println(ipString);
+    delay(5000);
+    for (auto& event : events) {
+        Serial.print(uint32_t(event));
+        Serial.print(',');
     }
 }
