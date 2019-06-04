@@ -11,7 +11,9 @@ int act4 = A7;
 int buzz = A2;
 const bool invertBuzzer = false;
 
-void setup() {
+void
+setup()
+{
     pinMode(act1, OUTPUT);
     pinMode(act2, OUTPUT);
     pinMode(act3, OUTPUT);
@@ -22,9 +24,11 @@ void setup() {
     digitalWrite(buzz, invertBuzzer);
 }
 
-void loop(){
+void
+loop()
+{
     int actuators[4] = {act1, act2, act3, act4};
-    for(int i=0;i<4;i++){
+    for (int i = 0; i < 4; i++) {
         digitalWrite(actuators[i], HIGH);
         delay(500);
         digitalWrite(actuators[i], LOW);

@@ -108,6 +108,7 @@
 #define DEVICE_DISCONNECTED_F -196.6
 #endif
 #define DEVICE_DISCONNECTED_RAW -2032
+#define RESET_DETECTED_RAW -2031
 
 class DallasTemperature {
 public:

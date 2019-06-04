@@ -61,8 +61,8 @@ INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/modules/Board
 CPPSRC += $(call here_files,platform/spark/modules/Board,*.cpp)
 
 # add nanopb dependencies
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/nanopb/nanopb
-CSRC += $(call here_files,platform/spark/device-os/nanopb/nanopb,*.c)
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/nanopb/nanopb
+CSRC += $(call here_files,platform/spark/device-os/third_party/nanopb/nanopb,*.c)
 # enable message id's
 CFLAGS += -DPB_MSGID=1
 
@@ -125,7 +125,21 @@ LDFLAGS += $(shell pkg-config --libs protobuf)
 CFLAGS += -Wno-system-headers
 
 GIT_VERSION = $(shell cd $(SOURCE_PATH); git rev-parse --short HEAD)
+$(info using $(GIT_VERSION) as version)
 CFLAGS += -DGIT_VERSION="$(GIT_VERSION)"
+
+GIT_DATE = $(shell cd $(SOURCE_PATH); git log -1 --format=%cd --date=short)
+$(info using $(GIT_DATE) as release date)
+CFLAGS += -DGIT_DATE="$(GIT_DATE)"
+
+PROTO_VERSION = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git rev-parse --short HEAD)
+$(info using $(PROTO_VERSION) as protocol version)
+CFLAGS += -DPROTO_VERSION="$(PROTO_VERSION)"
+
+PROTO_DATE = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git log -1 --format=%cd --date=short)
+$(info using $(GIT_DATE) as protocol date)
+CFLAGS += -DPROTO_DATE="$(PROTO_DATE)"
+
 
 CPPEXCLUDES += app/brewblox/blox/TouchSettingsBlock.cpp
 CPPEXCLUDES += app/brewblox/blox/WiFiSettingsBlock.cpp

@@ -1,42 +1,42 @@
-#include "application.h"
-
 #ifndef _INCL_BUFFER
 #define _INCL_BUFFER
+
+#include "spark_wiring_udp.h"
+#include <cstdint>
 
 #define INVALID_MARK_OFFSET 0xffff
 
 class Buffer {
 public:
-  Buffer(uint16_t size);
+    Buffer(uint16_t size);
 
-  uint16_t available();
-  
-  void mark();
-  void reset();
-  void setOffset(uint16_t offset);
-  uint16_t getOffset();
+    uint16_t available();
 
-  void read(UDP * udp);
+    void mark();
+    void reset();
+    void setOffset(uint16_t offset);
+    uint16_t getOffset();
 
-  uint8_t readUInt8();
-  uint16_t readUInt16();
+    void read(UDP* udp);
 
-  void write(UDP * udp);
+    uint8_t readUInt8();
+    uint16_t readUInt16();
 
-  void writeUInt8(uint8_t value);
-  void writeUInt16(uint16_t value);
-  void writeUInt32(uint32_t value);
+    void write(UDP* udp);
 
-  void clear();
+    void writeUInt8(uint8_t value);
+    void writeUInt16(uint16_t value);
+    void writeUInt32(uint32_t value);
+
+    void clear();
 
 private:
+    uint8_t* data;
+    uint16_t size;
 
-  uint8_t * data;
-  uint16_t size;
-
-  uint16_t limit = 0;
-  uint16_t offset = 0;
-  uint16_t markOffset = INVALID_MARK_OFFSET;
+    uint16_t limit = 0;
+    uint16_t offset = 0;
+    uint16_t markOffset = INVALID_MARK_OFFSET;
 };
 
 #endif

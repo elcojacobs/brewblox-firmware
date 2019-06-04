@@ -18,6 +18,7 @@
  */
 
 #pragma once
+#include "system_event.h"
 #include <cstdint>
 
 void
@@ -34,3 +35,15 @@ serialConnected();
 
 bool
 setWifiCredentials(const char* ssid, const char* password, uint8_t security, uint8_t cipher);
+
+void
+handleNetworkEvent(system_event_t event, int param);
+
+void
+wifiInit();
+
+bool
+listeningModeEnabled();
+
+void
+manageConnections();

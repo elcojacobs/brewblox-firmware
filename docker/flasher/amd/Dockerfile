@@ -1,7 +1,7 @@
 FROM brewblox/firmware-particle
 
 WORKDIR /app
-ENV PARTICLE_VERSION=1.0.1
+ENV PARTICLE_VERSION=1.2.1-rc.2
 ENV PARTICLE_RELEASES=https://github.com/particle-iot/firmware/releases/download/v${PARTICLE_VERSION}
 
 
@@ -9,13 +9,13 @@ RUN apk add --no-cache usbutils curl bash \
   && echo 'python serial-switcher.py' > ./trigger-dfu && chmod +x ./trigger-dfu \
   && echo 'python serial-switcher.py -b 28800' > ./trigger-listening && chmod +x ./trigger-listening \
   \
-  && curl -sL -o bootloader-p1.bin ${PARTICLE_RELEASES}/bootloader-${PARTICLE_VERSION}-p1.bin \
-  && curl -sL -o system-part1-p1.bin ${PARTICLE_RELEASES}/system-part1-${PARTICLE_VERSION}-p1.bin \
-  && curl -sL -o system-part2-p1.bin ${PARTICLE_RELEASES}/system-part2-${PARTICLE_VERSION}-p1.bin \
+  && curl -sL -o bootloader-p1.bin ${PARTICLE_RELEASES}/p1-bootloader@${PARTICLE_VERSION}.bin \
+  && curl -sL -o system-part1-p1.bin ${PARTICLE_RELEASES}/p1-system-part1@${PARTICLE_VERSION}.bin \
+  && curl -sL -o system-part2-p1.bin ${PARTICLE_RELEASES}/p1-system-part2@${PARTICLE_VERSION}.bin \
   \
-  && curl -sL -o bootloader-photon.bin ${PARTICLE_RELEASES}/bootloader-${PARTICLE_VERSION}-photon.bin \
-  && curl -sL -o system-part1-photon.bin ${PARTICLE_RELEASES}/system-part1-${PARTICLE_VERSION}-photon.bin \
-  && curl -sL -o system-part2-photon.bin ${PARTICLE_RELEASES}/system-part2-${PARTICLE_VERSION}-photon.bin \
+  && curl -sL -o bootloader-photon.bin ${PARTICLE_RELEASES}/photon-bootloader@${PARTICLE_VERSION}.bin \
+  && curl -sL -o system-part1-photon.bin ${PARTICLE_RELEASES}/photon-system-part1@${PARTICLE_VERSION}.bin \
+  && curl -sL -o system-part2-photon.bin ${PARTICLE_RELEASES}/photon-system-part2@${PARTICLE_VERSION}.bin \
   && apk del curl
 
 

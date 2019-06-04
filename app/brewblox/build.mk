@@ -30,7 +30,7 @@ MODULAR?=y
 endif
 
 # add nanopb dependencies
-include $(SOURCE_PATH)/platform/spark/device-os/nanopb/import.mk
+include $(SOURCE_PATH)/platform/spark/device-os/third_party/nanopb/import.mk
 ifeq ($(MODULAR),y)
 # include sources that are part of nanopb, but not included in shared libraries of particle
 CSRC += app/brewblox/nanopb_not_in_particle_dynalib.c
@@ -113,8 +113,20 @@ CSRC := $(filter-out $(CEXCLUDES),$(CSRC))
 CPPSRC := $(filter-out $(CPPEXCLUDES),$(CPPSRC)) 
 
 GIT_VERSION = $(shell cd $(SOURCE_PATH); git rev-parse --short HEAD)
-$(info using $(GIT_VERSION) as version string)
+$(info using $(GIT_VERSION) as version)
 CFLAGS += -DGIT_VERSION="$(GIT_VERSION)"
+
+GIT_DATE = $(shell cd $(SOURCE_PATH); git log -1 --format=%cd --date=short)
+$(info using $(GIT_DATE) as release date)
+CFLAGS += -DGIT_DATE="$(GIT_DATE)"
+
+PROTO_VERSION = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git rev-parse --short HEAD)
+$(info using $(PROTO_VERSION) as protocol version)
+CFLAGS += -DPROTO_VERSION="$(PROTO_VERSION)"
+
+PROTO_DATE = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git log -1 --format=%cd --date=short)
+$(info using $(GIT_DATE) as protocol date)
+CFLAGS += -DPROTO_DATE="$(PROTO_DATE)"
 
 COMPILER_VERSION = $(shell $(CC) --version) 
 $(info using compiler: $(COMPILER_VERSION))
