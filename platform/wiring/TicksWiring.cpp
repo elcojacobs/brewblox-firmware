@@ -6,7 +6,7 @@
 ticks_seconds_t
 TicksWiring::seconds()
 {
-    return HAL_Timer_Get_Micro_Seconds() / 1000;
+    return HAL_Timer_Get_Milli_Seconds() / 1000;
 }
 ticks_millis_t
 TicksWiring::millis()
