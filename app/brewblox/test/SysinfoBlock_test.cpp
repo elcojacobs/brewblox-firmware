@@ -43,12 +43,14 @@ SCENARIO("SysInfo Block")
         testBox.processInputToProto(decoded);
 
         std::string version = stringify(GIT_VERSION);
-        REQUIRE(version != "GIT_VERSION"); // check that it is properly expanded
+        std::string protocolVersion = stringify(PROTO_VERSION);
+        std::string releaseDate = stringify(GIT_DATE);
+        std::string protocolDate = stringify(PROTO_DATE);
 
-        THEN("The VERSION and device ID are correct")
+        THEN("The system info is serialized correctly")
         {
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\" version: \"") + version + std::string("\" platform: gcc hardware: Spark3"));
+            CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc hardware: Spark3") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\""));
         }
     }
 }

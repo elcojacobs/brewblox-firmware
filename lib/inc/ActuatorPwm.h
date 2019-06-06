@@ -67,7 +67,11 @@ public:
         std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target,
         duration_millis_t period = 4000);
 
-    ~ActuatorPwm() = default;
+    ~ActuatorPwm()
+    {
+        // ensure that interrupts are removed before destruction.
+        enabled(false);
+    };
 
     /** ActuatorPWM keeps track of the last high and low transition.
      *  This function returns the actually achieved value. This can differ from

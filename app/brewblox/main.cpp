@@ -21,14 +21,16 @@
 #include "Board.h"
 #include "BrewBlox.h"
 #include "Buzzer.h"
-#include "MDNS.h"
 #include "TimerInterrupts.h"
-#include "application.h" // particle stuff
 #include "blox/stringify.h"
 #include "cbox/Object.h"
+#include "connectivity.h"
 #include "d4d.hpp"
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/startup_screen.h"
+#include "eeprom_hal.h"
+#include "spark_wiring_startup.h"
+#include "spark_wiring_system.h"
 #include "spark_wiring_timer.h"
 
 SYSTEM_THREAD(ENABLED);
@@ -74,87 +76,6 @@ displayTick()
 }
 
 void
-initMdns(MDNS& mdns)
-{
-    bool success = mdns.setHostname(System.deviceID());
-    success = success && mdns.addService("tcp", "http", 80, System.deviceID());
-    success = success && mdns.addService("tcp", "brewblox", 8332, System.deviceID());
-    if (success) {
-        auto hw = String("Spark ");
-        switch (getSparkVersion()) {
-        case SparkVersion::V1:
-            hw += "1";
-            break;
-        case SparkVersion::V2:
-            hw += "2";
-            break;
-        case SparkVersion::V3:
-            hw += "3";
-            break;
-        }
-        mdns.addTXTEntry("VERSION", stringify(GIT_VERSION));
-        mdns.addTXTEntry("ID", System.deviceID());
-        mdns.addTXTEntry("PLATFORM", stringify(PLATFORM_ID));
-        mdns.addTXTEntry("HW", hw);
-    }
-}
-
-void
-processMdns()
-{
-    static auto mdns = MDNS();
-    static bool mdns_started = false;
-
-    if (!mdns_started) {
-        mdns_started = mdns.begin(true);
-        if (mdns_started) {
-            initMdns(mdns);
-        };
-    } else {
-        mdns.processQueries();
-    }
-}
-
-void
-processHttp()
-{
-#if PLATFORM_ID == PLATFORM_GCC
-    static auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with instructions
-#else
-    static auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
-#endif
-
-    TCPClient client = httpserver.available();
-    if (client) {
-        while (client.read() != -1) {
-        }
-
-        client.write("HTTP/1.1 200 Ok\n\n<html><body>Your BrewBlox Spark is online but it does not run it's own web server.\n"
-                     "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</body></html>\n\n");
-        client.flush();
-        delay(5);
-        client.stop();
-    }
-}
-
-void
-manageConnections()
-{
-    if (!WiFi.ready() || WiFi.listening()) {
-        if (!WiFi.connecting()) {
-            WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
-        }
-    } else {
-#if PLATFORM_ID != PLATFORM_GCC
-        Particle.connect();
-#endif
-        processHttp();
-
-        processMdns();
-    }
-}
-
-void
 setup()
 {
     // Install a signal handler
@@ -164,8 +85,6 @@ setup()
     boardInit();
     Buzzer.beep(2, 50);
 
-    System.disable(SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS);
-    WiFi.setListenTimeout(30);
     System.on(setup_update, watchdogCheckin);
 
 #if PLATFORM_ID == PLATFORM_GCC
@@ -197,7 +116,7 @@ setup()
 
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
     // This avoids having to do it later when writing to EEPROM
-    EEPROM.performPendingErase();
+    HAL_EEPROM_Perform_Pending_Erase();
 
     StartupScreen::setStep("Ready!");
 
@@ -209,20 +128,25 @@ setup()
 #if PLATFORM_ID != PLATFORM_GCC
     TimerInterrupts::init();
 #endif
+
+    wifiInit();
 }
 
 void
 loop()
 {
-    if (!WiFi.listening()) {
+    ticks.switchTaskTimer(TicksClass::TaskId::Communication);
+    if (!listeningModeEnabled()) {
         manageConnections();
         brewbloxBox().hexCommunicate();
     }
-
+    ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
     updateBrewbloxBox();
 
+    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
     displayTick();
 
+    ticks.switchTaskTimer(TicksClass::TaskId::System);
     watchdogCheckin();
 }
 

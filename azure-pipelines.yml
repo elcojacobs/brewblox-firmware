@@ -2,7 +2,7 @@ resources:
   repositories:
     - repository: self
       checkoutOptions:
-        submodules: true
+        submodules: recursive
 
 trigger:
   tags:

@@ -28,23 +28,14 @@
 
 /**
  * Initializes the temperature sensor.
- * This method is called when the sensor is first created and also any time the sensor reports it's disconnected.
- * If the result is TEMP_SENSOR_DISCONNECTED then subsequent calls to read() will also return TEMP_SENSOR_DISCONNECTED.
- * Clients should attempt to re-initialize the sensor by calling init() again. 
+ * This method should be called when the sensor is first created and also any time the sensor reports it has been reset.
+ * This re-intializes the reset detection.
  */
 void
 TempSensorOneWire::init()
 {
-    // This quickly tests if the sensor is connected and initializes the reset detection if necessary.
-
-    // If this is the first conversion after power on, the device will return DEVICE_DISCONNECTED_RAW
-    // Because HIGH_ALARM_TEMP will be copied from EEPROM
-    int16_t temp = m_sensor.getTempRaw(getDeviceAddress().asUint8ptr());
-    if (temp == DEVICE_DISCONNECTED_RAW) {
-        // Device was just powered on and should be initialized
-        if (m_sensor.initConnection(getDeviceAddress().asUint8ptr())) {
-            requestConversion();
-        }
+    if (m_sensor.initConnection(getDeviceAddress().asUint8ptr())) {
+        requestConversion();
     }
 }
 
@@ -92,10 +83,10 @@ TempSensorOneWire::readAndConstrainTemp()
     bool success;
 
     tempRaw = m_sensor.getTempRaw(getDeviceAddress().asUint8ptr());
-    success = tempRaw != DEVICE_DISCONNECTED_RAW;
+    success = tempRaw > RESET_DETECTED_RAW;
 
-    if (!success) {
-        // retry re-init
+    if (tempRaw == RESET_DETECTED_RAW) {
+        // retry re-init if the sensor is present, but needs a reset
         init();
     }
 

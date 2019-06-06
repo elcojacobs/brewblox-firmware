@@ -82,4 +82,32 @@ public:
     {
         return impl;
     }
+
+    enum class TaskId {
+        Communication,
+        BlocksUpdate,
+        DisplayUpdate,
+        System,
+        NumTasks,
+    };
+
+    void switchTaskTimer(TaskId startedTask)
+    {
+        auto now = millis();
+        auto elapsed = now - lastTimerTick;
+        uint8_t timerIdx = uint8_t(runningTask);
+        timers[timerIdx] = timers[timerIdx] - (timers[timerIdx] >> 5) + elapsed;
+        runningTask = startedTask;
+        lastTimerTick = now;
+    }
+
+    const auto& taskTimers() const
+    {
+        return timers;
+    }
+
+private:
+    ticks_millis_t timers[uint8_t(TaskId::NumTasks)]; // EMA of durations of each task
+    ticks_millis_t lastTimerTick = 0;
+    TaskId runningTask = TaskId::System;
 };
