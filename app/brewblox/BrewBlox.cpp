@@ -34,7 +34,6 @@
 #include "blox/PidBlock.h"
 #include "blox/SetpointProfileBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
-#include "blox/Spark3PinsBlock.h"
 #include "blox/SysInfoBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "blox/TempSensorOneWireBlock.h"
@@ -58,6 +57,14 @@ testConnectionSource()
     static cbox::StringStreamConnectionSource connSource;
     return connSource;
 }
+#endif
+
+#if PLATFORM_ID == 6
+#include "blox/Spark2PinsBlock.h"
+using PinsBlock = Spark2PinsBlock;
+#else
+#include "blox/Spark3PinsBlock.h"
+using PinsBlock = Spark3PinsBlock;
 #endif
 
 cbox::ConnectionPool&
@@ -91,7 +98,7 @@ makeBrewBloxBox()
             cbox::ContainedObject(6, 0x80, std::make_shared<TouchSettingsBlock>()),
 #endif
             cbox::ContainedObject(7, 0x80, std::make_shared<DisplaySettingsBlock>()),
-            cbox::ContainedObject(19, 0x80, std::make_shared<Spark3PinsBlock>()),
+            cbox::ContainedObject(19, 0x80, std::make_shared<PinsBlock>()),
     });
 
     static cbox::ObjectFactory objectFactory = {

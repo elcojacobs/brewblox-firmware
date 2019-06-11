@@ -21,24 +21,18 @@
 
 #include "blox/Block.h"
 #include "blox/SparkIoBase.h"
-#include "proto/cpp/Spark3Pins.pb.h"
+#include "proto/cpp/Spark2Pins.pb.h"
 
-#if PLATFORM_ID != 3
-#include "BrewPiTouch.h"
-extern BrewPiTouch touch;
-#endif
-
-class Spark3PinsBlock : public SparkIoBase, public Block<BrewbloxOptions_BlockType_Spark3Pins> {
+class Spark2PinsBlock : public SparkIoBase, public Block<BrewbloxOptions_BlockType_Spark2Pins> {
 private:
-    static const uint8_t numPins = 5;
+    static const uint8_t numPins = 4;
     virtual pin_t channelToPin(uint8_t channel) const override final
     {
         auto pins = std::array<uint8_t, numPins>{
-            PIN_V3_TOP1,
-            PIN_V3_TOP2,
-            PIN_V3_TOP3,
-            PIN_V3_BOTTOM1,
-            PIN_V3_BOTTOM2,
+            PIN_ACTUATOR1,
+            PIN_ACTUATOR2,
+            PIN_ACTUATOR3,
+            PIN_ACTUATOR0,
         };
 
         if (validChannel(channel)) {
@@ -48,19 +42,18 @@ private:
     }
 
 public:
-    Spark3PinsBlock()
-        : SparkIoBase(numPins)
+    Spark2PinsBlock()
+        : SparkIoBase(getSparkVersion() == SparkVersion::V2 ? numPins : numPins - 1)
     {
     }
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
     {
-        blox_Spark3Pins message = blox_Spark3Pins_init_zero;
-        cbox::CboxError result = streamProtoFrom(in, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
+        blox_Spark2Pins message = blox_Spark2Pins_init_zero;
+        cbox::CboxError result = streamProtoFrom(in, &message, blox_Spark2Pins_fields, blox_Spark2Pins_size);
 
         if (result == cbox::CboxError::OK) {
             // io pins are not writable through this block. They are configured by creating Digital Actuators
-            HAL_GPIO_Write(PIN_LCD_BACKLIGHT, message.enableLcdBacklight);
             HAL_GPIO_Write(PIN_ALARM, message.soundAlarm);
 #if defined(PIN_5V_ENABLE)
             HAL_GPIO_Write(PIN_5V_ENABLE, message.enableIoSupply5V);
@@ -75,55 +68,45 @@ public:
     virtual cbox::CboxError
     streamTo(cbox::DataOut& out) const override final
     {
-        blox_Spark3Pins message = blox_Spark3Pins_init_zero;
+        blox_Spark2Pins message = blox_Spark2Pins_init_zero;
 
         for (uint8_t i = 0; i < numPins; ++i) {
-            // all pins have the same structure, so interpret the union as top1 for all
+            // all pins have the same structure, so interpret the union as first actuator for all
             uint8_t chan = i + 1;
             message.pins[i].which_Pin = chan;
-            readIoConfig(*this, chan, message.pins[i].Pin.top1.config);
+            readIoConfig(*this, chan, message.pins[i].Pin.bottom1.config);
         }
 
-        message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
-#if defined(PIN_5V_ENABLE)
-        message.enableIoSupply5V = HAL_GPIO_Read(PIN_5V_ENABLE);
-#endif
-#if defined(PIN_12V_ENABLE)
-        message.enableIoSupply12V = HAL_GPIO_Read(PIN_12V_ENABLE);
-#endif
 
-#if PLATFORM_ID != 3
-        message.voltage5 = touch.read5V();
-        message.voltage12 = touch.read12V();
-#else
-        message.voltage5 = 5 * 410;
-        message.voltage12 = 12 * 149;
-#endif
-        return streamProtoTo(out, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
+        auto hw = blox_Spark2Pins_Hardware::blox_Spark2Pins_Hardware_unknown_hw;
+        switch (getSparkVersion()) {
+        case SparkVersion::V1:
+            hw = blox_Spark2Pins_Hardware_Spark1;
+            break;
+        case SparkVersion::V2:
+            hw = blox_Spark2Pins_Hardware_Spark2;
+            break;
+        }
+        message.hardware = hw;
+
+        return streamProtoTo(out, &message, blox_Spark2Pins_fields, blox_Spark2Pins_size);
     }
 
     virtual cbox::CboxError
     streamPersistedTo(cbox::DataOut& out) const override final
     {
-        blox_Spark3Pins message = blox_Spark3Pins_init_zero;
+        blox_Spark2Pins message = blox_Spark2Pins_init_zero;
 
-        message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
-#if defined(PIN_5V_ENABLE)
-        message.enableIoSupply5V = HAL_GPIO_Read(PIN_5V_ENABLE);
-#endif
-#if defined(PIN_12V_ENABLE)
-        message.enableIoSupply12V = HAL_GPIO_Read(PIN_12V_ENABLE);
-#endif
 
-        return streamProtoTo(out, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
+        return streamProtoTo(out, &message, blox_Spark2Pins_fields, blox_Spark2Pins_size);
     }
 
     virtual void*
     implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_Spark3Pins) {
+        if (iface == BrewbloxOptions_BlockType_Spark2Pins) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<IoArray>()) {
