@@ -77,13 +77,16 @@ public:
     {
         blox_Spark3Pins message = blox_Spark3Pins_init_zero;
 
-        for (uint8_t i = 0; i < numPins; ++i) {
-            // all pins have the same structure, so interpret the union as top1 for all
-            uint8_t chan = i + 1;
-            message.pins[i].which_Pin = chan;
-            readIoConfig(*this, chan, message.pins[i].Pin.top1.config);
-        }
-        message.pins_count = numPins;
+        message.pins[0].which_Pin = blox_Spark3Pins_IoPin_top1_tag;
+        readIoConfig(*this, 1, message.pins[0].Pin.top1.config);
+        message.pins[1].which_Pin = blox_Spark3Pins_IoPin_top2_tag;
+        readIoConfig(*this, 2, message.pins[1].Pin.top2.config);
+        message.pins[2].which_Pin = blox_Spark3Pins_IoPin_top3_tag;
+        readIoConfig(*this, 3, message.pins[2].Pin.top3.config);
+        message.pins[3].which_Pin = blox_Spark3Pins_IoPin_bottom1_tag;
+        readIoConfig(*this, 4, message.pins[3].Pin.bottom1.config);
+        message.pins[4].which_Pin = blox_Spark3Pins_IoPin_bottom2_tag;
+        readIoConfig(*this, 5, message.pins[4].Pin.bottom2.config);
 
         message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);

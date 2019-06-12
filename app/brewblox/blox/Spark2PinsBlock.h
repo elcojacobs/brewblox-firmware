@@ -64,13 +64,20 @@ public:
     {
         blox_Spark2Pins message = blox_Spark2Pins_init_zero;
 
-        for (uint8_t i = 0; i < numPins; ++i) {
-            // all pins have the same structure, so interpret the union as first actuator for all
-            uint8_t chan = i + 1;
-            message.pins[i].which_Pin = chan;
-            readIoConfig(*this, chan, message.pins[i].Pin.bottom1.config);
+        message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom1_tag;
+        readIoConfig(*this, 1, message.pins[0].Pin.bottom1.config);
+        message.pins[1].which_Pin = blox_Spark2Pins_IoPin_bottom2_tag;
+        readIoConfig(*this, 2, message.pins[1].Pin.bottom2.config);
+        message.pins[2].which_Pin = blox_Spark2Pins_IoPin_bottom3_tag;
+        readIoConfig(*this, 3, message.pins[2].Pin.bottom3.config);
+
+        if (getSparkVersion() != SparkVersion::V1) {
+            message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom1_tag;
+            readIoConfig(*this, 4, message.pins[3].Pin.bottom0.config);
+            message.pins_count = numPins;
+        } else {
+            message.pins_count = numPins - 1;
         }
-        message.pins_count = numPins;
 
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
 
