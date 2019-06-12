@@ -53,6 +53,7 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.getDeviceAddress();
+        message.pins_count = 8;
 
         for (uint8_t i = 0; i < 8; i++) {
             readIoConfig(device, i + 1, message.pins[i].Pin.A.config);

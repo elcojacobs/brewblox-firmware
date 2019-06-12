@@ -55,6 +55,7 @@ public:
         message.address = device.getDeviceAddress();
         message.connected = device.connected();
 
+        message.pins_count = 2;
         readIoConfig(device, 1, message.pins[0].Pin.A.config);
         readIoConfig(device, 2, message.pins[1].Pin.B.config);
 
