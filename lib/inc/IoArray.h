@@ -50,7 +50,7 @@ public:
 
     bool validChannel(uint8_t channel) const
     {
-        return channel > 0 && channel < size();
+        return channel > 0 && channel <= size();
     }
 
     // returns the chached value for the pin state. The

@@ -44,10 +44,6 @@ public:
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             device.setDeviceAddress(OneWireAddress(newData.address));
-
-            for (uint8_t i = 0; i < 8; i++) {
-                writeIoConfig(device, i + 1, newData.channels[i].config);
-            }
         }
         return res;
     }
@@ -59,7 +55,7 @@ public:
         message.address = device.getDeviceAddress();
 
         for (uint8_t i = 0; i < 8; i++) {
-            readIoConfig(device, i + 1, message.channels[i].config);
+            readIoConfig(device, i + 1, message.pins[i].Pin.A.config);
         }
 
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
