@@ -25,13 +25,13 @@
 inline void
 writeIoConfig(IoArray& device, uint8_t chan, const blox_IoChannel_ChannelConfig& v)
 {
-    device.writeChannelConfig(1, IoArray::ChannelConfig(v));
+    device.writeChannelConfig(chan, IoArray::ChannelConfig(v));
 }
 
 inline void
 readIoConfig(const IoArray& device, uint8_t chan, blox_IoChannel_ChannelConfig& result)
 {
     auto res = IoArray::ChannelConfig::UNKNOWN;
-    device.readChannelConfig(1, res);
+    device.readChannelConfig(chan, res);
     result = blox_IoChannel_ChannelConfig(res);
 }
