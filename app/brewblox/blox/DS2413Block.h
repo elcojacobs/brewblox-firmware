@@ -56,7 +56,9 @@ public:
         message.connected = device.connected();
 
         message.pins_count = 2;
+        message.pins[0].which_Pin = blox_DS2413_IoPin_A_tag;
         readIoConfig(device, 1, message.pins[0].Pin.A.config);
+        message.pins[1].which_Pin = blox_DS2413_IoPin_B_tag;
         readIoConfig(device, 2, message.pins[1].Pin.B.config);
 
         return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);

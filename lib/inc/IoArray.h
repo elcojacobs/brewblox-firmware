@@ -80,10 +80,9 @@ public:
     {
         // first channel on external interface is 1, because 0 is unconfigured
         if (validChannel(channel)) {
-            if (writeChannelImpl(channel, config)) {
-                channels[channel - 1].config = config;
-                return true;
-            }
+            channels[channel - 1].config = config;
+            writeChannelImpl(channel, config);
+            return true;
         }
         return false;
     }

@@ -63,8 +63,8 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
         {
             CHECK(testBox.lastReplyHasStatusOk());
 
-            // the channels are not in use yet, so only the address is sent
-            CHECK(decoded.ShortDebugString() == "address: 12345678");
+            // the channels are not in use yet, so the pins are empty
+            CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { } } pins { B { } }");
         }
 
         THEN("The writable settings match what was sent")
@@ -104,6 +104,18 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
                 CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 constrainedBy { unconstrained: Active } strippedFields: 3");
+            }
+            THEN("A read of the DS2413 is as expected")
+            {
+                testBox.put(uint16_t(0)); // msg id
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(cbox::obj_id_t(ds2413Id));
+
+                auto decoded = blox::DS2413();
+                testBox.processInputToProto(decoded);
+
+                // the channels are not in use yet, so the pins are empty
+                CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { config: ACTIVE_HIGH } } pins { B { } }");
             }
         }
     }

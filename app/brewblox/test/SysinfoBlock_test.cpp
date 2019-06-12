@@ -50,7 +50,7 @@ SCENARIO("SysInfo Block")
         THEN("The system info is serialized correctly")
         {
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc hardware: Spark3") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\""));
+            CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\""));
         }
     }
 }

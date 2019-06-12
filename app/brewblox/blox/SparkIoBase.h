@@ -53,7 +53,7 @@ public:
     writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
         auto pin = channelToPin(channel);
-        if (pin > 0) {
+        if (pin >= 0) {
 #ifdef PIN_V3_TOP1_DIR
             if (pin == PIN_V3_TOP1) {
                 bool isOutput = config == ChannelConfig::ACTIVE_HIGH || config == ChannelConfig::ACTIVE_LOW;
