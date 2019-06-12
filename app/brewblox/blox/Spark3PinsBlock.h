@@ -83,6 +83,7 @@ public:
             message.pins[i].which_Pin = chan;
             readIoConfig(*this, chan, message.pins[i].Pin.top1.config);
         }
+        message.pins_count = numPins;
 
         message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
