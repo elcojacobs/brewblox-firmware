@@ -10,4 +10,4 @@ docker-compose exec -T compiler \
         cp -r target ../docker/simulator/target
     '
 
-docker build -t brewblox/firmware-simulator:local simulator
+docker build --no-cache -t brewblox/firmware-simulator:local simulator
