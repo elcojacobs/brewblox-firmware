@@ -11,6 +11,8 @@ using MinOn = ADConstraints::MinOnTime<blox_DigitalConstraint_minOn_tag>;
 using Mutex_t = ADConstraints::Mutex<blox_DigitalConstraint_mutex_tag>;
 
 class CboxMutex : public ADConstraints::Base {
+    using State = ActuatorDigitalBase::State;
+
 private:
     cbox::CboxPtr<TimedMutex> lookup;
     Mutex_t m_mutexConstraint;
@@ -32,7 +34,7 @@ public:
         return lookup.getId();
     }
 
-    virtual bool allowed(const ActuatorDigital::State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
+    virtual bool allowed(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {
         return m_mutexConstraint.allowed(newState, now, act);
     };

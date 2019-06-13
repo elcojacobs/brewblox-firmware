@@ -37,7 +37,7 @@
 #define PRINT_TOGGLE_TIMES 0
 
 using value_t = ActuatorAnalog::value_t;
-using State = ActuatorDigital::State;
+using State = ActuatorDigitalBase::State;
 
 // auto output = &std::cout; // uncomment for stdout output
 auto output = std::make_unique<std::ofstream>(); // use unopened file stream for no output

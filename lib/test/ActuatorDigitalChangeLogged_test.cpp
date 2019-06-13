@@ -25,7 +25,7 @@
 
 SCENARIO("ActuatorDigitalChangeLogged test", "[ActuatorChangeLog]")
 {
-    using State = ActuatorDigital::State;
+    using State = ActuatorDigitalBase::State;
 
     auto mockIo = std::make_shared<MockIoArray>();
     auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);

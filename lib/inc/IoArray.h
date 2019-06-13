@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "ActuatorDigitalBase.h"
 #include <inttypes.h>
 #include <vector>
 
@@ -27,18 +28,13 @@
  */
 class IoArray {
 public:
+    using State = ActuatorDigitalBase::State;
     IoArray(uint8_t size)
         : channels(size)
     {
     }
 
     virtual ~IoArray() = default;
-
-    enum State : uint8_t {
-        Inactive = 0,
-        Active = 1,
-        Unknown = 2,
-    };
 
     enum class ChannelConfig {
         UNUSED = 0,
@@ -54,7 +50,7 @@ public:
     }
 
     // returns the chached value for the pin state. The
-    bool senseChannel(uint8_t channel, State& result) const
+    bool senseChannel(uint8_t channel, ActuatorDigitalBase::State& result) const
     {
         // first channel is 1, because 0 is used as 'unconfigured'
         if (validChannel(channel)) {

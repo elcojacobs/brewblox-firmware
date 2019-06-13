@@ -56,7 +56,7 @@ public:
 
     void unlock(const ActuatorDigitalChangeLogged& act)
     {
-        if (act.state() == ActuatorDigital::State::Active) {
+        if (act.state() == ActuatorDigitalChangeLogged::State::Active) {
             lastActive = lastUpdate;
             lastActuator = &act;
             update(lastUpdate);
@@ -92,7 +92,7 @@ public:
 };
 
 namespace ADConstraints {
-using State = ActuatorDigital::State;
+using State = ActuatorDigitalBase::State;
 
 class Base {
 public:
@@ -244,7 +244,7 @@ private:
     State m_unconstrained = State::Inactive;
 
 public:
-    ActuatorDigitalConstrained(ActuatorDigital& act)
+    ActuatorDigitalConstrained(ActuatorDigitalBase& act)
         : ActuatorDigitalChangeLogged(act){};
 
     ActuatorDigitalConstrained(const ActuatorDigitalConstrained&) = delete;

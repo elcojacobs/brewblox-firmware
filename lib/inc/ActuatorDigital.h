@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "ActuatorDigitalBase.h"
 #include "IoArray.h"
 #include <functional>
 #include <memory>
@@ -28,22 +29,7 @@
  * A digital actuator that toggles a channel of an ArrayIo object.
  *
  */
-class ActuatorDigital {
-public:
-    using State = IoArray::State;
-
-    static State invertState(State s)
-    {
-        switch (s) {
-        case State::Active:
-            return State::Inactive;
-        case State::Inactive:
-            return State::Active;
-        default:
-            return State::Unknown;
-        }
-    }
-
+class ActuatorDigital : public ActuatorDigitalBase {
 private:
     const std::function<std::shared_ptr<IoArray>()> m_target;
     bool m_invert = false;
@@ -60,7 +46,7 @@ public:
         channel(0); // release channel before destruction
     }
 
-    void state(const State& v)
+    virtual void state(const State& v) override final
     {
         if (auto devPtr = m_target()) {
             auto newState = v;
@@ -72,7 +58,7 @@ public:
         }
     }
 
-    State state() const
+    virtual State state() const override final
     {
         if (auto devPtr = m_target()) {
             State result;
@@ -119,7 +105,7 @@ public:
         }
     }
 
-    bool supportsFastIo() const
+    virtual bool supportsFastIo() const override final
     {
         if (auto devPtr = m_target()) {
             return devPtr->supportsFastIo();

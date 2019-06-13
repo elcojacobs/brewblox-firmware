@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
 #include "ActuatorDigitalConstraintsProto.h"
 #include "FieldTags.h"
@@ -38,7 +39,7 @@ public:
             actuator.channel(message.channel);
             actuator.invert(message.invert);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
-            constrained.state(ActuatorDigital::State(message.state));
+            constrained.state(ActuatorDigitalBase::State(message.state));
         }
 
         return result;
@@ -50,7 +51,7 @@ public:
         FieldTags stripped;
 
         auto state = actuator.state();
-        if (state == ActuatorDigital::State::Unknown) {
+        if (state == ActuatorDigitalBase::State::Unknown) {
             stripped.add(blox_DigitalActuator_state_tag);
         } else {
             message.state = blox_DigitalState(actuator.state());

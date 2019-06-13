@@ -36,7 +36,7 @@
 class ActuatorPwm final : public ActuatorAnalog {
 public:
     using value_t = ActuatorAnalog::value_t;
-    using State = ActuatorDigital::State;
+    using State = ActuatorDigitalBase::State;
     using update_t = ticks_millis_t;
 
 private:

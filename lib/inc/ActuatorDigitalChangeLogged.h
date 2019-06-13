@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include "ActuatorDigital.h"
+#include "ActuatorDigitalBase.h"
 #include "TicksTypes.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
 /*
- * An ActuatorDigital wrapper that logs the most recent changes
+ * An ActuatorDigitalBase wrapper that logs the most recent changes
  */
 
 // uneven length makes last entry equal to first for toggling (PWM) behavior
@@ -33,7 +33,7 @@ const uint8_t historyLength = 5;
 
 class ActuatorDigitalChangeLogged {
 public:
-    using State = ActuatorDigital::State;
+    using State = ActuatorDigitalBase::State;
 
     struct StateChange {
         State newState;
@@ -41,14 +41,14 @@ public:
     };
 
 private:
-    ActuatorDigital& actuator;
+    ActuatorDigitalBase& actuator;
     std::array<StateChange, historyLength> history;
 
 protected:
     ticks_millis_t lastUpdateTime = 0;
 
 public:
-    ActuatorDigitalChangeLogged(ActuatorDigital& act)
+    ActuatorDigitalChangeLogged(ActuatorDigitalBase& act)
         : actuator(act)
     {
         resetHistory();
