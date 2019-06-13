@@ -31,7 +31,10 @@ public:
         cbox::CboxError result = streamProtoFrom(dataIn, &message, blox_DigitalActuator_fields, blox_DigitalActuator_size);
 
         if (result == cbox::CboxError::OK) {
-            hwDevice.setId(message.hwDevice);
+            if (hwDevice.getId() != message.hwDevice) {
+                actuator.channel(0); // unregister at old hwDevice
+                hwDevice.setId(message.hwDevice);
+            }
             actuator.channel(message.channel);
             actuator.invert(message.invert);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);

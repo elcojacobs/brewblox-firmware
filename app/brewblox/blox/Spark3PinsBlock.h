@@ -77,6 +77,7 @@ public:
     {
         blox_Spark3Pins message = blox_Spark3Pins_init_zero;
 
+        message.pins_count = numPins;
         message.pins[0].which_Pin = blox_Spark3Pins_IoPin_top1_tag;
         readIo(*this, 1, message.pins[0].Pin.top1);
         message.pins[1].which_Pin = blox_Spark3Pins_IoPin_top2_tag;
