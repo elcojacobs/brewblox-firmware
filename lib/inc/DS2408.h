@@ -78,6 +78,7 @@ public:
      */
     ~DS2408() = default;
 
+private:
     /**
      * extracts a single bit from a byte
      *
@@ -217,6 +218,8 @@ public:
      * Updates all cache registers by reading them from the device.
      * Performs CRC checking on communication and sets the connect state to false on CRC error or to true on success.
      */
+
+public:
     void update() const;
 
     // generic ArrayIo interface

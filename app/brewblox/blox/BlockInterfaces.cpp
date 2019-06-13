@@ -19,14 +19,12 @@
 
 #include "ActuatorAnalogConstrained.h"
 #include "ActuatorDigitalConstrained.h"
-#include "ActuatorPwm.h"
 #include "Balancer.h"
-#include "DS2413.h"
+#include "DS2408.h"
 #include "DigitalConstraints.pb.h"
 #include "FixedPoint.h"
 #include "IoArray.h"
 #include "OneWireDevice.h"
-#include "Pid.h"
 #include "ProcessValue.h"
 #include "SetpointSensorPair.h"
 #include "TempSensor.h"
@@ -96,6 +94,13 @@ const obj_type_t
 interfaceIdImpl<IoArray>()
 {
     return BrewbloxOptions_BlockType_IoArrayInterface;
+}
+
+template <>
+const obj_type_t
+interfaceIdImpl<DS2408>()
+{
+    return BrewbloxOptions_BlockType_DS2408Interface;
 }
 
 } // end namespace cbox

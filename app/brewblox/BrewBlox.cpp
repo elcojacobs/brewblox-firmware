@@ -29,6 +29,7 @@
 #include "blox/DS2413Block.h"
 #include "blox/DigitalActuatorBlock.h"
 #include "blox/DisplaySettingsBlock.h"
+#include "blox/MotorValveBlock.h"
 #include "blox/MutexBlock.h"
 #include "blox/OneWireBusBlock.h"
 #include "blox/PidBlock.h"
@@ -114,7 +115,9 @@ makeBrewBloxBox()
         {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(objects, bootTimeRef()); }},
         {DS2413Block::staticTypeId(), std::make_shared<DS2413Block>},
         {DigitalActuatorBlock::staticTypeId(), []() { return std::make_shared<DigitalActuatorBlock>(objects); }},
-        {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>}};
+        {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>},
+        {MotorValveBlock::staticTypeId(), []() { return std::make_shared<MotorValveBlock>(objects); }},
+    };
 
     static EepromAccessImpl eeprom;
     static cbox::EepromObjectStorage objectStore(eeprom);

@@ -99,6 +99,10 @@ public:
             IoArray* ptr = &device;
             return ptr;
         }
+        if (iface == cbox::interfaceId<DS2408>()) {
+            // return the member that implements the interface in this case
+            return &device;
+        }
         if (iface == cbox::interfaceId<OneWireDevice>()) {
             // return the member that implements the interface in this case
             DS2408* dsPtr = &device;
