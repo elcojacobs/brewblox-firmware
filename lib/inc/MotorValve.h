@@ -41,8 +41,8 @@ public:
         InitIdle = 6,
     };
 
-    static const uint8_t chanIsClosed = 0;
-    static const uint8_t chanIsOpen = 1;
+    static const uint8_t chanIsNotClosed = 0;
+    static const uint8_t chanIsNotOpen = 1;
     static const uint8_t chanOpeningHigh = 2;
     static const uint8_t chanClosingHigh = 3;
 
@@ -124,12 +124,12 @@ public:
     {
         auto getState = [](const std::shared_ptr<DS2408>& devPtr, uint8_t startChan) {
             State feedBackPin = State::Unknown;
-            devPtr->senseChannel(startChan + chanIsClosed, feedBackPin);
-            if (feedBackPin == State::Active) {
+            devPtr->senseChannel(startChan + chanIsNotClosed, feedBackPin);
+            if (feedBackPin == State::Inactive) {
                 return ValveState::Closed;
             }
-            devPtr->senseChannel(startChan + chanIsOpen, feedBackPin);
-            if (feedBackPin == State::Active) {
+            devPtr->senseChannel(startChan + chanIsNotOpen, feedBackPin);
+            if (feedBackPin == State::Inactive) {
                 return ValveState::Open;
             }
             State openPin = State::Unknown;
@@ -175,8 +175,8 @@ public:
                     }
                 }
                 if (success && (newChannel == 1 || newChannel == 5)) { // only 2 valid options
-                    success = success && devPtr->claimChannel(newChannel + chanIsOpen, IoArray::ChannelConfig::INPUT);
-                    success = success && devPtr->claimChannel(newChannel + chanIsClosed, IoArray::ChannelConfig::INPUT);
+                    success = success && devPtr->claimChannel(newChannel + chanIsNotOpen, IoArray::ChannelConfig::INPUT);
+                    success = success && devPtr->claimChannel(newChannel + chanIsNotClosed, IoArray::ChannelConfig::INPUT);
                     success = success && devPtr->claimChannel(newChannel + chanOpeningHigh, IoArray::ChannelConfig::ACTIVE_HIGH);
                     success = success && devPtr->claimChannel(newChannel + chanClosingHigh, IoArray::ChannelConfig::ACTIVE_HIGH);
                     if (success) {
