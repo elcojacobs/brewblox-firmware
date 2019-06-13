@@ -35,3 +35,15 @@ readIoConfig(const IoArray& device, uint8_t chan, blox_IoChannel_ChannelConfig& 
     device.readChannelConfig(chan, res);
     result = blox_IoChannel_ChannelConfig(res);
 }
+
+inline void
+readIo(const IoArray& device, uint8_t chan, blox_IoChannel& result)
+{
+    auto config = IoArray::ChannelConfig::UNKNOWN;
+    device.readChannelConfig(chan, config);
+    result.config = blox_IoChannel_ChannelConfig(config);
+
+    auto state = IoArray::State::Unknown;
+    device.senseChannel(chan, state);
+    result.state = _blox_DigitalState(state);
+}

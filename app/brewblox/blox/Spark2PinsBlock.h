@@ -65,11 +65,11 @@ public:
         blox_Spark2Pins message = blox_Spark2Pins_init_zero;
 
         message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom1_tag;
-        readIoConfig(*this, 1, message.pins[0].Pin.bottom1.config);
+        readIo(*this, 1, message.pins[0].Pin.bottom1);
         message.pins[1].which_Pin = blox_Spark2Pins_IoPin_bottom2_tag;
-        readIoConfig(*this, 2, message.pins[1].Pin.bottom2.config);
+        readIo(*this, 2, message.pins[1].Pin.bottom2);
         message.pins[2].which_Pin = blox_Spark2Pins_IoPin_bottom3_tag;
-        readIoConfig(*this, 3, message.pins[2].Pin.bottom3.config);
+        readIo(*this, 3, message.pins[2].Pin.bottom3);
 
         if (getSparkVersion() != SparkVersion::V1) {
             message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom1_tag;

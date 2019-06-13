@@ -63,8 +63,8 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
         {
             CHECK(testBox.lastReplyHasStatusOk());
 
-            // the channels are not in use yet, so the pins are empty
-            CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { } } pins { B { } }");
+            // the channels are not in use yet, so config is default and state is Unknown (device is not found in sim)
+            CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { state: Unknown } } pins { B { state: Unknown } }");
         }
 
         THEN("The writable settings match what was sent")
@@ -114,8 +114,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 auto decoded = blox::DS2413();
                 testBox.processInputToProto(decoded);
 
-                // the channels are not in use yet, so the pins are empty
-                CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { config: ACTIVE_HIGH } } pins { B { } }");
+                CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { config: ACTIVE_HIGH state: Unknown } } pins { B { state: Unknown } }");
             }
         }
     }
