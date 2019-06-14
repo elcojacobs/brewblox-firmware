@@ -225,9 +225,13 @@ public:
     // generic ArrayIo interface
     virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {
-        // TODO
         if (connected() && validChannel(channel)) {
-            result = State::Unknown;
+            bool pioState = getBit(m_regCache.pio, channel - 1);
+            if (pioState == false) {
+                result = State::Inactive;
+            } else {
+                result = State::Active;
+            }
             return true; // valid channel
         }
         return false;
@@ -236,7 +240,7 @@ public:
     virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
         if (connected() && validChannel(channel)) {
-            bool latchEnabled = config == ChannelConfig::ACTIVE_LOW;
+            bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
             return writeLatchBit(channel - 1, latchEnabled);
         }
         return false;

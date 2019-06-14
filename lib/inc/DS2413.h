@@ -203,7 +203,7 @@ private:
     virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
         if (connected() && validChannel(channel)) {
-            bool latchEnabled = config == ChannelConfig::ACTIVE_LOW;
+            bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
             return writeLatchBit(Pio(channel), latchEnabled);
         }
         return false;

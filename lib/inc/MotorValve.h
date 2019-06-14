@@ -41,8 +41,8 @@ public:
         InitIdle = 6,
     };
 
-    static const uint8_t chanIsNotClosed = 0;
-    static const uint8_t chanIsNotOpen = 1;
+    static const uint8_t chanIsClosed = 0;
+    static const uint8_t chanIsOpen = 1;
     static const uint8_t chanOpeningHigh = 2;
     static const uint8_t chanClosingHigh = 3;
 
@@ -107,15 +107,16 @@ public:
         }
         m_desiredValveState = v;
         if (auto devPtr = m_target()) {
+            // ACTIVE HIGH means latch pull down enabled, so the input to the H-bridge is inverted.
             if (v == ValveState::Opening) {
-                devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
-                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
-            } else if (v == ValveState::Closing) {
                 devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_LOW);
                 devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
-            } else {
+            } else if (v == ValveState::Closing) {
                 devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
-                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
+                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
+            } else {
+                devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_LOW);
+                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
             }
         }
     }
@@ -124,12 +125,12 @@ public:
     {
         auto getState = [](const std::shared_ptr<DS2408>& devPtr, uint8_t startChan) {
             State feedBackPin = State::Unknown;
-            devPtr->senseChannel(startChan + chanIsNotClosed, feedBackPin);
-            if (feedBackPin == State::Inactive) {
+            devPtr->senseChannel(startChan + chanIsClosed, feedBackPin);
+            if (feedBackPin == State::Active) {
                 return ValveState::Closed;
             }
-            devPtr->senseChannel(startChan + chanIsNotOpen, feedBackPin);
-            if (feedBackPin == State::Inactive) {
+            devPtr->senseChannel(startChan + chanIsOpen, feedBackPin);
+            if (feedBackPin == State::Active) {
                 return ValveState::Open;
             }
             State openPin = State::Unknown;
@@ -152,6 +153,13 @@ public:
         };
         if (auto devPtr = m_target()) {
             m_actualValveState = getState(devPtr, m_startChannel);
+            if (m_desiredValveState == ValveState::Closing && m_actualValveState == ValveState::Closed) {
+                m_desiredValveState = ValveState::Closed;
+            }
+            if (m_desiredValveState == ValveState::Opening && m_actualValveState == ValveState::Open) {
+                m_desiredValveState = ValveState::Open;
+            }
+
             if (m_actualValveState != m_desiredValveState) {
                 valveState(m_desiredValveState);
             }
@@ -175,8 +183,8 @@ public:
                     }
                 }
                 if (success && (newChannel == 1 || newChannel == 5)) { // only 2 valid options
-                    success = success && devPtr->claimChannel(newChannel + chanIsNotOpen, IoArray::ChannelConfig::INPUT);
-                    success = success && devPtr->claimChannel(newChannel + chanIsNotClosed, IoArray::ChannelConfig::INPUT);
+                    success = success && devPtr->claimChannel(newChannel + chanIsOpen, IoArray::ChannelConfig::INPUT);
+                    success = success && devPtr->claimChannel(newChannel + chanIsClosed, IoArray::ChannelConfig::INPUT);
                     success = success && devPtr->claimChannel(newChannel + chanOpeningHigh, IoArray::ChannelConfig::ACTIVE_HIGH);
                     success = success && devPtr->claimChannel(newChannel + chanClosingHigh, IoArray::ChannelConfig::ACTIVE_HIGH);
                     if (success) {
