@@ -34,15 +34,22 @@ public:
 
         if (result == cbox::CboxError::OK) {
             if (hwDevice.getId() != message.hwDevice) {
-                valve.startChannel(0); // unregister at old hwDevice
+                valve.startChannel(0, true); // unregister at old hwDevice
                 hwDevice.setId(message.hwDevice);
             }
-            valve.startChannel(message.startChannel);
+            valve.startChannel(message.startChannel, false);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
             constrained.state(ActuatorDigitalBase::State(message.state));
         }
 
         return result;
+    }
+    void writePersistedStateToMessage(blox_MotorValve& message) const
+    {
+        message.state = blox_DigitalState(constrained.unconstrained());
+        message.hwDevice = hwDevice.getId();
+        message.startChannel = valve.startChannel();
+        getDigitalConstraints(message.constrainedBy, constrained);
     }
 
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
@@ -50,13 +57,14 @@ public:
         blox_MotorValve message = blox_MotorValve_init_zero;
         FieldTags stripped;
 
+        writePersistedStateToMessage(message);
+
         auto state = valve.state();
         if (state == ActuatorDigitalBase::State::Unknown) {
             stripped.add(blox_MotorValve_state_tag);
         } else {
             message.state = blox_DigitalState(valve.state());
         }
-
         auto valveState = valve.valveState();
         if (valveState == MotorValve::ValveState::Unknown) {
             stripped.add(blox_MotorValve_valveState_tag);
@@ -64,18 +72,16 @@ public:
             message.valveState = blox_MotorValve_ValveState(valve.valveState());
         }
 
-        message.hwDevice = hwDevice.getId();
-        message.startChannel = valve.startChannel();
-
-        getDigitalConstraints(message.constrainedBy, constrained);
-
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
         return streamProtoTo(out, &message, blox_MotorValve_fields, blox_MotorValve_size);
     }
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
-        return streamTo(out);
+
+        blox_MotorValve message = blox_MotorValve_init_zero;
+        writePersistedStateToMessage(message);
+        return streamProtoTo(out, &message, blox_MotorValve_fields, blox_MotorValve_size);
     }
 
     virtual cbox::update_t update(const cbox::update_t& now) override final

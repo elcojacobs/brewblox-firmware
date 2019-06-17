@@ -45,6 +45,17 @@ public:
         return result;
     }
 
+    void writePersistedStateToMessage(blox_DigitalActuator& message) const
+    {
+        message.state = blox_DigitalState(constrained.unconstrained());
+        message.hwDevice = hwDevice.getId();
+        message.hwDevice = hwDevice.getId();
+        message.channel = actuator.channel();
+        message.invert = actuator.invert();
+
+        getDigitalConstraints(message.constrainedBy, constrained);
+    }
+
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
     {
         blox_DigitalActuator message = blox_DigitalActuator_init_zero;
@@ -57,9 +68,6 @@ public:
             message.state = blox_DigitalState(actuator.state());
         }
 
-        message.hwDevice = hwDevice.getId();
-        message.channel = actuator.channel();
-        message.invert = actuator.invert();
         getDigitalConstraints(message.constrainedBy, constrained);
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
@@ -68,7 +76,9 @@ public:
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
-        return streamTo(out);
+        blox_DigitalActuator message = blox_DigitalActuator_init_zero;
+        writePersistedStateToMessage(message);
+        return streamProtoTo(out, &message, blox_DigitalActuator_fields, blox_DigitalActuator_size);
     }
 
     virtual cbox::update_t update(const cbox::update_t& now) override final

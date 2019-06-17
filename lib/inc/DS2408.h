@@ -71,6 +71,7 @@ public:
     {
         m_regCache.pio = 0xFF;
         m_regCache.latch = 0xFF;
+        updateLatches();
     }
 
     /**
@@ -109,90 +110,19 @@ private:
     }
 
     /**
-     * Reads the pin state of a given channel.
-     * Note that for a read to make sense the latch must be off (value written is 1).
-     * @param pio channel number 0-7
-     * @returns state of the output pin for the given channel
-     */
-    bool readPioBit(uint8_t pos)
-    {
-        return getBit(readPios(), pos);
-    }
-
-    /**
-     * Performs a simultaneous read of all I/O pins.
-     * @returns bit field with all pio states
-     */
-    uint8_t readPios() const
-    {
-        if (!connected()) {
-            update(); // use update instead of accessRead(), because it has error checking
-        }
-        return m_regCache.pio;
-    }
-
-    /**
-     * Reads the latch state of a given channel.
-     * @param channel number 0-7
-     * @returns state of the latch for the given channel
-     */
-    bool readLatchBit(uint8_t pos) const
-    {
-        return getBit(readLatches(), pos);
-    }
-
-    /**
-     * Performs a simultaneous read of all latches.
-     * @returns bit field with all pio states
-     */
-    uint8_t readLatches() const
-    {
-        if (!connected()) {
-            update(); // use update instead of accessRead(), because it has error checking
-        }
-        return m_regCache.latch;
-    }
-
-    /**
-     * Change a single bit in the output latch register. Uses the cached value for the other bits
-     * @param pio The bit position to write
-     * @param set The value of the bit (1 or 0)
-     * @returns true on success
-     */
-    bool writeLatchBit(uint8_t pos, bool set)
-    {
-        uint8_t retries = 2;
-
-        while (!connected() && (retries-- > 0)) {
-            // read a fresh value form the device
-            update();
-        }
-
-        if (!connected()) {
-            return false; // cannot read from device successfully
-        }
-        uint8_t newValues = setBit(m_regCache.latch, pos, set);
-        bool success = writeLatches(newValues);
-        return success;
-    }
-
-    // return enabled state of all latches
-    uint8_t latches() const
-    {
-        return ~readLatches(); // invert because latches are active low
-    }
-
-    /**
-     * Write a new state to all output latches.
-     * @param values new state for all latches as a bitfield. 1 = pull down latch enabled.
+     * Set all output latches to correct state based on channel config
      * @return true on success
      */
-    bool
-    writeLatches(uint8_t values)
+    bool updateLatches()
     {
-        bool success = accessWrite(values);
+        uint8_t newLatches = 0xFF; // all latches disabled
+        for (uint8_t i = 0; i < 8; ++i) {
+            newLatches = setBit(newLatches, i, channels[i].config != ChannelConfig::ACTIVE_HIGH);
+        }
+
+        bool success = accessWrite(newLatches);
         if (success) {
-            m_regCache.latch = values;
+            m_regCache.latch = newLatches;
         }
         return success;
     }
@@ -200,11 +130,10 @@ private:
     /**
      * Reads the pio state of all pins and returns them as a single byte.
      * Note that the state that is returned is the actual pin state, not the state of the latch register.
-     * If the pull down latch is disabled (written as 1), this can be used to read an input switch
+     * If the pull down latch is disabled (written as 0), this can be used to read an input switch
      * @return bit field with all 8 pio pin states
      */
-    uint8_t
-    accessRead();
+    uint8_t accessRead();
 
     /**
      * Writes the state of all PIOs in one operation.
@@ -212,7 +141,7 @@ private:
      * @param maxTries the maximum number of attempts before giving up.
      * @return true on success
      */
-    bool accessWrite(uint8_t latches, uint8_t maxTries = 3);
+    bool accessWrite(uint8_t latches, uint8_t maxTries = 1);
 
     /**
      * Updates all cache registers by reading them from the device.
@@ -241,8 +170,8 @@ public:
     virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
     {
         if (connected() && validChannel(channel)) {
-            bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
-            return writeLatchBit(channel - 1, !latchEnabled); // a zero enables the latch
+            updateLatches();
+            return true;
         }
         return false;
     }

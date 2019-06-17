@@ -57,25 +57,24 @@ public:
     explicit MotorValve(std::function<std::shared_ptr<DS2408>()>&& target, uint8_t startChan)
         : m_target(target)
     {
-        startChannel(startChan);
+        startChannel(startChan, true);
     }
     ~MotorValve()
     {
-        startChannel(0); // release channels before destruction
+        startChannel(0, true); // release channels before destruction
     }
 
     virtual void state(const State& v) override final
     {
         if (v == State::Active) {
-            if (m_desiredValveState == ValveState::Opening || m_desiredValveState == ValveState::Open) {
+            if (m_actualValveState == ValveState::Opening || m_actualValveState == ValveState::Open) {
                 return; // nothing to do
             } else {
                 m_desiredValveState = ValveState::Opening;
                 update();
             }
-        }
-        if (v == State::Inactive) {
-            if (m_desiredValveState == ValveState::Closing || m_desiredValveState == ValveState::Closed) {
+        } else {
+            if (m_actualValveState == ValveState::Closing || m_actualValveState == ValveState::Closed) {
                 return; // nothing to do
             } else {
                 m_desiredValveState = ValveState::Closing;
@@ -103,6 +102,9 @@ public:
 
     void valveState(ValveState v, std::shared_ptr<DS2408>& devPtr)
     {
+        if (m_startChannel == 0) {
+            return;
+        }
         m_desiredValveState = v;
         // ACTIVE HIGH means latch pull down enabled, so the input to the H-bridge is inverted.
         if (v == ValveState::Opening) {
@@ -119,6 +121,10 @@ public:
 
     ValveState getValveState(const std::shared_ptr<DS2408>& devPtr) const
     {
+        if (m_startChannel == 0) {
+            return ValveState::Unknown;
+        }
+
         State isClosedPin = State::Unknown;
         devPtr->senseChannel(m_startChannel + chanIsClosed, isClosedPin);
         State isOpenPin = State::Unknown;
@@ -139,7 +145,7 @@ public:
             vs = ValveState::Closing;
         } else if (openChan == Config::ACTIVE_HIGH && closeChan == Config::ACTIVE_HIGH) {
             vs = ValveState::HalfOpenIdle;
-        } else if (openChan == Config::ACTIVE_LOW && closeChan == Config::ACTIVE_LOW) {
+        } else {
             return ValveState::InitIdle; // return immediately to get out of init state
         }
 
@@ -161,13 +167,22 @@ public:
     void update()
     {
         if (auto devPtr = m_target()) {
+            if (m_actualValveState == ValveState::InitIdle) {
+                // re-initialize when needed
+                if (!startChannel(m_startChannel, true)) {
+                    return; // stop update when init fails
+                };
+            }
+
             m_actualValveState = getValveState(devPtr);
 
             if (m_desiredValveState == ValveState::Closing && m_actualValveState == ValveState::Closed) {
                 valveState(ValveState::Closed, devPtr);
+                return;
             }
             if (m_desiredValveState == ValveState::Opening && m_actualValveState == ValveState::Open) {
                 valveState(ValveState::Open, devPtr);
+                return;
             }
 
             if (m_actualValveState != m_desiredValveState) {
@@ -181,33 +196,37 @@ public:
         return m_startChannel;
     }
 
-    void startChannel(uint8_t newChannel)
+    bool startChannel(uint8_t newChannel, bool force)
     {
-        if (newChannel != m_startChannel) {
-
+        bool success = false;
+        auto oldChannel = m_startChannel;
+        if ((newChannel != oldChannel) || force) {
             if (auto devPtr = m_target()) {
-                bool success = true;
-                if (m_startChannel != 0) {
+                success = true;
+                if (oldChannel != 0) {
                     for (uint8_t i = 0; i < 4; ++i) {
-                        success = success && devPtr->releaseChannel(m_startChannel + i);
+                        devPtr->releaseChannel(oldChannel + i);
                     }
+                    m_startChannel = 0;
                 }
-                if (success && (newChannel == 1 || newChannel == 5)) { // only 2 valid options
-                    success = success && devPtr->claimChannel(newChannel + chanIsOpen, IoArray::ChannelConfig::INPUT);
-                    success = success && devPtr->claimChannel(newChannel + chanIsClosed, IoArray::ChannelConfig::INPUT);
-                    success = success && devPtr->claimChannel(newChannel + chanOpeningHigh, IoArray::ChannelConfig::ACTIVE_HIGH);
-                    success = success && devPtr->claimChannel(newChannel + chanClosingHigh, IoArray::ChannelConfig::ACTIVE_HIGH);
+                if (newChannel == 1 || newChannel == 5) { // only 2 valid options
+                    success = devPtr->claimChannel(newChannel + chanIsClosed, IoArray::ChannelConfig::INPUT) && success;
+                    success = devPtr->claimChannel(newChannel + chanIsOpen, IoArray::ChannelConfig::INPUT) && success;
+                    success = devPtr->claimChannel(newChannel + chanOpeningHigh, IoArray::ChannelConfig::ACTIVE_HIGH) && success;
+                    success = devPtr->claimChannel(newChannel + chanClosingHigh, IoArray::ChannelConfig::ACTIVE_HIGH) && success;
                     if (success) {
                         m_startChannel = newChannel;
                     } else {
                         for (uint8_t i = 0; i < 4; ++i) {
-                            success = success && devPtr->releaseChannel(newChannel + i); // cancel all channels
+                            devPtr->releaseChannel(newChannel + i); // cancel all channels
                         }
-                        m_startChannel = 0;
                     }
                 }
+            } else {
+                m_startChannel = newChannel; // set anyway, device will read as initIdle later which will trigger a retry
             }
         }
+        return success;
     }
 
     virtual bool supportsFastIo() const override final

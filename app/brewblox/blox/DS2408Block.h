@@ -53,24 +53,25 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.getDeviceAddress();
+        message.connected = device.connected();
 
         message.pins_count = 8;
         message.pins[0].which_Pin = blox_DS2408_IoPin_A_tag;
         readIo(device, 1, message.pins[0].Pin.A);
         message.pins[1].which_Pin = blox_DS2408_IoPin_B_tag;
-        readIo(device, 2, message.pins[0].Pin.B);
+        readIo(device, 2, message.pins[1].Pin.B);
         message.pins[2].which_Pin = blox_DS2408_IoPin_C_tag;
-        readIo(device, 3, message.pins[0].Pin.C);
+        readIo(device, 3, message.pins[2].Pin.C);
         message.pins[3].which_Pin = blox_DS2408_IoPin_D_tag;
-        readIo(device, 4, message.pins[0].Pin.D);
+        readIo(device, 4, message.pins[3].Pin.D);
         message.pins[4].which_Pin = blox_DS2408_IoPin_E_tag;
-        readIo(device, 5, message.pins[0].Pin.E);
+        readIo(device, 5, message.pins[4].Pin.E);
         message.pins[5].which_Pin = blox_DS2408_IoPin_F_tag;
-        readIo(device, 6, message.pins[0].Pin.F);
+        readIo(device, 6, message.pins[5].Pin.F);
         message.pins[6].which_Pin = blox_DS2408_IoPin_G_tag;
-        readIo(device, 7, message.pins[0].Pin.G);
+        readIo(device, 7, message.pins[6].Pin.G);
         message.pins[7].which_Pin = blox_DS2408_IoPin_H_tag;
-        readIo(device, 8, message.pins[0].Pin.H);
+        readIo(device, 8, message.pins[7].Pin.H);
 
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
     }
