@@ -70,17 +70,18 @@ public:
             if (m_desiredValveState == ValveState::Opening || m_desiredValveState == ValveState::Open) {
                 return; // nothing to do
             } else {
-                valveState(ValveState::Opening);
+                m_desiredValveState = ValveState::Opening;
+                update();
             }
         }
         if (v == State::Inactive) {
             if (m_desiredValveState == ValveState::Closing || m_desiredValveState == ValveState::Closed) {
                 return; // nothing to do
             } else {
-                valveState(ValveState::Closing);
+                m_desiredValveState = ValveState::Closing;
+                update();
             }
         }
-        valveState(ValveState::Closing); // close the valve when Unknown is written
     }
 
     virtual State state() const override final
@@ -100,68 +101,77 @@ public:
         return m_actualValveState;
     }
 
-    void valveState(ValveState v)
+    void valveState(ValveState v, std::shared_ptr<DS2408>& devPtr)
     {
-        if (m_desiredValveState == v) {
-            return;
-        }
         m_desiredValveState = v;
-        if (auto devPtr = m_target()) {
-            // ACTIVE HIGH means latch pull down enabled, so the input to the H-bridge is inverted.
-            if (v == ValveState::Opening) {
-                devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_LOW);
-                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
-            } else if (v == ValveState::Closing) {
-                devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
-                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
-            } else {
-                devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_LOW);
-                devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
-            }
+        // ACTIVE HIGH means latch pull down enabled, so the input to the H-bridge is inverted.
+        if (v == ValveState::Opening) {
+            devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_LOW);
+            devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
+        } else if (v == ValveState::Closing) {
+            devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
+            devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
+        } else {
+            devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
+            devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
         }
     }
 
+    ValveState getValveState(const std::shared_ptr<DS2408>& devPtr) const
+    {
+        State isClosedPin = State::Unknown;
+        devPtr->senseChannel(m_startChannel + chanIsClosed, isClosedPin);
+        State isOpenPin = State::Unknown;
+        devPtr->senseChannel(m_startChannel + chanIsOpen, isOpenPin);
+
+        using Config = DS2408::ChannelConfig;
+        Config openChan = Config::UNKNOWN;
+        devPtr->readChannelConfig(m_startChannel + chanOpeningHigh, openChan);
+        Config closeChan = Config::UNKNOWN;
+        devPtr->readChannelConfig(m_startChannel + chanClosingHigh, closeChan);
+
+        ValveState vs = ValveState::Unknown;
+
+        // Note: signal to H-bridge is inverted because active high enables a pull down latch
+        if (openChan == Config::ACTIVE_LOW && closeChan == Config::ACTIVE_HIGH) {
+            vs = ValveState::Opening;
+        } else if (openChan == Config::ACTIVE_HIGH && closeChan == Config::ACTIVE_LOW) {
+            vs = ValveState::Closing;
+        } else if (openChan == Config::ACTIVE_HIGH && closeChan == Config::ACTIVE_HIGH) {
+            vs = ValveState::HalfOpenIdle;
+        } else if (openChan == Config::ACTIVE_LOW && closeChan == Config::ACTIVE_LOW) {
+            return ValveState::InitIdle; // return immediately to get out of init state
+        }
+
+        if (isOpenPin == State::Active) {
+            if (vs != ValveState::Closing) {
+                vs = ValveState::Open;
+            }
+        }
+
+        if (isClosedPin == State::Active) {
+            if (vs != ValveState::Opening) {
+                vs = ValveState::Closed;
+            }
+        }
+
+        return vs;
+    };
+
     void update()
     {
-        auto getState = [](const std::shared_ptr<DS2408>& devPtr, uint8_t startChan) {
-            State feedBackPin = State::Unknown;
-            devPtr->senseChannel(startChan + chanIsClosed, feedBackPin);
-            if (feedBackPin == State::Active) {
-                return ValveState::Closed;
-            }
-            devPtr->senseChannel(startChan + chanIsOpen, feedBackPin);
-            if (feedBackPin == State::Active) {
-                return ValveState::Open;
-            }
-            State openPin = State::Unknown;
-            devPtr->senseChannel(startChan + chanOpeningHigh, openPin);
-            State closePin = State::Unknown;
-            devPtr->senseChannel(startChan + chanOpeningHigh, closePin);
-            if (openPin == State::Active && closePin == State::Inactive) {
-                return ValveState::Opening;
-            }
-            if (openPin == State::Inactive && closePin == State::Active) {
-                return ValveState::Closing;
-            }
-            if (openPin == State::Inactive && closePin == State::Inactive) {
-                return ValveState::InitIdle;
-            }
-            if (openPin == State::Active && closePin == State::Active) {
-                return ValveState::HalfOpenIdle;
-            }
-            return ValveState::Unknown;
-        };
         if (auto devPtr = m_target()) {
-            m_actualValveState = getState(devPtr, m_startChannel);
+            m_actualValveState = getValveState(devPtr);
+
             if (m_desiredValveState == ValveState::Closing && m_actualValveState == ValveState::Closed) {
-                m_desiredValveState = ValveState::Closed;
+                valveState(ValveState::Closed, devPtr);
             }
             if (m_desiredValveState == ValveState::Opening && m_actualValveState == ValveState::Open) {
-                m_desiredValveState = ValveState::Open;
+                valveState(ValveState::Open, devPtr);
             }
 
             if (m_actualValveState != m_desiredValveState) {
-                valveState(m_desiredValveState);
+                valveState(m_desiredValveState, devPtr);
             }
         }
     }
@@ -200,8 +210,7 @@ public:
         }
     }
 
-    virtual bool
-    supportsFastIo() const override final
+    virtual bool supportsFastIo() const override final
     {
         return false;
     }

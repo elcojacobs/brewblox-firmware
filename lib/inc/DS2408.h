@@ -190,7 +190,7 @@ private:
     bool
     writeLatches(uint8_t values)
     {
-        bool success = accessWrite(~values);
+        bool success = accessWrite(values);
         if (success) {
             m_regCache.latch = values;
         }
@@ -228,12 +228,13 @@ public:
         if (connected() && validChannel(channel)) {
             bool pioState = getBit(m_regCache.pio, channel - 1);
             if (pioState == false) {
-                result = State::Inactive;
-            } else {
                 result = State::Active;
+            } else {
+                result = State::Inactive;
             }
             return true; // valid channel
         }
+        result = State::Unknown;
         return false;
     }
 
@@ -241,7 +242,7 @@ public:
     {
         if (connected() && validChannel(channel)) {
             bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
-            return writeLatchBit(channel - 1, latchEnabled);
+            return writeLatchBit(channel - 1, !latchEnabled); // a zero enables the latch
         }
         return false;
     }
