@@ -32,7 +32,7 @@ DS2413::cacheIsValid() const
 }
 
 bool
-DS2413::writeLatchBit(Pio pio, bool set)
+DS2413::writeLatchBit(Pio pio, bool latchEnabled)
 {
     bool ok = false;
 
@@ -49,7 +49,7 @@ DS2413::writeLatchBit(Pio pio, bool set)
     uint8_t oldVal = writeByteFromCache();
     uint8_t newVal = oldVal;
 
-    if (set) {
+    if (latchEnabled) {
         newVal &= ~mask; // 0 means latch transistor is active
     } else {
         newVal |= mask; // 1 means latch transistor is inactive
@@ -66,13 +66,13 @@ DS2413::writeLatchBit(Pio pio, bool set)
 }
 
 bool
-DS2413::readLatchBit(Pio pio, bool& result) const
+DS2413::readLatchBit(Pio pio, bool& isEnabled) const
 {
     if (cacheIsValid() && connected()) {
-        result = ((m_cachedState & latchReadMask(pio)) == 0);
+        isEnabled = ((m_cachedState & latchReadMask(pio)) == 0);
         return true;
     } else {
-        result = false;
+        isEnabled = false;
         return false;
     }
 }
@@ -107,10 +107,10 @@ DS2413::writeByteFromCache()
 }
 
 bool
-DS2413::sense(Pio pio, bool& result) const
+DS2413::sense(Pio pio, bool& isPulledDown) const
 {
     if (cacheIsValid() && connected()) {
-        result = ((m_cachedState & senseMask(pio)) != 0);
+        isPulledDown = ((m_cachedState & senseMask(pio)) == 0);
         return true;
     } else {
         return false;

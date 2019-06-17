@@ -80,7 +80,7 @@ public:
      * @param useCached     do not read the pin states from the device
      * @return              true on success
      */
-    bool writeLatchBit(Pio pio, bool set);
+    bool writeLatchBit(Pio pio, bool latchEnabled);
 
     /**
      * Read the latch state of an output. True means latch is active
@@ -188,10 +188,10 @@ private:
     virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {
         if (connected() && validChannel(channel)) {
-            bool isHigh;
-            bool success = sense(Pio(channel), isHigh);
+            bool isPulledDown;
+            bool success = sense(Pio(channel), isPulledDown);
             if (success) {
-                result = isHigh ? State::Active : State::Inactive;
+                result = isPulledDown ? State::Active : State::Inactive;
             } else {
                 result = State::Unknown;
             }
