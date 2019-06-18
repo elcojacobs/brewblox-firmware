@@ -97,7 +97,9 @@ listeningModeEnabled()
 void
 manageConnections()
 {
+    static uint16_t wifiTimeOut = 0;
     if (wifiIsConnected) {
+        wifiTimeOut = 0;
         if (!mdns_started) {
             mdns_started = mdns.begin(true);
         } else {
@@ -114,6 +116,14 @@ manageConnections()
             delay(5);
             client.stop();
         }
+    } else {
+        ++wifiTimeOut;
+    }
+    if (wifiTimeOut > 1000) {
+        // after 1000 loops without WiFi, trigger reconnect
+        // wifi is expected to reconnect automatically. This is a failsafe in case it does not
+        spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
+        wifiTimeOut = 0;
     }
 }
 
