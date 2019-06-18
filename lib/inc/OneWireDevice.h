@@ -34,7 +34,14 @@ public:
     void setDeviceAddress(const OneWireAddress& addr);
     bool validAddress() const;
 
+    bool connected() const
+    {
+        return m_connected;
+    }
+
 protected:
     OneWire& oneWire;
     OneWireAddress address;
+
+    mutable bool m_connected = false;
 };

@@ -122,7 +122,7 @@ private:
     std::vector<std::unique_ptr<Constraint>> constraints;
     ActuatorAnalog& actuator;
     uint8_t m_limiting = 0x00;
-    value_t m_unconstrained = 0;
+    value_t m_desiredSetting = 0;
 
 public:
     ActuatorAnalogConstrained(ActuatorAnalog& act)
@@ -174,11 +174,11 @@ public:
     {
         // first set actuator to requested value to check whether it constrains the setting itself
         actuator.setting(val);
-        m_unconstrained = actuator.setting();
+        m_desiredSetting = actuator.setting();
 
         // then set it to the constrained value
         if (actuator.settingValid()) {
-            actuator.setting(constrain(m_unconstrained));
+            actuator.setting(constrain(m_desiredSetting));
         } else {
             constrain(0);
         }
@@ -187,7 +187,7 @@ public:
     void update()
     {
         if (actuator.settingValid()) {
-            setting(m_unconstrained); // re-apply constraints
+            setting(m_desiredSetting); // re-apply constraints
         }
     }
 
@@ -221,9 +221,9 @@ public:
         }
     }
 
-    value_t unconstrained() const
+    value_t desiredSetting() const
     {
-        return m_unconstrained;
+        return m_desiredSetting;
     }
 
     uint8_t limiting() const

@@ -41,18 +41,20 @@ SCENARIO("Auto discovery of OneWire devices")
         auto reply = testBox.processInput();
         THEN("3 new objects are discovered")
         {
-            CHECK(reply == cbox::addCrc("00000C") + "|0000" + "," + cbox::addCrc("64002E01") + "," + cbox::addCrc("65002E01") + "," + cbox::addCrc("66002E01") + "," + cbox::addCrc("67003B01") + "\n");
+            CHECK(reply == cbox::addCrc("00000C") + "|0000" + "," + cbox::addCrc("64002E01") + "," + cbox::addCrc("65002E01") + "," + cbox::addCrc("66002E01") + "," + cbox::addCrc("67003B01") + "," + cbox::addCrc("68003D01") + "\n");
             AND_THEN("These objects can be used as temp sensor")
             {
                 auto d1 = brewbloxBox().makeCboxPtr<TempSensor>(100);
                 auto d2 = brewbloxBox().makeCboxPtr<TempSensor>(101);
                 auto d3 = brewbloxBox().makeCboxPtr<TempSensor>(102);
                 auto d4 = brewbloxBox().makeCboxPtr<DS2413Block>(103);
+                auto d5 = brewbloxBox().makeCboxPtr<DS2408Block>(104);
 
                 CHECK(d1.lock());
                 CHECK(d2.lock());
                 CHECK(d3.lock());
                 CHECK(d4.lock());
+                CHECK(d5.lock());
             }
         }
 
@@ -80,7 +82,7 @@ SCENARIO("Auto discovery of OneWire devices")
                 testBox.put(uint16_t(0)); // msg id
                 testBox.put(commands::DISCOVER_NEW_OBJECTS);
                 auto reply = testBox.processInput();
-                CHECK(reply == cbox::addCrc("00000C") + "|0000" + "," + cbox::addCrc("68002E01") + "\n");
+                CHECK(reply == cbox::addCrc("00000C") + "|0000" + "," + cbox::addCrc("69002E01") + "\n");
             }
         }
     }

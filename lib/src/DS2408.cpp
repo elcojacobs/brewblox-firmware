@@ -64,7 +64,7 @@ DS2408::accessWrite(uint8_t b,
 }
 
 void
-DS2408::update()
+DS2408::update() const
 {
     oneWire.reset();
     oneWire.select(address.asUint8ptr());
@@ -91,8 +91,6 @@ DS2408::update()
         } else {
             CL_LOG_WARN("DS2408 disconnected ") << address.toString();
         }
-        m_connected = success;
     }
-
-    oneWire.reset();
+    m_connected = success;
 }

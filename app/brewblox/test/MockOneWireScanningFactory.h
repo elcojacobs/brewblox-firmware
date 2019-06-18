@@ -20,6 +20,7 @@ private:
         0x2222'2222'2222'2228, // DS18B20
         0x3333'3333'3333'3328, // DS18B20
         0x4444'4444'4444'443A, // DS2413
+        0x5555'5555'5555'5529, // DS2408
     };
     std::vector<OneWireAddress>::const_iterator nextAddress;
 

@@ -35,7 +35,6 @@ private:
     DallasTemperature m_sensor;
     temp_t m_calibrationOffset;
     temp_t m_cachedValue = 0;
-    bool m_connected = false;
 
 public:
     /**

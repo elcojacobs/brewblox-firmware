@@ -20,26 +20,28 @@
 #include <catch.hpp>
 
 #include "BrewBloxTestBox.h"
-#include "blox/ActuatorDS2413Block.h"
 #include "blox/DS2413Block.h"
+#include "blox/DigitalActuatorBlock.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/ActuatorDS2413_test.pb.h"
 #include "proto/test/cpp/DS2413_test.pb.h"
+#include "proto/test/cpp/DigitalActuator_test.pb.h"
 #include <sstream>
 
-SCENARIO("A DS2413 Block")
+SCENARIO("A DigitalActuator Block with a DS2413 target")
 {
-    WHEN("a DS2413 object is created")
+    WHEN("a DS2413 block is created")
     {
         BrewBloxTestBox testBox;
         using commands = cbox::Box::CommandID;
+        auto ds2413Id = cbox::obj_id_t(100);
+        auto actId = cbox::obj_id_t(101);
 
         testBox.reset();
 
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::CREATE_OBJECT);
-        testBox.put(cbox::obj_id_t(100));
+        testBox.put(cbox::obj_id_t(ds2413Id));
         testBox.put(uint8_t(0xFF));
         testBox.put(DS2413Block::staticTypeId());
 
@@ -52,7 +54,7 @@ SCENARIO("A DS2413 Block")
         CHECK(testBox.lastReplyHasStatusOk());
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::READ_OBJECT);
-        testBox.put(cbox::obj_id_t(100));
+        testBox.put(cbox::obj_id_t(ds2413Id));
 
         auto decoded = blox::DS2413();
         testBox.processInputToProto(decoded);
@@ -61,30 +63,30 @@ SCENARIO("A DS2413 Block")
         {
             CHECK(testBox.lastReplyHasStatusOk());
 
-            // the channels are not in use yet, so only the address is sent
-            CHECK(decoded.ShortDebugString() == "address: 12345678");
+            // the channels are not in use yet, so config is default and state is Unknown (device is not found in sim)
+            CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { state: Unknown } } pins { B { state: Unknown } }");
         }
 
         THEN("The writable settings match what was sent")
         {
-            auto lookup = brewbloxBox().makeCboxPtr<DS2413Block>(100);
+            auto lookup = brewbloxBox().makeCboxPtr<DS2413Block>(ds2413Id);
             auto devicePtr = lookup.lock();
             REQUIRE(devicePtr);
             CHECK(devicePtr->get().getDeviceAddress() == 12345678);
         }
 
-        AND_WHEN("A DS2413Actuator is created that uses one of the channels")
+        AND_WHEN("A DigitalActuator block is created that uses one of the channels")
         {
             testBox.put(uint16_t(0)); // msg id
             testBox.put(commands::CREATE_OBJECT);
-            testBox.put(cbox::obj_id_t(101));
+            testBox.put(cbox::obj_id_t(actId));
             testBox.put(uint8_t(0xFF));
-            testBox.put(ActuatorDS2413Block::staticTypeId());
+            testBox.put(DigitalActuatorBlock::staticTypeId());
 
-            auto message = blox::ActuatorDS2413();
-            message.set_hwdevice(100);
-            message.set_channel(blox::ActuatorDS2413_Channel_A);
-            message.set_state(blox::AD_State::AD_State_Active);
+            auto message = blox::DigitalActuator();
+            message.set_hwdevice(ds2413Id);
+            message.set_channel(1);
+            message.set_desiredstate(blox::DigitalState::Active);
 
             testBox.put(message);
 
@@ -95,13 +97,24 @@ SCENARIO("A DS2413 Block")
             {
                 testBox.put(uint16_t(0)); // msg id
                 testBox.put(commands::READ_OBJECT);
-                testBox.put(cbox::obj_id_t(101));
+                testBox.put(cbox::obj_id_t(actId));
 
-                auto decoded = blox::ActuatorDS2413();
+                auto decoded = blox::DigitalActuator();
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: A constrainedBy { unconstrained: Active } strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 desiredState: Active strippedFields: 3");
+            }
+            THEN("A read of the DS2413 is as expected")
+            {
+                testBox.put(uint16_t(0)); // msg id
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(cbox::obj_id_t(ds2413Id));
+
+                auto decoded = blox::DS2413();
+                testBox.processInputToProto(decoded);
+
+                CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { config: ACTIVE_HIGH state: Unknown } } pins { B { state: Unknown } }");
             }
         }
     }

@@ -108,7 +108,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     newAct.set_targetid(101);
     newAct.set_referenceid(103);
     newAct.set_referencesettingorvalue(blox::ActuatorOffset_SettingOrValue(ActuatorOffset::SettingOrValue::SETTING));
-    newAct.set_setting(cnl::unwrap(ActuatorAnalog::value_t(12)));
+    newAct.set_desiredsetting(cnl::unwrap(ActuatorAnalog::value_t(12)));
     newAct.set_enabled(true);
 
     testBox.put(newAct);
@@ -128,8 +128,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         CHECK(testBox.lastReplyHasStatusOk());
         CHECK(decoded.ShortDebugString() == "targetId: 101 referenceId: 103 "
                                             "setting: 49152 value: 4096 " // setting is 12 (setpoint difference), value is 1 (21 - 20)
-                                            "constrainedBy { unconstrained: 49152 } "
-                                            "drivenTargetId: 101 enabled: true");
+                                            "drivenTargetId: 101 enabled: true "
+                                            "desiredSetting: 49152");
     }
 
     // read reference pair
@@ -173,7 +173,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         testBox.put(SetpointSensorPairBlock::staticTypeId());
 
         auto newPair = blox::SetpointSensorPair();
-        newPair.set_setting(cnl::unwrap(temp_t(20.0)));
+        newPair.set_storedsetting(cnl::unwrap(temp_t(20.0)));
         newPair.set_settingenabled(false);
         testBox.put(newPair);
 
@@ -193,8 +193,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
                 CHECK(decoded.ShortDebugString() == "targetId: 101 referenceId: 103 "
-                                                    "constrainedBy { unconstrained: 49152 } "
                                                     "enabled: true "
+                                                    "desiredSetting: 49152 "
                                                     "strippedFields: 7 strippedFields: 6");
             }
         }

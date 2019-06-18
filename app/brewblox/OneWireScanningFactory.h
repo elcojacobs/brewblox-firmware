@@ -22,6 +22,7 @@
 #include "OneWire.h"
 #include "OneWireAddress.h"
 #include "OneWireDevice.h"
+#include "blox/DS2408Block.h"
 #include "blox/DS2413Block.h"
 #include "blox/TempSensorOneWireBlock.h"
 #include "cbox/Object.h"
@@ -88,6 +89,11 @@ public:
                     }
                     case DS2413_FAMILY_ID: {
                         auto newDevice = std::make_shared<DS2413Block>();
+                        newDevice->get().setDeviceAddress(newAddr);
+                        return std::move(newDevice);
+                    }
+                    case DS2408_FAMILY_ID: {
+                        auto newDevice = std::make_shared<DS2408Block>();
                         newDevice->get().setDeviceAddress(newAddr);
                         return std::move(newDevice);
                     }

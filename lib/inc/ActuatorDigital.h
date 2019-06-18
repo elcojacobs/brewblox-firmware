@@ -1,7 +1,8 @@
 /*
- * Copyright 2018 BrewPi B.V.
+ * Copyright 2013 BrewPi/Elco Jacobs.
+ * Copyright 2013 Matthew McGowan
  *
- * This file is part of the BrewBlox Control Library.
+ * This file is part of BrewPi.
  *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,24 +20,96 @@
 
 #pragma once
 
-#include <cstdint>
+#include "ActuatorDigitalBase.h"
+#include "IoArray.h"
+#include <functional>
+#include <memory>
 
 /*
- * An ActuatorDigital simply turns something on or off.
+ * A digital actuator that toggles a channel of an ArrayIo object.
+ *
  */
-class ActuatorDigital {
+class ActuatorDigital : public ActuatorDigitalBase {
+private:
+    const std::function<std::shared_ptr<IoArray>()> m_target;
+    bool m_invert = false;
+    uint8_t m_channel = 0;
+
 public:
-    enum State : uint8_t {
-        Inactive = 0,
-        Active = 1,
-        Unknown = 2,
-    };
+    explicit ActuatorDigital(std::function<std::shared_ptr<IoArray>()>&& target, uint8_t chan)
+        : m_target(target)
+    {
+        channel(chan);
+    }
+    ~ActuatorDigital()
+    {
+        channel(0); // release channel before destruction
+    }
 
-    ActuatorDigital() = default;
-    virtual ~ActuatorDigital() = default;
+    virtual void state(const State& v) override final
+    {
+        if (auto devPtr = m_target()) {
+            auto newState = v;
+            if (m_invert) {
+                newState = invertState(v);
+            }
+            IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_LOW;
+            devPtr->writeChannelConfig(m_channel, config);
+        }
+    }
 
-    virtual void state(const State& state) = 0;
+    virtual State state() const override final
+    {
+        if (auto devPtr = m_target()) {
+            State result;
+            if (devPtr->senseChannel(m_channel, result)) {
+                if (m_invert) {
+                    result = invertState(result);
+                }
+                return result;
+            }
+        }
 
-    // no bool return type offered, because this forces classes to implement handling the Unknown state
-    virtual State state() const = 0;
+        return State::Unknown;
+    }
+
+    bool invert() const
+    {
+        return m_invert;
+    }
+
+    void invert(bool inv)
+    {
+        auto active = state();
+        m_invert = inv;
+        state(active);
+    }
+
+    uint8_t channel() const
+    {
+        return m_channel;
+    }
+
+    void channel(uint8_t newChannel)
+    {
+        if (newChannel != m_channel) {
+            if (auto devPtr = m_target()) {
+                if (devPtr->releaseChannel(m_channel)) {
+                    if (devPtr->claimChannel(newChannel, IoArray::ChannelConfig::ACTIVE_LOW)) {
+                        m_channel = newChannel;
+                    } else {
+                        m_channel = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    virtual bool supportsFastIo() const override final
+    {
+        if (auto devPtr = m_target()) {
+            return devPtr->supportsFastIo();
+        }
+        return false;
+    }
 };

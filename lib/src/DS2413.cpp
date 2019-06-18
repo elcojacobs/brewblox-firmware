@@ -31,36 +31,25 @@ DS2413::cacheIsValid() const
     return upperInverted == lower;
 }
 
-uint8_t
-DS2413::cachedState() const
-{
-    return m_cachedState & 0x0f;
-}
-
 bool
-DS2413::writeLatchBit(Pio pio,
-                      bool set,
-                      bool useCached)
+DS2413::writeLatchBit(Pio pio, bool latchEnabled)
 {
     bool ok = false;
-    uint8_t retries = 5;
 
-    if (!useCached || !cacheIsValid()) {
+    while (!cacheIsValid()) {
         // read a fresh value form the device
-        do {
-            update();
-        } while (!cacheIsValid() && (retries-- > 0));
+        update();
+    }
 
-        if (!cacheIsValid()) {
-            return false; // cannot read from device successfully
-        }
+    if (!connected()) {
+        return false; // cannot read from device successfully
     }
 
     uint8_t mask = latchWriteMask(pio);
     uint8_t oldVal = writeByteFromCache();
     uint8_t newVal = oldVal;
 
-    if (set) {
+    if (latchEnabled) {
         newVal &= ~mask; // 0 means latch transistor is active
     } else {
         newVal |= mask; // 1 means latch transistor is inactive
@@ -77,39 +66,28 @@ DS2413::writeLatchBit(Pio pio,
 }
 
 bool
-DS2413::readLatchBit(Pio pio, bool& result, bool useCached)
+DS2413::readLatchBit(Pio pio, bool& isEnabled) const
 {
-    if (!useCached || !cacheIsValid()) {
-        update();
-    }
-
-    return latchReadCached(pio, result);
-}
-
-bool
-DS2413::latchReadCached(Pio pio, bool& result) const
-{
-    if (cacheIsValid()) {
-        result = ((m_cachedState & latchReadMask(pio)) == 0);
+    if (cacheIsValid() && connected()) {
+        isEnabled = ((m_cachedState & latchReadMask(pio)) == 0);
         return true;
     } else {
-        result = false;
+        isEnabled = false;
         return false;
     }
 }
 
 bool
-DS2413::update()
+DS2413::update() const
 {
     m_cachedState = accessRead();
     bool success = cacheIsValid();
-    if (m_connected && !success) {
-        m_connected = false;
+    if (connected() && !success) {
         CL_LOG_WARN("DS2413 disconnected: ") << getDeviceAddress().toString();
-    } else if (!m_connected && success) {
-        m_connected = true;
+    } else if (!connected() && success) {
         CL_LOG_INFO("DS2413 connected: ") << getDeviceAddress().toString();
     }
+    m_connected = success;
     return success;
 }
 
@@ -129,14 +107,13 @@ DS2413::writeByteFromCache()
 }
 
 bool
-DS2413::sense(Pio pio, bool& result)
+DS2413::sense(Pio pio, bool& isPulledDown) const
 {
-    update();
-    if (cacheIsValid()) {
-        return false;
-    } else {
-        result = ((m_cachedState & senseMask(pio)) != 0);
+    if (cacheIsValid() && connected()) {
+        isPulledDown = ((m_cachedState & senseMask(pio)) == 0);
         return true;
+    } else {
+        return false;
     }
 }
 
@@ -145,7 +122,7 @@ DS2413::sense(Pio pio, bool& result)
  * @return
  */
 uint8_t
-DS2413::accessRead() /* const */
+DS2413::accessRead() const
 {
     oneWire.reset();
     oneWire.select(address.asUint8ptr());

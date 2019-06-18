@@ -25,6 +25,7 @@
 #else
 #include "pinmap_impl.h"
 #endif
+#include <array>
 #include <stdint.h>
 
 // Most pins are only conditionally defined here, allowing definitions to be provided in Config.h for
@@ -98,6 +99,9 @@ enum class SparkVersion : uint8_t {
 #define PIN_V3_TOP1_DIR 5
 #define PIN_V3_TOP2_DIR 6
 #define PIN_ALARM 7
+#define PIN_LCD_BACKLIGHT 10
+#define PIN_5V_ENABLE 11
+#define PIN_12V_ENABLE 12
 #endif
 
 SparkVersion

@@ -37,7 +37,7 @@ public:
             offset.enabled(newData.enabled);
             offset.selectedReference(ActuatorOffset::SettingOrValue(newData.referenceSettingOrValue));
             setAnalogConstraints(newData.constrainedBy, constrained, objectsRef);
-            constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.setting));
+            constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.desiredSetting));
         }
         return result;
     }
@@ -66,6 +66,7 @@ public:
         } else {
             stripped.add(blox_ActuatorOffset_setting_tag);
         };
+        message.desiredSetting = cnl::unwrap(constrained.desiredSetting());
 
         getAnalogConstraints(message.constrainedBy, constrained);
 
@@ -82,7 +83,7 @@ public:
         persisted.referenceId = reference.getId();
         persisted.referenceSettingOrValue = blox_ActuatorOffset_SettingOrValue(offset.selectedReference());
         persisted.enabled = offset.enabled();
-        persisted.setting = cnl::unwrap(constrained.setting());
+        persisted.desiredSetting = cnl::unwrap(constrained.desiredSetting());
         getAnalogConstraints(persisted.constrainedBy, constrained);
 
         return streamProtoTo(out, &persisted, blox_ActuatorOffset_fields, blox_ActuatorOffset_size);
