@@ -40,6 +40,7 @@
 #include "blox/TempSensorOneWireBlock.h"
 #include "blox/TouchSettingsBlock.h"
 #include "blox/WiFiSettingsBlock.h"
+#include "blox/stringify.h"
 #include "cbox/Box.h"
 #include "cbox/Connections.h"
 #include "cbox/EepromObjectStorage.h"
@@ -156,6 +157,26 @@ logger()
     static auto logger = Logger([](Logger::LogLevel level, const std::string& log) {
         cbox::DataOut& out = theConnectionPool().logDataOut();
         out.write('<');
+        const char debug[] = "DEBUG";
+        const char info[] = "INFO";
+        const char warn[] = "WARNING";
+        const char err[] = "ERROR";
+
+        switch (level) {
+        case Logger::LogLevel::DEBUG:
+            out.writeBuffer(debug, strlen(debug));
+            break;
+        case Logger::LogLevel::INFO:
+            out.writeBuffer(info, strlen(info));
+            break;
+        case Logger::LogLevel::WARN:
+            out.writeBuffer(warn, strlen(warn));
+            break;
+        case Logger::LogLevel::ERROR:
+            out.writeBuffer(err, strlen(err));
+            break;
+        }
+        out.write(':');
         for (const auto& c : log) {
             out.write(c);
         }
@@ -177,7 +198,23 @@ namespace cbox {
 void
 connectionStarted(DataOut& out)
 {
-    char msg[] = "<!Connected to BrewBlox v0.1.0>";
+    char msg[] = "<!BREWBLOX," stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) ",";
+
     out.writeBuffer(&msg, strlen(msg));
+    cbox::BinaryToHexTextOut hexOut(out);
+#if PLATFORM_ID == 3
+    int resetReason = 0;
+#else
+    auto resetReason = System.resetReason();
+#endif
+    hexOut.write(resetReason);
+    out.write(',');
+#if PLATFORM_ID == 3
+    int resetData = 0;
+#else
+    auto resetData = System.resetReasonData();
+#endif
+    hexOut.write(resetData);
+    out.write('>');
 }
 } // end namespace cbox
