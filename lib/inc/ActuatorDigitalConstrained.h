@@ -241,7 +241,7 @@ public:
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
     uint8_t m_limiting = 0x00;
-    State m_unconstrained = State::Inactive;
+    State m_desiredState = State::Inactive;
 
 public:
     ActuatorDigitalConstrained(ActuatorDigitalBase& act)
@@ -299,19 +299,19 @@ public:
         return m_limiting;
     }
 
-    void state(const State& val, const ticks_millis_t& now)
+    void desiredState(const State& val, const ticks_millis_t& now)
     {
         lastUpdateTime = now; // always update fallback time for state setter without time
-        m_unconstrained = val;
+        m_desiredState = val;
         m_limiting = checkConstraints(val, now);
         if (m_limiting == 0) {
             ActuatorDigitalChangeLogged::state(val, now);
         }
     }
 
-    void state(const State& val)
+    void desiredState(const State& val)
     {
-        state(val, lastUpdateTime);
+        desiredState(val, lastUpdateTime);
     }
 
     State state() const
@@ -321,12 +321,12 @@ public:
 
     void update(const ticks_millis_t& now)
     {
-        state(m_unconstrained, now); // re-apply constraints for new update time
+        desiredState(m_desiredState, now); // re-apply constraints for new update time
     }
 
-    State unconstrained() const
+    State desiredState() const
     {
-        return m_unconstrained;
+        return m_desiredState;
     }
 
     const std::vector<std::unique_ptr<Constraint>>& constraintsList() const

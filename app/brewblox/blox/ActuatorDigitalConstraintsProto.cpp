@@ -96,5 +96,4 @@ getDigitalConstraints(blox_DigitalConstraints& msg, const ActuatorDigitalConstra
         msg.constraints[i].limiting = act.limiting() & (uint8_t(1) << i);
         msg.constraints_count++;
     }
-    msg.unconstrained = blox_DigitalState(act.unconstrained());
 }

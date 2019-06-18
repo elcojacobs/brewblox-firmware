@@ -225,9 +225,9 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         // Toggle actuator if necessary
         if (m_enabled && m_settingValid && wait == 0) {
             if (currentState == State::Inactive) {
-                actPtr->state(State::Active, now);
+                actPtr->desiredState(State::Active, now);
             } else {
-                actPtr->state(State::Inactive, now);
+                actPtr->desiredState(State::Inactive, now);
             }
         }
 
@@ -253,7 +253,7 @@ ActuatorPwm::settingValid(bool v)
 {
     if (!v && m_enabled) {
         if (auto actPtr = m_target()) {
-            actPtr->state(State::Inactive);
+            actPtr->desiredState(State::Inactive);
         }
     }
     m_settingValid = v;

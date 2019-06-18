@@ -65,7 +65,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         testBox.put(DigitalActuatorBlock::staticTypeId());
 
         auto pinMsg = blox::DigitalActuator();
-        pinMsg.set_state(state);
+        pinMsg.set_desiredstate(state);
         pinMsg.set_invert(false);
         pinMsg.set_hwdevice(19);
         pinMsg.set_channel(chan);
@@ -105,7 +105,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 1 state: Active constrainedBy { constraints { mutex: 101 } unconstrained: Active }");
+            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 1 state: Active constrainedBy { constraints { mutex: 101 } } desiredState: Active");
         }
 
         // read a pin actuator 2, which is constrained and inactive
@@ -117,7 +117,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 2 constrainedBy { constraints { mutex: 101 limiting: true } unconstrained: Active }");
+            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 2 constrainedBy { constraints { mutex: 101 limiting: true } } desiredState: Active");
         }
     }
 

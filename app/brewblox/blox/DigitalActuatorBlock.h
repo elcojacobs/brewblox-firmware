@@ -39,7 +39,7 @@ public:
             actuator.channel(message.channel);
             actuator.invert(message.invert);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
-            constrained.state(ActuatorDigitalBase::State(message.state));
+            constrained.desiredState(ActuatorDigitalBase::State(message.desiredState));
         }
 
         return result;
@@ -47,11 +47,10 @@ public:
 
     void writePersistedStateToMessage(blox_DigitalActuator& message) const
     {
-        message.state = blox_DigitalState(constrained.unconstrained());
-        message.hwDevice = hwDevice.getId();
         message.hwDevice = hwDevice.getId();
         message.channel = actuator.channel();
         message.invert = actuator.invert();
+        message.desiredState = blox_DigitalState(constrained.desiredState());
 
         getDigitalConstraints(message.constrainedBy, constrained);
     }
@@ -61,14 +60,13 @@ public:
         blox_DigitalActuator message = blox_DigitalActuator_init_zero;
         FieldTags stripped;
 
+        writePersistedStateToMessage(message);
         auto state = actuator.state();
         if (state == ActuatorDigitalBase::State::Unknown) {
             stripped.add(blox_DigitalActuator_state_tag);
         } else {
             message.state = blox_DigitalState(actuator.state());
         }
-
-        getDigitalConstraints(message.constrainedBy, constrained);
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
         return streamProtoTo(out, &message, blox_DigitalActuator_fields, blox_DigitalActuator_size);

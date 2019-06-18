@@ -86,7 +86,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
             auto message = blox::DigitalActuator();
             message.set_hwdevice(ds2413Id);
             message.set_channel(1);
-            message.set_state(blox::DigitalState::Active);
+            message.set_desiredstate(blox::DigitalState::Active);
 
             testBox.put(message);
 
@@ -103,7 +103,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 constrainedBy { unconstrained: Active } strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 desiredState: Active strippedFields: 3");
             }
             THEN("A read of the DS2413 is as expected")
             {

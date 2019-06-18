@@ -39,14 +39,14 @@ public:
             }
             valve.startChannel(message.startChannel, false);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
-            constrained.state(ActuatorDigitalBase::State(message.state));
+            constrained.desiredState(ActuatorDigitalBase::State(message.desiredState));
         }
 
         return result;
     }
     void writePersistedStateToMessage(blox_MotorValve& message) const
     {
-        message.state = blox_DigitalState(constrained.unconstrained());
+        message.desiredState = blox_DigitalState(constrained.desiredState());
         message.hwDevice = hwDevice.getId();
         message.startChannel = valve.startChannel();
         getDigitalConstraints(message.constrainedBy, constrained);
