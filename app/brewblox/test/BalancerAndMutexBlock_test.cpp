@@ -243,7 +243,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         {
             auto newPwm = blox::ActuatorPwm();
             newPwm.set_actuatorid(pin1Id);
-            newPwm.set_setting(cnl::unwrap(ActuatorAnalog::value_t(80)));
+            newPwm.set_desiredsetting(cnl::unwrap(ActuatorAnalog::value_t(80)));
             newPwm.set_period(4000);
             newPwm.set_enabled(true);
 
@@ -267,7 +267,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         {
             auto newPwm = blox::ActuatorPwm();
             newPwm.set_actuatorid(pin2Id);
-            newPwm.set_setting(cnl::unwrap(ActuatorAnalog::value_t(80)));
+            newPwm.set_desiredsetting(cnl::unwrap(ActuatorAnalog::value_t(80)));
             newPwm.set_period(4000);
             newPwm.set_enabled(true);
 
@@ -312,10 +312,10 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                                                 "constrainedBy { "
                                                 "constraints { "
                                                 "balanced { balancerId: 200 granted: 204800 id: 1 } "
-                                                "limiting: true } "
-                                                "unconstrained: 327680 } "
+                                                "limiting: true } } "
                                                 "drivenActuatorId: 102 "
-                                                "enabled: true");
+                                                "enabled: true "
+                                                "desiredSetting: 327680");
         }
 
         // read a pwm actuator 2
@@ -332,10 +332,10 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
                                                 "constrainedBy { "
                                                 "constraints { "
                                                 "balanced { balancerId: 200 granted: 204800 id: 2 } "
-                                                "limiting: true } "
-                                                "unconstrained: 327680 } "
+                                                "limiting: true } } "
                                                 "drivenActuatorId: 103 "
-                                                "enabled: true");
+                                                "enabled: true "
+                                                "desiredSetting: 327680");
         }
 
         // run for a while

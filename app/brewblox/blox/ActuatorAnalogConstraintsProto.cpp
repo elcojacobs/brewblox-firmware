@@ -111,5 +111,4 @@ getAnalogConstraints(blox_AnalogConstraints& msg, const ActuatorAnalogConstraine
         msg.constraints[i].limiting = act.limiting() & (uint8_t(1) << i);
         msg.constraints_count++;
     }
-    msg.unconstrained = cnl::unwrap(act.unconstrained());
 }
