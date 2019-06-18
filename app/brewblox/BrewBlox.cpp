@@ -202,10 +202,18 @@ connectionStarted(DataOut& out)
 
     out.writeBuffer(&msg, strlen(msg));
     cbox::BinaryToHexTextOut hexOut(out);
+#if PLATFORM_ID == 3
+    int resetReason = 0;
+#else
     auto resetReason = System.resetReason();
+#endif
     hexOut.write(resetReason);
     out.write(',');
+#if PLATFORM_ID == 3
+    int resetData = 0;
+#else
     auto resetData = System.resetReasonData();
+#endif
     hexOut.write(resetData);
     out.write('>');
 }
