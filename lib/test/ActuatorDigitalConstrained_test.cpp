@@ -19,31 +19,34 @@
 
 #include <catch.hpp>
 
+#include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
-#include "ActuatorDigitalMock.h"
+#include "MockIoArray.h"
 
 using State = ActuatorDigital::State;
 
 SCENARIO("ActuatorDigitalConstrained", "[constraints]")
 {
     auto now = ticks_millis_t(0);
-    auto mock = ActuatorDigitalMock();
+
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
     auto constrained = ActuatorDigitalConstrained(mock);
 
     WHEN("A minimum ON time constrained is added, the actuator cannot turn off before it has passed")
     {
         constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(1500));
-        constrained.state(State::Active, now);
+        constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
 
         now += 1499;
-        constrained.state(ActuatorDigital::Inactive, now);
+        constrained.desiredState(State::Inactive, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
 
         now += 1;
-        constrained.state(ActuatorDigital::Inactive, now);
+        constrained.desiredState(State::Inactive, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
     }
@@ -51,35 +54,35 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     WHEN("A minimum OFF time constrained is added, the actuator cannot turn on before it has passed")
     {
         constrained.addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1500));
-        constrained.state(State::Inactive, now);
+        constrained.desiredState(State::Inactive, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
 
         now += 1499;
-        constrained.state(ActuatorDigital::Active, now);
+        constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
 
         now += 1;
-        constrained.state(ActuatorDigital::Active, now);
+        constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
     }
 
     WHEN("A minimum ON and a minimum OFF time are added, both are honored")
     {
-        constrained.state(State::Inactive, now);
+        constrained.desiredState(State::Inactive, now);
         constrained.addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1000));
         constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(2000));
 
         while (constrained.state() == State::Inactive) {
-            constrained.state(State::Active, ++now);
+            constrained.desiredState(State::Active, ++now);
         }
         auto timesOff = constrained.getLastStartEndTime(State::Inactive, now);
         CHECK(timesOff.end - timesOff.start == 1000);
 
         while (constrained.state() == State::Active) {
-            constrained.state(State::Inactive, ++now);
+            constrained.desiredState(State::Inactive, ++now);
         }
 
         auto timesOn = constrained.getLastStartEndTime(State::Active, now);
@@ -90,9 +93,10 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
 SCENARIO("Mutex contraint", "[constraints]")
 {
     auto now = ticks_millis_t(0);
-    auto mock1 = ActuatorDigitalMock();
+    auto mockIo = std::make_shared<MockIoArray>();
+    auto mock1 = ActuatorDigital([mockIo]() { return mockIo; }, 1);
     auto constrained1 = ActuatorDigitalConstrained(mock1);
-    auto mock2 = ActuatorDigitalMock();
+    auto mock2 = ActuatorDigital([mockIo]() { return mockIo; }, 2);
     auto constrained2 = ActuatorDigitalConstrained(mock2);
     auto mut = std::make_shared<TimedMutex>();
 
@@ -107,34 +111,34 @@ SCENARIO("Mutex contraint", "[constraints]")
 
     WHEN("Two actuators share a mutex, they cannot be active at the same time")
     {
-        constrained1.state(State::Active, ++now);
+        constrained1.desiredState(State::Active, ++now);
         CHECK(constrained1.state() == State::Active);
-        constrained2.state(State::Active, ++now);
+        constrained2.desiredState(State::Active, ++now);
         CHECK(constrained2.state() == State::Inactive);
 
-        constrained1.state(State::Inactive, ++now);
-        constrained2.state(State::Active, ++now);
+        constrained1.desiredState(State::Inactive, ++now);
+        constrained2.desiredState(State::Active, ++now);
         CHECK(constrained2.state() == State::Active);
 
-        constrained1.state(State::Active, ++now);
+        constrained1.desiredState(State::Active, ++now);
         CHECK(constrained1.state() == State::Inactive);
     }
 
     WHEN("A minimum OFF time constraint holds an actuator low, it doesn't lock the mutex")
     {
         constrained1.addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1000));
-        constrained1.state(State::Active, ++now);
+        constrained1.desiredState(State::Active, ++now);
         CHECK(constrained1.state() == State::Inactive);
-        constrained2.state(State::Active, ++now);
+        constrained2.desiredState(State::Active, ++now);
         CHECK(constrained2.state() == State::Active);
     }
 
     WHEN("An actuator doesn't have the mutex, it won't unlock it when set to Inactive")
     {
-        constrained1.state(State::Active, ++now);
+        constrained1.desiredState(State::Active, ++now);
         CHECK(constrained1.state() == State::Active);
-        constrained2.state(State::Inactive, ++now);
-        constrained2.state(State::Active, ++now);
+        constrained2.desiredState(State::Inactive, ++now);
+        constrained2.desiredState(State::Active, ++now);
         CHECK(constrained2.state() == State::Inactive);
     }
 
@@ -142,29 +146,29 @@ SCENARIO("Mutex contraint", "[constraints]")
     {
         mut->differentActuatorWait(1000);
         mut->update(now);
-        constrained1.state(State::Active, ++now);
+        constrained1.desiredState(State::Active, ++now);
         CHECK(constrained1.state() == State::Active);
 
         mut->update(now);
-        constrained1.state(State::Inactive, ++now);
+        constrained1.desiredState(State::Inactive, ++now);
         CHECK(constrained1.state() == State::Inactive);
 
         THEN("Actuator 1 can go active again immediately")
         {
             mut->update(now);
-            constrained1.state(State::Active, ++now);
+            constrained1.desiredState(State::Active, ++now);
             CHECK(constrained1.state() == State::Active);
         }
 
         THEN("Actuator 2 has to wait until no actuator has been active for 1000ms")
         {
             mut->update(now);
-            constrained2.state(State::Active, ++now);
+            constrained2.desiredState(State::Active, ++now);
             CHECK(constrained2.state() == State::Inactive);
 
             while (constrained2.state() != State::Active && now < 2000) {
                 mut->update(now);
-                constrained2.state(State::Active, ++now);
+                constrained2.desiredState(State::Active, ++now);
             }
             CHECK(now == 1002);
         }
@@ -172,22 +176,22 @@ SCENARIO("Mutex contraint", "[constraints]")
         THEN("Toggling actuator 1 again resets the wait time")
         {
             mut->update(now);
-            constrained2.state(State::Active, ++now);
+            constrained2.desiredState(State::Active, ++now);
             CHECK(constrained2.state() == State::Inactive);
 
             while (constrained2.state() != State::Active && now < 500) {
                 mut->update(now);
-                constrained2.state(State::Active, ++now);
+                constrained2.desiredState(State::Active, ++now);
             }
 
             mut->update(now);
-            constrained1.state(State::Active, ++now);
-            constrained1.state(State::Inactive, ++now);
+            constrained1.desiredState(State::Active, ++now);
+            constrained1.desiredState(State::Inactive, ++now);
 
             while (constrained2.state() != State::Active && now < 2000) {
                 mut->update(now);
-                constrained2.state(State::Active, ++now);
-                constrained2.state(State::Active, ++now);
+                constrained2.desiredState(State::Active, ++now);
+                constrained2.desiredState(State::Active, ++now);
             }
 
             CHECK(now == 1502);
@@ -196,11 +200,11 @@ SCENARIO("Mutex contraint", "[constraints]")
 
     WHEN("The state is changed without providing the current time, it is applied using the last update time")
     {
-        constrained1.state(State::Active, 2000);
+        constrained1.desiredState(State::Active, 2000);
         CHECK(constrained1.state() == State::Active);
 
         constrained1.update(6000);
-        constrained1.state(State::Inactive);
+        constrained1.desiredState(State::Inactive);
 
         auto activeTimes = constrained1.getLastStartEndTime(State::Active, 8000);
         auto inactiveTimes = constrained1.getLastStartEndTime(State::Inactive, 8000);

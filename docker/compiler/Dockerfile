@@ -44,7 +44,7 @@ RUN echo "tzdata tzdata/Areas select Europe" > /tmp/preseed.txt; \
 
 # install various packages needed for the build, testing, or for building the dependencies
 RUN apt-get update -q \
-  && apt-get install -qy --no-install-recommends tzdata git bash dfu-util python python-pip gdb lcov rsync \ 
+  && apt-get install -qy --no-install-recommends tzdata git bash dfu-util python python-pip gdb lcov rsync colormake \ 
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

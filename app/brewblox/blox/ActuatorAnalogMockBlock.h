@@ -30,7 +30,7 @@ public:
             actuator.minValue(cnl::wrap<ActuatorAnalog::value_t>(newData.minValue));
             actuator.maxValue(cnl::wrap<ActuatorAnalog::value_t>(newData.maxValue));
             setAnalogConstraints(newData.constrainedBy, constrained, objectsRef);
-            constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.setting));
+            constrained.setting(cnl::wrap<ActuatorAnalog::value_t>(newData.desiredSetting));
         }
         return result;
     }
@@ -65,8 +65,7 @@ public:
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
         blox_ActuatorAnalogMock message = blox_ActuatorAnalogMock_init_zero;
-        message.setting = cnl::unwrap(constrained.setting());
-
+        message.desiredSetting = cnl::unwrap(constrained.desiredSetting());
         message.minSetting = cnl::unwrap(actuator.minSetting());
         message.maxSetting = cnl::unwrap(actuator.maxSetting());
         message.minValue = cnl::unwrap(actuator.minValue());

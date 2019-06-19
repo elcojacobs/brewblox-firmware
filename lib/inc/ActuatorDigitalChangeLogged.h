@@ -19,21 +19,21 @@
 
 #pragma once
 
-#include "ActuatorDigital.h"
+#include "ActuatorDigitalBase.h"
 #include "TicksTypes.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
 /*
- * An ActuatorDigital wrapper that logs the most recent changes
+ * An ActuatorDigitalBase wrapper that logs the most recent changes
  */
 
 // uneven length makes last entry equal to first for toggling (PWM) behavior
 const uint8_t historyLength = 5;
 
-class ActuatorDigitalChangeLogged : public ActuatorDigital {
+class ActuatorDigitalChangeLogged {
 public:
-    using State = ActuatorDigital::State;
+    using State = ActuatorDigitalBase::State;
 
     struct StateChange {
         State newState;
@@ -41,27 +41,27 @@ public:
     };
 
 private:
-    ActuatorDigital& actuator;
+    ActuatorDigitalBase& actuator;
     std::array<StateChange, historyLength> history;
 
 protected:
     ticks_millis_t lastUpdateTime = 0;
 
 public:
-    ActuatorDigitalChangeLogged(ActuatorDigital& act)
+    ActuatorDigitalChangeLogged(ActuatorDigitalBase& act)
         : actuator(act)
     {
         resetHistory();
     };
-    virtual ~ActuatorDigitalChangeLogged() = default;
+    ~ActuatorDigitalChangeLogged() = default;
 
-    virtual void state(const State& val, const ticks_millis_t& now)
+    void state(const State& val, const ticks_millis_t& now)
     {
         actuator.state(val);
         update(now);
     };
 
-    virtual void state(const State& val) override
+    void state(const State& val)
     {
         state(val, lastUpdateTime);
     };
@@ -71,7 +71,7 @@ public:
         actuator.state(val);
     }
 
-    State state() const override
+    State state() const
     {
         return actuator.state();
     };
@@ -168,5 +168,10 @@ public:
         history.fill(StateChange{State::Unknown, ticks_millis_t(-1)});
         history[0] = {actuator.state(), 0};
         lastUpdateTime = 0;
+    }
+
+    bool supportsFastIo() const
+    {
+        return actuator.supportsFastIo();
     }
 };

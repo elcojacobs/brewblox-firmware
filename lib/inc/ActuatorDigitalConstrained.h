@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include "ActuatorDigital.h"
 #include "ActuatorDigitalChangeLogged.h"
 #include "TicksTypes.h"
 #include <algorithm>
@@ -57,7 +56,7 @@ public:
 
     void unlock(const ActuatorDigitalChangeLogged& act)
     {
-        if (act.state() == ActuatorDigital::State::Active) {
+        if (act.state() == ActuatorDigitalChangeLogged::State::Active) {
             lastActive = lastUpdate;
             lastActuator = &act;
             update(lastUpdate);
@@ -93,7 +92,7 @@ public:
 };
 
 namespace ADConstraints {
-using State = ActuatorDigital::State;
+using State = ActuatorDigitalBase::State;
 
 class Base {
 public:
@@ -235,17 +234,17 @@ public:
 
 } // end namespace ADConstraints
 
-class ActuatorDigitalConstrained : public ActuatorDigitalChangeLogged {
+class ActuatorDigitalConstrained : private ActuatorDigitalChangeLogged {
 public:
     using Constraint = ADConstraints::Base;
 
 private:
     std::vector<std::unique_ptr<Constraint>> constraints;
     uint8_t m_limiting = 0x00;
-    State m_unconstrained = State::Inactive;
+    State m_desiredState = State::Inactive;
 
 public:
-    ActuatorDigitalConstrained(ActuatorDigital& act)
+    ActuatorDigitalConstrained(ActuatorDigitalBase& act)
         : ActuatorDigitalChangeLogged(act){};
 
     ActuatorDigitalConstrained(const ActuatorDigitalConstrained&) = delete;
@@ -254,6 +253,13 @@ public:
     ActuatorDigitalConstrained& operator=(ActuatorDigitalConstrained&&) = default;
 
     virtual ~ActuatorDigitalConstrained() = default;
+
+    // ActuatorDigitalChangeLogged is inherited privately to prevent bypassing constraints.
+    // explicitly make functions available that should be in public interface here.
+    using ActuatorDigitalChangeLogged::activeDurations;
+    using ActuatorDigitalChangeLogged::getLastStartEndTime;
+    using ActuatorDigitalChangeLogged::setStateUnlogged;
+    using ActuatorDigitalChangeLogged::supportsFastIo;
 
     void addConstraint(std::unique_ptr<Constraint>&& newConstraint)
     {
@@ -293,34 +299,34 @@ public:
         return m_limiting;
     }
 
-    virtual void state(const State& val, const ticks_millis_t& now) override final
+    void desiredState(const State& val, const ticks_millis_t& now)
     {
         lastUpdateTime = now; // always update fallback time for state setter without time
-        m_unconstrained = val;
+        m_desiredState = val;
         m_limiting = checkConstraints(val, now);
         if (m_limiting == 0) {
             ActuatorDigitalChangeLogged::state(val, now);
         }
     }
 
-    virtual void state(const State& val) override final
+    void desiredState(const State& val)
     {
-        state(val, lastUpdateTime);
+        desiredState(val, lastUpdateTime);
     }
 
-    virtual State state() const override
+    State state() const
     {
         return ActuatorDigitalChangeLogged::state();
     }
 
     void update(const ticks_millis_t& now)
     {
-        state(m_unconstrained, now); // re-apply constraints for new update time
+        desiredState(m_desiredState, now); // re-apply constraints for new update time
     }
 
-    State unconstrained() const
+    State desiredState() const
     {
-        return m_unconstrained;
+        return m_desiredState;
     }
 
     const std::vector<std::unique_ptr<Constraint>>& constraintsList() const

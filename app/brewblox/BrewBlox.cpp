@@ -22,13 +22,14 @@
 #include "Logger.h"
 #include "OneWireScanningFactory.h"
 #include "blox/ActuatorAnalogMockBlock.h"
-#include "blox/ActuatorDS2413Block.h"
 #include "blox/ActuatorOffsetBlock.h"
-#include "blox/ActuatorPinBlock.h"
 #include "blox/ActuatorPwmBlock.h"
 #include "blox/BalancerBlock.h"
+#include "blox/DS2408Block.h"
 #include "blox/DS2413Block.h"
+#include "blox/DigitalActuatorBlock.h"
 #include "blox/DisplaySettingsBlock.h"
+#include "blox/MotorValveBlock.h"
 #include "blox/MutexBlock.h"
 #include "blox/OneWireBusBlock.h"
 #include "blox/PidBlock.h"
@@ -39,6 +40,7 @@
 #include "blox/TempSensorOneWireBlock.h"
 #include "blox/TouchSettingsBlock.h"
 #include "blox/WiFiSettingsBlock.h"
+#include "blox/stringify.h"
 #include "cbox/Box.h"
 #include "cbox/Connections.h"
 #include "cbox/EepromObjectStorage.h"
@@ -57,6 +59,14 @@ testConnectionSource()
     static cbox::StringStreamConnectionSource connSource;
     return connSource;
 }
+#endif
+
+#if PLATFORM_ID == 6
+#include "blox/Spark2PinsBlock.h"
+using PinsBlock = Spark2PinsBlock;
+#else
+#include "blox/Spark3PinsBlock.h"
+using PinsBlock = Spark3PinsBlock;
 #endif
 
 cbox::ConnectionPool&
@@ -90,37 +100,8 @@ makeBrewBloxBox()
             cbox::ContainedObject(6, 0x80, std::make_shared<TouchSettingsBlock>()),
 #endif
             cbox::ContainedObject(7, 0x80, std::make_shared<DisplaySettingsBlock>()),
+            cbox::ContainedObject(19, 0x80, std::make_shared<PinsBlock>()),
     });
-
-#ifdef PIN_V3_BOTTOM1
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_BOTTOM1), 0x80, 10);
-#endif
-#ifdef PIN_V3_BOTTOM2
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_BOTTOM2), 0x80, 11);
-#endif
-#ifdef PIN_V3_TOP1
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP1), 0x80, 12);
-#endif
-#ifdef PIN_V3_TOP2
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP2), 0x80, 13);
-#endif
-#ifdef PIN_V3_TOP3
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_V3_TOP3), 0x80, 14);
-#endif
-#ifdef PIN_ACTUATOR0
-    if (getSparkVersion() == SparkVersion::V2) {
-        objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR0), 0x80, 15);
-    }
-#endif
-#ifdef PIN_ACTUATOR1
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR1), 0x80, 16);
-#endif
-#ifdef PIN_ACTUATOR2
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR2), 0x80, 17);
-#endif
-#ifdef PIN_ACTUATOR3
-    objects.add(std::make_shared<ActuatorPinBlock>(objects, PIN_ACTUATOR3), 0x80, 18);
-#endif
 
     static cbox::ObjectFactory objectFactory = {
         {TempSensorOneWireBlock::staticTypeId(), std::make_shared<TempSensorOneWireBlock>},
@@ -134,7 +115,10 @@ makeBrewBloxBox()
         {MutexBlock::staticTypeId(), std::make_shared<MutexBlock>},
         {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(objects, bootTimeRef()); }},
         {DS2413Block::staticTypeId(), std::make_shared<DS2413Block>},
-        {ActuatorDS2413Block::staticTypeId(), []() { return std::make_shared<ActuatorDS2413Block>(objects); }}};
+        {DigitalActuatorBlock::staticTypeId(), []() { return std::make_shared<DigitalActuatorBlock>(objects); }},
+        {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>},
+        {MotorValveBlock::staticTypeId(), []() { return std::make_shared<MotorValveBlock>(objects); }},
+    };
 
     static EepromAccessImpl eeprom;
     static cbox::EepromObjectStorage objectStore(eeprom);
@@ -173,6 +157,26 @@ logger()
     static auto logger = Logger([](Logger::LogLevel level, const std::string& log) {
         cbox::DataOut& out = theConnectionPool().logDataOut();
         out.write('<');
+        const char debug[] = "DEBUG";
+        const char info[] = "INFO";
+        const char warn[] = "WARNING";
+        const char err[] = "ERROR";
+
+        switch (level) {
+        case Logger::LogLevel::DEBUG:
+            out.writeBuffer(debug, strlen(debug));
+            break;
+        case Logger::LogLevel::INFO:
+            out.writeBuffer(info, strlen(info));
+            break;
+        case Logger::LogLevel::WARN:
+            out.writeBuffer(warn, strlen(warn));
+            break;
+        case Logger::LogLevel::ERROR:
+            out.writeBuffer(err, strlen(err));
+            break;
+        }
+        out.write(':');
         for (const auto& c : log) {
             out.write(c);
         }
@@ -194,7 +198,23 @@ namespace cbox {
 void
 connectionStarted(DataOut& out)
 {
-    char msg[] = "<!Connected to BrewBlox v0.1.0>";
+    char msg[] = "<!BREWBLOX," stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) ",";
+
     out.writeBuffer(&msg, strlen(msg));
+    cbox::BinaryToHexTextOut hexOut(out);
+#if PLATFORM_ID == 3
+    int resetReason = 0;
+#else
+    auto resetReason = System.resetReason();
+#endif
+    hexOut.write(resetReason);
+    out.write(',');
+#if PLATFORM_ID == 3
+    int resetData = 0;
+#else
+    auto resetData = System.resetReasonData();
+#endif
+    hexOut.write(resetData);
+    out.write('>');
 }
 } // end namespace cbox
