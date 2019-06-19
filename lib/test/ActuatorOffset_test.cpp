@@ -131,9 +131,8 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
     {
         act->selectedReference(ActuatorOffset::SettingOrValue::SETTING);
         referenceSensor->connected(true);
-        act->setting(12.0);
-
         reference->settingValid(false);
+        act->setting(12.0);
 
         CHECK(target->setting() == 20.0); // unchanged
         CHECK(act->valueValid() == false);
