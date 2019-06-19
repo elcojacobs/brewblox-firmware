@@ -38,6 +38,9 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         [target]() { return target; },
         [reference]() { return reference; });
 
+    act->setting(0);
+    act->update();
+
     WHEN("The actuator is written, the target is offset from the reference")
     {
         reference->setting(20);
@@ -98,20 +101,44 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(act->value() == 0);
         CHECK(act->setting() == 12.0);
         CHECK(target->settingValid() == true);
+
+        AND_WHEN("The reference setting becomes invalid")
+        {
+            reference->settingValid(false);
+            act->update();
+            THEN("The target setting is set to invalid once, but not on subsequent updates")
+            {
+                CHECK(target->settingValid() == false);
+
+                target->settingValid(true);
+                target->setting(33);
+                act->update();
+                CHECK(target->settingValid() == true);
+                CHECK(target->setting() == 33);
+
+                target->settingValid(true);
+                target->setting(31);
+                act->update();
+                CHECK(target->settingValid() == true);
+                CHECK(target->setting() == 31);
+            }
+        }
     }
 
     WHEN("the reference setting is used but invalid"
          "but the reference sensor is valid, then "
-         "target setpoint will be invalid, and actuator value is invalid and 0")
+         "target setpoint will be set to invalid, and actuator value is invalid and 0")
     {
         act->selectedReference(ActuatorOffset::SettingOrValue::SETTING);
         referenceSensor->connected(true);
-        reference->settingValid(false);
         act->setting(12.0);
+
+        reference->settingValid(false);
 
         CHECK(target->setting() == 20.0); // unchanged
         CHECK(act->valueValid() == false);
         CHECK(act->settingValid() == false);
+
         CHECK(act->value() == 0);
         CHECK(act->setting() == 12.0); // setting() still returns requested offset
         CHECK(target->settingValid() == false);

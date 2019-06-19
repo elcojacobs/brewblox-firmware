@@ -107,40 +107,41 @@ public:
 
     void update()
     {
-        m_settingValid = false;
-        if (!m_enabled) {
-            return;
-        }
-
         m_valueValid = false;
+        m_value = 0;
+        bool newTargetSettingValid = false;
+        auto newTargetSetting = value_t(0);
+
         if (auto targetPtr = m_target()) {
             if (auto refPtr = m_reference()) {
                 if (m_selectedReference == SettingOrValue::SETTING) {
                     if (refPtr->settingValid()) {
-                        targetPtr->settingValid(true); // try to make target valid
-                        targetPtr->setting(refPtr->setting() + m_setting);
-                        m_settingValid = true;
+                        newTargetSetting = refPtr->setting() + m_setting;
+                        newTargetSettingValid = true;
                         if (targetPtr->valueValid()) {
                             m_value = targetPtr->value() - refPtr->setting();
                             m_valueValid = true;
                         }
-                        return;
                     }
                 } else {
                     if (refPtr->valueValid()) {
-                        targetPtr->settingValid(true); // try to make target valid
-                        targetPtr->setting(refPtr->value() + m_setting);
-                        m_settingValid = true;
+                        newTargetSetting = refPtr->value() + m_setting;
+                        newTargetSettingValid = true;
                         if (targetPtr->valueValid()) {
                             m_value = targetPtr->value() - refPtr->value();
                             m_valueValid = true;
                         }
-                        return;
                     }
                 }
             }
-            targetPtr->settingValid(false);
-            m_value = 0;
+            if (newTargetSettingValid && m_enabled) {
+                targetPtr->settingValid(true); // try to make target valid
+                targetPtr->setting(newTargetSetting);
+                m_settingValid = true;
+            } else if (m_settingValid) {
+                targetPtr->settingValid(false); // invalidate target once
+                m_settingValid = false;
+            }
         }
     }
 
