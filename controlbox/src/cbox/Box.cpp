@@ -24,6 +24,7 @@
 #include "ContainedObject.h"
 #include "DataStream.h"
 #include "DataStreamConverters.h"
+#include "DeprecatedObject.h"
 #include "GroupsObject.h"
 #include "Object.h"
 #include "ObjectContainer.h"
@@ -444,6 +445,9 @@ Box::loadObjectsFromStorage()
 
             if (newObj) {
                 objects.add(std::move(newObj), groups, id);
+            } else if (status == CboxError::OBJECT_NOT_CREATABLE) {
+                objects.add(std::make_shared<DeprecatedObject>(id), 0xFF);
+                status = CboxError::OK;
             }
         }
         return status;
