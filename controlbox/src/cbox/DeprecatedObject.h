@@ -60,6 +60,11 @@ public:
     {
         return update_never(now);
     }
+
+    obj_id_t storageId()
+    {
+        return originalId;
+    }
 };
 
 } // end namespace cbox

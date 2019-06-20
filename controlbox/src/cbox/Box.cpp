@@ -279,9 +279,17 @@ Box::deleteObject(DataIn& in, HexCrcDataOut& out)
         status = CboxError::CRC_ERROR_IN_COMMAND;
     }
 
+    auto storageId = id;
+
+    auto deprecated = makeCboxPtr<DeprecatedObject>(id);
+    if (auto obj = deprecated.lock()) {
+        // object is a deprecated one. We should delete the original object id from storage
+        storageId = obj->storageId();
+    }
+
     if (status == CboxError::OK) {
         status = objects.remove(id);
-        storage.disposeObject(id); // todo: event if error?
+        storage.disposeObject(storageId); // todo: event if error?
     }
 
     out.writeResponseSeparator();
