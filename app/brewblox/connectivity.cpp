@@ -37,6 +37,8 @@ auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with
 auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
 #endif
 
+auto upgradeServer = TCPServer(9393);
+
 void
 printWiFiIp(char dest[16])
 {
@@ -116,6 +118,13 @@ manageConnections()
             delay(5);
             client.stop();
         }
+
+        TCPClient upgrader = upgradeServer.available();
+        if (upgrader) {
+            system_firmwareUpdate(&upgrader);
+            upgrader.stop();
+        }
+
     } else {
         ++wifiTimeOut;
     }
