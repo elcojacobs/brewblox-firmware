@@ -202,6 +202,11 @@ connectionStarted(DataOut& out)
 
     out.writeBuffer(&msg, strlen(msg));
     cbox::BinaryToHexTextOut hexOut(out);
+
+    const char sysVersion[] = stringify(SYSTEM_VERSION_STRING);
+    out.writeBuffer(sysVersion, strlen(sysVersion));
+    out.write(',');
+
 #if PLATFORM_ID == 3
     int resetReason = 0;
 #else
