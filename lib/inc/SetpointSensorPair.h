@@ -30,15 +30,15 @@
 /*
  * A process value has a setting and an current value
  */
-class SetpointSensorPair : public ProcessValue<fp12_t> {
+class SetpointSensorPair : public ProcessValue<temp_t> {
 public:
     using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
 
 private:
-    fp12_t m_setting = 20;
+    temp_t m_setting = 20;
     bool m_settingEnabled = false;
     const std::function<std::shared_ptr<TempSensor>()> m_sensor;
-    FpFilterChain<fp12_t> m_filter;
+    FpFilterChain<temp_t> m_filter;
     uint8_t m_filterChoice = 0;         // input filter index
     uint8_t m_sensorFailureCount = 255; // force a reset on init
 
@@ -53,22 +53,22 @@ public:
 
     virtual ~SetpointSensorPair() = default;
 
-    virtual void setting(fp12_t const& setting) override final
+    virtual void setting(temp_t const& setting) override final
     {
         m_setting = setting;
     }
 
-    virtual fp12_t setting() const override final
+    virtual temp_t setting() const override final
     {
         return m_setting;
     }
 
-    virtual fp12_t value() const override final
+    virtual temp_t value() const override final
     {
         return m_filter.read();
     }
 
-    fp12_t valueUnfiltered() const
+    temp_t valueUnfiltered() const
     {
         if (auto sPtr = m_sensor()) {
             return sPtr->value();
@@ -110,8 +110,11 @@ public:
         return m_filter.getStepThreshold();
     }
 
-    void configureFilter(uint8_t choice, const fp12_t& threshold)
+    void configureFilter(uint8_t choice, temp_t threshold)
     {
+        if (threshold == 0) {
+            threshold = temp_t(1);
+        }
         if (m_filterChoice != choice) {
             m_filterChoice = choice;
             m_filter.setParams(choice, threshold);

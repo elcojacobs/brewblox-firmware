@@ -64,6 +64,8 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     newPair.set_sensorid(100);
     newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     newPair.set_settingenabled(true);
+    newPair.set_filter(blox::SetpointSensorPair_FilterChoice::SetpointSensorPair_FilterChoice_FILT_30s);
+    newPair.set_filterthreshold(cnl::unwrap(temp_t(1)));
     testBox.put(newPair);
 
     testBox.processInput();
@@ -97,8 +99,6 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     blox::Pid newPid;
     newPid.set_inputid(102);
     newPid.set_outputid(103);
-    newPid.set_filter(blox::Pid_FilterChoice::Pid_FilterChoice_FILT_30s);
-    newPid.set_filterthreshold(cnl::unwrap(ActuatorAnalog::value_t(1)));
     newPid.set_enabled(true);
     newPid.set_kp(cnl::unwrap(Pid::in_t(10)));
     newPid.set_ti(2000);
@@ -132,11 +132,36 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     // only nonzero values are shown in the debug string
     CHECK(decoded.ShortDebugString() == "inputId: 102 outputId: 103 "
                                         "inputValue: 81920 inputSetting: 86016 "
-                                        "outputValue: 61425 outputSetting: 61425 "
-                                        "filterThreshold: 4096 "
+                                        "outputValue: 61440 outputSetting: 61440 "
                                         "enabled: true active: true "
                                         "kp: 40960 ti: 2000 td: 200 "
-                                        "p: 40950 i: 20475 "
-                                        "error: 4095 integral: 4095000 derivative: -1 "
+                                        "p: 40960 i: 20480 "
+                                        "error: 4096 integral: 4096000 "
                                         "drivenOutputId: 103");
+
+    THEN("The integral value can be written externally to reset it trough the integralReset field")
+    {
+
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(cbox::obj_id_t(104));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(PidBlock::staticTypeId());
+
+        newPid.set_integralreset(cnl::unwrap(Pid::out_t(20)));
+        testBox.put(newPid);
+
+        auto decoded = blox::Pid();
+        testBox.processInputToProto(decoded);
+
+        CHECK(testBox.lastReplyHasStatusOk());
+        CHECK(decoded.ShortDebugString() == "inputId: 102 outputId: 103 "
+                                            "inputValue: 81920 inputSetting: 86016 "
+                                            "outputValue: 122900 outputSetting: 122900 "
+                                            "enabled: true active: true "
+                                            "kp: 40960 ti: 2000 td: 200 "
+                                            "p: 40960 i: 81940 "
+                                            "error: 4096 integral: 16388096 "
+                                            "drivenOutputId: 103");
+    }
 }

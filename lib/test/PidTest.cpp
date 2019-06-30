@@ -805,4 +805,18 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             }
         }
     }
+
+    WHEN("The integral part is set externally")
+    {
+        pid.kp(10);
+        pid.ti(1000);
+        pid.td(0);
+        pid.setIntegral(20);
+        pid.update();
+
+        THEN("The new output matches what whas set")
+        {
+            CHECK(pid.i() == 20);
+        }
+    }
 }

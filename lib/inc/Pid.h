@@ -37,9 +37,9 @@ private:
 
     // state
     in_t m_error = in_t{0};
-    in_t m_p = in_t{0};
-    in_t m_i = in_t{0};
-    in_t m_d = in_t{0};
+    out_t m_p = out_t{0};
+    out_t m_i = out_t{0};
+    out_t m_d = out_t{0};
     integral_t m_integral = integral_t{0};
     derivative_t m_derivative = derivative_t{0};
 
@@ -145,6 +145,13 @@ public:
     auto active() const
     {
         return m_active;
+    }
+    void setIntegral(const out_t& newIntegratorPart)
+    {
+        if (m_kp == 0) {
+            return;
+        }
+        m_integral = newIntegratorPart * m_ti / m_kp;
     }
 
 private:

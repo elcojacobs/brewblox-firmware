@@ -145,7 +145,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
                                             "setting: 131072 "
                                             "value: 86016 "
                                             "settingEnabled: true "
-                                            "storedSetting: 131072"); // setting 32, value 21 (setpoint adjusted to 20 + 12)
+                                            "storedSetting: 131072 "
+                                            "filterThreshold: 4096"); // setting 32, value 21 (setpoint adjusted to 20 + 12)
     }
 
     // read target pair
@@ -161,7 +162,8 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
                                             "setting: 81920 "
                                             "value: 110592 "
                                             "settingEnabled: true "
-                                            "storedSetting: 81920"); // 20, 27 (unaffected)
+                                            "storedSetting: 81920 "
+                                            "filterThreshold: 4096"); // 20, 27 (unaffected)
     }
 
     AND_WHEN("The reference setpoint is disabled")
