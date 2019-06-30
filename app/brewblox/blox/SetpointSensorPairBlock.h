@@ -32,9 +32,8 @@ public
             pair.setting(cnl::wrap<temp_t>(newData.storedSetting));
             pair.settingValid(newData.settingEnabled);
             pair.configureFilter(uint8_t(newData.filter), cnl::wrap<fp12_t>(newData.filterThreshold));
-            
-            
-            if(newData.resetFilter || sensor.getId() != newData.sensorId){
+
+            if (newData.resetFilter || sensor.getId() != newData.sensorId) {
                 sensor.setId(newData.sensorId);
                 pair.resetFilter();
             }
@@ -59,11 +58,16 @@ public
         } else {
             stripped.add(blox_SetpointSensorPair_setting_tag);
         };
+        if (pair.sensorValid()) {
+            message.valueUnfiltered = cnl::unwrap(pair.valueUnfiltered());
+        } else {
+            stripped.add(blox_SetpointSensorPair_valueUnfiltered_tag);
+        }
 
         message.filter = blox_SetpointSensorPair_FilterChoice(pair.filterChoice());
         message.filterThreshold = cnl::unwrap(pair.filterThreshold());
 
-        stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 2);
+        stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 3);
 
         return streamProtoTo(out, &message, blox_SetpointSensorPair_fields, blox_SetpointSensorPair_size);
     }

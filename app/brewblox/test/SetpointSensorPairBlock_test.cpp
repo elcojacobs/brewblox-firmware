@@ -89,7 +89,8 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
                                         "settingEnabled: true "
                                         "storedSetting: 86016 "
                                         "filter: FILT_3m "
-                                        "filterThreshold: 2048");
+                                        "filterThreshold: 2048 "
+                                        "valueUnfiltered: 81920");
 
     WHEN("The sensor is invalid for over 10 seconds")
     {
@@ -120,7 +121,8 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
                                                 "storedSetting: 86016 "
                                                 "filter: FILT_3m "
                                                 "filterThreshold: 2048 "
-                                                "strippedFields: 6");
+                                                "strippedFields: 6 "
+                                                "strippedFields: 11");
         }
     }
 
@@ -151,7 +153,8 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
                                                 "settingEnabled: true "
                                                 "storedSetting: 86016 "
                                                 "filter: FILT_3m "
-                                                "filterThreshold: 2048");
+                                                "filterThreshold: 2048 "
+                                                "valueUnfiltered: 102400");
         }
 
         AND_THEN("Sending a filter reset trigger will force the filter state to the current value")
@@ -174,7 +177,8 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
                                                 "settingEnabled: true "
                                                 "storedSetting: 86016 "
                                                 "filter: FILT_3m "
-                                                "filterThreshold: 2048");
+                                                "filterThreshold: 2048 "
+                                                "valueUnfiltered: 102400");
         }
     }
 }
