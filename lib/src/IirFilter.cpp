@@ -121,9 +121,7 @@ int64_t
 IirFilter::unshift(const int64_t val, uint8_t shift) const
 {
     const int64_t rounder = 1 << (shift - 1);
-    // round towards zero, which is unbiased
-    // safer than away from zero, which can make the value run away from zero slowly
-    int64_t rounded = (val > 0) ? val - rounder : val + rounder;
+    int64_t rounded = val + rounder;
     return rounded >> shift;
 }
 

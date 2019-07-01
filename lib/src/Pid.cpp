@@ -28,40 +28,28 @@ Pid::update()
         if (m_enabled) {
             active(true);
         }
-        auto inputError = input->setting() - input->value();
-        if (m_inputFailureCount >= 10) {
-            m_filter.reset(inputError);
-        }
-        m_filter.add(inputError);
-        m_inputFailureCount = 0;
+        m_error = input->error();
+        m_derivative = input->derivative();
+        m_integral = m_ti ? m_integral + m_error : 0;
     } else {
-        if (m_inputFailureCount < 10) {
-            ++m_inputFailureCount;
-        } else {
-            if (active()) {
-                active(false);
-            }
-            return;
+        if (active()) {
+            active(false);
         }
+        m_integral = 0;
     }
     if (!active()) {
         return;
     }
 
     // calculate PID parts.
-    m_error = m_filter.read();
+
     m_p = m_kp * m_error;
 
-    if (m_ti != 0) {
-        m_integral += m_error;
+    if (m_ti) {
         m_i = (m_integral * m_kp) / m_ti;
-    } else {
-        m_integral = 0;
-        m_ti = 0;
     }
 
-    m_derivative = m_filter.readDerivative<decltype(m_derivative)>();
-    m_d = m_kp * (m_derivative * m_td);
+    m_d = -m_kp * (m_derivative * m_td);
 
     auto pidResult = m_p + m_i + m_d;
 

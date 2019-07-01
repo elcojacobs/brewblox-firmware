@@ -19,9 +19,8 @@
 
 #pragma once
 
-#include "FixedPoint.h"
-#include "FpFilterChain.h"
 #include "ProcessValue.h"
+#include "SetpointSensorPair.h"
 #include <cstring>
 #include <functional>
 
@@ -30,39 +29,33 @@ public:
     using in_t = fp12_t;
     using out_t = fp12_t;
     using integral_t = safe_elastic_fixed_point<19, 12, int32_t>;
-    using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
+    using derivative_t = SetpointSensorPair::derivative_t;
 
 private:
-    const std::function<std::shared_ptr<ProcessValue<in_t>>()> m_inputPtr;
+    const std::function<std::shared_ptr<SetpointSensorPair>()> m_inputPtr;
     const std::function<std::shared_ptr<ProcessValue<out_t>>()> m_outputPtr;
-
-    FpFilterChain<in_t> m_filter;
 
     // state
     in_t m_error = in_t{0};
-    in_t m_p = in_t{0};
-    in_t m_i = in_t{0};
-    in_t m_d = in_t{0};
+    out_t m_p = out_t{0};
+    out_t m_i = out_t{0};
+    out_t m_d = out_t{0};
     integral_t m_integral = integral_t{0};
     derivative_t m_derivative = derivative_t{0};
 
-    uint8_t m_inputFailureCount = 255; // force a reset on init
-
     // settings
-    in_t m_kp = in_t{0};        // proportional gain
-    uint16_t m_ti = 0;          // integral time constant
-    uint16_t m_td = 0;          // derivative time constant
-    uint8_t m_filterChoice = 0; // input filter index
-    bool m_enabled = false;     // persisted setting to manually disable the pid
-    bool m_active = false;      // automatically set when input is invalid
+    in_t m_kp = in_t{0};    // proportional gain
+    uint16_t m_ti = 0;      // integral time constant
+    uint16_t m_td = 0;      // derivative time constant
+    bool m_enabled = false; // persisted setting to manually disable the pid
+    bool m_active = false;  // automatically set when input is invalid
 
 public:
     explicit Pid(
-        std::function<std::shared_ptr<ProcessValue<in_t>>()>&& input,
+        std::function<std::shared_ptr<SetpointSensorPair>()>&& input,
         std::function<std::shared_ptr<ProcessValue<out_t>>()>&& output)
         : m_inputPtr(input)
         , m_outputPtr(output)
-        , m_filter(0)
     {
     }
 
@@ -138,26 +131,6 @@ public:
         m_td = arg;
     }
 
-    auto filterChoice() const
-    {
-        return m_filterChoice;
-    }
-
-    auto filterThreshold() const
-    {
-        return m_filter.getStepThreshold();
-    }
-
-    void configureFilter(const uint8_t& choice, const in_t& threshold)
-    {
-        if (m_filterChoice != choice) {
-            m_filterChoice = choice;
-            m_filter.setParams(choice, threshold);
-        } else {
-            m_filter.setStepThreshold(threshold);
-        }
-    }
-
     void enabled(bool state)
     {
         active(state);
@@ -172,6 +145,13 @@ public:
     auto active() const
     {
         return m_active;
+    }
+    void setIntegral(const out_t& newIntegratorPart)
+    {
+        if (m_kp == 0) {
+            return;
+        }
+        m_integral = newIntegratorPart * m_ti / m_kp;
     }
 
 private:

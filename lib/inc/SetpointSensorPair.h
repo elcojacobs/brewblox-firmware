@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "FixedPoint.h"
+#include "FpFilterChain.h"
 #include "ProcessValue.h"
 #include "TempSensor.h"
 #include "Temperature.h"
@@ -29,16 +31,24 @@
  * A process value has a setting and an current value
  */
 class SetpointSensorPair : public ProcessValue<temp_t> {
+public:
+    using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
+
 private:
     temp_t m_setting = 20;
     bool m_settingEnabled = false;
     const std::function<std::shared_ptr<TempSensor>()> m_sensor;
+    FpFilterChain<temp_t> m_filter;
+    uint8_t m_filterChoice = 0;         // input filter index
+    uint8_t m_sensorFailureCount = 255; // force a reset on init
 
 public:
     explicit SetpointSensorPair(
         std::function<std::shared_ptr<TempSensor>()>&& _sensor)
         : m_sensor(_sensor)
+        , m_filter(m_filterChoice)
     {
+        update();
     }
 
     virtual ~SetpointSensorPair() = default;
@@ -55,6 +65,11 @@ public:
 
     virtual temp_t value() const override final
     {
+        return m_filter.read();
+    }
+
+    temp_t valueUnfiltered() const
+    {
         if (auto sPtr = m_sensor()) {
             return sPtr->value();
         } else {
@@ -63,6 +78,11 @@ public:
     }
 
     bool valueValid() const override final
+    {
+        return m_sensorFailureCount <= 10;
+    }
+
+    bool sensorValid() const
     {
         if (auto sens = m_sensor()) {
             return sens->valid();
@@ -78,5 +98,62 @@ public:
     virtual void settingValid(bool v) override final
     {
         m_settingEnabled = v;
+    }
+
+    auto filterChoice() const
+    {
+        return m_filterChoice;
+    }
+
+    auto filterThreshold() const
+    {
+        return m_filter.getStepThreshold();
+    }
+
+    void configureFilter(uint8_t choice, temp_t threshold)
+    {
+        if (threshold == 0) {
+            threshold = temp_t(1);
+        }
+        if (m_filterChoice != choice) {
+            m_filterChoice = choice;
+            m_filter.setParams(choice, threshold);
+        } else {
+            m_filter.setStepThreshold(threshold);
+        }
+    }
+
+    void update()
+    {
+        if (sensorValid()) {
+            auto val = valueUnfiltered();
+            if (!valueValid()) {
+                m_filter.reset(val);
+            }
+            m_filter.add(val);
+            m_sensorFailureCount = 0;
+        } else {
+            if (m_sensorFailureCount < 255) {
+                m_sensorFailureCount++;
+            }
+        }
+    }
+
+    auto error()
+    {
+        return setting() - value();
+    }
+
+    auto derivative()
+    {
+        return m_filter.readDerivative<derivative_t>();
+    }
+
+    void resetFilter()
+    {
+        if (sensorValid()) {
+            m_filter.reset(valueUnfiltered());
+            m_sensorFailureCount = 0;
+        }
     }
 };
