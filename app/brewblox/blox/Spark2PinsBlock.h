@@ -72,7 +72,7 @@ public:
         readIo(*this, 3, message.pins[2].Pin.bottom3);
 
         if (getSparkVersion() != SparkVersion::V1) {
-            message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom1_tag;
+            message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom0_tag;
             readIoConfig(*this, 4, message.pins[3].Pin.bottom0.config);
             message.pins_count = numPins;
         } else {
