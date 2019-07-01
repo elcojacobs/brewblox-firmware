@@ -54,12 +54,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.ti(0);
         pid.td(0);
 
-        input->setting(21);
-        sensor->value(20);
-
-        for (int32_t i = 0; i < 100; ++i) {
-            pid.update(); // update 100 times to settle input filter
+        for (int32_t i = 0; i < 1000; ++i) {
+            input->setting(21);
+            sensor->value(20);
         }
+
+        input->update();
+        pid.update();
+
         CHECK(actuator->setting() == Approx(10).margin(0.01));
     }
 
@@ -71,8 +73,8 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
-
         for (int32_t i = 0; i < 1000; ++i) {
+            input->update();
             pid.update();
         }
 
@@ -92,6 +94,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         sensor->value(20);
 
         for (int32_t i = 0; i < 1000; ++i) {
+            input->update();
             pid.update();
         }
 
@@ -120,11 +123,12 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->setting(30);
         sensor->value(20);
 
-        temp_t mockVal;
+        fp12_t mockVal;
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 900; ++i) {
-            mockVal = temp_t(20) + (temp_t(9) * i) / 900;
+            mockVal = fp12_t(20) + (fp12_t(9) * i) / 900;
             sensor->value(mockVal);
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -148,11 +152,12 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->setting(20);
         sensor->value(30);
 
-        temp_t mockVal;
+        fp12_t mockVal;
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 900; ++i) {
-            mockVal = temp_t(30) - (temp_t(9) * i) / 900;
+            mockVal = fp12_t(30) - (fp12_t(9) * i) / 900;
             sensor->value(mockVal);
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -180,6 +185,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -196,6 +202,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->setting(19);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -223,6 +230,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -238,6 +246,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->setting(21);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -265,10 +274,10 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
-        pid.update();
 
         double integratorValueWithoutAntiWindup = accumulatedError * (10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(50.0).epsilon(0.01));
@@ -281,6 +290,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->setting(19);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -307,6 +317,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -322,6 +333,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->setting(21);
         accumulatedError = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
+            input->update();
             pid.update();
             accumulatedError += pid.error();
         }
@@ -335,7 +347,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(-10).margin(0.01));
     }
 
-    WHEN("The PID input is invalid for over 10 seconds, the actuator is set to invalid and the PID is inactive")
+    WHEN("The sensor of the PID input becomes invalid")
     {
         pid.kp(10);
         pid.ti(2000);
@@ -349,17 +361,25 @@ SCENARIO("PID Test with mock actuator", "[pid]")
             if (i == 2000) {
                 sensor->connected(false);
             }
+            input->update();
             pid.update();
             if (!pid.active()) {
                 break;
             }
         }
-        CHECK(i == 2010);
-        CHECK(actuator->settingValid() == false);
+        THEN("The input becomes invalid after 5 seconds")
+        {
+            CHECK(i == 2010);
+        }
+        AND_THEN("PID is inactive")
+        {
+            CHECK(actuator->settingValid() == false);
+        }
 
         AND_WHEN("The input becomes valid again, the pid and actuator become active again")
         {
             sensor->connected(true);
+            input->update();
             pid.update();
 
             CHECK(pid.active() == true);
@@ -399,6 +419,7 @@ SCENARIO("PID Test with offset actuator", "[pid]")
     pid.td(0);
 
     for (int32_t i = 0; i < 100; ++i) {
+        reference->update();
         pid.update(); // update 100 times to settle input filter
     }
 
@@ -412,16 +433,19 @@ SCENARIO("PID Test with offset actuator", "[pid]")
     WHEN("The PID input sensor becomes invalid")
     {
         referenceSensor->connected(false);
+        reference->update();
         pid.update();
 
-        THEN("The target setpoint is set to invalid after 10 failed updates")
+        THEN("The input value becomes invalid and the target setpoint is set to invalid after 10 failed sensor reads")
         {
             for (uint8_t i = 0; i < 10; ++i) {
                 CHECK(pid.active() == true);
                 CHECK(target->settingValid() == true);
+                reference->update();
                 pid.update();
             }
 
+            CHECK(reference->valueValid() == false);
             CHECK(pid.active() == false);
             CHECK(target->settingValid() == false);
         }
@@ -429,8 +453,10 @@ SCENARIO("PID Test with offset actuator", "[pid]")
         AND_WHEN("The sensor comes back alive, the pid and setpoint are active/valid again")
         {
             referenceSensor->connected(true);
+            reference->update();
             pid.update();
 
+            CHECK(reference->valueValid() == true);
             CHECK(pid.active() == true);
             CHECK(target->settingValid() == true);
         }
@@ -439,6 +465,7 @@ SCENARIO("PID Test with offset actuator", "[pid]")
     WHEN("The PID is disabled")
     {
         pid.enabled(false);
+        reference->update();
         pid.update();
 
         THEN("The target setpoint is set to invalid")
@@ -452,6 +479,7 @@ SCENARIO("PID Test with offset actuator", "[pid]")
             target->setting(20.0);
             target->settingValid(true);
             CHECK(target->settingValid() == true);
+            reference->update();
             pid.update();
 
             THEN("The already disabled PID doesn't affect it")
@@ -472,6 +500,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         [&sensor]() { return sensor; });
     input->settingValid(true);
     input->setting(20);
+    input->configureFilter(0, fp12_t(1));
 
     auto mockIo = std::make_shared<MockIoArray>();
     auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
@@ -489,8 +518,6 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
     pid.enabled(true);
 
-    pid.configureFilter(0, Pid::in_t(1));
-
     auto nextPwmUpdate = now;
     auto nextPidUpdate = now;
 
@@ -501,6 +528,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
+                input->update();
                 pid.update();
                 actuator->update();
                 nextPidUpdate = now + 1000;
@@ -555,7 +583,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         input->setting(30);
         sensor->value(20);
 
-        temp_t mockVal;
+        fp12_t mockVal;
         double accumulatedError = 0;
 
         auto start = now;
@@ -564,8 +592,9 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
-                mockVal = temp_t(20.0 + 9.0 * (now - start) / 900'000);
+                mockVal = fp12_t(20.0 + 9.0 * (now - start) / 900'000);
                 sensor->value(mockVal);
+                input->update();
                 pid.update();
                 actuator->update();
                 accumulatedError += pid.error();
@@ -592,7 +621,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         input->setting(20);
         sensor->value(30);
 
-        temp_t mockVal;
+        fp12_t mockVal;
         double accumulatedError = 0;
 
         auto start = now;
@@ -601,8 +630,9 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
-                mockVal = temp_t(30.0 - 9.0 * (now - start) / 900'000);
+                mockVal = fp12_t(30.0 - 9.0 * (now - start) / 900'000);
                 sensor->value(mockVal);
+                input->update();
                 pid.update();
                 actuator->update();
                 accumulatedError += pid.error();
@@ -620,14 +650,14 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
 
-    WHEN("When changing Ti")
+    WHEN("When changing Ti is changed")
     {
         pid.kp(-10);
         pid.ti(2000);
         pid.td(200);
 
-        input->setting(20);
-        sensor->value(21);
+        // sensor is left at 20
+        input->setting(19);
 
         auto start = now;
         while (now <= start + 1000'000) {
@@ -635,6 +665,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
+                input->update();
                 pid.update();
                 actuator->update();
                 nextPidUpdate = now + 1000;
@@ -648,6 +679,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(pid.d() == Approx(0.0).margin(0.01));
 
         pid.ti(1000);
+        input->update();
         pid.update();
 
         THEN("The integral action is unchanged")
@@ -666,8 +698,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.ti(2000);
         pid.td(200);
 
-        input->setting(20);
-        sensor->value(25);
+        // sensor is left at 20
+        input->setting(15);
 
         auto start = now;
         while (now <= start + 1000'000) {
@@ -675,6 +707,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 nextPwmUpdate = pwm.update(now);
             }
             if (now >= nextPidUpdate) {
+                input->update();
                 pid.update();
                 actuator->update();
                 nextPidUpdate = now + 1000;
@@ -698,6 +731,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     nextPwmUpdate = pwm.update(now);
                 }
                 if (now >= nextPidUpdate) {
+                    input->update();
                     pid.update();
                     actuator->update();
                     nextPidUpdate = now + 1000;
@@ -705,6 +739,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 ++now;
             }
 
+            input->update();
             pid.update();
 
             CHECK(pid.p() == Approx(50).epsilon(0.01));
@@ -724,6 +759,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     nextPwmUpdate = pwm.update(now);
                 }
                 if (now >= nextPidUpdate) {
+                    input->update();
                     pid.update();
                     actuator->update();
                     nextPidUpdate = now + 1000;
@@ -731,6 +767,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 ++now;
             }
 
+            input->update();
             pid.update();
 
             CHECK(pid.p() == Approx(125).epsilon(0.01));
@@ -744,6 +781,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     WHEN("The PID is disabled")
     {
         pid.enabled(false);
+        input->update();
         pid.update();
 
         THEN("The pwm setting is set to invalid")
@@ -757,6 +795,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             actuator->settingValid(true);
             CHECK(actuator->settingValid() == true);
             CHECK(actuator->setting() == 50);
+            input->update();
             pid.update();
 
             THEN("The disabled PID doesn't affect it")
@@ -764,6 +803,20 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 CHECK(actuator->settingValid() == true);
                 CHECK(actuator->setting() == 50.0);
             }
+        }
+    }
+
+    WHEN("The integral part is set externally")
+    {
+        pid.kp(10);
+        pid.ti(1000);
+        pid.td(0);
+        pid.setIntegral(20);
+        pid.update();
+
+        THEN("The new output matches what whas set")
+        {
+            CHECK(pid.i() == 20);
         }
     }
 }
