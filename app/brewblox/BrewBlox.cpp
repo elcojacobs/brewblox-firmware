@@ -40,6 +40,7 @@
 #include "blox/TempSensorOneWireBlock.h"
 #include "blox/TouchSettingsBlock.h"
 #include "blox/WiFiSettingsBlock.h"
+#include "blox/stringify.h"
 #include "cbox/Box.h"
 #include "cbox/Connections.h"
 #include "cbox/EepromObjectStorage.h"
@@ -193,3 +194,38 @@ updateBrewbloxBox()
 #endif
 }
 
+const char*
+versionCsv()
+{
+    static const char version[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," stringify(PLATFORM_ID);
+    return version;
+}
+
+namespace cbox {
+void
+connectionStarted(DataOut& out)
+{
+    char header[] = "<!BREWBLOX,";
+
+    out.writeBuffer(header, strlen(header));
+    out.writeBuffer(versionCsv(), strlen(versionCsv()));
+    out.write(',');
+
+    cbox::BinaryToHexTextOut hexOut(out);
+#if PLATFORM_ID == 3
+    int resetReason = 0;
+#else
+    auto resetReason = System.resetReason();
+#endif
+    hexOut.write(resetReason);
+    out.write(',');
+#if PLATFORM_ID == 3
+    int resetData = 0;
+#else
+    auto resetData = System.resetReasonData();
+#endif
+    hexOut.write(resetData);
+    out.write('>');
+}
+
+} // end namespace cbox

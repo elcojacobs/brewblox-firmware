@@ -23,6 +23,7 @@
 #include "Buzzer.h"
 #include "TimerInterrupts.h"
 #include "blox/stringify.h"
+#include "cbox/Box.h"
 #include "cbox/Object.h"
 #include "connectivity.h"
 #include "d4d.hpp"

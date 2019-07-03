@@ -19,9 +19,8 @@
 
 #include "connectivity.h"
 #include "Board.h"
+#include "BrewBlox.h"
 #include "MDNS.h"
-#include "blox/stringify.h"
-#include "cbox/Connections.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_tcpclient.h"
 #include "spark_wiring_tcpserver.h"
@@ -196,8 +195,6 @@ wifiInit()
     initMdns();
 }
 
-const char versionCsv[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," stringify(PLATFORM_ID);
-
 void
 handleDebugConnection(TCPClient& dbgConn)
 {
@@ -228,7 +225,7 @@ handleDebugConnection(TCPClient& dbgConn)
 
         if (command == DCMD::Ack) {
             dbgConn.write("<!BREWBLOX_DEBUG,");
-            dbgConn.write(versionCsv);
+            dbgConn.write(versionCsv());
             dbgConn.write(">\n");
             dbgConn.flush();
         } else if (command == DCMD::FlashFirmware) {
@@ -246,32 +243,3 @@ handleDebugConnection(TCPClient& dbgConn)
     delay(5);
     dbgConn.stop();
 }
-
-namespace cbox {
-void
-connectionStarted(DataOut& out)
-{
-    char header[] = "<!BREWBLOX,";
-
-    out.writeBuffer(&header, strlen(header));
-    out.writeBuffer(&versionCsv, strlen(versionCsv));
-    out.write(',');
-
-    cbox::BinaryToHexTextOut hexOut(out);
-#if PLATFORM_ID == 3
-    int resetReason = 0;
-#else
-    auto resetReason = System.resetReason();
-#endif
-    hexOut.write(resetReason);
-    out.write(',');
-#if PLATFORM_ID == 3
-    int resetData = 0;
-#else
-    auto resetData = System.resetReasonData();
-#endif
-    hexOut.write(resetData);
-    out.write('>');
-}
-
-} // end namespace cbox
