@@ -196,7 +196,7 @@ wifiInit()
     initMdns();
 }
 
-const char versionCsv[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING);
+const char versionCsv[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," stringify(PLATFORM_ID);
 
 void
 handleDebugConnection(TCPClient& dbgConn)
