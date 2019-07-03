@@ -47,6 +47,7 @@
 #include "cbox/ObjectContainer.h"
 #include "cbox/ObjectFactory.h"
 #include "cbox/spark/SparkEepromAccess.h"
+#include "platforms.h"
 #include <memory>
 
 using EepromAccessImpl = cbox::SparkEepromAccess;
@@ -197,7 +198,17 @@ updateBrewbloxBox()
 const char*
 versionCsv()
 {
-    static const char version[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," stringify(PLATFORM_ID);
+#if PLATFORM_ID == 3
+#define PLATFORM_STRING "gcc"
+#elif PLATFORM_ID == 6
+#define PLATFORM_STRING "photon"
+#elif PLATFORM_ID == 8
+#define PLATFORM_STRING "p1"
+#else
+#define PLATFORM_STRING "unkown"
+#endif
+
+    static const char version[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," PLATFORM_STRING;
     return version;
 }
 
