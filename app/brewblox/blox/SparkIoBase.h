@@ -42,7 +42,7 @@ public:
     senseChannelImpl(uint8_t channel, State& result) const override final
     {
         auto pin = channelToPin(channel);
-        if (pin > 0) {
+        if (pin >= 0) {
             result = HAL_GPIO_Read(pin) != 0 ? State::Active : State::Inactive;
             return true;
         }

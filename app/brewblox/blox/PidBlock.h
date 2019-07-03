@@ -12,7 +12,7 @@
 
 class PidBlock : public Block<BrewbloxOptions_BlockType_Pid> {
 private:
-    cbox::CboxPtr<ProcessValue<Pid::in_t>> input;
+    cbox::CboxPtr<SetpointSensorPair> input;
     cbox::CboxPtr<ActuatorAnalogConstrained> output;
 
     Pid pid;
@@ -39,10 +39,12 @@ public:
             pid.enabled(newData.enabled);
             input.setId(newData.inputId);
             output.setId(newData.outputId);
-            pid.configureFilter(uint8_t(newData.filter), cnl::wrap<Pid::in_t>(newData.filterThreshold));
             pid.kp(cnl::wrap<Pid::in_t>(newData.kp));
             pid.ti(newData.ti);
             pid.td(newData.td);
+            if (newData.integralReset != 0) {
+                pid.setIntegral(cnl::wrap<Pid::out_t>(newData.integralReset));
+            }
         }
         return res;
     }
@@ -89,8 +91,6 @@ public:
             stripped.add(blox_Pid_outputValue_tag);
         }
 
-        message.filter = blox_Pid_FilterChoice(pid.filterChoice());
-        message.filterThreshold = cnl::unwrap(pid.filterThreshold());
         message.enabled = pid.enabled();
         message.active = pid.active();
         message.kp = cnl::unwrap(pid.kp());
@@ -114,8 +114,6 @@ public:
         blox_Pid message = blox_Pid_init_zero;
         message.inputId = input.getId();
         message.outputId = output.getId();
-        message.filter = blox_Pid_FilterChoice(pid.filterChoice());
-        message.filterThreshold = cnl::unwrap(pid.filterThreshold());
         message.enabled = pid.enabled();
         message.kp = cnl::unwrap(pid.kp());
         message.ti = pid.ti();
