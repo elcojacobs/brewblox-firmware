@@ -106,7 +106,7 @@ jobs:
     dependsOn:
       - Tests
       - Simulator
-      - Flasher
+      - Binaries
 
     variables:
       # Variables imported from brewblox group:
