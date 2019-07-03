@@ -47,6 +47,7 @@
 #include "cbox/ObjectContainer.h"
 #include "cbox/ObjectFactory.h"
 #include "cbox/spark/SparkEepromAccess.h"
+#include "platforms.h"
 #include <memory>
 
 using EepromAccessImpl = cbox::SparkEepromAccess;
@@ -194,19 +195,34 @@ updateBrewbloxBox()
 #endif
 }
 
+const char*
+versionCsv()
+{
+#if PLATFORM_ID == 3
+#define PLATFORM_STRING "gcc"
+#elif PLATFORM_ID == 6
+#define PLATFORM_STRING "photon"
+#elif PLATFORM_ID == 8
+#define PLATFORM_STRING "p1"
+#else
+#define PLATFORM_STRING "unkown"
+#endif
+
+    static const char version[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," PLATFORM_STRING;
+    return version;
+}
+
 namespace cbox {
 void
 connectionStarted(DataOut& out)
 {
-    char msg[] = "<!BREWBLOX," stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) ",";
+    char header[] = "<!BREWBLOX,";
 
-    out.writeBuffer(&msg, strlen(msg));
-    cbox::BinaryToHexTextOut hexOut(out);
-
-    const char sysVersion[] = stringify(SYSTEM_VERSION_STRING);
-    out.writeBuffer(sysVersion, strlen(sysVersion));
+    out.writeBuffer(header, strlen(header));
+    out.writeBuffer(versionCsv(), strlen(versionCsv()));
     out.write(',');
 
+    cbox::BinaryToHexTextOut hexOut(out);
 #if PLATFORM_ID == 3
     int resetReason = 0;
 #else
@@ -222,4 +238,5 @@ connectionStarted(DataOut& out)
     hexOut.write(resetData);
     out.write('>');
 }
+
 } // end namespace cbox

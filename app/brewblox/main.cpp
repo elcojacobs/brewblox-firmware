@@ -23,6 +23,7 @@
 #include "Buzzer.h"
 #include "TimerInterrupts.h"
 #include "blox/stringify.h"
+#include "cbox/Box.h"
 #include "cbox/Object.h"
 #include "connectivity.h"
 #include "d4d.hpp"
@@ -46,8 +47,20 @@ signal_handler(int signal)
 }
 #endif
 
+enum RESET_USER_REASON {
+    NOT_SPECIFIED = 0,
+    WATCHDOG = 1,
+    CBOX_RESET = 2,
+};
+
+void
+watchdogReset()
+{
+    System.reset(RESET_USER_REASON::WATCHDOG);
+}
+
 #if PLATFORM_THREADING
-ApplicationWatchdog appWatchdog(60000, System.reset);
+ApplicationWatchdog appWatchdog(60000, watchdogReset);
 inline void
 watchdogCheckin()
 {
@@ -157,7 +170,7 @@ handleReset(bool exitFlag)
 #if PLATFORM_ID == PLATFORM_GCC
         exit(0);
 #else
-        System.reset();
+        System.reset(RESET_USER_REASON::CBOX_RESET);
 #endif
     }
 }

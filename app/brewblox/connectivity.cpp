@@ -19,6 +19,7 @@
 
 #include "connectivity.h"
 #include "Board.h"
+#include "BrewBlox.h"
 #include "MDNS.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_tcpclient.h"
@@ -36,6 +37,8 @@ auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with
 #else
 auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
 #endif
+
+auto debugServer = TCPServer(8333);
 
 void
 printWiFiIp(char dest[16])
@@ -95,6 +98,9 @@ listeningModeEnabled()
 }
 
 void
+handleDebugConnection(TCPClient& dbgConn);
+
+void
 manageConnections()
 {
     static uint16_t wifiTimeOut = 0;
@@ -115,6 +121,11 @@ manageConnections()
             client.flush();
             delay(5);
             client.stop();
+        }
+
+        TCPClient dbg = debugServer.available();
+        if (dbg) {
+            handleDebugConnection(dbg);
         }
     } else {
         ++wifiTimeOut;
@@ -182,4 +193,53 @@ wifiInit()
     spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
     System.on(network_status, handleNetworkEvent);
     initMdns();
+}
+
+void
+handleDebugConnection(TCPClient& dbgConn)
+{
+    enum class DCMD : uint8_t {
+        None,
+        Ack,
+        FlashFirmware,
+    };
+
+    auto command = DCMD::None;
+    while (true) {
+        int recv = dbgConn.read();
+
+        if (recv == -1 || recv == '\r') {
+            continue; // wait for characters
+        }
+
+        if (recv == 'F') {
+            command = DCMD::FlashFirmware;
+            continue; // wait for \n
+        }
+
+        if (recv == '\n') {
+            if (command == DCMD::None) {
+                command = DCMD::Ack;
+            }
+        }
+
+        if (command == DCMD::Ack) {
+            dbgConn.write("<!BREWBLOX_DEBUG,");
+            dbgConn.write(versionCsv());
+            dbgConn.write(">\n");
+            dbgConn.flush();
+        } else if (command == DCMD::FlashFirmware) {
+            dbgConn.write("<!READY_FOR_FIRMWARE>\n");
+            dbgConn.flush();
+            system_firmwareUpdate(&dbgConn);
+            break;
+        } else {
+            dbgConn.write("<No valid command received, closing connection>");
+            dbgConn.flush();
+            break;
+        }
+    }
+
+    delay(5);
+    dbgConn.stop();
 }

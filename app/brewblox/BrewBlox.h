@@ -19,12 +19,15 @@
 
 #pragma once
 
-#include "OneWire.h"
-#include "TicksTypes.h"
 #include "cbox/Box.h"
 
+// forward declarations
+namespace cbox {
+class StringStreamConnectionSource;
+}
+class OneWire;
+
 #if !defined(SPARK)
-#include "cbox/ConnectionsStringStream.h"
 cbox::StringStreamConnectionSource&
 testConnectionSource();
 #endif
@@ -39,3 +42,6 @@ theOneWire();
 
 void
 updateBrewbloxBox();
+
+const char*
+versionCsv();
