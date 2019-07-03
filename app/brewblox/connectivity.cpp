@@ -20,6 +20,8 @@
 #include "connectivity.h"
 #include "Board.h"
 #include "MDNS.h"
+#include "blox/stringify.h"
+#include "cbox/Connections.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_tcpclient.h"
 #include "spark_wiring_tcpserver.h"
@@ -37,7 +39,7 @@ auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with
 auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
 #endif
 
-auto upgradeServer = TCPServer(9393);
+auto debugServer = TCPServer(8333);
 
 void
 printWiFiIp(char dest[16])
@@ -97,6 +99,9 @@ listeningModeEnabled()
 }
 
 void
+handleDebugConnection(TCPClient& dbgConn);
+
+void
 manageConnections()
 {
     static uint16_t wifiTimeOut = 0;
@@ -119,12 +124,10 @@ manageConnections()
             client.stop();
         }
 
-        TCPClient upgrader = upgradeServer.available();
-        if (upgrader) {
-            system_firmwareUpdate(&upgrader);
-            upgrader.stop();
+        TCPClient dbg = debugServer.available();
+        if (dbg) {
+            handleDebugConnection(dbg);
         }
-
     } else {
         ++wifiTimeOut;
     }
@@ -192,3 +195,83 @@ wifiInit()
     System.on(network_status, handleNetworkEvent);
     initMdns();
 }
+
+const char versionCsv[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING);
+
+void
+handleDebugConnection(TCPClient& dbgConn)
+{
+    enum class DCMD : uint8_t {
+        None,
+        Ack,
+        FlashFirmware,
+    };
+
+    auto command = DCMD::None;
+    while (true) {
+        int recv = dbgConn.read();
+
+        if (recv == -1 || recv == '\r') {
+            continue; // wait for characters
+        }
+
+        if (recv == 'F') {
+            command = DCMD::FlashFirmware;
+            continue; // wait for \n
+        }
+
+        if (recv == '\n') {
+            if (command == DCMD::None) {
+                command = DCMD::Ack;
+            }
+        }
+
+        if (command == DCMD::Ack) {
+            dbgConn.write("<!BREWBLOX_DEBUG,");
+            dbgConn.write(versionCsv);
+            dbgConn.write(">\n");
+            dbgConn.flush();
+        } else if (command == DCMD::FlashFirmware) {
+            dbgConn.write("<!READY_FOR_FIRMWARE>\n");
+            dbgConn.flush();
+            system_firmwareUpdate(&dbgConn);
+            break;
+        } else {
+            dbgConn.write("<No valid command received, closing connection>");
+            dbgConn.flush();
+            break;
+        }
+    }
+
+    delay(5);
+    dbgConn.stop();
+}
+
+namespace cbox {
+void
+connectionStarted(DataOut& out)
+{
+    char header[] = "<!BREWBLOX,";
+
+    out.writeBuffer(&header, strlen(header));
+    out.writeBuffer(&versionCsv, strlen(versionCsv));
+    out.write(',');
+
+    cbox::BinaryToHexTextOut hexOut(out);
+#if PLATFORM_ID == 3
+    int resetReason = 0;
+#else
+    auto resetReason = System.resetReason();
+#endif
+    hexOut.write(resetReason);
+    out.write(',');
+#if PLATFORM_ID == 3
+    int resetData = 0;
+#else
+    auto resetData = System.resetReasonData();
+#endif
+    hexOut.write(resetData);
+    out.write('>');
+}
+
+} // end namespace cbox
