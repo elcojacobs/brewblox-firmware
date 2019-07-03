@@ -9,6 +9,8 @@ RUN touch device_key.der server_key.der eeprom.bin
 EXPOSE 80
 # brewblox protocol
 EXPOSE 8332
+# debug port
+EXPOSE 8333
 # mdns
 EXPOSE 5353/udp
 # websocket display emulation

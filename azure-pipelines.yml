@@ -70,9 +70,9 @@ jobs:
           artifactName: simulator
 
   #########################################################
-  # Flasher
+  # Binaries
   #########################################################
-  - job: Flasher
+  - job: Binaries
     pool:
       vmImage: "Ubuntu-16.04"
 
@@ -83,20 +83,19 @@ jobs:
         displayName: Start compiler
 
       - bash: |
-          bash build-flasher.sh
+          bash build-bin.sh
         workingDirectory: docker
         displayName: Build
 
       - bash: |
-          docker save brewblox/firmware-flasher:local > $(Build.ArtifactStagingDirectory)/flasher.tar
-          docker save brewblox/firmware-flasher:rpi-local > $(Build.ArtifactStagingDirectory)/rpi-flasher.tar
+          docker save brewblox/firmware-bin:local > $(Build.ArtifactStagingDirectory)/bin.tar
         workingDirectory: docker
         displayName: Save image
 
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: "$(Build.ArtifactStagingDirectory)"
-          artifactName: flasher
+          artifactName: bin
 
   #########################################################
   # Deployment
@@ -107,7 +106,7 @@ jobs:
     dependsOn:
       - Tests
       - Simulator
-      - Flasher
+      - Binaries
 
     variables:
       # Variables imported from brewblox group:
@@ -141,37 +140,33 @@ jobs:
         inputs:
           buildType: current
           downloadType: single
-          artifactName: flasher
+          artifactName: bin
           downloadPath: $(System.ArtifactsDirectory)
 
       - bash: |
           docker load -i $(System.ArtifactsDirectory)/simulator/simulator.tar
-          docker load -i $(System.ArtifactsDirectory)/flasher/flasher.tar
-          docker load -i $(System.ArtifactsDirectory)/flasher/rpi-flasher.tar
+          docker load -i $(System.ArtifactsDirectory)/bin/bin.tar
         displayName: Import images
 
       - bash: |
           bash push-local.sh ${SIM_REPO} newest-tag
           bash push-local.sh ${SIM_REPO} $(brewblox.tag)
-          bash push-local.sh ${FLASH_REPO} newest-tag
-          bash push-local.sh ${FLASH_REPO} $(brewblox.tag)
-          bash push-rpi-local.sh ${FLASH_REPO} rpi-newest-tag
-          bash push-rpi-local.sh ${FLASH_REPO} rpi-$(brewblox.tag)
+          bash push-local.sh ${BIN_REPO} newest-tag
+          bash push-local.sh ${BIN_REPO} $(brewblox.tag)
         displayName: Deploy newest-tag and version tag to Docker Hub on tagged commits
         condition: and(succeeded(), variables['brewblox.tag'])
         workingDirectory: docker
         env:
           SIM_REPO: brewblox/firmware-simulator
-          FLASH_REPO: brewblox/firmware-flasher
+          BIN_REPO: brewblox/bin
 
       - bash: |
           CLEAN_BRANCH=$(echo $(brewblox.branch) | tr '/' '-' | tr '[:upper:]' '[:lower:]')
           bash push-local.sh ${SIM_REPO} ${CLEAN_BRANCH}
-          bash push-local.sh ${FLASH_REPO} ${CLEAN_BRANCH}
-          bash push-rpi-local.sh ${FLASH_REPO} rpi-${CLEAN_BRANCH}
+          bash push-local.sh ${BIN_REPO} ${CLEAN_BRANCH}
         displayName: Deploy branch to Docker Hub on any push to the GitHub repository
         condition: and(succeeded(), variables['brewblox.branch'], not(variables['brewblox.tag']))
         workingDirectory: docker
         env:
           SIM_REPO: brewblox/firmware-simulator
-          FLASH_REPO: brewblox/firmware-flasher
+          BIN_REPO: brewblox/bin
