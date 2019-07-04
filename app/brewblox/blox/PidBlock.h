@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ActuatorAnalogConstrained.h"
+#include "IntervalHelper.h"
 #include "Pid.h"
 #include "ProcessValue.h"
 #include "blox/Block.h"
@@ -16,6 +17,7 @@ private:
     cbox::CboxPtr<ActuatorAnalogConstrained> output;
 
     Pid pid;
+    IntervalHelper<1000> m_intervalHelper;
 
 public:
     PidBlock(cbox::ObjectContainer& objects)
@@ -45,6 +47,7 @@ public:
             if (newData.integralReset != 0) {
                 pid.setIntegral(cnl::wrap<Pid::out_t>(newData.integralReset));
             }
+            pid.update(); // force an update that bypasses the update interval
         }
         return res;
     }
@@ -125,8 +128,14 @@ public:
     virtual cbox::update_t
     update(const cbox::update_t& now) override final
     {
-        pid.update();
-        return update_1s(now);
+        bool doUpdate = false;
+        auto nextUpdate = m_intervalHelper.update(now, doUpdate);
+
+        if (doUpdate) {
+
+            pid.update();
+        }
+        return nextUpdate;
     }
 
     virtual void*

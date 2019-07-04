@@ -20,7 +20,6 @@
 #include <catch.hpp>
 
 #include <stdlib.h> /* srand, rand */
-#include <time.h>   /* time, to seed rand */
 
 #include "ActuatorAnalogConstrained.h"
 #include "ActuatorDigital.h"
