@@ -104,6 +104,10 @@ public:
 
     void kp(const in_t& arg)
     {
+        if (arg != 0) {
+            // scale integral history so integral action doesn't change
+            m_integral = (m_integral * m_kp) / arg;
+        }
         m_kp = arg;
     }
 
