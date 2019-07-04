@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IntervalHelper.h"
 #include "SetpointSensorPair.h"
 #include "SetpointSensorPair.pb.h"
 #include "blox/Block.h"
@@ -12,9 +13,9 @@ class SetpointSensorPairBlock : public Block<BrewbloxOptions_BlockType_SetpointS
 private:
     cbox::CboxPtr<TempSensor> sensor;
     SetpointSensorPair pair;
+    IntervalHelper<1000> m_intervalHelper;
 
-public
-    :
+public:
     SetpointSensorPairBlock(cbox::ObjectContainer& objects)
         : sensor(objects)
         , pair(sensor.lockFunctor())
@@ -37,6 +38,7 @@ public
                 sensor.setId(newData.sensorId);
                 pair.resetFilter();
             }
+            pair.update(); // force an update that bypasses the update interval
         }
         return res;
     }
@@ -86,8 +88,13 @@ public
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
-        pair.update();
-        return update_1s(now);
+        bool doUpdate = false;
+        auto nextUpdate = m_intervalHelper.update(now, doUpdate);
+
+        if (doUpdate) {
+            pair.update();
+        }
+        return nextUpdate;
     }
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
