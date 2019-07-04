@@ -125,7 +125,7 @@ jobs:
         displayName: export build variables
 
       - bash: |
-          echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin
+          echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin docker.io
         displayName: Docker login
         condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
