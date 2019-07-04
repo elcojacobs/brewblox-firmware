@@ -1,8 +1,6 @@
 resources:
   repositories:
     - repository: self
-      checkoutOptions:
-        submodules: recursive
 
 trigger:
   tags:
@@ -21,6 +19,10 @@ jobs:
       vmImage: "Ubuntu-16.04"
 
     steps:
+      - bash: |
+          git submodule update --init --recursive
+        displayName: Init submodules
+
       - bash: |
           bash start-compiler.sh
         workingDirectory: docker
@@ -50,6 +52,10 @@ jobs:
 
     steps:
       - bash: |
+          git submodule update --init --recursive
+        displayName: Init submodules
+
+      - bash: |
           bash start-compiler.sh
         workingDirectory: docker
         displayName: Start compiler
@@ -77,6 +83,10 @@ jobs:
       vmImage: "Ubuntu-16.04"
 
     steps:
+      - bash: |
+          git submodule update --init --recursive
+        displayName: Init submodules
+
       - bash: |
           bash start-compiler.sh
         workingDirectory: docker
