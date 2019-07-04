@@ -650,7 +650,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
 
-    WHEN("When changing Ti is changed")
+    WHEN("When Ti is changed")
     {
         pid.kp(-10);
         pid.ti(2000);
@@ -679,6 +679,48 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(pid.d() == Approx(0.0).margin(0.01));
 
         pid.ti(1000);
+        input->update();
+        pid.update();
+
+        THEN("The integral action is unchanged")
+        {
+            CHECK(pid.i() == Approx(10.0 * 1000 / 2000).epsilon(0.01));
+        }
+        THEN("The integral is scaled with the inverse factor of the change")
+        {
+            CHECK(pid.integral() == Approx(-500).epsilon(0.01));
+        }
+    }
+
+    WHEN("When Kp is changed")
+    {
+        pid.kp(-10);
+        pid.ti(2000);
+        pid.td(200);
+
+        // sensor is left at 20
+        input->setting(19);
+
+        auto start = now;
+        while (now <= start + 1000'000) {
+            if (now >= nextPwmUpdate) {
+                nextPwmUpdate = pwm.update(now);
+            }
+            if (now >= nextPidUpdate) {
+                input->update();
+                pid.update();
+                actuator->update();
+                nextPidUpdate = now + 1000;
+            }
+            ++now;
+        }
+
+        CHECK(pid.error() == Approx(-1).epsilon(0.01));
+        CHECK(pid.p() == Approx(10).epsilon(0.01));
+        CHECK(pid.i() == Approx(10.0 * 1000 / 2000).epsilon(0.01));
+        CHECK(pid.d() == Approx(0.0).margin(0.01));
+
+        pid.kp(-20);
         input->update();
         pid.update();
 
