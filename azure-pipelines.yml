@@ -158,7 +158,7 @@ jobs:
         workingDirectory: docker
         env:
           SIM_REPO: brewblox/firmware-simulator
-          BIN_REPO: brewblox/bin
+          BIN_REPO: brewblox/firmware-bin
 
       - bash: |
           CLEAN_BRANCH=$(echo $(brewblox.branch) | tr '/' '-' | tr '[:upper:]' '[:lower:]')
@@ -169,4 +169,4 @@ jobs:
         workingDirectory: docker
         env:
           SIM_REPO: brewblox/firmware-simulator
-          BIN_REPO: brewblox/bin
+          BIN_REPO: brewblox/firmware-bin
