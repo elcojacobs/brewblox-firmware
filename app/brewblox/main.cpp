@@ -101,7 +101,7 @@ setup()
     System.on(setup_update, watchdogCheckin);
 
 #if PLATFORM_ID == PLATFORM_GCC
-    manageConnections(); // init network early to websocket display emulation works during setup()
+    manageConnections(0); // init network early to websocket display emulation works during setup()
 #endif
 
     // init display
