@@ -150,7 +150,7 @@ loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
-        manageConnections();
+        manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
     }
     ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
