@@ -24,7 +24,6 @@
 #include <memory>
 #include <vector>
 
-
 class FilterChain {
 private:
     struct Stage {
@@ -48,6 +47,9 @@ public:
     int32_t read() const;                               // read from last filter
     uint32_t minSampleInterval(uint8_t filterNr) const; // get minimum sample interval of filter at index i
     uint32_t minSampleInterval() const;                 // get minimum sample interval of filter at last filter
+
+    uint8_t intervalToFilterNr(uint32_t maxInterval) const; // get slowest filter number with interval faster than argument
+
     uint32_t getCount() const
     {
         return counter;
@@ -65,6 +67,6 @@ public:
     int64_t readWithNFractionBits(uint8_t filterNr, uint8_t bits) const;
     int64_t readWithNFractionBits(uint8_t bits) const;
     int32_t readLastInput() const;
-    IirFilter::DerivativeResult readDerivative() const;
+    IirFilter::DerivativeResult readDerivative(uint8_t filterNr) const;
     void reset(const int32_t& value);
 };

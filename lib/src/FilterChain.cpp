@@ -158,12 +158,28 @@ FilterChain::minSampleInterval(uint8_t filterNr) const
     if (filterNr > stages.size() - 1) {
         return 1;
     }
-    int32_t interval = 1;
+    uint32_t interval = 1;
     auto it = stages.begin();
     for (; it != stages.end() && it != stages.begin() + filterNr + 1; it++) {
         interval *= it->interval;
     }
     return interval;
+}
+
+uint8_t
+FilterChain::intervalToFilterNr(uint32_t maxInterval) const
+{
+    uint8_t filterNr = 0;
+    uint32_t stageInterval = 1;
+    for (auto it = stages.begin() + 1; it != stages.end(); it++) {
+        stageInterval *= it->interval;
+        if (stageInterval <= maxInterval) {
+            filterNr++;
+        } else {
+            break;
+        }
+    }
+    return filterNr;
 }
 
 uint32_t
@@ -194,11 +210,14 @@ FilterChain::readLastInput() const
 }
 
 IirFilter::DerivativeResult
-FilterChain::readDerivative() const
+FilterChain::readDerivative(uint8_t filterNr) const
 {
-    auto retv = stages[stages.size() - 1].filter.readDerivative();
-    // The last filter is updated less frequenctly, so the derivative needs to be scaled back to the input sample interval
-    auto inputSamplesPerOutputChange = minSampleInterval();
+    if (filterNr >= stages.size()) {
+        filterNr = stages.size() - 1;
+    }
+    auto retv = stages[filterNr].filter.readDerivative();
+    // Scale back derivative to account for sample interval in slower updating stages
+    auto inputSamplesPerOutputChange = minSampleInterval(filterNr - 1);
     retv.result = retv.result / inputSamplesPerOutputChange;
     return retv;
 }

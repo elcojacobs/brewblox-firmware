@@ -73,6 +73,8 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
+
         for (int32_t i = 0; i < 1000; ++i) {
             input->update();
             pid.update();
@@ -92,6 +94,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
 
         for (int32_t i = 0; i < 1000; ++i) {
             input->update();
@@ -122,6 +125,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(30);
         sensor->value(20);
+        input->resetFilter();
 
         fp12_t mockVal;
         double accumulatedError = 0;
@@ -134,8 +138,8 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         }
 
         CHECK(mockVal == 29);
-        CHECK(pid.error() == Approx(1.23).epsilon(0.01)); // the filter introduces some delay, which is why this is not 1.0
-        CHECK(pid.p() == Approx(12.3).epsilon(0.01));
+        CHECK(pid.error() == Approx(1).epsilon(0.1)); // the filter introduces some delay, which is why this is not exactly 1.0
+        CHECK(pid.p() == Approx(10).epsilon(0.1));
         CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.001));
         CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.001));
@@ -151,6 +155,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(20);
         sensor->value(30);
+        input->resetFilter();
 
         fp12_t mockVal;
         double accumulatedError = 0;
@@ -163,8 +168,8 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         }
 
         CHECK(mockVal == 21);
-        CHECK(pid.error() == Approx(-1.23).epsilon(0.01)); // the filter introduces some delay, which is why this is not 1.0
-        CHECK(pid.p() == Approx(12.3).epsilon(0.01));
+        CHECK(pid.error() == Approx(-1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
+        CHECK(pid.p() == Approx(10).epsilon(0.1));
         CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.001));
         CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.001));
@@ -180,6 +185,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
         actuator->minSetting(0);
         actuator->maxSetting(20);
 
@@ -225,6 +231,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(19);
         sensor->value(20);
+        input->resetFilter();
         actuator->minSetting(0);
         actuator->maxSetting(20);
 
@@ -269,6 +276,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
         actuator->minValue(5);
         actuator->maxValue(20);
 
@@ -312,6 +320,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(19);
         sensor->value(20);
+        input->resetFilter();
         actuator->minValue(5);
         actuator->maxValue(20);
 
@@ -355,6 +364,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
 
         int32_t i = 0;
         for (; i <= 10000; ++i) {
@@ -544,6 +554,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
 
         run1000seconds();
 
@@ -558,6 +569,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         input->setting(21);
         sensor->value(20);
+        input->resetFilter();
 
         run1000seconds();
 
@@ -582,6 +594,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         input->setting(30);
         sensor->value(20);
+        input->resetFilter();
 
         fp12_t mockVal;
         double accumulatedError = 0;
@@ -604,8 +617,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         }
 
         CHECK(mockVal == 29);
-        CHECK(pid.error() == Approx(1.23).epsilon(0.01)); // the filter introduces some delay, which is why this is not 1.0
-        CHECK(pid.p() == Approx(12.3).epsilon(0.01));
+        CHECK(pid.error() == Approx(1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
+        CHECK(pid.p() == Approx(10).epsilon(0.1));
         CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.05)); // some integral anti-windup will occur at the start
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 
@@ -620,6 +633,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         input->setting(20);
         sensor->value(30);
+        input->resetFilter();
 
         fp12_t mockVal;
         double accumulatedError = 0;
@@ -642,8 +656,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         }
 
         CHECK(mockVal == 21);
-        CHECK(pid.error() == Approx(-1.23).epsilon(0.01)); // the filter introduces some delay, which is why this is not 1.0
-        CHECK(pid.p() == Approx(12.3).epsilon(0.01));
+        CHECK(pid.error() == Approx(-1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
+        CHECK(pid.p() == Approx(10).epsilon(0.1));
         CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.05)); // some integral anti-windup will occur at the start
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 

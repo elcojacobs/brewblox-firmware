@@ -369,6 +369,19 @@ SCENARIO("Filters in chain are ran at specified intervals", "[filterchain][inter
             }
         }
     }
+
+    WHEN("A filter chain is downsampled at each stage, the slowest filter nr with an update interval of at least a certain frequency can be queried")
+    {
+        FilterChain chain({2, 2, 2, 2, 2, 2}, {2, 2, 3, 3, 4, 4});
+        CHECK(chain.intervalToFilterNr(1) == 0);
+        CHECK(chain.intervalToFilterNr(2) == 1);
+        CHECK(chain.intervalToFilterNr(3) == 1);
+        CHECK(chain.intervalToFilterNr(2 * 2) == 1);
+        CHECK(chain.intervalToFilterNr(2 * 2 * 3 - 1) == 2);
+        CHECK(chain.intervalToFilterNr(2 * 2 * 3 * 3) == 3);
+        CHECK(chain.intervalToFilterNr(2 * 2 * 3 * 3 * 4) == 4);
+        CHECK(chain.intervalToFilterNr(2 * 2 * 3 * 3 * 4 * 4) == 5);
+    }
 }
 
 SCENARIO("Filters chain output matches manually cascaded filters", "[filterchain][match]")

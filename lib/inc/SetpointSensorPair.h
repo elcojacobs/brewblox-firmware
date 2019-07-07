@@ -46,7 +46,7 @@ public:
     explicit SetpointSensorPair(
         std::function<std::shared_ptr<TempSensor>()>&& _sensor)
         : m_sensor(_sensor)
-        , m_filter(m_filterChoice)
+        , m_filter(0)
     {
         update();
     }
@@ -144,9 +144,9 @@ public:
         return setting() - value();
     }
 
-    auto derivative()
+    auto derivative(uint32_t period)
     {
-        return m_filter.readDerivative<derivative_t>();
+        return m_filter.readDerivativeForInterval<derivative_t>(period);
     }
 
     void resetFilter()

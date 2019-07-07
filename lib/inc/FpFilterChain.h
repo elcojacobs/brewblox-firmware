@@ -25,57 +25,20 @@
 template <typename T>
 class FpFilterChain {
 private:
-    FilterChain chain;
+    FilterChain chain = FilterChain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4});
+    uint8_t readIdx = 0;
 
     struct FilterSpec {
         const std::vector<uint8_t> paramIdxs;
         const std::vector<uint8_t> intervals;
     };
 
-    static constexpr FilterSpec predefinedFilter(const uint8_t& specIdx)
-    {
-        FilterSpec predefinedFilterSpecs[] = {
-            {{0, 0}, {2, 1}},                   // 28
-            {{2, 0}, {4, 1}},                   // 56
-            {{2, 2, 0}, {4, 3, 1}},             // 171
-            {{2, 2, 2}, {4, 3, 1}},             // 257
-            {{2, 2, 2, 0}, {4, 4, 3, 1}},       // 683
-            {{2, 2, 2, 2}, {4, 4, 4, 1}},       // 1343
-            {{2, 2, 2, 2, 0}, {4, 4, 4, 3, 1}}, // 2729
-        };
-        auto idx = (specIdx < 7) ? specIdx : 0;
-        return predefinedFilterSpecs[idx];
-    }
-
 public:
     using value_type = T;
 
-    FpFilterChain(const uint8_t& specIdx)
-        : chain(predefinedFilter(specIdx).paramIdxs, predefinedFilter(specIdx).intervals)
-    {
-    }
-
-    FpFilterChain(const std::vector<uint8_t>& params)
-        : chain(params)
-    {
-    }
-
-    FpFilterChain(const std::vector<uint8_t>& params, const value_type& stepThreshold)
-        : chain(params, cnl::unwrap(stepThreshold))
-    {
-    }
-
-    FpFilterChain(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals)
-        : chain(params, intervals)
-    {
-    }
-
-    FpFilterChain(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const value_type& stepThreshold)
-        : chain(params, intervals, cnl::unwrap(stepThreshold))
-    {
-    }
-
-    ~FpFilterChain<value_type>() = default;
+    FpFilterChain(uint8_t idx)
+        : readIdx(idx){};
+    ~FpFilterChain() = default;
 
     void add(const value_type& val)
     {
@@ -83,15 +46,10 @@ public:
     }
     void add(const int32_t& val);
 
-    void setParams(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const value_type& stepThreshold)
-    {
-        chain.setParams(params, intervals, cnl::unwrap(stepThreshold));
-    }
-
     void setParams(const uint8_t& choice, const value_type& stepThreshold)
     {
-        auto spec = predefinedFilter(choice);
-        chain.setParams(spec.paramIdxs, spec.intervals, cnl::unwrap(stepThreshold));
+        readIdx = choice;
+        chain.setStepThreshold(cnl::unwrap(stepThreshold));
     }
 
     void setStepThreshold(const value_type& stepThreshold)
@@ -104,7 +62,7 @@ public:
     }
     value_type read() const
     {
-        return cnl::wrap<value_type>(chain.read());
+        return cnl::wrap<value_type>(chain.read(readIdx));
     }
 
     value_type read(uint8_t filterNr) const
@@ -124,9 +82,9 @@ public:
 
     // get the derivative from the chain with max precision and convert to the requested FP precision
     template <typename U>
-    U readDerivative() const
+    U readDerivative(uint8_t idx) const
     {
-        auto derivative = chain.readDerivative();
+        auto derivative = chain.readDerivative(idx);
         uint8_t destFractionBits = -U::exponent;
         uint8_t filterFactionBits = -T::exponent + derivative.fractionBits;
         int64_t result;
@@ -136,6 +94,19 @@ public:
             result = derivative.result >> (filterFactionBits - destFractionBits);
         }
         return cnl::wrap<U>(result);
+    }
+
+    template <typename U>
+    U readDerivative() const
+    {
+        return readDerivative<U>(readIdx);
+    }
+
+    template <typename U>
+    U readDerivativeForInterval(uint32_t numUpdates) const
+    {
+        // select filter in chain with an update interval to have the optimal amount of filtering for the period requested
+        return readDerivative<U>(chain.intervalToFilterNr(numUpdates / 6));
     }
 
     void reset(const value_type& value)
