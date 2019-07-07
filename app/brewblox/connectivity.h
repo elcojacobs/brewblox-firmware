@@ -46,4 +46,4 @@ bool
 listeningModeEnabled();
 
 void
-manageConnections();
+manageConnections(uint32_t now);

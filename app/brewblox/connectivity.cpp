@@ -101,11 +101,10 @@ void
 handleDebugConnection(TCPClient& dbgConn);
 
 void
-manageConnections()
+manageConnections(uint32_t now)
 {
-    static uint16_t wifiTimeOut = 0;
+    static uint32_t lastConnect = 0;
     if (wifiIsConnected) {
-        wifiTimeOut = 0;
         if (!mdns_started) {
             mdns_started = mdns.begin(true);
         } else {
@@ -127,14 +126,16 @@ manageConnections()
         if (dbg) {
             handleDebugConnection(dbg);
         }
-    } else {
-        ++wifiTimeOut;
+        lastConnect = now;
+        return;
     }
-    if (wifiTimeOut > 1000) {
-        // after 1000 loops without WiFi, trigger reconnect
+    if (now - lastConnect > 60000) {
+        // after 60 seconds without WiFi, trigger reconnect
         // wifi is expected to reconnect automatically. This is a failsafe in case it does not
-        spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
-        wifiTimeOut = 0;
+        if (!spark::WiFi.connecting()) {
+            spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
+        }
+        lastConnect = now;
     }
 }
 
@@ -173,14 +174,14 @@ handleNetworkEvent(system_event_t event, int param)
         localIp = ip.raw().ipv4;
         wifiIsConnected = true;
 #if PLATFORM_ID != PLATFORM_GCC
-        Particle.connect();
+        // Particle.connect();
 
 #endif
     } break;
     default:
         localIp = uint32_t(0);
         wifiIsConnected = false;
-        Particle.disconnect();
+        // Particle.disconnect();
         break;
     }
 }

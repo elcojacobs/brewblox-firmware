@@ -101,7 +101,7 @@ setup()
     System.on(setup_update, watchdogCheckin);
 
 #if PLATFORM_ID == PLATFORM_GCC
-    manageConnections(); // init network early to websocket display emulation works during setup()
+    manageConnections(0); // init network early to websocket display emulation works during setup()
 #endif
 
     // init display
@@ -150,7 +150,7 @@ loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
-        manageConnections();
+        manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
     }
     ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
