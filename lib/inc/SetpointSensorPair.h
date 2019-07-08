@@ -117,7 +117,7 @@ public:
     auto filterThreshold(temp_t threshold)
     {
         if (threshold == 0) {
-            threshold = 1;
+            threshold = 5;
         }
         m_filter.setStepThreshold(threshold);
     }

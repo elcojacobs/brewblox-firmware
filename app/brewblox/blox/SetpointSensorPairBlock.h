@@ -32,7 +32,8 @@ public:
         if (res == cbox::CboxError::OK) {
             pair.setting(cnl::wrap<temp_t>(newData.storedSetting));
             pair.settingValid(newData.settingEnabled);
-            pair.configureFilter(uint8_t(newData.filter), cnl::wrap<fp12_t>(newData.filterThreshold));
+            pair.filterChoice(uint8_t(newData.filter));
+            pair.filterThreshold(cnl::wrap<fp12_t>(newData.filterThreshold));
 
             if (newData.resetFilter || sensor.getId() != newData.sensorId) {
                 sensor.setId(newData.sensorId);
