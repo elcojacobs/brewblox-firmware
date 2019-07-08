@@ -875,4 +875,37 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             CHECK(pid.i() == 20);
         }
     }
+
+    WHEN("A step response is applied to the input")
+    {
+        pid.kp(10);
+        pid.ti(2000);
+        pid.td(600);
+        auto start = now;
+        auto dMax = pid.d();
+        sensor->value(20);
+        input->configureFilter(0, temp_t(99));
+        input->resetFilter();
+
+        while (now <= start + 1000'000) {
+            if (now >= nextPwmUpdate) {
+                nextPwmUpdate = pwm.update(now);
+            }
+            if (now == 10'000) {
+                sensor->value(30);
+            }
+            if (now >= nextPidUpdate) {
+                input->update();
+                pid.update();
+                if (pid.d() > dMax) {
+                    dMax = pid.d();
+                }
+                actuator->update();
+                nextPidUpdate = now + 1000;
+            }
+            ++now;
+        }
+
+        CHECK(dMax == 10);
+    }
 }
