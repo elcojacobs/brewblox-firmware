@@ -39,14 +39,13 @@ private:
     bool m_settingEnabled = false;
     const std::function<std::shared_ptr<TempSensor>()> m_sensor;
     FpFilterChain<temp_t> m_filter;
-    uint8_t m_filterChoice = 0;         // input filter index
     uint8_t m_sensorFailureCount = 255; // force a reset on init
 
 public:
     explicit SetpointSensorPair(
         std::function<std::shared_ptr<TempSensor>()>&& _sensor)
         : m_sensor(_sensor)
-        , m_filter(0)
+        , m_filter(1)
     {
         update();
     }
@@ -102,7 +101,7 @@ public:
 
     auto filterChoice() const
     {
-        return m_filterChoice;
+        return m_filter.getReadIdx();
     }
 
     auto filterThreshold() const
@@ -110,17 +109,17 @@ public:
         return m_filter.getStepThreshold();
     }
 
-    void configureFilter(uint8_t choice, temp_t threshold)
+    void filterChoice(uint8_t choice)
+    {
+        m_filter.setReadIdx(choice);
+    }
+
+    auto filterThreshold(temp_t threshold)
     {
         if (threshold == 0) {
-            threshold = temp_t(1);
+            threshold = 1;
         }
-        if (m_filterChoice != choice) {
-            m_filterChoice = choice;
-            m_filter.setParams(choice, threshold);
-        } else {
-            m_filter.setStepThreshold(threshold);
-        }
+        m_filter.setStepThreshold(threshold);
     }
 
     void update()

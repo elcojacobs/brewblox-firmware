@@ -37,7 +37,7 @@ SCENARIO("Fixed point filterchain using temp_t")
                                                      {0, 1},
                                                      {0, 1, 1}};
 
-    for (uint8_t filter = 0; filter < 6; filter++) {
+    for (uint8_t filter = 0; filter <= 6; filter++) {
         GIVEN("A filter chain tapped at stage " + std::to_string(filter))
         {
             auto chain = FpFilterChain<temp_t>(filter);
@@ -113,32 +113,37 @@ SCENARIO("Fixed point filterchain using temp_t")
 
         THEN("They block higher frequencies and pass lower frequencies")
         {
-            auto chain = FpFilterChain<temp_t>(0);
+            auto chain = FpFilterChain<temp_t>(0); // unfiltered
+            CHECK(findHalfAmplitudePeriod(chain) == 10);
+            CHECK(findGainAtPeriod(chain, 5, false) > 0.9);
+            CHECK(findGainAtPeriod(chain, 20, false) > 0.9);
+
+            chain = FpFilterChain<temp_t>(1);
             CHECK(findHalfAmplitudePeriod(chain) == 13);
             CHECK(findGainAtPeriod(chain, 7) < 0.1);
             CHECK(findGainAtPeriod(chain, 26) > 0.8);
 
-            chain = FpFilterChain<temp_t>(1);
+            chain = FpFilterChain<temp_t>(2);
             CHECK(findHalfAmplitudePeriod(chain) == 43);
             CHECK(findGainAtPeriod(chain, 22) < 0.1);
             CHECK(findGainAtPeriod(chain, 86) > 0.8);
 
-            chain = FpFilterChain<temp_t>(2);
+            chain = FpFilterChain<temp_t>(3);
             CHECK(findHalfAmplitudePeriod(chain) == 91);
             CHECK(findGainAtPeriod(chain, 46) < 0.1);
             CHECK(findGainAtPeriod(chain, 182) > 0.8);
 
-            chain = FpFilterChain<temp_t>(3);
+            chain = FpFilterChain<temp_t>(4);
             CHECK(findHalfAmplitudePeriod(chain) == 184);
             CHECK(findGainAtPeriod(chain, 92) < 0.1);
             CHECK(findGainAtPeriod(chain, 368) > 0.8);
 
-            chain = FpFilterChain<temp_t>(4);
+            chain = FpFilterChain<temp_t>(5);
             CHECK(findHalfAmplitudePeriod(chain) == 519);
             CHECK(findGainAtPeriod(chain, 259) < 0.1);
             CHECK(findGainAtPeriod(chain, 1038) > 0.8);
 
-            chain = FpFilterChain<temp_t>(5);
+            chain = FpFilterChain<temp_t>(6);
             CHECK(findHalfAmplitudePeriod(chain) == 1546);
             CHECK(findGainAtPeriod(chain, 773) < 0.1);
             CHECK(findGainAtPeriod(chain, 3096) > 0.8);
@@ -163,7 +168,7 @@ SCENARIO("Fixed point filterchain using temp_t")
                 // std::cout << "\n";
                 return t;
             };
-            auto chain = FpFilterChain<temp_t>(5);
+            auto chain = FpFilterChain<temp_t>(6);
             CHECK(findStepResponseDelay(chain, temp_t(100)) == 1368);
             CHECK(findStepResponseDelay(chain, temp_t(10)) == 1368);
             CHECK(findStepResponseDelay(chain, temp_t(0.9)) == 1368);
@@ -179,7 +184,7 @@ SCENARIO("Fixed point filterchain using temp_t")
             uint32_t period = 200;
             const temp_t amplIn = period / (2.0 * M_PI); // derivative max 1
 
-            auto c = FpFilterChain<temp_t>(0);
+            auto c = FpFilterChain<temp_t>(1);
 
             derivative_t maxDerivative12 = 0;
             derivative_t maxDerivative25 = 0;

@@ -26,7 +26,7 @@ template <typename T>
 class FpFilterChain {
 private:
     FilterChain chain = FilterChain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4});
-    uint8_t readIdx = 0;
+    uint8_t readIdx; // 0 for no filtering, 1 - 6 for each filter stage
 
     struct FilterSpec {
         const std::vector<uint8_t> paramIdxs;
@@ -46,10 +46,14 @@ public:
     }
     void add(const int32_t& val);
 
-    void setParams(const uint8_t& choice, const value_type& stepThreshold)
+    void setReadIdx(uint8_t idx)
     {
-        readIdx = choice;
-        chain.setStepThreshold(cnl::unwrap(stepThreshold));
+        readIdx = idx;
+    }
+
+    uint8_t getReadIdx() const
+    {
+        return readIdx;
     }
 
     void setStepThreshold(const value_type& stepThreshold)
@@ -62,7 +66,10 @@ public:
     }
     value_type read() const
     {
-        return cnl::wrap<value_type>(chain.read(readIdx));
+        if (readIdx == 0) {
+            return cnl::wrap<value_type>(chain.readLastInput());
+        }
+        return cnl::wrap<value_type>(chain.read(readIdx - 1));
     }
 
     value_type read(uint8_t filterNr) const
@@ -99,7 +106,7 @@ public:
     template <typename U>
     U readDerivative() const
     {
-        return readDerivative<U>(readIdx);
+        return readDerivative<U>(readIdx > 0 ? readIdx - 1 : 0);
     }
 
     template <typename U>

@@ -510,7 +510,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         [&sensor]() { return sensor; });
     input->settingValid(true);
     input->setting(20);
-    input->configureFilter(0, fp12_t(5));
+    input->filterChoice(1);
+    input->filterThreshold(5);
 
     auto mockIo = std::make_shared<MockIoArray>();
     auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
@@ -880,7 +881,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
-        input->configureFilter(0, temp_t(99));
+        input->filterChoice(1);
+        input->filterThreshold(99);
         auto testStep = [&](uint16_t td) {
             pid.td(td);
             auto start = now;
