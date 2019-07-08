@@ -173,10 +173,10 @@ SCENARIO("Fixed point filterchain using temp_t")
             CHECK(findStepResponseDelay(chain, 0.9) == 1368);
         }
 
-        AND_WHEN("The derivative is requested over a larger period")
+        AND_WHEN("The derivative is requested with a certain period")
         {
             using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
-            uint32_t period = 100;
+            uint32_t period = 200;
             const temp_t amplIn = period / (2.0 * M_PI); // derivative max 1
 
             auto c = FpFilterChain<temp_t>(0);
@@ -204,8 +204,8 @@ SCENARIO("Fixed point filterchain using temp_t")
             }
 
             CHECK(maxDerivative12 > 0.8);
-            CHECK(maxDerivative25 > 0.5);
-            CHECK(maxDerivative100 < 0.1);
+            CHECK(maxDerivative25 > 0.5);  // sample rate of 25 should have most of the sine wave left
+            CHECK(maxDerivative100 < 0.1); // sample rate of 100 should filted out the sine with period 200
         }
     }
 }

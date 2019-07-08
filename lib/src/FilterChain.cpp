@@ -52,7 +52,7 @@ FilterChain::add(const int32_t& val)
         nextFilterIn = s.filter.readWithNFractionBits(nextFilterInFractionBits);
     }
     counter++;
-    if (counter == minSampleInterval()) {
+    if (counter == sampleInterval()) {
         counter = 0; // reset counter if last filter has had all its updates
     }
 }
@@ -153,7 +153,7 @@ FilterChain::readWithNFractionBits(uint8_t bits) const
 }
 
 uint32_t
-FilterChain::minSampleInterval(uint8_t filterNr) const
+FilterChain::sampleInterval(uint8_t filterNr) const
 {
     if (filterNr > stages.size() - 1) {
         return 1;
@@ -173,7 +173,7 @@ FilterChain::intervalToFilterNr(uint32_t maxInterval) const
     uint32_t stageInterval = 1;
     for (auto it = stages.begin() + 1; it != stages.end(); it++) {
         stageInterval *= it->interval;
-        if (stageInterval <= maxInterval) {
+        if (stageInterval < maxInterval) {
             filterNr++;
         } else {
             break;
@@ -183,9 +183,9 @@ FilterChain::intervalToFilterNr(uint32_t maxInterval) const
 }
 
 uint32_t
-FilterChain::minSampleInterval() const
+FilterChain::sampleInterval() const
 {
-    return minSampleInterval(stages.size() - 1);
+    return sampleInterval(stages.size() - 1);
 }
 
 uint8_t
@@ -217,7 +217,7 @@ FilterChain::readDerivative(uint8_t filterNr) const
     }
     auto retv = stages[filterNr].filter.readDerivative();
     // Scale back derivative to account for sample interval in slower updating stages
-    auto inputSamplesPerOutputChange = minSampleInterval(filterNr - 1);
+    auto inputSamplesPerOutputChange = filterNr > 0 ? sampleInterval(filterNr - 1) : 1;
     retv.result = retv.result / inputSamplesPerOutputChange;
     return retv;
 }

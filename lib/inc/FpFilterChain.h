@@ -103,10 +103,10 @@ public:
     }
 
     template <typename U>
-    U readDerivativeForInterval(uint32_t numUpdates) const
+    U readDerivativeForInterval(uint32_t maxInterval) const
     {
         // select filter in chain with an update interval to have the optimal amount of filtering for the period requested
-        return readDerivative<U>(chain.intervalToFilterNr(numUpdates / 6));
+        return readDerivative<U>(chain.intervalToFilterNr(maxInterval));
     }
 
     void reset(const value_type& value)

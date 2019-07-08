@@ -41,12 +41,12 @@ public:
 
     void add(const int32_t& val);
     void setParams(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const int32_t& stepThreshold);
-    void setStepThreshold(const int32_t& threshold);    // set the step detection threshold
-    int32_t getStepThreshold() const;                   // get the step detection threshold of last filter
-    int32_t read(uint8_t filterNr) const;               // read from specified filter
-    int32_t read() const;                               // read from last filter
-    uint32_t minSampleInterval(uint8_t filterNr) const; // get minimum sample interval of filter at index i
-    uint32_t minSampleInterval() const;                 // get minimum sample interval of filter at last filter
+    void setStepThreshold(const int32_t& threshold); // set the step detection threshold
+    int32_t getStepThreshold() const;                // get the step detection threshold of last filter
+    int32_t read(uint8_t filterNr) const;            // read from specified filter
+    int32_t read() const;                            // read from last filter
+    uint32_t sampleInterval(uint8_t filterNr) const; // get minimum sample interval of filter at index i
+    uint32_t sampleInterval() const;                 // get minimum sample interval of filter at last filter
 
     uint8_t intervalToFilterNr(uint32_t maxInterval) const; // get slowest filter number with interval faster than argument
 
@@ -56,7 +56,7 @@ public:
     }; // return count. Can be used to synchronize sensor switching
     uint32_t getCount(uint8_t filterNr) const
     {
-        return counter / minSampleInterval(filterNr - 1);
+        return counter / sampleInterval(filterNr - 1);
     }; // return count for a specific filter
     uint8_t length() const
     {

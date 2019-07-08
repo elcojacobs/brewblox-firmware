@@ -29,7 +29,7 @@ Pid::update()
             active(true);
         }
         m_error = input->error();
-        m_derivative = m_td ? input->derivative(m_td) : 0;
+        m_derivative = m_td ? input->derivative(m_td / 2) : 0;
 
         m_integral = m_ti ? m_integral + m_error : 0;
     } else {

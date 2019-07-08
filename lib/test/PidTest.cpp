@@ -142,7 +142,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(pid.p() == Approx(10).epsilon(0.1));
         CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.001));
         CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
-        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.001));
+        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
@@ -172,7 +172,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(pid.p() == Approx(10).epsilon(0.1));
         CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.001));
         CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
-        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.001));
+        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
@@ -510,7 +510,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         [&sensor]() { return sensor; });
     input->settingValid(true);
     input->setting(20);
-    input->configureFilter(0, fp12_t(1));
+    input->configureFilter(0, fp12_t(5));
 
     auto mockIo = std::make_shared<MockIoArray>();
     auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
@@ -876,36 +876,47 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         }
     }
 
-    WHEN("A step response is applied to the input")
+    WHEN("A step response is applied to the input for various Td")
     {
         pid.kp(10);
         pid.ti(2000);
-        pid.td(600);
-        auto start = now;
-        auto dMax = pid.d();
-        sensor->value(20);
         input->configureFilter(0, temp_t(99));
-        input->resetFilter();
+        auto testStep = [&](uint16_t td) {
+            pid.td(td);
+            auto start = now;
+            auto dMin = Pid::out_t(0);
+            sensor->value(20);
+            input->resetFilter();
 
-        while (now <= start + 1000'000) {
-            if (now >= nextPwmUpdate) {
-                nextPwmUpdate = pwm.update(now);
-            }
-            if (now == 10'000) {
-                sensor->value(30);
-            }
-            if (now >= nextPidUpdate) {
-                input->update();
-                pid.update();
-                if (pid.d() > dMax) {
-                    dMax = pid.d();
+            while (now <= start + 2000'000) {
+                if (now >= nextPwmUpdate) {
+                    nextPwmUpdate = pwm.update(now);
                 }
-                actuator->update();
-                nextPidUpdate = now + 1000;
+                if (now == start + 10'000) {
+                    sensor->value(30);
+                }
+                if (now >= nextPidUpdate) {
+                    input->update();
+                    pid.update();
+                    if (pid.d() < dMin) {
+                        dMin = pid.d();
+                    }
+                    actuator->update();
+                    nextPidUpdate = now + 1000;
+                }
+                ++now;
             }
-            ++now;
-        }
+            return dMin;
+        };
 
-        CHECK(dMax == 10);
+        THEN("A derivative filter is selected so that derivative output is max 30%-150% of proportional gain")
+        {
+            for (uint16_t td = 20; td < 1200; td = td * 5 / 4) {
+                INFO("td=" + std::to_string(td));
+
+                CHECK(testStep(td) >= -150);
+                CHECK(testStep(td) <= -30);
+            }
+        }
     }
 }

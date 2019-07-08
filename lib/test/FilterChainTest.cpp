@@ -209,7 +209,7 @@ test_frequencies(
     double t = 0;
     double dt = double(1.0) / double(input_freq);
     double max_period = 1.0 / *std::min_element(freq.begin(), freq.end());
-    double t_end = std::max(10.0 * max_period, 10.0 * chain.minSampleInterval() * dt);
+    double t_end = std::max(10.0 * max_period, 10.0 * chain.sampleInterval() * dt);
     double sensor = 0;
     double max = 0;
     double t_max = 0;
@@ -321,19 +321,19 @@ SCENARIO("Filters in chain are ran at specified intervals", "[filterchain][inter
         {
             FilterChain chain1({2, 2, 2, 2, 2, 2}, {1, 1, 1, 1, 1, 1});
             countSameValueAtOutPut(chain1, 1, 0);
-            CHECK(chain1.minSampleInterval() == 1);
+            CHECK(chain1.sampleInterval() == 1);
 
             FilterChain chain2({2, 2, 2, 2, 2, 2}, {2, 1, 2, 1, 1, 4});
             countSameValueAtOutPut(chain2, 4, 15);
-            CHECK(chain2.minSampleInterval() == 16);
+            CHECK(chain2.sampleInterval() == 16);
 
             FilterChain chain3({2, 2, 2, 2, 2, 2}, {2, 2, 2, 1, 1, 4});
             countSameValueAtOutPut(chain3, 8, 31);
-            CHECK(chain3.minSampleInterval() == 32);
+            CHECK(chain3.sampleInterval() == 32);
 
             FilterChain chain4({2, 2, 2, 2, 2, 2}, {4, 2, 1, 4, 2, 1});
             countSameValueAtOutPut(chain4, 64, 63);
-            CHECK(chain4.minSampleInterval() == 64);
+            CHECK(chain4.sampleInterval() == 64);
         }
     }
     WHEN("The sample rates are specified")
@@ -374,7 +374,7 @@ SCENARIO("Filters in chain are ran at specified intervals", "[filterchain][inter
     {
         FilterChain chain({2, 2, 2, 2, 2, 2}, {2, 2, 3, 3, 4, 4});
         CHECK(chain.intervalToFilterNr(1) == 0);
-        CHECK(chain.intervalToFilterNr(2) == 1);
+        CHECK(chain.intervalToFilterNr(2) == 0);
         CHECK(chain.intervalToFilterNr(3) == 1);
         CHECK(chain.intervalToFilterNr(2 * 2) == 1);
         CHECK(chain.intervalToFilterNr(2 * 2 * 3 - 1) == 2);
