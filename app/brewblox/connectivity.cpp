@@ -186,7 +186,7 @@ wifiInit()
 }
 
 void
-updateFirmwareFromStream(cbox::StreamType streamType)
+updateFirmwareStreamHandler(Stream& stream)
 {
     enum class DCMD : uint8_t {
         None,
@@ -194,54 +194,65 @@ updateFirmwareFromStream(cbox::StreamType streamType)
         FlashFirmware,
     };
 
-    Stream* stream;
+    auto command = DCMD::Ack;
+    bool newlineReceived = true;
+    while (true) {
+        int recv = stream.read();
 
+        switch (recv) {
+        case 'F':
+            command = DCMD::FlashFirmware;
+            break;
+        case '\n':
+            if (command == DCMD::None) {
+                command = DCMD::Ack;
+            }
+            newlineReceived = true;
+            break;
+        case -1:
+        case '\r':
+            break;
+        default:
+            stream.write("<Invalid command received, closing connection>");
+            stream.flush();
+            return;
+        }
+        if (!newlineReceived) {
+            continue;
+        }
+
+        if (command == DCMD::Ack) {
+            stream.write("<!FIRMWARE_UPDATER,");
+            stream.write(versionCsv());
+            stream.write(">\n");
+            stream.flush();
+        }
+        if (command == DCMD::FlashFirmware) {
+            stream.write("<!READY_FOR_FIRMWARE>\n");
+            stream.flush();
+            system_firmwareUpdate(&stream);
+            break;
+        }
+        newlineReceived = false;
+    }
+}
+
+void
+updateFirmwareFromStream(cbox::StreamType streamType)
+{
     if (streamType == cbox::StreamType::Usb) {
         Serial.begin(9600);
-        stream = &Serial;
+        updateFirmwareStreamHandler(Serial);
     } else {
         TCPServer server(8332); // re-open TCP server
 
         TCPClient client;
-        while (!client) {
+        while (true) {
             client = server.available();
-        }
-        stream = &client;
-    }
-
-    auto command = DCMD::None;
-    while (true) {
-        int recv = stream->read();
-
-        if (recv == -1 || recv == '\r') {
-            continue; // wait for characters
-        }
-
-        if (recv == 'F') {
-            command = DCMD::FlashFirmware;
-            continue; // wait for \n
-        }
-
-        if (recv == '\n') {
-            if (command == DCMD::None) {
-                command = DCMD::Ack;
+            if (client) {
+                updateFirmwareStreamHandler(client);
+                client.stop();
             }
-        }
-
-        if (command == DCMD::Ack) {
-            stream->write("<!BREWBLOX_DEBUG,");
-            stream->write(versionCsv());
-            stream->write(">\n");
-            stream->flush();
-        } else if (command == DCMD::FlashFirmware) {
-            stream->write("<!READY_FOR_FIRMWARE>\n");
-            stream->flush();
-            system_firmwareUpdate(stream);
-            break;
-        } else {
-            stream->write("<No valid command received, closing connection>");
-            stream->flush();
-            break;
         }
     }
 }

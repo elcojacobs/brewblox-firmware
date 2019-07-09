@@ -89,5 +89,9 @@ public:
         connectionQueue.pop();
         return retval;
     }
+
+    virtual void stop() override final
+    {
+    }
 };
 } // end namespace cbox

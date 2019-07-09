@@ -250,16 +250,22 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
 {
     switch (cmdId) {
     case 100: // firmware update
+    {
+        CboxError status = CboxError::OK;
         in.spool();
+        if (out.crc()) {
+            status = CboxError::CRC_ERROR_IN_COMMAND;
+        }
         out.writeResponseSeparator();
-        out.write(asUint8(CboxError::OK));
+        out.write(asUint8(status));
         out.endMessage();
-        theConnectionPool().closeAll();
-
-        updateFirmwareFromStream(in.streamType());
-
-        handleReset(true); // reset in case the firmware update failed
+        if (status == CboxError::OK) {
+            theConnectionPool().closeAll();
+            updateFirmwareFromStream(in.streamType());
+            handleReset(true); // reset in case the firmware update failed
+        }
         return true;
+    }
     default:
         return false;
     }

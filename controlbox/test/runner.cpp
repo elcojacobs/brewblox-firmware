@@ -26,12 +26,20 @@ applicationCommand(uint8_t cmdId, DataIn& in, HexCrcDataOut& out)
 {
 
     switch (cmdId) {
-    case 100:
+    case 100: {
+        CboxError status = CboxError::OK;
         in.spool();
+        if (out.crc()) {
+            status = CboxError::CRC_ERROR_IN_COMMAND;
+        }
+
         out.writeResponseSeparator();
-        out.write(asUint8(CboxError::OK));
-        out.write(100);
+        out.write(asUint8(status));
+        if (status == CboxError::OK) {
+            out.write(100);
+        }
         return true;
+    }
     default:
         return false;
     }
