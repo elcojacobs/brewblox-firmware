@@ -34,6 +34,7 @@ public:
     }
     ~TcpConnection()
     {
+        get().flush();
         get().stop();
     }
 };

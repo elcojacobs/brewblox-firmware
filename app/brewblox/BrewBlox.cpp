@@ -48,6 +48,7 @@
 #include "cbox/ObjectFactory.h"
 #include "cbox/spark/SparkEepromAccess.h"
 #include "platforms.h"
+#include "spark_wiring_led.h"
 #include <memory>
 
 using EepromAccessImpl = cbox::SparkEepromAccess;
@@ -245,6 +246,8 @@ connectionStarted(DataOut& out)
     out.write('>');
 }
 
+particle::LEDStatus blinkOrange(RGB_COLOR_ORANGE, LED_PATTERN_BLINK, LED_SPEED_NORMAL, LED_PRIORITY_IMPORTANT);
+
 bool
 applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
 {
@@ -260,9 +263,11 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
         out.write(asUint8(status));
         out.endMessage();
         if (status == CboxError::OK) {
+            blinkOrange.setActive(true);
             theConnectionPool().closeAll();
             updateFirmwareFromStream(in.streamType());
             handleReset(true); // reset in case the firmware update failed
+            blinkOrange.setActive(false);
         }
         return true;
     }

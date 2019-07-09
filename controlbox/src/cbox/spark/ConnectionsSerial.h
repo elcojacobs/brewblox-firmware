@@ -55,6 +55,7 @@ public:
 
     virtual void stop() override final
     {
+        Serial.flush();
         Serial.end();
     }
 };
