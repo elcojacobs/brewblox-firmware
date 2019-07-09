@@ -49,10 +49,25 @@
 #include "cbox/ObjectFactory.h"
 #include "cbox/spark/SparkEepromAccess.h"
 #include "platforms.h"
-#include "spark_wiring_led.h"
 #include <memory>
 
 using EepromAccessImpl = cbox::SparkEepromAccess;
+
+#if defined(SPARK)
+#include "spark_wiring_led.h"
+particle::LEDStatus blinkOrange(RGB_COLOR_ORANGE, LED_PATTERN_BLINK, LED_SPEED_NORMAL, LED_PRIORITY_IMPORTANT);
+extern void
+updateFirmwareFromStream(cbox::StreamType streamType);
+#else
+class BlinkOrangeMock {
+public:
+    void setActive(bool) {}
+};
+BlinkOrangeMock blinkOrange;
+
+void
+updateFirmwareFromStream(cbox::StreamType streamType){};
+#endif
 
 // define separately to make it available for tests
 #if !defined(SPARK)
@@ -214,9 +229,6 @@ versionCsv()
     return version;
 }
 
-extern void
-updateFirmwareFromStream(cbox::StreamType streamType);
-
 namespace cbox {
 void
 connectionStarted(DataOut& out)
@@ -243,8 +255,6 @@ connectionStarted(DataOut& out)
     hexOut.write(resetData);
     out.write('>');
 }
-
-particle::LEDStatus blinkOrange(RGB_COLOR_ORANGE, LED_PATTERN_BLINK, LED_SPEED_NORMAL, LED_PRIORITY_IMPORTANT);
 
 bool
 applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
