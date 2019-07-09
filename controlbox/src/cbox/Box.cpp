@@ -34,7 +34,7 @@
 #include <vector>
 
 extern void
-handleReset(bool);
+handleReset(bool exit, uint8_t reason);
 
 namespace cbox {
 
@@ -470,7 +470,7 @@ Box::reboot(DataIn& in, HexCrcDataOut& out)
 
     out.write(asUint8(CboxError::OK));
 
-    ::handleReset(true);
+    ::handleReset(true, 2);
 }
 
 void
@@ -490,7 +490,7 @@ Box::factoryReset(DataIn& in, HexCrcDataOut& out)
 
     out.write(asUint8(CboxError::OK));
 
-    ::handleReset(true);
+    ::handleReset(true, 3);
 }
 
 /**

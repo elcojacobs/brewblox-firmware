@@ -17,6 +17,7 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "./reset.h"
 #include "AppTicks.h"
 #include "Board.h"
 #include "Logger.h"
@@ -216,9 +217,6 @@ versionCsv()
 extern void
 updateFirmwareFromStream(cbox::StreamType streamType);
 
-extern void
-handleReset(bool);
-
 namespace cbox {
 void
 connectionStarted(DataOut& out)
@@ -266,7 +264,8 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
             blinkOrange.setActive(true);
             theConnectionPool().closeAll();
             updateFirmwareFromStream(in.streamType());
-            handleReset(true); // reset in case the firmware update failed
+            uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+            handleReset(true, reason); // reset in case the firmware update failed
             blinkOrange.setActive(false);
         }
         return true;

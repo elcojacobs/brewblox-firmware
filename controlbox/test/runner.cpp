@@ -10,7 +10,7 @@
 TestInfo testInfo;
 
 void
-handleReset(bool)
+handleReset(bool, uint8_t)
 {
     ++testInfo.rebootCount;
 }
