@@ -241,11 +241,12 @@ void
 updateFirmwareFromStream(cbox::StreamType streamType)
 {
     if (streamType == cbox::StreamType::Usb) {
-        Serial.begin(9600);
-        WITH_LOCK(Serial)
-        {
-            updateFirmwareStreamHandler(Serial);
+        auto ser = Serial;
+        WITH_LOCK(ser);
+        if (ser.baud() == 0) {
+            ser.begin(9600);
         }
+        updateFirmwareStreamHandler(ser);
     } else {
         TCPServer server(8332); // re-open TCP server
 
