@@ -38,8 +38,6 @@ auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with
 auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
 #endif
 
-auto debugServer = TCPServer(8333);
-
 void
 printWiFiIp(char dest[16])
 {
@@ -98,9 +96,6 @@ listeningModeEnabled()
 }
 
 void
-handleDebugConnection(TCPClient& dbgConn);
-
-void
 manageConnections(uint32_t now)
 {
     static uint32_t lastConnect = 0;
@@ -121,12 +116,6 @@ manageConnections(uint32_t now)
             delay(5);
             client.stop();
         }
-
-        TCPClient dbg = debugServer.available();
-        if (dbg) {
-            handleDebugConnection(dbg);
-        }
-        lastConnect = now;
         return;
     }
     if (now - lastConnect > 60000) {
@@ -197,7 +186,7 @@ wifiInit()
 }
 
 void
-handleDebugConnection(TCPClient& dbgConn)
+updateFirmwareFromStream(cbox::StreamType streamType)
 {
     enum class DCMD : uint8_t {
         None,
@@ -205,9 +194,24 @@ handleDebugConnection(TCPClient& dbgConn)
         FlashFirmware,
     };
 
+    Stream* stream;
+
+    if (streamType == cbox::StreamType::Usb) {
+        Serial.begin(9600);
+        stream = &Serial;
+    } else {
+        TCPServer server(8332); // re-open TCP server
+
+        TCPClient client;
+        while (!client) {
+            client = server.available();
+        }
+        stream = &client;
+    }
+
     auto command = DCMD::None;
     while (true) {
-        int recv = dbgConn.read();
+        int recv = stream->read();
 
         if (recv == -1 || recv == '\r') {
             continue; // wait for characters
@@ -225,22 +229,19 @@ handleDebugConnection(TCPClient& dbgConn)
         }
 
         if (command == DCMD::Ack) {
-            dbgConn.write("<!BREWBLOX_DEBUG,");
-            dbgConn.write(versionCsv());
-            dbgConn.write(">\n");
-            dbgConn.flush();
+            stream->write("<!BREWBLOX_DEBUG,");
+            stream->write(versionCsv());
+            stream->write(">\n");
+            stream->flush();
         } else if (command == DCMD::FlashFirmware) {
-            dbgConn.write("<!READY_FOR_FIRMWARE>\n");
-            dbgConn.flush();
-            system_firmwareUpdate(&dbgConn);
+            stream->write("<!READY_FOR_FIRMWARE>\n");
+            stream->flush();
+            system_firmwareUpdate(stream);
             break;
         } else {
-            dbgConn.write("<No valid command received, closing connection>");
-            dbgConn.flush();
+            stream->write("<No valid command received, closing connection>");
+            stream->flush();
             break;
         }
     }
-
-    delay(5);
-    dbgConn.stop();
 }

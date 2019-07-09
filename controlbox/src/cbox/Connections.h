@@ -53,10 +53,12 @@ public:
     virtual ~ConnectionSource() = default;
 
     virtual std::unique_ptr<Connection> newConnection() = 0;
+
+    virtual void stop() = 0;
 };
 
 template <class S>
-DataIn::StreamType
+StreamType
 getStreamType();
 
 /**
@@ -93,9 +95,9 @@ public:
         return stream_size_t(stream.available());
     }
 
-    static DataIn::StreamType streamTypeImpl();
+    static StreamType streamTypeImpl();
 
-    virtual DataIn::StreamType streamType() const override final
+    virtual StreamType streamType() const override final
     {
         return streamTypeImpl();
     }
@@ -263,6 +265,14 @@ public:
     DataOut& logDataOut() const
     {
         return currentDataOut;
+    }
+
+    void closeAll()
+    {
+        connections.clear();
+        for (auto& source : connectionSources) {
+            source.get().stop();
+        }
     }
 };
 

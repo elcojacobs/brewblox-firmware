@@ -212,6 +212,12 @@ versionCsv()
     return version;
 }
 
+extern void
+updateFirmwareFromStream(cbox::StreamType streamType);
+
+extern void
+handleReset(bool);
+
 namespace cbox {
 void
 connectionStarted(DataOut& out)
@@ -240,9 +246,23 @@ connectionStarted(DataOut& out)
 }
 
 bool
-applicationCommand(uint8_t cmdId, cbox::DataIn&, cbox::HexCrcDataOut&)
+applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
 {
-    return false;
+    switch (cmdId) {
+    case 100: // firmware update
+        in.spool();
+        out.writeResponseSeparator();
+        out.write(asUint8(CboxError::OK));
+        out.endMessage();
+        theConnectionPool().closeAll();
+
+        updateFirmwareFromStream(in.streamType());
+
+        handleReset(true); // reset in case the firmware update failed
+        return true;
+    default:
+        return false;
+    }
 }
 
 } // end namespace cbox

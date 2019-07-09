@@ -6,17 +6,17 @@ class TCPClient;
 namespace cbox {
 
 template <>
-DataIn::StreamType
+StreamType
 StreamDataIn<USBSerial>::streamTypeImpl()
 {
-    return DataIn::StreamType::Serial;
+    return StreamType::Usb;
 }
 
 template <>
-DataIn::StreamType
+StreamType
 StreamDataIn<TCPClient>::streamTypeImpl()
 {
-    return DataIn::StreamType::Tcp;
+    return StreamType::Tcp;
 }
 
 } // end namespace cbox

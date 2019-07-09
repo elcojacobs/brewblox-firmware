@@ -58,6 +58,11 @@ public:
         }
         return nullptr;
     }
+
+    void stop() override final
+    {
+        server.stop();
+    }
 };
 
 } // end namespace cbox

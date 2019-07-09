@@ -183,6 +183,13 @@ public:
     }
 };
 
+enum class StreamType : uint8_t {
+    Mock = 0,
+    Usb = 1,
+    Tcp = 2,
+    Eeprom = 3,
+};
+
 /**
  * A data input stream. The stream contents may be determined asynchronously.
  * hasNext() returns true if the stream may eventually produce a new item, false if the stream is closed.
@@ -274,13 +281,6 @@ public:
         }
         return success;
     }
-
-    enum class StreamType : uint8_t {
-        Mock = 0,
-        Serial = 1,
-        Tcp = 2,
-        Eeprom = 3,
-    };
 
     virtual StreamType streamType() const = 0;
 };
