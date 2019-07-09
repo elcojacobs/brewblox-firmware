@@ -239,4 +239,10 @@ connectionStarted(DataOut& out)
     out.write('>');
 }
 
+bool
+applicationCommand(uint8_t cmdId, cbox::DataIn&, cbox::HexCrcDataOut&)
+{
+    return false;
+}
+
 } // end namespace cbox

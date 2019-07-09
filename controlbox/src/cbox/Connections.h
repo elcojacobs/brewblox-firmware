@@ -27,10 +27,6 @@
 #include <vector>
 
 namespace cbox {
-
-class DataOut;
-class DataIn;
-
 /**
  * Represents a connection to an endpoint. The details of the endpoint are not provided here.
  * A connection has these components:
@@ -58,6 +54,10 @@ public:
 
     virtual std::unique_ptr<Connection> newConnection() = 0;
 };
+
+template <class S>
+DataIn::StreamType
+getStreamType();
 
 /**
  * Adapts a Stream instance to DataIn.
@@ -91,6 +91,13 @@ public:
     virtual stream_size_t available() override
     {
         return stream_size_t(stream.available());
+    }
+
+    static DataIn::StreamType streamTypeImpl();
+
+    virtual DataIn::StreamType streamType() const override final
+    {
+        return streamTypeImpl();
     }
 };
 

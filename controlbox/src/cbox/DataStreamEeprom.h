@@ -110,5 +110,10 @@ public:
         _length -= skip;
         return skip == skip_length;
     }
+
+    virtual StreamType streamType() const override final
+    {
+        return StreamType::Eeprom;
+    }
 };
 }

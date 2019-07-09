@@ -63,6 +63,11 @@ public:
     {
         return hasNext() ? 1 : 0; // don't use in.eof() as the stream is already in error state then
     }
+
+    virtual StreamType streamType() const override final
+    {
+        return StreamType::Mock;
+    }
 };
 
 /**

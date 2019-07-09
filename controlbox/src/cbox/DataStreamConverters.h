@@ -176,6 +176,11 @@ public:
             textIn.next();
         }
     }
+
+    virtual StreamType streamType() const override final
+    {
+        return textIn.streamType();
+    }
 };
 
 /**
