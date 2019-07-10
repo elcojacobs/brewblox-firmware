@@ -284,7 +284,7 @@ SCENARIO("A controlbox Box")
 
     WHEN("A connection sends a noop command, it receives a reply.")
     {
-        *in << "000000"; // list all objects
+        *in << "000000"; // noop command
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
@@ -1075,5 +1075,21 @@ SCENARIO("A controlbox Box")
         }
 
         clearStreams();
+    }
+
+    WHEN("The application implements a custom command")
+    {
+        *in << "000064"; // discover new objects
+        *in << crc(in->str()) << "\n";
+        box.hexCommunicate();
+
+        // we expect this command to return a single byte (100, 64 hex)
+        THEN("The command is executed correctly")
+        {
+            expected << addCrc("000064") << "|"
+                     << addCrc("0064") // CboxError OK + 100
+                     << "\n";
+            CHECK(out->str() == expected.str());
+        }
     }
 }

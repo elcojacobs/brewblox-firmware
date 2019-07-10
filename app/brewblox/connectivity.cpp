@@ -38,8 +38,6 @@ auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with
 auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
 #endif
 
-auto debugServer = TCPServer(8333);
-
 void
 printWiFiIp(char dest[16])
 {
@@ -98,9 +96,6 @@ listeningModeEnabled()
 }
 
 void
-handleDebugConnection(TCPClient& dbgConn);
-
-void
 manageConnections(uint32_t now)
 {
     static uint32_t lastConnect = 0;
@@ -121,12 +116,6 @@ manageConnections(uint32_t now)
             delay(5);
             client.stop();
         }
-
-        TCPClient dbg = debugServer.available();
-        if (dbg) {
-            handleDebugConnection(dbg);
-        }
-        lastConnect = now;
         return;
     }
     if (now - lastConnect > 60000) {
@@ -197,7 +186,7 @@ wifiInit()
 }
 
 void
-handleDebugConnection(TCPClient& dbgConn)
+updateFirmwareStreamHandler(Stream& stream)
 {
     enum class DCMD : uint8_t {
         None,
@@ -205,42 +194,69 @@ handleDebugConnection(TCPClient& dbgConn)
         FlashFirmware,
     };
 
-    auto command = DCMD::None;
+    auto command = DCMD::Ack;
+    bool newlineReceived = true;
     while (true) {
-        int recv = dbgConn.read();
+        int recv = stream.read();
 
-        if (recv == -1 || recv == '\r') {
-            continue; // wait for characters
-        }
-
-        if (recv == 'F') {
+        switch (recv) {
+        case 'F':
             command = DCMD::FlashFirmware;
-            continue; // wait for \n
-        }
-
-        if (recv == '\n') {
+            break;
+        case '\n':
             if (command == DCMD::None) {
                 command = DCMD::Ack;
             }
+            newlineReceived = true;
+            break;
+        case -1:
+        case '\r':
+            break;
+        default:
+            stream.write("<Invalid command received, closing connection>");
+            stream.flush();
+            return;
+        }
+        if (!newlineReceived) {
+            continue;
         }
 
         if (command == DCMD::Ack) {
-            dbgConn.write("<!BREWBLOX_DEBUG,");
-            dbgConn.write(versionCsv());
-            dbgConn.write(">\n");
-            dbgConn.flush();
-        } else if (command == DCMD::FlashFirmware) {
-            dbgConn.write("<!READY_FOR_FIRMWARE>\n");
-            dbgConn.flush();
-            system_firmwareUpdate(&dbgConn);
-            break;
-        } else {
-            dbgConn.write("<No valid command received, closing connection>");
-            dbgConn.flush();
+            stream.write("<!FIRMWARE_UPDATER,");
+            stream.write(versionCsv());
+            stream.write(">\n");
+            stream.flush();
+        }
+        if (command == DCMD::FlashFirmware) {
+            stream.write("<!READY_FOR_FIRMWARE>\n");
+            stream.flush();
+            system_firmwareUpdate(&stream);
             break;
         }
+        newlineReceived = false;
     }
+}
 
-    delay(5);
-    dbgConn.stop();
+void
+updateFirmwareFromStream(cbox::StreamType streamType)
+{
+    if (streamType == cbox::StreamType::Usb) {
+        auto ser = Serial;
+        WITH_LOCK(ser);
+        if (ser.baud() == 0) {
+            ser.begin(9600);
+        }
+        updateFirmwareStreamHandler(ser);
+    } else {
+        TCPServer server(8332); // re-open TCP server
+
+        TCPClient client;
+        while (true) {
+            client = server.available();
+            if (client) {
+                updateFirmwareStreamHandler(client);
+                client.stop();
+            }
+        }
+    }
 }

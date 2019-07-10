@@ -34,6 +34,7 @@ public:
     }
     ~TcpConnection()
     {
+        get().flush();
         get().stop();
     }
 };
@@ -57,6 +58,11 @@ public:
             }
         }
         return nullptr;
+    }
+
+    void stop() override final
+    {
+        server.stop();
     }
 };
 

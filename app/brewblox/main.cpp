@@ -30,6 +30,7 @@
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
+#include "reset.h"
 #include "spark_wiring_startup.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_timer.h"
@@ -46,12 +47,6 @@ signal_handler(int signal)
     exit(signal);
 }
 #endif
-
-enum RESET_USER_REASON {
-    NOT_SPECIFIED = 0,
-    WATCHDOG = 1,
-    CBOX_RESET = 2,
-};
 
 void
 watchdogReset()
@@ -164,13 +159,13 @@ loop()
 }
 
 void
-handleReset(bool exitFlag)
+handleReset(bool exitFlag, uint8_t reason)
 {
     if (exitFlag) {
 #if PLATFORM_ID == PLATFORM_GCC
         exit(0);
 #else
-        System.reset(RESET_USER_REASON::CBOX_RESET);
+        System.reset(reason);
 #endif
     }
 }

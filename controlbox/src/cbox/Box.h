@@ -143,6 +143,10 @@ public:
         LIST_COMPATIBLE_OBJECTS = 11, // list object IDs implementing the requested interface
         DISCOVER_NEW_OBJECTS = 12,    // discover newly connected objects that support auto discovery
     };
+    // application can add additional commands, starting at 100.
 };
+
+bool
+applicationCommand(uint8_t cmdId, DataIn& in, HexCrcDataOut& out); // command handler specified by application to add additional commands
 
 } // end namespace cbox

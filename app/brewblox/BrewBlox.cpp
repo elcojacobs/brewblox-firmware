@@ -17,6 +17,7 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "./reset.h"
 #include "AppTicks.h"
 #include "Board.h"
 #include "Logger.h"
@@ -51,6 +52,22 @@
 #include <memory>
 
 using EepromAccessImpl = cbox::SparkEepromAccess;
+
+#if defined(SPARK)
+#include "spark_wiring_led.h"
+particle::LEDStatus blinkOrange(RGB_COLOR_ORANGE, LED_PATTERN_BLINK, LED_SPEED_NORMAL, LED_PRIORITY_IMPORTANT);
+extern void
+updateFirmwareFromStream(cbox::StreamType streamType);
+#else
+class BlinkOrangeMock {
+public:
+    void setActive(bool) {}
+};
+BlinkOrangeMock blinkOrange;
+
+void
+updateFirmwareFromStream(cbox::StreamType streamType){};
+#endif
 
 // define separately to make it available for tests
 #if !defined(SPARK)
@@ -237,6 +254,35 @@ connectionStarted(DataOut& out)
 #endif
     hexOut.write(resetData);
     out.write('>');
+}
+
+bool
+applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
+{
+    switch (cmdId) {
+    case 100: // firmware update
+    {
+        CboxError status = CboxError::OK;
+        in.spool();
+        if (out.crc()) {
+            status = CboxError::CRC_ERROR_IN_COMMAND;
+        }
+        out.writeResponseSeparator();
+        out.write(asUint8(status));
+        out.endMessage();
+        if (status == CboxError::OK) {
+            blinkOrange.setActive(true);
+            theConnectionPool().closeAll();
+            updateFirmwareFromStream(in.streamType());
+            uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+            handleReset(true, reason); // reset in case the firmware update failed
+            blinkOrange.setActive(false);
+        }
+        return true;
+    }
+    default:
+        return false;
+    }
 }
 
 } // end namespace cbox
