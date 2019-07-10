@@ -19,6 +19,7 @@
 
 #include "connectivity.h"
 #include "Board.h"
+#include "BrewBlox.h"
 #include "MDNS.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_tcpclient.h"
@@ -95,11 +96,10 @@ listeningModeEnabled()
 }
 
 void
-manageConnections()
+manageConnections(uint32_t now)
 {
-    static uint16_t wifiTimeOut = 0;
+    static uint32_t lastConnect = 0;
     if (wifiIsConnected) {
-        wifiTimeOut = 0;
         if (!mdns_started) {
             mdns_started = mdns.begin(true);
         } else {
@@ -116,14 +116,15 @@ manageConnections()
             delay(5);
             client.stop();
         }
-    } else {
-        ++wifiTimeOut;
+        return;
     }
-    if (wifiTimeOut > 1000) {
-        // after 1000 loops without WiFi, trigger reconnect
+    if (now - lastConnect > 60000) {
+        // after 60 seconds without WiFi, trigger reconnect
         // wifi is expected to reconnect automatically. This is a failsafe in case it does not
-        spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
-        wifiTimeOut = 0;
+        if (!spark::WiFi.connecting()) {
+            spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
+        }
+        lastConnect = now;
     }
 }
 
@@ -162,14 +163,14 @@ handleNetworkEvent(system_event_t event, int param)
         localIp = ip.raw().ipv4;
         wifiIsConnected = true;
 #if PLATFORM_ID != PLATFORM_GCC
-        Particle.connect();
+        // Particle.connect();
 
 #endif
     } break;
     default:
         localIp = uint32_t(0);
         wifiIsConnected = false;
-        Particle.disconnect();
+        // Particle.disconnect();
         break;
     }
 }
@@ -182,4 +183,80 @@ wifiInit()
     spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
     System.on(network_status, handleNetworkEvent);
     initMdns();
+}
+
+void
+updateFirmwareStreamHandler(Stream& stream)
+{
+    enum class DCMD : uint8_t {
+        None,
+        Ack,
+        FlashFirmware,
+    };
+
+    auto command = DCMD::Ack;
+    bool newlineReceived = true;
+    while (true) {
+        int recv = stream.read();
+
+        switch (recv) {
+        case 'F':
+            command = DCMD::FlashFirmware;
+            break;
+        case '\n':
+            if (command == DCMD::None) {
+                command = DCMD::Ack;
+            }
+            newlineReceived = true;
+            break;
+        case -1:
+        case '\r':
+            break;
+        default:
+            stream.write("<Invalid command received, closing connection>");
+            stream.flush();
+            return;
+        }
+        if (!newlineReceived) {
+            continue;
+        }
+
+        if (command == DCMD::Ack) {
+            stream.write("<!FIRMWARE_UPDATER,");
+            stream.write(versionCsv());
+            stream.write(">\n");
+            stream.flush();
+        }
+        if (command == DCMD::FlashFirmware) {
+            stream.write("<!READY_FOR_FIRMWARE>\n");
+            stream.flush();
+            system_firmwareUpdate(&stream);
+            break;
+        }
+        newlineReceived = false;
+    }
+}
+
+void
+updateFirmwareFromStream(cbox::StreamType streamType)
+{
+    if (streamType == cbox::StreamType::Usb) {
+        auto ser = Serial;
+        WITH_LOCK(ser);
+        if (ser.baud() == 0) {
+            ser.begin(9600);
+        }
+        updateFirmwareStreamHandler(ser);
+    } else {
+        TCPServer server(8332); // re-open TCP server
+
+        TCPClient client;
+        while (true) {
+            client = server.available();
+            if (client) {
+                updateFirmwareStreamHandler(client);
+                client.stop();
+            }
+        }
+    }
 }

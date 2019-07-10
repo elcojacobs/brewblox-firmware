@@ -64,7 +64,7 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     newPair.set_sensorid(100);
     newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     newPair.set_settingenabled(true);
-    newPair.set_filter(blox::SetpointSensorPair_FilterChoice::SetpointSensorPair_FilterChoice_FILT_30s);
+    newPair.set_filter(blox::SetpointSensorPair_FilterChoice::SetpointSensorPair_FilterChoice_FILT_15s);
     newPair.set_filterthreshold(cnl::unwrap(temp_t(1)));
     testBox.put(newPair);
 
@@ -109,9 +109,10 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
 
-    // update 1000 seconds (PID updates every second, t is in ms)
+    // update 999 seconds (PID updates every second, t is in ms)
+    // one extra update will be triggered on proto receive
     uint32_t t = 0;
-    for (; t < 1000'000; ++t) {
+    for (; t < 999'000; t += 100) {
         testBox.update(t);
     }
 

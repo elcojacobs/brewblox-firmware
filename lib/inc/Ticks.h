@@ -83,12 +83,12 @@ public:
         return impl;
     }
 
-    enum class TaskId {
-        Communication,
-        BlocksUpdate,
-        DisplayUpdate,
-        System,
-        NumTasks,
+    enum class TaskId : uint8_t {
+        Communication = 0,
+        BlocksUpdate = 1,
+        DisplayUpdate = 2,
+        System = 3,
+        NumTasks = 4,
     };
 
     void switchTaskTimer(TaskId startedTask)
@@ -101,9 +101,9 @@ public:
         lastTimerTick = now;
     }
 
-    const auto& taskTimers() const
+    ticks_millis_t taskTime(uint8_t id)
     {
-        return timers;
+        return timers[id];
     }
 
 private:

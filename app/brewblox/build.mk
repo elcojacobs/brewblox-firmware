@@ -13,6 +13,7 @@ endif
 # add all controlbox source files
 INCLUDE_DIRS += $(SOURCE_PATH)/controlbox/src/
 CPPSRC += $(call here_files,controlbox/src/cbox/,*.cpp)
+CPPSRC += $(call here_files,controlbox/src/cbox/spark/,*.cpp)
 
 # add auto-generated protobuf includes
 INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox/proto/cpp

@@ -17,6 +17,7 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "./reset.h"
 #include "AppTicks.h"
 #include "Board.h"
 #include "Logger.h"
@@ -47,9 +48,26 @@
 #include "cbox/ObjectContainer.h"
 #include "cbox/ObjectFactory.h"
 #include "cbox/spark/SparkEepromAccess.h"
+#include "platforms.h"
 #include <memory>
 
 using EepromAccessImpl = cbox::SparkEepromAccess;
+
+#if defined(SPARK)
+#include "spark_wiring_led.h"
+particle::LEDStatus blinkOrange(RGB_COLOR_ORANGE, LED_PATTERN_BLINK, LED_SPEED_NORMAL, LED_PRIORITY_IMPORTANT);
+extern void
+updateFirmwareFromStream(cbox::StreamType streamType);
+#else
+class BlinkOrangeMock {
+public:
+    void setActive(bool) {}
+};
+BlinkOrangeMock blinkOrange;
+
+void
+updateFirmwareFromStream(cbox::StreamType streamType){};
+#endif
 
 // define separately to make it available for tests
 #if !defined(SPARK)
@@ -194,13 +212,33 @@ updateBrewbloxBox()
 #endif
 }
 
+const char*
+versionCsv()
+{
+#if PLATFORM_ID == 3
+#define PLATFORM_STRING "gcc"
+#elif PLATFORM_ID == 6
+#define PLATFORM_STRING "photon"
+#elif PLATFORM_ID == 8
+#define PLATFORM_STRING "p1"
+#else
+#define PLATFORM_STRING "unkown"
+#endif
+
+    static const char version[] = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," PLATFORM_STRING;
+    return version;
+}
+
 namespace cbox {
 void
 connectionStarted(DataOut& out)
 {
-    char msg[] = "<!BREWBLOX," stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) ",";
+    char header[] = "<!BREWBLOX,";
 
-    out.writeBuffer(&msg, strlen(msg));
+    out.writeBuffer(header, strlen(header));
+    out.writeBuffer(versionCsv(), strlen(versionCsv()));
+    out.write(',');
+
     cbox::BinaryToHexTextOut hexOut(out);
 #if PLATFORM_ID == 3
     int resetReason = 0;
@@ -217,4 +255,34 @@ connectionStarted(DataOut& out)
     hexOut.write(resetData);
     out.write('>');
 }
+
+bool
+applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
+{
+    switch (cmdId) {
+    case 100: // firmware update
+    {
+        CboxError status = CboxError::OK;
+        in.spool();
+        if (out.crc()) {
+            status = CboxError::CRC_ERROR_IN_COMMAND;
+        }
+        out.writeResponseSeparator();
+        out.write(asUint8(status));
+        out.endMessage();
+        if (status == CboxError::OK) {
+            blinkOrange.setActive(true);
+            theConnectionPool().closeAll();
+            updateFirmwareFromStream(in.streamType());
+            uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+            handleReset(true, reason); // reset in case the firmware update failed
+            blinkOrange.setActive(false);
+        }
+        return true;
+    }
+    default:
+        return false;
+    }
+}
+
 } // end namespace cbox

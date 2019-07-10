@@ -183,6 +183,13 @@ public:
     }
 };
 
+enum class StreamType : uint8_t {
+    Mock = 0,
+    Usb = 1,
+    Tcp = 2,
+    Eeprom = 3,
+};
+
 /**
  * A data input stream. The stream contents may be determined asynchronously.
  * hasNext() returns true if the stream may eventually produce a new item, false if the stream is closed.
@@ -274,6 +281,8 @@ public:
         }
         return success;
     }
+
+    virtual StreamType streamType() const = 0;
 };
 
 /**
@@ -288,6 +297,11 @@ public:
     virtual uint8_t next() override { return 0; }
     virtual uint8_t peek() override { return 0; }
     virtual stream_size_t available() override { return 0; }
+
+    virtual StreamType streamType() const override final
+    {
+        return StreamType::Mock;
+    }
 };
 
 /*
@@ -320,6 +334,11 @@ public:
     virtual bool hasNext() override { return in.hasNext(); }
     virtual uint8_t peek() override { return in.peek(); }
     virtual stream_size_t available() override { return in.available(); }
+
+    virtual StreamType streamType() const override final
+    {
+        return in.streamType();
+    }
 };
 
 /*
@@ -366,6 +385,11 @@ public:
     virtual stream_size_t available() override { return size - pos; }
     void reset() { pos = 0; };
     stream_size_t bytes_read() { return pos; };
+
+    virtual StreamType streamType() const override final
+    {
+        return StreamType::Mock;
+    }
 };
 
 /**
@@ -408,6 +432,11 @@ public:
         if (newLen < len) {
             len = newLen; // only allow making region smaller
         }
+    }
+
+    virtual StreamType streamType() const override final
+    {
+        return in.streamType();
     }
 };
 

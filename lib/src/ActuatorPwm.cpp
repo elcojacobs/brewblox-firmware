@@ -206,21 +206,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             m_valueValid = false;
         }
 
-        // calculate achieved duty cycle
-        twoPeriodTotalTime += wait;
-        if (twoPeriodTotalTime == 0) {
-            m_dutyAchieved = 0;
-        } else {
-            auto dutyAchieved = (value_t(100) * twoPeriodHighTime) / twoPeriodTotalTime;
-            if (wait == 0) {
-                // end of high or low time
-                m_dutyAchieved = dutyAchieved;
-            } else if ((currentState == State::Inactive && dutyAchieved < m_dutyAchieved)
-                       || (currentState == State::Active && dutyAchieved > m_dutyAchieved)) {
-                // current period is long enough to start using the current achieved value including this period
-                m_dutyAchieved = dutyAchieved;
-            }
-        }
+        bool toggled = false;
 
         // Toggle actuator if necessary
         if (m_enabled && m_settingValid && wait == 0) {
@@ -228,6 +214,23 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 actPtr->desiredState(State::Active, now);
             } else {
                 actPtr->desiredState(State::Inactive, now);
+            }
+            if (currentState != actPtr->state()) {
+                toggled = true;
+            }
+        }
+
+        twoPeriodTotalTime += wait;
+        if (twoPeriodTotalTime == 0) {
+            m_dutyAchieved = 0;
+        } else {
+            // calculate achieved duty cycle
+            auto dutyAchieved = (value_t(100) * twoPeriodHighTime) / twoPeriodTotalTime;
+            if (toggled // end of high or low time or
+                        // current period is long enough to start using the current achieved value including this period
+                || (currentState == State::Inactive && dutyAchieved < m_dutyAchieved)
+                || (currentState == State::Active && dutyAchieved > m_dutyAchieved)) {
+                m_dutyAchieved = dutyAchieved;
             }
         }
 

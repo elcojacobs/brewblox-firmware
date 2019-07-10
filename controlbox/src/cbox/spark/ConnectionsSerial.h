@@ -52,6 +52,12 @@ public:
         }
         return nullptr;
     }
+
+    virtual void stop() override final
+    {
+        Serial.flush();
+        Serial.end();
+    }
 };
 
 } // end namespace cbox

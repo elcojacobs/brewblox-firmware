@@ -20,7 +20,6 @@
 #include <catch.hpp>
 
 #include <stdlib.h> /* srand, rand */
-#include <time.h>   /* time, to seed rand */
 
 #include "ActuatorAnalogConstrained.h"
 #include "ActuatorDigital.h"
@@ -348,6 +347,21 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         // we don use 2% and 98% here, because with the maximum history taken into account it is not achievable under the constraints
         CHECK(randomIntervalTest(10, pwm, mock, 4.0, 500, now) == Approx(4.0).margin(0.5));
         CHECK(randomIntervalTest(10, pwm, mock, 96.0, 500, now) == Approx(96.0).margin(0.5));
+    }
+
+    WHEN("PWM actuator target is constrained with a minimal ON time, the achieved value is always correct once adjusted")
+    {
+        pwm.period(10000);                                                               // 10s
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(5000)); // 5 s
+        pwm.setting(30);
+
+        for (; now < 100000; now += 100) {
+            pwm.update(now);
+            if (now > 50000) {
+                CHECK(pwm.value() == Approx(30).margin(0.5));
+            }
+        }
+        pwm.setting(50);
     }
 
     WHEN("PWM actuator is set to invalid, the output pin is set low")

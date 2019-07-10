@@ -23,12 +23,14 @@
 #include "Buzzer.h"
 #include "TimerInterrupts.h"
 #include "blox/stringify.h"
+#include "cbox/Box.h"
 #include "cbox/Object.h"
 #include "connectivity.h"
 #include "d4d.hpp"
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
+#include "reset.h"
 #include "spark_wiring_startup.h"
 #include "spark_wiring_system.h"
 #include "spark_wiring_timer.h"
@@ -46,8 +48,14 @@ signal_handler(int signal)
 }
 #endif
 
+void
+watchdogReset()
+{
+    System.reset(RESET_USER_REASON::WATCHDOG);
+}
+
 #if PLATFORM_THREADING
-ApplicationWatchdog appWatchdog(60000, System.reset);
+ApplicationWatchdog appWatchdog(60000, watchdogReset);
 inline void
 watchdogCheckin()
 {
@@ -88,7 +96,7 @@ setup()
     System.on(setup_update, watchdogCheckin);
 
 #if PLATFORM_ID == PLATFORM_GCC
-    manageConnections(); // init network early to websocket display emulation works during setup()
+    manageConnections(0); // init network early to websocket display emulation works during setup()
 #endif
 
     // init display
@@ -137,7 +145,7 @@ loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
-        manageConnections();
+        manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
     }
     ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
@@ -151,13 +159,13 @@ loop()
 }
 
 void
-handleReset(bool exitFlag)
+handleReset(bool exitFlag, uint8_t reason)
 {
     if (exitFlag) {
 #if PLATFORM_ID == PLATFORM_GCC
         exit(0);
 #else
-        System.reset();
+        System.reset(reason);
 #endif
     }
 }

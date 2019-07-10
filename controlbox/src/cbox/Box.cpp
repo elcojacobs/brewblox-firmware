@@ -34,7 +34,7 @@
 #include <vector>
 
 extern void
-handleReset(bool);
+handleReset(bool exit, uint8_t reason);
 
 namespace cbox {
 
@@ -470,7 +470,7 @@ Box::reboot(DataIn& in, HexCrcDataOut& out)
 
     out.write(asUint8(CboxError::OK));
 
-    ::handleReset(true);
+    ::handleReset(true, 2);
 }
 
 void
@@ -490,7 +490,7 @@ Box::factoryReset(DataIn& in, HexCrcDataOut& out)
 
     out.write(asUint8(CboxError::OK));
 
-    ::handleReset(true);
+    ::handleReset(true, 3);
 }
 
 /**
@@ -585,50 +585,57 @@ Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
     in.get(msg_id);             // echo message id back
     uint8_t cmd_id = in.next(); // get command type code
 
-    switch (cmd_id) {
-    case NONE:
-        connectionStarted(dataOut); // insert welcome message annotation
-        noop(in, out);
-        break;
-    case READ_OBJECT:
-        readObject(in, out);
-        break;
-    case WRITE_OBJECT:
-        writeObject(in, out);
-        break;
-    case CREATE_OBJECT:
-        createObject(in, out);
-        break;
-    case DELETE_OBJECT:
-        deleteObject(in, out);
-        break;
-    case LIST_ACTIVE_OBJECTS:
-        listActiveObjects(in, out);
-        break;
-    case READ_STORED_OBJECT:
-        readStoredObject(in, out);
-        break;
-    case LIST_STORED_OBJECTS:
-        listStoredObjects(in, out);
-        break;
-    case CLEAR_OBJECTS:
-        clearObjects(in, out);
-        break;
-    case REBOOT:
-        reboot(in, out);
-        break;
-    case FACTORY_RESET:
-        factoryReset(in, out);
-        break;
-    case LIST_COMPATIBLE_OBJECTS:
-        listCompatibleObjects(in, out);
-        break;
-    case DISCOVER_NEW_OBJECTS:
-        discoverNewObjects(in, out);
-        break;
-    default:
-        invalidCommand(in, out);
-        break;
+    if (cmd_id < 100) {
+        switch (cmd_id) {
+        case NONE:
+            connectionStarted(dataOut); // insert welcome message annotation
+            noop(in, out);
+            break;
+        case READ_OBJECT:
+            readObject(in, out);
+            break;
+        case WRITE_OBJECT:
+            writeObject(in, out);
+            break;
+        case CREATE_OBJECT:
+            createObject(in, out);
+            break;
+        case DELETE_OBJECT:
+            deleteObject(in, out);
+            break;
+        case LIST_ACTIVE_OBJECTS:
+            listActiveObjects(in, out);
+            break;
+        case READ_STORED_OBJECT:
+            readStoredObject(in, out);
+            break;
+        case LIST_STORED_OBJECTS:
+            listStoredObjects(in, out);
+            break;
+        case CLEAR_OBJECTS:
+            clearObjects(in, out);
+            break;
+        case REBOOT:
+            reboot(in, out);
+            break;
+        case FACTORY_RESET:
+            factoryReset(in, out);
+            break;
+        case LIST_COMPATIBLE_OBJECTS:
+            listCompatibleObjects(in, out);
+            break;
+        case DISCOVER_NEW_OBJECTS:
+            discoverNewObjects(in, out);
+            break;
+        default:
+            invalidCommand(in, out);
+            break;
+        }
+    } else {
+        bool validCommand = applicationCommand(cmd_id, in, out);
+        if (!validCommand) {
+            invalidCommand(in, out);
+        }
     }
 
     hexIn.unBlock(); // consumes any leftover \r or \n

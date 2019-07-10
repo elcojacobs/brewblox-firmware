@@ -32,55 +32,29 @@ using temp_t = safe_elastic_fixed_point<11, 12, int32_t>;
 
 SCENARIO("Fixed point filterchain using temp_t")
 {
+
     std::vector<std::vector<uint8_t>> chainsSpecs = {{0},
                                                      {0, 1},
                                                      {0, 1, 1}};
 
-    for (auto& chainSpec : chainsSpecs) {
-        std::stringstream chain_str;
-        std::ostream_iterator<uint8_t> out_it(chain_str, ", ");
-        std::copy(chainSpec.begin(), chainSpec.end(), out_it);
-
-        GIVEN("A filter chain of filters: " + chain_str.str())
+    for (uint8_t filter = 0; filter <= 6; filter++) {
+        GIVEN("A filter chain tapped at stage " + std::to_string(filter))
         {
-            auto chain = FpFilterChain<temp_t>(chainSpec);
+            auto chain = FpFilterChain<temp_t>(filter);
 
             temp_t step = 10;
             WHEN("A step input of std::to_string(step) is applied")
             {
                 uint32_t count = 0;
-                while (count++ < 2000) {
+                while (count++ < 3000) {
                     chain.add(step);
                 }
                 THEN("The steady state output matches the step amplitude")
                 {
+                    INFO(filter);
                     CHECK(chain.read() == Approx(temp_t(10)).epsilon(0.001));
                 }
             }
-        }
-    }
-
-    GIVEN("A chain of filters that is not downsampled in between")
-    {
-        auto chain = FpFilterChain<temp_t>({0, 0}, std::vector<uint8_t>{1, 1});
-
-        WHEN("A step input of 100 is applied")
-        {
-            uint32_t count = 0;
-            temp_t step = 100;
-            //char csv[] = "../test-results/test.csv";
-            ///std::ofstream csvFile(csv);
-            while (count++ < 1000) {
-                chain.add(step);
-                /*				csvFile << count;
-				for(int i = 0; i < chain.length(); i++){
-					csvFile << "," << chain.read(i);
-				}
-				csvFile << std::endl;
-*/
-            }
-            //csvFile.close();
-            CHECK_THAT(chain.read(), IsWithinOf(temp_t(0.01), temp_t(100.0)));
         }
     }
 
@@ -90,17 +64,6 @@ SCENARIO("Fixed point filterchain using temp_t")
             auto result = ampl * temp_t(sin(2.0 * M_PI * t / period));
             return temp_t(result);
         };
-
-        auto chains
-            = std::vector<FpFilterChain<temp_t>>{
-                FpFilterChain<temp_t>({0, 0}, std::vector<uint8_t>{2, 1}), // 28
-                FpFilterChain<temp_t>({2, 0}, std::vector<uint8_t>{4, 1}), // 56
-                FpFilterChain<temp_t>({2, 2, 0}, {4, 3, 1}),               // 171
-                FpFilterChain<temp_t>({2, 2, 2}, {4, 3, 1}),               // 257
-                FpFilterChain<temp_t>({2, 2, 2, 0}, {4, 4, 3, 1}),         // 683
-                FpFilterChain<temp_t>({2, 2, 2, 2}, {4, 4, 4, 1}),         // 1343
-                FpFilterChain<temp_t>({2, 2, 2, 2, 0}, {4, 4, 4, 3, 1}),   // 2729
-            };
 
         auto findGainAtPeriod = [&sine](FpFilterChain<temp_t>& c, const uint32_t& period, bool checkMaxDerivative = true) {
             using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
@@ -150,33 +113,40 @@ SCENARIO("Fixed point filterchain using temp_t")
 
         THEN("They block higher frequencies and pass lower frequencies")
         {
-            CHECK(findHalfAmplitudePeriod(chains[0]) == 28);
-            CHECK(findGainAtPeriod(chains[0], 14) < 0.1);
-            CHECK(findGainAtPeriod(chains[0], 56) > 0.8);
+            auto chain = FpFilterChain<temp_t>(0); // unfiltered
+            CHECK(findHalfAmplitudePeriod(chain) == 10);
+            CHECK(findGainAtPeriod(chain, 5, false) > 0.9);
+            CHECK(findGainAtPeriod(chain, 20, false) > 0.9);
 
-            CHECK(findHalfAmplitudePeriod(chains[1]) == 55);
-            CHECK(findGainAtPeriod(chains[1], 28) < 0.1);
-            CHECK(findGainAtPeriod(chains[1], 120) > 0.8);
+            chain = FpFilterChain<temp_t>(1);
+            CHECK(findHalfAmplitudePeriod(chain) == 13);
+            CHECK(findGainAtPeriod(chain, 7) < 0.1);
+            CHECK(findGainAtPeriod(chain, 26) > 0.8);
 
-            CHECK(findHalfAmplitudePeriod(chains[2]) == 171);
-            CHECK(findGainAtPeriod(chains[2], 80) < 0.1);
-            CHECK(findGainAtPeriod(chains[2], 300) > 0.8);
+            chain = FpFilterChain<temp_t>(2);
+            CHECK(findHalfAmplitudePeriod(chain) == 43);
+            CHECK(findGainAtPeriod(chain, 22) < 0.1);
+            CHECK(findGainAtPeriod(chain, 86) > 0.8);
 
-            CHECK(findHalfAmplitudePeriod(chains[3]) == 257);
-            CHECK(findGainAtPeriod(chains[3], 120) < 0.1);
-            CHECK(findGainAtPeriod(chains[3], 500) > 0.8);
+            chain = FpFilterChain<temp_t>(3);
+            CHECK(findHalfAmplitudePeriod(chain) == 91);
+            CHECK(findGainAtPeriod(chain, 46) < 0.1);
+            CHECK(findGainAtPeriod(chain, 182) > 0.8);
 
-            CHECK(findHalfAmplitudePeriod(chains[4]) == 683);
-            CHECK(findGainAtPeriod(chains[4], 300) < 0.1);
-            CHECK(findGainAtPeriod(chains[4], 1200) > 0.8);
+            chain = FpFilterChain<temp_t>(4);
+            CHECK(findHalfAmplitudePeriod(chain) == 184);
+            CHECK(findGainAtPeriod(chain, 92) < 0.1);
+            CHECK(findGainAtPeriod(chain, 368) > 0.8);
 
-            CHECK(findHalfAmplitudePeriod(chains[5]) == 1343);
-            CHECK(findGainAtPeriod(chains[5], 600) < 0.1);
-            CHECK(findGainAtPeriod(chains[5], 2400) > 0.8);
+            chain = FpFilterChain<temp_t>(5);
+            CHECK(findHalfAmplitudePeriod(chain) == 519);
+            CHECK(findGainAtPeriod(chain, 259) < 0.1);
+            CHECK(findGainAtPeriod(chain, 1038) > 0.8);
 
-            CHECK(findHalfAmplitudePeriod(chains[6]) == 2730);
-            CHECK(findGainAtPeriod(chains[6], 1200) < 0.1);
-            CHECK(findGainAtPeriod(chains[6], 4800) > 0.8);
+            chain = FpFilterChain<temp_t>(6);
+            CHECK(findHalfAmplitudePeriod(chain) == 1546);
+            CHECK(findGainAtPeriod(chain, 773) < 0.1);
+            CHECK(findGainAtPeriod(chain, 3096) > 0.8);
         }
 
         AND_WHEN("The step threshold is set, a slow filter will respond much quicker to a step input")
@@ -198,38 +168,49 @@ SCENARIO("Fixed point filterchain using temp_t")
                 // std::cout << "\n";
                 return t;
             };
-
-            CHECK(findStepResponseDelay(chains[6], temp_t(100)) == 2496);
-            CHECK(findStepResponseDelay(chains[6], temp_t(10)) == 2496);
-            CHECK(findStepResponseDelay(chains[6], temp_t(0.9)) == 2496);
-            chains[6].setStepThreshold(1);
-            CHECK(findStepResponseDelay(chains[6], 100) < 400);
-            CHECK(findStepResponseDelay(chains[6], 10) < 2496 / 2);
-            CHECK(findStepResponseDelay(chains[6], 0.9) == 2496);
+            auto chain = FpFilterChain<temp_t>(6);
+            CHECK(findStepResponseDelay(chain, temp_t(100)) == 1368);
+            CHECK(findStepResponseDelay(chain, temp_t(10)) == 1368);
+            CHECK(findStepResponseDelay(chain, temp_t(0.9)) == 1368);
+            chain.setStepThreshold(1);
+            CHECK(findStepResponseDelay(chain, 100) < 400);
+            CHECK(findStepResponseDelay(chain, 10) < 1368 / 2);
+            CHECK(findStepResponseDelay(chain, 0.9) == 1368);
         }
-    }
 
-    WHEN("A different filterchain spec is chosen that is longer")
-    {
-        auto chain = FpFilterChain<temp_t>(3); // 5 min
-
-        // generate noisy input with average value 10
-        uint32_t count = 0;
-        while (count++ < 600) {
-            chain.add(temp_t(8) + temp_t(count % 2) + temp_t(count % 3) / 2 + temp_t(count % 5) / 4 + temp_t(count % 7) / 6);
-        }
-        REQUIRE(chain.read() == Approx(temp_t(10)).epsilon(0.01));
-
-        chain.setParams(5, temp_t(100)); // 20min
-        REQUIRE(chain.read() == Approx(temp_t(10)).epsilon(0.01));
-
-        THEN("The filter output stays between expected boundaries")
+        AND_WHEN("The derivative is requested with a certain period")
         {
-            uint32_t count = 0;
-            while (count++ < 2000) {
-                chain.add(temp_t(8) + temp_t(count % 2) + temp_t(count % 3) / 2 + temp_t(count % 5) / 4 + temp_t(count % 7) / 6);
-                CHECK(chain.read() == Approx(temp_t(10)).epsilon(0.01));
+            using derivative_t = safe_elastic_fixed_point<1, 23, int32_t>;
+            uint32_t period = 200;
+            const temp_t amplIn = period / (2.0 * M_PI); // derivative max 1
+
+            auto c = FpFilterChain<temp_t>(1);
+
+            derivative_t maxDerivative12 = 0;
+            derivative_t maxDerivative25 = 0;
+            derivative_t maxDerivative100 = 0;
+            for (uint32_t t = 0; t < period * 10; ++t) {
+                auto wave = sine(t, period, amplIn);
+                c.add(wave);
+
+                auto derivative = c.readDerivativeForInterval<derivative_t>(12);
+                if (derivative > maxDerivative12) {
+                    maxDerivative12 = derivative;
+                }
+                derivative = c.readDerivativeForInterval<derivative_t>(25);
+                if (derivative > maxDerivative25) {
+                    maxDerivative25 = derivative;
+                }
+
+                derivative = c.readDerivativeForInterval<derivative_t>(100);
+                if (derivative > maxDerivative100) {
+                    maxDerivative100 = derivative;
+                }
             }
+
+            CHECK(maxDerivative12 > 0.8);
+            CHECK(maxDerivative25 > 0.5);  // sample rate of 25 should have most of the sine wave left
+            CHECK(maxDerivative100 < 0.1); // sample rate of 100 should filted out the sine with period 200
         }
     }
 }
