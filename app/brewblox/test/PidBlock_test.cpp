@@ -30,17 +30,24 @@
 #include "proto/test/cpp/SetpointSensorPair_test.pb.h"
 #include "proto/test/cpp/TempSensorMock_test.pb.h"
 
-SCENARIO("A Blox Pid object can be created from streamed protobuf data")
+extern cbox::Box&
+makeBrewBloxBox();
+
+SCENARIO("A Blox Pid object with mock analog actuator")
 {
     BrewBloxTestBox testBox;
     using commands = cbox::Box::CommandID;
 
     testBox.reset();
+    auto sensorId = cbox::obj_id_t(100);
+    auto setpointId = cbox::obj_id_t(101);
+    auto actuatorId = cbox::obj_id_t(102);
+    auto pidId = cbox::obj_id_t(103);
 
     // create mock sensor
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(100));
+    testBox.put(sensorId);
     testBox.put(uint8_t(0xFF));
     testBox.put(TempSensorMockBlock::staticTypeId());
 
@@ -56,12 +63,12 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     // create pair
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(102));
+    testBox.put(cbox::obj_id_t(setpointId));
     testBox.put(uint8_t(0xFF));
     testBox.put(SetpointSensorPairBlock::staticTypeId());
 
     blox::SetpointSensorPair newPair;
-    newPair.set_sensorid(100);
+    newPair.set_sensorid(sensorId);
     newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     newPair.set_settingenabled(true);
     newPair.set_filter(blox::SetpointSensorPair_FilterChoice::SetpointSensorPair_FilterChoice_FILT_15s);
@@ -74,7 +81,7 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     // create actuator
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(103));
+    testBox.put(cbox::obj_id_t(actuatorId));
     testBox.put(uint8_t(0xFF));
     testBox.put(ActuatorAnalogMockBlock::staticTypeId());
 
@@ -92,13 +99,13 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     // create Pid
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::CREATE_OBJECT);
-    testBox.put(cbox::obj_id_t(104));
+    testBox.put(cbox::obj_id_t(pidId));
     testBox.put(uint8_t(0xFF));
     testBox.put(PidBlock::staticTypeId());
 
     blox::Pid newPid;
-    newPid.set_inputid(102);
-    newPid.set_outputid(103);
+    newPid.set_inputid(setpointId);
+    newPid.set_outputid(actuatorId);
     newPid.set_enabled(true);
     newPid.set_kp(cnl::unwrap(Pid::in_t(10)));
     newPid.set_ti(2000);
@@ -119,7 +126,7 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     // read PID
     testBox.put(uint16_t(0)); // msg id
     testBox.put(commands::READ_OBJECT);
-    testBox.put(cbox::obj_id_t(104));
+    testBox.put(cbox::obj_id_t(pidId));
 
     auto decoded = blox::Pid();
     testBox.processInputToProto(decoded);
@@ -131,21 +138,21 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
     CHECK(cnl::wrap<Pid::out_t>(decoded.outputvalue()) == Approx(15.0).epsilon(0.01));
 
     // only nonzero values are shown in the debug string
-    CHECK(decoded.ShortDebugString() == "inputId: 102 outputId: 103 "
+    CHECK(decoded.ShortDebugString() == "inputId: 101 outputId: 102 "
                                         "inputValue: 81920 inputSetting: 86016 "
                                         "outputValue: 61440 outputSetting: 61440 "
                                         "enabled: true active: true "
                                         "kp: 40960 ti: 2000 td: 200 "
                                         "p: 40960 i: 20480 "
                                         "error: 4096 integral: 4096000 "
-                                        "drivenOutputId: 103");
+                                        "drivenOutputId: 102");
 
     THEN("The integral value can be written externally to reset it trough the integralReset field")
     {
 
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::WRITE_OBJECT);
-        testBox.put(cbox::obj_id_t(104));
+        testBox.put(cbox::obj_id_t(pidId));
         testBox.put(uint8_t(0xFF));
         testBox.put(PidBlock::staticTypeId());
 
@@ -156,13 +163,67 @@ SCENARIO("A Blox Pid object can be created from streamed protobuf data")
         testBox.processInputToProto(decoded);
 
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "inputId: 102 outputId: 103 "
+        CHECK(decoded.ShortDebugString() == "inputId: 101 outputId: 102 "
                                             "inputValue: 81920 inputSetting: 86016 "
                                             "outputValue: 122900 outputSetting: 122900 "
                                             "enabled: true active: true "
                                             "kp: 40960 ti: 2000 td: 200 "
                                             "p: 40960 i: 81940 "
                                             "error: 4096 integral: 16388096 "
-                                            "drivenOutputId: 103");
+                                            "drivenOutputId: 102");
+    }
+
+    AND_WHEN("The setpoint is disabled")
+    {
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(cbox::obj_id_t(setpointId));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(PidBlock::staticTypeId());
+        newPair.set_settingenabled(false);
+        testBox.put(newPair);
+
+        auto decoded = blox::SetpointSensorPair();
+        testBox.processInputToProto(decoded);
+
+        CHECK(testBox.lastReplyHasStatusOk());
+
+        brewbloxBox().update(1000);
+        auto pidLookup = brewbloxBox().makeCboxPtr<PidBlock>(pidId);
+        auto actuatorLookup = brewbloxBox().makeCboxPtr<ActuatorAnalogMockBlock>(actuatorId);
+        THEN("The PID becomes inactive")
+        {
+            auto pid = pidLookup.lock();
+            CHECK(pid->get().active() == false);
+        }
+        THEN("The Actuator is set to zero and setting invalid")
+        {
+            auto act = actuatorLookup.lock();
+            CHECK(act->get().setting() == 0);
+            CHECK(act->get().settingValid() == false);
+        }
+
+        AND_WHEN("The actuator is created after the PID in the same transaction")
+        {
+            // create Pid
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::CREATE_OBJECT);
+            testBox.put(cbox::obj_id_t(pidId));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(PidBlock::staticTypeId());
+
+            blox::Pid newPid;
+            newPid.set_inputid(setpointId);
+            newPid.set_outputid(actuatorId);
+            newPid.set_enabled(false);
+            newPid.set_kp(cnl::unwrap(Pid::in_t(10)));
+            newPid.set_ti(2000);
+            newPid.set_td(200);
+
+            testBox.put(newPid);
+
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
+        }
     }
 }
