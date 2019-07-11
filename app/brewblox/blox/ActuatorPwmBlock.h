@@ -4,6 +4,7 @@
 #include "ActuatorAnalogConstraintsProto.h"
 #include "ActuatorDigitalConstrained.h"
 #include "ActuatorPwm.h"
+#include "BrewBlox.h"
 #include "DigitalActuatorBlock.h"
 #include "blox/Block.h"
 #include "blox/FieldTags.h"
@@ -17,6 +18,8 @@ private:
     cbox::CboxPtr<ActuatorDigitalConstrained> actuator;
     ActuatorPwm pwm;
     ActuatorAnalogConstrained constrained;
+
+    bool previousSettingValid = false;
 
 public:
     ActuatorPwmBlock(cbox::ObjectContainer& objects)
@@ -87,7 +90,21 @@ public:
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
         constrained.update();
-        return pwm.update(now);
+        auto nextUpdate = pwm.update(now);
+        auto settingValid = pwm.settingValid();
+        if (previousSettingValid != settingValid) {
+            // When the pwm changes whether it has a valid setting
+            // ensure that the output actuator target state in EEPROM is inactive
+            // to prevent loading older EEPROM data for it on reboot
+            // in which the output is still active
+            if (auto ptr = actuator.lock()) {
+                ptr->desiredState(ActuatorDigitalBase::State::Inactive);
+                brewbloxBox().storeUpdatedObject(actuator.getId());
+                previousSettingValid = settingValid;
+            }
+            return now;
+        }
+        return nextUpdate;
     }
 
     virtual void* implements(const cbox::obj_type_t& iface) override final

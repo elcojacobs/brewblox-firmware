@@ -349,19 +349,68 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         CHECK(randomIntervalTest(10, pwm, mock, 96.0, 500, now) == Approx(96.0).margin(0.5));
     }
 
-    WHEN("PWM actuator target is constrained with a minimal ON time, the achieved value is always correct once adjusted")
+    WHEN("The actuator has been set to 30% duty and switches to 5% with minimum ON time at 40% duty")
     {
         pwm.period(10000);                                                               // 10s
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(5000)); // 5 s
-        pwm.setting(30);
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(4000)); // 4 s
+        pwm.setting(30);                                                                 // will result in 4s on, 13.3s off
 
+        auto nextUpdate = pwm.update(now);
+        auto lastHighTime = now;
         for (; now < 100000; now += 100) {
-            pwm.update(now);
-            if (now > 50000) {
-                CHECK(pwm.value() == Approx(30).margin(0.5));
+            if (now > nextUpdate) {
+                nextUpdate = pwm.update(now);
+                if (mock.state() == State::Active) {
+                    lastHighTime = now;
+                }
             }
         }
-        pwm.setting(50);
+        pwm.setting(20);
+        nextUpdate = pwm.update(now);
+
+        THEN("The output is turned off")
+        {
+            CHECK(mock.state() == State::Inactive);
+        }
+        THEN("The next low time is stretched even more")
+        {
+            while (mock.state() == State::Inactive) {
+                if (now > nextUpdate) {
+                    nextUpdate = pwm.update(now);
+                }
+                now += 100;
+            }
+            CHECK(now - lastHighTime > 15000);
+
+            AND_THEN("It pwm will settle on the desired duty")
+            {
+                for (; now < 200000; now += 100) {
+                    if (now > nextUpdate) {
+                        nextUpdate = pwm.update(now);
+                    }
+                }
+                CHECK(pwm.value() == 20);
+            }
+        }
+    }
+
+    WHEN("PWM actuator target is constrained with a minimal ON time")
+    {
+        pwm.period(10000);                                                               // 10s
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(2000)); // 2 s
+        pwm.setting(10);
+        auto nextUpdate = pwm.update(now);
+        THEN("the achieved value is always correct once adjusted")
+        {
+            for (; now < 100000; now += 100) {
+                if (now > nextUpdate) {
+                    nextUpdate = pwm.update(now);
+                }
+                if (now > 50000) {
+                    CHECK(pwm.value() == Approx(10).margin(1));
+                }
+            }
+        }
     }
 
     WHEN("PWM actuator is set to invalid, the output pin is set low")

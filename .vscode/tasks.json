@@ -290,8 +290,8 @@
     {
       "label": "build cbox tests local",
       "type": "shell",
-      "command": "make",
-      "args": ["-C", "../controlbox"],
+      "command": "bash",
+      "args": ["../wrapped_make.sh", "-C", "../controlbox"],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -326,9 +326,8 @@
     },
     {
       "label": "build lib tests local",
-      "type": "shell",
-      "command": "make",
-      "args": ["-C", "../lib/test"],
+      "command": "bash",
+      "args": ["../wrapped_make.sh", "-C", "../lib/test"],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -346,8 +345,8 @@
     {
       "label": "build app tests local",
       "type": "shell",
-      "command": "make",
-      "args": ["-C", "../app/brewblox/test"],
+      "command": "bash",
+      "args": ["../wrapped_make.sh", "-C", "../app/brewblox/test"],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"

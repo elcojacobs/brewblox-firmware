@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ActuatorAnalogConstrained.h"
+#include "BrewBlox.h"
 #include "IntervalHelper.h"
 #include "Pid.h"
 #include "ProcessValue.h"
@@ -9,8 +10,6 @@
 #include "cbox/CboxPtr.h"
 #include "proto/cpp/Pid.pb.h"
 
-#include "cbox/CboxPtr.h"
-
 class PidBlock : public Block<BrewbloxOptions_BlockType_Pid> {
 private:
     cbox::CboxPtr<SetpointSensorPair> input;
@@ -18,6 +17,7 @@ private:
 
     Pid pid;
     IntervalHelper<1000> m_intervalHelper;
+    bool previousActive = false;
 
 public:
     PidBlock(cbox::ObjectContainer& objects)
@@ -83,15 +83,16 @@ public:
             }
             if (ptr->settingValid()) {
                 message.outputSetting = cnl::unwrap(ptr->setting());
-                if (pid.enabled()) {
-                    message.drivenOutputId = message.outputId;
-                }
             } else {
                 stripped.add(blox_Pid_outputSetting_tag);
             }
+
         } else {
             stripped.add(blox_Pid_outputSetting_tag);
             stripped.add(blox_Pid_outputValue_tag);
+        }
+        if (pid.active()) {
+            message.drivenOutputId = message.outputId;
         }
 
         message.enabled = pid.enabled();
@@ -132,8 +133,20 @@ public:
         auto nextUpdate = m_intervalHelper.update(now, doUpdate);
 
         if (doUpdate) {
-
             pid.update();
+            auto pidActive = pid.active();
+            if (previousActive != pidActive) {
+                // When the pid changes whether it is active
+                // ensure that the output object setting in EEPROM is zero
+                // to prevent loading older EEPROM data for it on reboot
+                // in which the output is still active
+                if (auto ptr = output.lock()) {
+                    ptr->setting(0);
+                    brewbloxBox().storeUpdatedObject(output.getId());
+                    previousActive = pidActive;
+                }
+                return now;
+            }
         }
         return nextUpdate;
     }
