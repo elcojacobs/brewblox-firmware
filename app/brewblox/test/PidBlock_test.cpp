@@ -116,11 +116,11 @@ SCENARIO("A Blox Pid object with mock analog actuator")
     testBox.processInput();
     CHECK(testBox.lastReplyHasStatusOk());
 
-    // update 999 seconds (PID updates every second, t is in ms)
+    // update 999 seconds (PID updates every second, now is in ms)
     // one extra update will be triggered on proto receive
-    uint32_t t = 0;
-    for (; t < 999'000; t += 100) {
-        testBox.update(t);
+    uint32_t now = 0;
+    for (; now < 999'000; now += 100) {
+        testBox.update(now);
     }
 
     // read PID
@@ -179,7 +179,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
         testBox.put(commands::WRITE_OBJECT);
         testBox.put(cbox::obj_id_t(setpointId));
         testBox.put(uint8_t(0xFF));
-        testBox.put(PidBlock::staticTypeId());
+        testBox.put(SetpointSensorPairBlock::staticTypeId());
         newPair.set_settingenabled(false);
         testBox.put(newPair);
 
@@ -188,7 +188,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
 
         CHECK(testBox.lastReplyHasStatusOk());
 
-        brewbloxBox().update(1000);
+        brewbloxBox().update(now + 2000);
         auto pidLookup = brewbloxBox().makeCboxPtr<PidBlock>(pidId);
         auto actuatorLookup = brewbloxBox().makeCboxPtr<ActuatorAnalogMockBlock>(actuatorId);
         THEN("The PID becomes inactive")
@@ -201,29 +201,6 @@ SCENARIO("A Blox Pid object with mock analog actuator")
             auto act = actuatorLookup.lock();
             CHECK(act->get().setting() == 0);
             CHECK(act->get().settingValid() == false);
-        }
-
-        AND_WHEN("The actuator is created after the PID in the same transaction")
-        {
-            // create Pid
-            testBox.put(uint16_t(0)); // msg id
-            testBox.put(commands::CREATE_OBJECT);
-            testBox.put(cbox::obj_id_t(pidId));
-            testBox.put(uint8_t(0xFF));
-            testBox.put(PidBlock::staticTypeId());
-
-            blox::Pid newPid;
-            newPid.set_inputid(setpointId);
-            newPid.set_outputid(actuatorId);
-            newPid.set_enabled(false);
-            newPid.set_kp(cnl::unwrap(Pid::in_t(10)));
-            newPid.set_ti(2000);
-            newPid.set_td(200);
-
-            testBox.put(newPid);
-
-            testBox.processInput();
-            CHECK(testBox.lastReplyHasStatusOk());
         }
     }
 }
