@@ -420,7 +420,12 @@ Box::listStoredObjects(DataIn& in, HexCrcDataOut& out)
 void
 Box::loadObjectsFromStorage()
 {
-    const auto objectLoader = [this](const storage_id_t& id, RegionDataIn& objInStorage) -> CboxError {
+    // keep a list of deprecated objects so we can add them after all other objects
+    // they get a new ID, if use the next free ID before all other objects are processed
+    // then they can take an ID that is in use by an object loader later
+    std::vector<obj_id_t> deprecatedList;
+
+    const auto objectLoader = [this, &deprecatedList](const storage_id_t& id, RegionDataIn& objInStorage) -> CboxError {
         obj_id_t objId = obj_id_t(id);
         CboxError status = CboxError::OK;
 
@@ -454,7 +459,7 @@ Box::loadObjectsFromStorage()
             if (newObj) {
                 objects.add(std::move(newObj), groups, id);
             } else if (status == CboxError::OBJECT_NOT_CREATABLE) {
-                objects.add(std::make_shared<DeprecatedObject>(id), 0xFF);
+                deprecatedList.emplace_back(id);
                 status = CboxError::OK;
             }
         }
@@ -462,6 +467,11 @@ Box::loadObjectsFromStorage()
     };
     // now apply the loader above to all objects in storage
     storage.retrieveObjects(objectLoader);
+
+    // add deprecated object placeholders at the end
+    for (auto& id : deprecatedList) {
+        objects.add(std::make_shared<DeprecatedObject>(id), 0xFF);
+    }
 
     // finally, deactivate objects that should not be active based on the (possibly just loaded) active groups setting
     setActiveGroupsAndUpdateObjects(activeGroups);
