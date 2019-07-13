@@ -42,7 +42,7 @@ class SerialConnectionSource : public ConnectionSource {
 public:
     SerialConnectionSource()
     {
-        Serial.begin();
+        Serial.begin(115200);
     }
 
     std::unique_ptr<Connection> newConnection() override final

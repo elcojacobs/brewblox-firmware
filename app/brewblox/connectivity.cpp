@@ -244,7 +244,7 @@ updateFirmwareFromStream(cbox::StreamType streamType)
         auto ser = Serial;
         WITH_LOCK(ser);
         if (ser.baud() == 0) {
-            ser.begin(9600);
+            ser.begin(115200);
         }
         updateFirmwareStreamHandler(ser);
     } else {
