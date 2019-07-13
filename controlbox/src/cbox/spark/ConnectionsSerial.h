@@ -42,7 +42,7 @@ class SerialConnectionSource : public ConnectionSource {
 public:
     SerialConnectionSource()
     {
-        Serial.begin();
+        Serial.begin(115200);
     }
 
     std::unique_ptr<Connection> newConnection() override final
@@ -55,8 +55,7 @@ public:
 
     virtual void stop() override final
     {
-        Serial.flush();
-        Serial.end();
+        Serial.flush(); // only flush, leave port open
     }
 };
 
