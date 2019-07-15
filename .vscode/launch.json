@@ -1,113 +1,128 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "brewblox app gcc",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/target/brewblox-gcc/brewblox",
+      "args": ["-i123456789012345678901234"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/target/brewblox-gcc",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
         {
-            "name": "brewblox app gcc",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/target/brewblox-gcc/brewblox",
-            "args": [
-                "-i123456789012345678901234"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build/target/brewblox-gcc",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    // "ignoreFailures": true
-                },
-            ],
-            "miDebuggerArgs": "-x ~/repos/firmware/tools/pretty.gdbinit",
-            "preLaunchTask": "build_and_touch_gcc"
-        },
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing"
+          // "ignoreFailures": true
+        }
+      ],
+      "miDebuggerArgs": "-x ~/repos/firmware/tools/pretty.gdbinit",
+      "preLaunchTask": "build_and_touch_gcc"
+    },
+    {
+      "name": "gdb lib test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/lib/test/build/lib_test_runner",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
         {
-            "name": "gdb lib test",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/lib/test/build/lib_test_runner",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "gdb brewblox app test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/app/brewblox/test/build/brewblox_test_runner",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [
         {
-            "name": "gdb brewblox app test",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/app/brewblox/test/build/brewblox_test_runner",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [
-                {
-                    "LSAN_OPTIONS": "verbosity=1:log_threads=1"
-                }
-            ],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    // "ignoreFailures": true
-                },
-            ],
-            "miDebuggerArgs": "-x ~/repos/firmware/tools/pretty.gdbinit"
-        },
+          "LSAN_OPTIONS": "verbosity=1:log_threads=1"
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
         {
-            "name": "gdb controlbox test",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/controlbox/build/cbox_test_runner",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    // "ignoreFailures": true
-                },
-            ],
-            "miDebuggerArgs": "-x ~/repos/firmware/tools/pretty.gdbinit"
-        },
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing"
+          // "ignoreFailures": true
+        }
+      ],
+      "miDebuggerArgs": "-x ~/repos/firmware/tools/pretty.gdbinit"
+    },
+    {
+      "name": "gdb controlbox test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/controlbox/build/cbox_test_runner",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
         {
-            "name": "controlbox unit tests",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/controlbox/build/cbox_test_runner",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-    ]
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing"
+          // "ignoreFailures": true
+        }
+      ],
+      "miDebuggerArgs": "-x ~/repos/firmware/tools/pretty.gdbinit"
+    },
+    {
+      "name": "controlbox unit tests",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/controlbox/build/cbox_test_runner",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+
+    {
+      "name": "brewblox p1 openocd debug",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/target/brewblox-p1/brewblox.elf",
+      "device": "STM32F205RG",
+      "configFiles": [
+        "/home/elco/opt/openocd/tcl/interface/stlink.cfg",
+        "/home/elco/opt/openocd/tcl/target/stm32f2x.cfg"
+      ],
+      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-7-2018-q2-update/bin",
+      "showDevDebugOutput": true,
+      "runToMain": true
+    }
+  ]
 }
