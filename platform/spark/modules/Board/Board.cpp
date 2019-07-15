@@ -19,6 +19,7 @@
 
 #include "Board.h"
 #include "delay_hal.h"
+#include "pwm_hal.h"
 
 const uint8_t HIGH = 1;
 const uint8_t LOW = 0;
@@ -92,9 +93,9 @@ boardInit()
 
     HAL_GPIO_Write(PIN_ALARM, LOW);
 
-#if PLATFORM_ID != 3
+#ifdef PIN_LCD_BACKLIGHT
     HAL_Pin_Mode(PIN_LCD_BACKLIGHT, OUTPUT);
-    HAL_GPIO_Write(PIN_LCD_BACKLIGHT, HIGH);
+    displayBrightness(255);
 #endif
 
 #elif PLATFORM_ID == 6
@@ -130,3 +131,11 @@ boardInit()
     HAL_Pin_Mode(PIN_TOUCH_IRQ, INPUT);
 #endif
 }
+
+#ifdef PIN_LCD_BACKLIGHT
+void
+displayBrightness(uint8_t v)
+{
+    HAL_PWM_Write_With_Frequency(PIN_LCD_BACKLIGHT, v, 100);
+}
+#endif

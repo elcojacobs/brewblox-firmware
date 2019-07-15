@@ -19,6 +19,7 @@
 
 #include "WidgetsScreen.h"
 #include "ActuatorAnalogWidget.h"
+#include "Board.h"
 #include "BrewBlox.h"
 #include "PidWidget.h"
 #include "SetpointSensorWidget.h"
@@ -134,6 +135,10 @@ WidgetsScreen::loadSettings()
         default:
             break;
         }
+    }
+
+    if (settings.brightness >= 20) {
+        displayBrightness(settings.brightness);
     }
 
     D4D_InvalidateScreen(&widgets_screen, D4D_TRUE);

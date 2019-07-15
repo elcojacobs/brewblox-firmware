@@ -28,7 +28,7 @@ private:
     static const uint8_t numPins = 4;
     virtual pin_t channelToPin(uint8_t channel) const override final
     {
-        auto pins = std::array<uint8_t, numPins>{
+        auto pins = std::array<pin_t, numPins>{
             PIN_ACTUATOR1,
             PIN_ACTUATOR2,
             PIN_ACTUATOR3,
