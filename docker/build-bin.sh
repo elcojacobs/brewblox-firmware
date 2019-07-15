@@ -1,6 +1,8 @@
 #! /usr/bin/env bash
 set -e
 
+MY_DIR=$(dirname $(readlink -f $0))
+
 rm -rf ./firmware-bin/source || true
 mkdir ./firmware-bin/source
 
@@ -20,5 +22,7 @@ touch $FILE
 echo "[FIRMWARE]" >> $FILE
 echo "firmware_version=$(git rev-parse --short HEAD)" >> $FILE
 echo "firmware_date=$(git show -s --format=%ci)" >> $FILE
+echo "proto_version=$(cd $MY_DIR/../app/brewblox/proto; git rev-parse --short HEAD)" >> $FILE
+echo "proto_date=$(cd $MY_DIR/../app/brewblox/proto; git show -s --format=%ci)" >> $FILE
 
 docker build --no-cache -t brewblox/firmware-bin:local firmware-bin
