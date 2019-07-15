@@ -132,10 +132,15 @@ boardInit()
 #endif
 }
 
-#ifdef PIN_LCD_BACKLIGHT
+#if defined(PIN_LCD_BACKLIGHT) && defined(SPARK)
 void
 displayBrightness(uint8_t v)
 {
     HAL_PWM_Write_With_Frequency(PIN_LCD_BACKLIGHT, v, 100);
+}
+#else
+void
+displayBrightness(uint8_t v)
+{
 }
 #endif

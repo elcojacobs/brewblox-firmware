@@ -70,9 +70,6 @@ enum class SparkVersion : uint8_t {
 #define PIN_SD_CS P1S3
 #define PIN_LCD_BACKLIGHT D2
 
-void
-displayBrightness(uint8_t v);
-
 #elif PLATFORM_ID == 6 // photon
 // A7 is the leftmost pin. V1 does not have A7 on the green connector
 #define PIN_ACTUATOR0 A7
@@ -106,6 +103,9 @@ displayBrightness(uint8_t v);
 #define PIN_5V_ENABLE 11
 #define PIN_12V_ENABLE 12
 #endif
+
+void
+displayBrightness(uint8_t v);
 
 SparkVersion
 getSparkVersion();
