@@ -33,8 +33,12 @@ private:
     static const uint8_t numPins = 5;
     virtual pin_t channelToPin(uint8_t channel) const override final
     {
-        auto pins = std::array<uint8_t, numPins>{
+        auto pins = std::array<pin_t, numPins>{
+#ifdef PIN_V3_TOP1
             PIN_V3_TOP1,
+#else
+            pin_t(-1),
+#endif
             PIN_V3_TOP2,
             PIN_V3_TOP3,
             PIN_V3_BOTTOM1,
@@ -60,7 +64,6 @@ public:
 
         if (result == cbox::CboxError::OK) {
             // io pins are not writable through this block. They are configured by creating Digital Actuators
-            HAL_GPIO_Write(PIN_LCD_BACKLIGHT, message.enableLcdBacklight);
             HAL_GPIO_Write(PIN_ALARM, message.soundAlarm);
 #if defined(PIN_5V_ENABLE)
             HAL_GPIO_Write(PIN_5V_ENABLE, message.enableIoSupply5V);
@@ -89,7 +92,6 @@ public:
         message.pins[4].which_Pin = blox_Spark3Pins_IoPin_bottom2_tag;
         readIo(*this, 5, message.pins[4].Pin.bottom2);
 
-        message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
 #if defined(PIN_5V_ENABLE)
         message.enableIoSupply5V = HAL_GPIO_Read(PIN_5V_ENABLE);
@@ -113,7 +115,6 @@ public:
     {
         blox_Spark3Pins message = blox_Spark3Pins_init_zero;
 
-        message.enableLcdBacklight = HAL_GPIO_Read(PIN_LCD_BACKLIGHT);
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
 #if defined(PIN_5V_ENABLE)
         message.enableIoSupply5V = HAL_GPIO_Read(PIN_5V_ENABLE);

@@ -104,6 +104,9 @@ enum class SparkVersion : uint8_t {
 #define PIN_12V_ENABLE 12
 #endif
 
+void
+displayBrightness(uint8_t v);
+
 SparkVersion
 getSparkVersion();
 
