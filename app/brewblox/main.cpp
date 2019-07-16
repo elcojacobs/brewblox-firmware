@@ -55,6 +55,7 @@ watchdogReset()
 }
 
 #if PLATFORM_THREADING
+#include "spark_wiring_watchdog.h"
 ApplicationWatchdog appWatchdog(60000, watchdogReset);
 inline void
 watchdogCheckin()

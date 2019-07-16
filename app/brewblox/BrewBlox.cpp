@@ -69,8 +69,28 @@ void
 updateFirmwareFromStream(cbox::StreamType streamType){};
 #endif
 
-// define separately to make it available for tests
-#if !defined(SPARK)
+// Include OneWire implementation depending on platform
+#if !defined(PLATFORM_ID) || PLATFORM_ID == 3
+#include "OneWireNull.h"
+#include "test/MockOneWireScanningFactory.h"
+using OneWireDriver = OneWireNull;
+#define ONEWIRE_ARG
+#else
+#include "DS248x.h"
+#include "OneWireScanningFactory.h"
+using OneWireDriver = DS248x;
+#define ONEWIRE_ARG 0x00
+#endif
+
+// Include serial connection for platform
+#if defined(SPARK)
+#if PLATFORM_ID != 3 || defined(STDIN_SERIAL)
+#include "cbox/spark/ConnectionsSerial.h"
+#endif
+#include "cbox/spark/ConnectionsTcp.h"
+#else
+#include "cbox/ConnectionsStringStream.h"
+
 cbox::StringStreamConnectionSource&
 testConnectionSource()
 {
