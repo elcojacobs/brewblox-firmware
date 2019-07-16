@@ -58,6 +58,7 @@ public:
     {
         // base class OneWireLowLevelInterface configures pin or bus master IC
 #if ONEWIRE_SEARCH
+        init();
         reset_search();
 #endif
     }

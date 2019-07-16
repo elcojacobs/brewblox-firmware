@@ -20,6 +20,7 @@
 #include "BrewBloxTestBox.h"
 #include "blox/Spark3PinsBlock.h"
 #include "cbox/CboxPtr.h"
+#include "cbox/ConnectionsStringStream.h"
 
 BrewBloxTestBox::BrewBloxTestBox()
     : in(std::make_shared<std::stringstream>())
