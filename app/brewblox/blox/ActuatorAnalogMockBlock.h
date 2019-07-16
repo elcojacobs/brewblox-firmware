@@ -51,6 +51,7 @@ public:
             stripped.add(blox_ActuatorAnalogMock_setting_tag);
         };
 
+        message.desiredSetting = cnl::unwrap(constrained.desiredSetting());
         message.minSetting = cnl::unwrap(actuator.minSetting());
         message.maxSetting = cnl::unwrap(actuator.maxSetting());
         message.minValue = cnl::unwrap(actuator.minValue());
