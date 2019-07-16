@@ -546,10 +546,38 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 
             constrainedPwm1.update();
             constrainedPwm2.update();
-
             balancer->update();
 
             CHECK(balancer->clients()[0].requested == 0);
+        }
+    }
+
+    WHEN("One PWM actuator is holding the mutex and the other is under 5% duty, the blocked actuator will keep its desiredState Inactive")
+    {
+        constrainedPwm1.setting(10);
+        constrainedPwm2.setting(4);
+
+        constrainedPwm1.update();
+        constrainedPwm2.update();
+        pwm1.update(now);
+        pwm2.update(now);
+
+        mut->differentActuatorWait(5 * period);
+
+        auto start = now;
+        auto nextPwm1Update = now;
+        auto nextPwm2Update = now;
+        for (; now - start <= 100 * period; now += 100) {
+            if (now >= nextPwm1Update) {
+                constrainedPwm1.update();
+                nextPwm1Update = pwm1.update(now);
+            }
+            if (now >= nextPwm2Update) {
+                nextPwm2Update = pwm2.update(now);
+                constrainedPwm2.update();
+                CHECK(constrainedMock2->desiredState() == State::Inactive);
+            }
+            mut->update(now);
         }
     }
 }
