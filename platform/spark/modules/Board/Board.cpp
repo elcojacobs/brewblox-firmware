@@ -82,13 +82,13 @@ boardInit()
 #ifdef PIN_12V_ENABLE
     HAL_Pin_Mode(PIN_12V_ENABLE, OUTPUT);
     // TODO: temporary until 12V can be toggled by software
-    HAL_GPIO_Write(PIN_12V_ENABLE, HIGH);
+    HAL_GPIO_Write(PIN_12V_ENABLE, LOW);
 #endif
 
 #ifdef PIN_5V_ENABLE
     HAL_Pin_Mode(PIN_5V_ENABLE, OUTPUT);
     // 5V on RJ12 enabled by default, 12V disabled to prevent damaging wrongly connected peripherals
-    HAL_GPIO_Write(PIN_5V_ENABLE, HIGH);
+    HAL_GPIO_Write(PIN_5V_ENABLE, LOW);
 #endif
 
     HAL_GPIO_Write(PIN_ALARM, LOW);
@@ -132,15 +132,26 @@ boardInit()
 #endif
 }
 
-#if defined(PIN_LCD_BACKLIGHT) && defined(SPARK)
 void
-displayBrightness(uint8_t v)
+enablePheripheral5V(bool enabled)
 {
-    HAL_PWM_Write_With_Frequency(PIN_LCD_BACKLIGHT, v, 100);
-}
-#else
-void
-displayBrightness(uint8_t v)
-{
-}
+#if defined(PIN_5V_ENABLE)
+    HAL_GPIO_Write(PIN_5V_ENABLE, enabled);
 #endif
+}
+
+void
+enablePheripheral12V(bool enabled)
+{
+#if defined(PIN_12V_ENABLE)
+    HAL_GPIO_Write(PIN_12V_ENABLE, enabled);
+#endif
+}
+
+void
+displayBrightness(uint8_t v)
+{
+#if defined(PIN_LCD_BACKLIGHT) && defined(SPARK)
+    HAL_PWM_Write_With_Frequency(PIN_LCD_BACKLIGHT, v, 100);
+#endif
+}

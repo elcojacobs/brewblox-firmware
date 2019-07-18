@@ -55,6 +55,7 @@ watchdogReset()
 }
 
 #if PLATFORM_THREADING
+#include "spark_wiring_watchdog.h"
 ApplicationWatchdog appWatchdog(60000, watchdogReset);
 inline void
 watchdogCheckin()
@@ -107,15 +108,20 @@ setup()
     StartupScreen::activate();
 
     StartupScreen::setProgress(10);
-    StartupScreen::setStep("Init BrewBlox framework");
-    brewbloxBox();
+    StartupScreen::setStep("Power cycling pheripherals");
 
-    StartupScreen::setProgress(60);
+    while (ticks.millis() < 2000) {
+        displayTick();
+    };
+    enablePheripheral5V(true);
+
+    StartupScreen::setProgress(30);
     StartupScreen::setStep("Init OneWire");
     theOneWire();
 
-    StartupScreen::setProgress(70);
-    StartupScreen::setStep("Init BrewBlox");
+    StartupScreen::setProgress(40);
+    StartupScreen::setStep("Init BrewBlox framework");
+    brewbloxBox();
 
     StartupScreen::setProgress(80);
     StartupScreen::setStep("Loading objects");

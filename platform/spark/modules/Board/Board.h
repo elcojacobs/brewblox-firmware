@@ -112,3 +112,8 @@ getSparkVersion();
 
 void
 boardInit();
+
+void
+enablePheripheral5V(bool enabled);
+void
+enablePheripheral12V(bool enabled);
