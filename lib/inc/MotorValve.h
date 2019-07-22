@@ -49,6 +49,7 @@ public:
 private:
     const std::function<std::shared_ptr<DS2408>()> m_target;
     uint8_t m_startChannel = 0;
+    uint8_t m_desiredChannel = 0;
 
     ValveState m_desiredValveState = ValveState::InitIdle;
     ValveState m_actualValveState = ValveState::InitIdle;
@@ -57,11 +58,11 @@ public:
     explicit MotorValve(std::function<std::shared_ptr<DS2408>()>&& target, uint8_t startChan)
         : m_target(target)
     {
-        startChannel(startChan, true);
+        startChannel(startChan);
     }
     ~MotorValve()
     {
-        startChannel(0, true); // release channels before destruction
+        startChannel(0); // release channels before destruction
     }
 
     virtual void state(const State& v) override final
@@ -166,14 +167,13 @@ public:
 
     void update()
     {
+        if (!channelReady()) {
+            // Periodic retry to claim channel in case target didn't exist
+            // at earlier tries
+            claimChannel();
+            return;
+        }
         if (auto devPtr = m_target()) {
-            if (m_actualValveState == ValveState::InitIdle) {
-                // re-initialize when needed
-                if (!startChannel(m_startChannel, true)) {
-                    return; // stop update when init fails
-                };
-            }
-
             m_actualValveState = getValveState(devPtr);
 
             if (m_desiredValveState == ValveState::Closing && m_actualValveState == ValveState::Closed) {
@@ -193,43 +193,49 @@ public:
 
     uint8_t startChannel() const
     {
-        return m_startChannel;
+        return m_desiredChannel;
     }
 
-    bool startChannel(uint8_t newChannel, bool force)
+    bool channelReady() const
     {
-        bool success = false;
-        auto oldChannel = m_startChannel;
-        if ((newChannel != oldChannel) || force) {
-            if (auto devPtr = m_target()) {
-                success = true;
-                if (oldChannel != 0) {
-                    for (uint8_t i = 0; i < 4; ++i) {
-                        devPtr->releaseChannel(oldChannel + i);
-                    }
-                    m_startChannel = 0;
+        return m_desiredChannel == m_startChannel;
+    }
+
+    void startChannel(uint8_t newChannel)
+    {
+        m_desiredChannel = newChannel;
+        update();
+    }
+
+    void claimChannel()
+    {
+        if (auto devPtr = m_target()) {
+            if (m_startChannel != 0) {
+                for (uint8_t i = 0; i < 4; ++i) {
+                    devPtr->releaseChannel(m_startChannel + i);
                 }
-                if (newChannel == 1 || newChannel == 5) { // only 2 valid options
-                    success = devPtr->claimChannel(newChannel + chanIsClosed, IoArray::ChannelConfig::INPUT) && success;
-                    success = devPtr->claimChannel(newChannel + chanIsOpen, IoArray::ChannelConfig::INPUT) && success;
-                    success = devPtr->claimChannel(newChannel + chanOpeningHigh, IoArray::ChannelConfig::ACTIVE_HIGH) && success;
-                    success = devPtr->claimChannel(newChannel + chanClosingHigh, IoArray::ChannelConfig::ACTIVE_HIGH) && success;
-                    if (success) {
-                        m_startChannel = newChannel;
-                    } else {
-                        for (uint8_t i = 0; i < 4; ++i) {
-                            devPtr->releaseChannel(newChannel + i); // cancel all channels
-                        }
+                m_startChannel = 0;
+            }
+            if (m_desiredChannel == 1 || m_desiredChannel == 5) { // only 2 valid options
+                bool success = devPtr->claimChannel(m_desiredChannel + chanIsClosed, IoArray::ChannelConfig::INPUT);
+                success = devPtr->claimChannel(m_desiredChannel + chanIsOpen, IoArray::ChannelConfig::INPUT) && success;
+                success = devPtr->claimChannel(m_desiredChannel + chanOpeningHigh, IoArray::ChannelConfig::ACTIVE_HIGH) && success;
+                success = devPtr->claimChannel(m_desiredChannel + chanClosingHigh, IoArray::ChannelConfig::ACTIVE_HIGH) && success;
+                if (success) {
+                    m_startChannel = m_desiredChannel;
+                } else {
+                    for (uint8_t i = 0; i < 4; ++i) {
+                        devPtr->releaseChannel(m_desiredChannel + i); // cancel all channels again
                     }
                 }
             } else {
-                m_startChannel = newChannel; // set anyway, device will read as initIdle later which will trigger a retry
+                m_desiredChannel = 0;
             }
         }
-        return success;
     }
 
-    virtual bool supportsFastIo() const override final
+    virtual bool
+    supportsFastIo() const override final
     {
         return false;
     }
