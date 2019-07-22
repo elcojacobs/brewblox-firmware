@@ -117,5 +117,39 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { config: ACTIVE_HIGH state: Unknown } } pins { B { state: Unknown } }");
             }
         }
+
+        AND_WHEN("A DigitalActuator block is created before the target DS2413 block is created")
+        {
+            auto ds2413Id2 = cbox::obj_id_t(102);
+
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::CREATE_OBJECT);
+            testBox.put(cbox::obj_id_t(actId));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(DigitalActuatorBlock::staticTypeId());
+
+            auto message = blox::DigitalActuator();
+            message.set_hwdevice(ds2413Id2);
+            message.set_channel(1);
+            message.set_desiredstate(blox::DigitalState::Active);
+
+            testBox.put(message);
+
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
+
+            THEN("The configured channel is not lost and the actuator reads as expected")
+            {
+                testBox.put(uint16_t(0)); // msg id
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(cbox::obj_id_t(actId));
+
+                auto decoded = blox::DigitalActuator();
+                testBox.processInputToProto(decoded);
+
+                // in simulation, the hw device will not work and therefore the state will be unknown
+                CHECK(decoded.ShortDebugString() == "hwDevice: 102 channel: 1 desiredState: Active strippedFields: 3");
+            }
+        }
     }
 }

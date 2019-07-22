@@ -34,6 +34,7 @@ private:
     const std::function<std::shared_ptr<IoArray>()> m_target;
     bool m_invert = false;
     uint8_t m_channel = 0;
+    uint8_t m_desiredChannel = 0;
 
 public:
     explicit ActuatorDigital(std::function<std::shared_ptr<IoArray>()>&& target, uint8_t chan)
@@ -48,25 +49,29 @@ public:
 
     virtual void state(const State& v) override final
     {
-        if (auto devPtr = m_target()) {
-            auto newState = v;
-            if (m_invert) {
-                newState = invertState(v);
+        if (channelReady()) {
+            if (auto devPtr = m_target()) {
+                auto newState = v;
+                if (m_invert) {
+                    newState = invertState(v);
+                }
+                IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_LOW;
+                devPtr->writeChannelConfig(m_channel, config);
             }
-            IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_LOW;
-            devPtr->writeChannelConfig(m_channel, config);
         }
     }
 
     virtual State state() const override final
     {
-        if (auto devPtr = m_target()) {
-            State result;
-            if (devPtr->senseChannel(m_channel, result)) {
-                if (m_invert) {
-                    result = invertState(result);
+        if (channelReady()) {
+            if (auto devPtr = m_target()) {
+                State result;
+                if (devPtr->senseChannel(m_channel, result)) {
+                    if (m_invert) {
+                        result = invertState(result);
+                    }
+                    return result;
                 }
-                return result;
             }
         }
 
@@ -87,22 +92,38 @@ public:
 
     uint8_t channel() const
     {
-        return m_channel;
+        return m_desiredChannel;
+    }
+
+    void claimChannel()
+    {
+        if (auto devPtr = m_target()) {
+            if (devPtr->releaseChannel(m_channel)) {
+                if (devPtr->claimChannel(m_desiredChannel, IoArray::ChannelConfig::ACTIVE_LOW)) {
+                    m_channel = m_desiredChannel;
+                }
+            }
+        }
+    }
+
+    bool channelReady() const
+    {
+        return m_desiredChannel == m_channel;
+    }
+
+    void update()
+    {
+        if (!channelReady()) {
+            // Periodic retry to claim channel in case target didn't exist
+            // at earlier tries
+            claimChannel();
+        }
     }
 
     void channel(uint8_t newChannel)
     {
-        if (newChannel != m_channel) {
-            if (auto devPtr = m_target()) {
-                if (devPtr->releaseChannel(m_channel)) {
-                    if (devPtr->claimChannel(newChannel, IoArray::ChannelConfig::ACTIVE_LOW)) {
-                        m_channel = newChannel;
-                    } else {
-                        m_channel = 0;
-                    }
-                }
-            }
-        }
+        m_desiredChannel = newChannel;
+        update();
     }
 
     virtual bool supportsFastIo() const override final
