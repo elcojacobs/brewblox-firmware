@@ -195,45 +195,35 @@ updateFirmwareStreamHandler(Stream& stream)
     };
 
     auto command = DCMD::Ack;
-    bool newlineReceived = true;
+
     while (true) {
         int recv = stream.read();
-
         switch (recv) {
         case 'F':
             command = DCMD::FlashFirmware;
             break;
         case '\n':
-            if (command == DCMD::None) {
-                command = DCMD::Ack;
+            if (command == DCMD::Ack) {
+                stream.write("<!FIRMWARE_UPDATER,");
+                stream.write(versionCsv());
+                stream.write(">\n");
+                stream.flush();
             }
-            newlineReceived = true;
-            break;
-        case -1:
-        case '\r':
+            if (command == DCMD::FlashFirmware) {
+                stream.write("<!READY_FOR_FIRMWARE>\n");
+                stream.flush();
+                system_firmwareUpdate(&stream);
+                break;
+            } else {
+                stream.write("<Invalid command received>\n");
+                stream.flush();
+            }
+            command = DCMD::Ack;
             break;
         default:
-            stream.write("<Invalid command received, closing connection>");
-            stream.flush();
-            return;
-        }
-        if (!newlineReceived) {
-            continue;
-        }
-
-        if (command == DCMD::Ack) {
-            stream.write("<!FIRMWARE_UPDATER,");
-            stream.write(versionCsv());
-            stream.write(">\n");
-            stream.flush();
-        }
-        if (command == DCMD::FlashFirmware) {
-            stream.write("<!READY_FOR_FIRMWARE>\n");
-            stream.flush();
-            system_firmwareUpdate(&stream);
+            command = DCMD::None;
             break;
         }
-        newlineReceived = false;
     }
 }
 
