@@ -108,7 +108,7 @@ setup()
     StartupScreen::activate();
 
     StartupScreen::setProgress(10);
-    StartupScreen::setStep("Power cycling pheripherals");
+    StartupScreen::setStep("Power cycling peripherals");
 
     while (ticks.millis() < 2000) {
         displayTick();

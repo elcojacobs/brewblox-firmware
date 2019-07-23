@@ -81,6 +81,7 @@ public:
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
+        actuator.update();
         constrained.update(now);
         return now + 1000;
     }

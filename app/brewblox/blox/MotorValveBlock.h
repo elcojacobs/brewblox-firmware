@@ -34,10 +34,10 @@ public:
 
         if (result == cbox::CboxError::OK) {
             if (hwDevice.getId() != message.hwDevice) {
-                valve.startChannel(0, true); // unregister at old hwDevice
+                valve.startChannel(0); // unregister at old hwDevice
                 hwDevice.setId(message.hwDevice);
             }
-            valve.startChannel(message.startChannel, false);
+            valve.startChannel(message.startChannel);
             setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
             constrained.desiredState(ActuatorDigitalBase::State(message.desiredState));
         }
