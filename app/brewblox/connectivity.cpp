@@ -195,8 +195,10 @@ updateFirmwareStreamHandler(Stream& stream)
     };
 
     auto command = DCMD::Ack;
+    uint8_t invalidCommands = 0;
 
     while (true) {
+        delay(1);
         int recv = stream.read();
         switch (recv) {
         case 'F':
@@ -217,9 +219,14 @@ updateFirmwareStreamHandler(Stream& stream)
             } else {
                 stream.write("<Invalid command received>\n");
                 stream.flush();
+                if (++invalidCommands > 2) {
+                    return;
+                }
             }
             command = DCMD::Ack;
             break;
+        case -1:
+            continue; // empty
         default:
             command = DCMD::None;
             break;
