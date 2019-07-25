@@ -67,20 +67,14 @@ public:
 
     virtual void state(const State& v) override final
     {
+        auto oldState = m_desiredValveState;
         if (v == State::Active) {
-            if (m_actualValveState == ValveState::Opening || m_actualValveState == ValveState::Open) {
-                return; // nothing to do
-            } else {
-                m_desiredValveState = ValveState::Opening;
-                update();
-            }
+            m_desiredValveState = ValveState::Opening;
         } else {
-            if (m_actualValveState == ValveState::Closing || m_actualValveState == ValveState::Closed) {
-                return; // nothing to do
-            } else {
-                m_desiredValveState = ValveState::Closing;
-                update();
-            }
+            m_desiredValveState = ValveState::Closing;
+        }
+        if (oldState != m_desiredValveState) {
+            update();
         }
     }
 
@@ -101,17 +95,17 @@ public:
         return m_actualValveState;
     }
 
-    void valveState(ValveState v, std::shared_ptr<DS2408>& devPtr)
+    void applyValveState(ValveState v, std::shared_ptr<DS2408>& devPtr)
     {
         if (m_startChannel == 0) {
             return;
         }
-        m_desiredValveState = v;
         // ACTIVE HIGH means latch pull down enabled, so the input to the H-bridge is inverted.
-        if (v == ValveState::Opening) {
+        // We keep the motor enabled just in case. The valve itself has an internal shutoff.
+        if (v == ValveState::Opening || v == ValveState::Open) {
             devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_LOW);
             devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
-        } else if (v == ValveState::Closing) {
+        } else if (v == ValveState::Closing || v == ValveState::Closed) {
             devPtr->writeChannelConfig(m_startChannel + chanOpeningHigh, DS2408::ChannelConfig::ACTIVE_HIGH);
             devPtr->writeChannelConfig(m_startChannel + chanClosingHigh, DS2408::ChannelConfig::ACTIVE_LOW);
         } else {
@@ -177,16 +171,15 @@ public:
             m_actualValveState = getValveState(devPtr);
 
             if (m_desiredValveState == ValveState::Closing && m_actualValveState == ValveState::Closed) {
-                valveState(ValveState::Closed, devPtr);
-                return;
+                return; // leave motor driven
             }
             if (m_desiredValveState == ValveState::Opening && m_actualValveState == ValveState::Open) {
-                valveState(ValveState::Open, devPtr);
-                return;
+                return; // leave motor driven
             }
 
             if (m_actualValveState != m_desiredValveState) {
-                valveState(m_desiredValveState, devPtr);
+                applyValveState(m_desiredValveState, devPtr);
+                m_actualValveState = getValveState(devPtr);
             }
         }
     }
