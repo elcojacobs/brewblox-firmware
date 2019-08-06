@@ -51,16 +51,12 @@ ActuatorPwm::manageTimerTask()
 void
 ActuatorPwm::period(const duration_millis_t& p)
 {
-    if (p < 1000) {
-        m_period = 1000;
-        if (auto actPtr = m_target()) {
-            if (actPtr->supportsFastIo()) {
-                m_period = p;
-            }
-        }
-        return;
-    }
     m_period = p;
+    if (auto actPtr = m_target()) {
+        if (p < 1000 && !actPtr->supportsFastIo()) {
+            m_period = 1000;
+        }
+    }
 #if PLATFORM_ID != PLATFORM_GCC
     manageTimerTask();
 #endif
