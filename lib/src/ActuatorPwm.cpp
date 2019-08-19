@@ -127,6 +127,8 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         auto currentHighTime = durations.currentActive;
         auto currentPeriod = durations.currentPeriod;
         auto previousPeriod = durations.previousPeriod;
+        auto previousHighTime = durations.previousActive;
+        auto previousLowTime = previousPeriod - previousHighTime;
         auto wait = duration_millis_t(0);
         auto currentState = actPtr->state();
         auto invDutyTime = m_period - m_dutyTime;
@@ -148,9 +150,9 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
 
                 // high period can adapt between boundaries
                 // maximum high time is the highest value among:
-                // - 1.5x the previous period minus current desired low time
+                // - 1.5x the previous hight time
                 // - 1.5x the normal high time
-                auto maxHighTime = std::max(m_dutyTime, previousPeriod - invDutyTime) * 3 / 2;
+                auto maxHighTime = std::max(m_dutyTime, previousHighTime) * 3 / 2;
 
                 // make sure that periods following each other do not alternate in high time
                 // if the current period is already longer than the duty, diminish it by 25% of the extra time
@@ -184,9 +186,9 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             } else {
                 // low period can adapt between boundaries
                 // maximum low time is the highest value among:
-                // - 1.5x the previous period minus current desired high time
+                // - 1.5x the previous low time
                 // - 1.5x the normal low time
-                auto maxLowTime = std::max(invDutyTime, previousPeriod - m_dutyTime) * 3 / 2;
+                auto maxLowTime = std::max(invDutyTime, previousLowTime) * 3 / 2;
 
                 // make sure that periods following each other do not alternate in low time
                 // if the current period is already longer than the invDuty, diminish it by 33% of the extra time
