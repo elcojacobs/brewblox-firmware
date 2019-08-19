@@ -154,11 +154,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // - 1.5x the normal high time
                 auto maxHighTime = std::max(m_dutyTime, previousHighTime) * 3 / 2;
 
-                // make sure that periods following each other do not alternate in high time
-                // if the current period is already longer than the duty, diminish it by 25% of the extra time
-                // This prevents alternating between 1500 and 2500 when the total of 2 periods should be 4000.
-                if (currentHighTime > m_dutyTime && twoPeriodHighTime < 2 * m_dutyTime) {
-                    twoPeriodTargetHighTime -= (currentHighTime - m_dutyTime) / 4;
+                // make sure that periods following each other do not continuously alternate in shortend/stretched cycle
+                // by converging to the mean or unadjusted, whichever is higher
+                auto mean = std::max(m_dutyTime, twoPeriodTargetHighTime / 2);
+                if (currentHighTime > mean && previousHighTime < mean) {
+                    twoPeriodTargetHighTime -= (currentHighTime - previousHighTime) / 4;
                 }
 
                 if (currentHighTime < maxHighTime) {
@@ -190,11 +190,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // - 1.5x the normal low time
                 auto maxLowTime = std::max(invDutyTime, previousLowTime) * 3 / 2;
 
-                // make sure that periods following each other do not alternate in low time
-                // if the current period is already longer than the invDuty, diminish it by 33% of the extra time
-                // This prevents alternating between 1500 and 2500 when the total of 2 periods should be 4000.
-                if (thisPeriodLowTime > invDutyTime && twoPeriodLowTime < 2 * invDutyTime) {
-                    twoPeriodTargetLowTime -= (thisPeriodLowTime - invDutyTime) / 3;
+                // make sure that periods following each other do not continuously alternate in shortend/stretched cycle
+                // by converging to the mean or the unadjusted time, whichever is higher
+                auto mean = std::max(invDutyTime, twoPeriodTargetLowTime / 2);
+                if (thisPeriodLowTime > mean && previousLowTime < mean) {
+                    twoPeriodTargetLowTime -= (thisPeriodLowTime - previousLowTime) / 4;
                 }
 
                 if (thisPeriodLowTime < maxLowTime) {
