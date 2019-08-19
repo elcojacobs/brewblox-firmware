@@ -301,14 +301,163 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         }
     }
 
-    WHEN("the PWM actuator is set to 90 right after initialization, it doesn't stay low longer than the normal low period")
+    WHEN("the PWM actuator is set to 90% right after initialization, it doesn't stay low longer than the normal low period")
     {
         pwm.setting(90);
         // wait target to go low
         while (mock.state() != State::Inactive) {
-            pwm.update(now++);
+            now = pwm.update(now);
         }
         CHECK(now <= 400);
+    }
+
+    WHEN("the PWM actuator is set to 60% after being 99% for a long time, the low time has the normal duration")
+    {
+        pwm.setting(99);
+        while (now < 10000 || mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(60);
+        pwm.update(now);
+
+        CHECK(mock.state() == State::Inactive);
+        auto lowStartTime = now;
+        while (mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+        auto lowTime = now - lowStartTime;
+        CHECK(lowTime == pwm.period() * 0.4);
+    }
+
+    WHEN("the PWM actuator is set to 40% after being 99% for a long time, the low time is stretched to compensate for the history")
+    {
+        pwm.setting(99);
+        while (now < 100000 || mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(40);
+        pwm.update(now);
+
+        auto lowStartTime = now;
+        while (mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+        auto lowTime = now - lowStartTime;
+        CHECK(lowTime == pwm.period() * 0.6 * 1.5);
+    }
+
+    WHEN("the PWM actuator is set to 40% after being 1% for a long time, the high time has the normal duration")
+    {
+        pwm.setting(1);
+        while (now < 100000 || mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(40);
+        pwm.update(now);
+
+        auto highStartTime = now;
+        while (mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+        auto highTime = now - highStartTime;
+        CHECK(highTime == pwm.period() * 0.4);
+    }
+
+    WHEN("the PWM actuator is set to 60% after being 1% for a long time, the high time is strechted to compensate for the history")
+    {
+        pwm.setting(1);
+        while (now < 100000 || mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(60);
+        pwm.update(now);
+
+        auto highStartTime = now;
+        while (mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+        auto highTime = now - highStartTime;
+        CHECK(highTime == pwm.period() * 0.6 * 1.5);
+    }
+
+    WHEN("the PWM actuator is set to 60% after being 1% for a long time, the high time is strechted to compensate for the history")
+    {
+        pwm.setting(1);
+        while (now < 100000 || mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(60);
+        pwm.update(now);
+
+        auto highStartTime = now;
+        while (mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+        auto highTime = now - highStartTime;
+        CHECK(highTime == pwm.period() * 0.6 * 1.5);
+    }
+
+    WHEN("the PWM actuator is set to 60% after being 1% for a long time, the high time is strechted to compensate for the history")
+    {
+        pwm.setting(1);
+        while (now < 100000 || mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(60);
+        pwm.update(now);
+
+        auto highStartTime = now;
+        while (mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+        auto highTime = now - highStartTime;
+        CHECK(highTime == pwm.period() * 0.6 * 1.5);
+    }
+
+    WHEN("the PWM actuator is set to 60% after being 1% for a long time, "
+         "with a  minimum ON time constraint active, the high time is not strechted beyond 1.5x normal duration")
+    {
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(1000)); // 1 second
+        pwm.setting(1);
+        while (now < 100000 || mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(60);
+        pwm.update(now);
+
+        auto highStartTime = now;
+        while (mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+        auto highTime = now - highStartTime;
+        CHECK(highTime == pwm.period() * 0.6 * 1.5);
+    }
+
+    WHEN("the PWM actuator is set to 40% after being 99% for a long time, "
+         "with a  minimum OFF time constraint active, the low time is not strechted beyond 1.5x normal duration")
+    {
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1000)); // 1 second
+        pwm.setting(99);
+        while (now < 100000 || mock.state() == State::Active) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(40);
+        pwm.update(now);
+
+        auto lowStartTime = now;
+        while (mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+        auto lowTime = now - lowStartTime;
+        CHECK(lowTime == pwm.period() * 0.6 * 1.5);
     }
 
     WHEN("the PWM actuator is set from 0 to 50, it goes high immediately")

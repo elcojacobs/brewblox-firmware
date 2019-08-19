@@ -241,7 +241,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             }
         }
 
-        return now + std::min(update_t(1000), wait >> 1);
+        return now + std::min(update_t(1000), (wait >> 1) + 1);
     }
     return now + 1000;
 }
