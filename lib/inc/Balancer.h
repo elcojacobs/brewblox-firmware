@@ -68,7 +68,8 @@ public:
 
     void unregisterEntry(const uint8_t& requester_id)
     {
-        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }));
+        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }),
+                         requesters.end());
     }
 
     value_t constrain(const uint8_t& requester_id, const value_t& val)
@@ -82,7 +83,9 @@ public:
             return std::min(val, match->granted);
         };
 
-        return 0; // not found. Should not be possible because Balanced registers in constructor
+        // not found. Could happen is actuator was created before the balancer. Register entry now (on first request).
+        registerEntry(requester_id);
+        return 0;
     }
 
     value_t granted(const uint8_t& requester_id) const

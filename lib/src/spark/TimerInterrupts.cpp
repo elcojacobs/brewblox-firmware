@@ -74,7 +74,7 @@ TimerInterrupts::add(std::function<void()>&& func)
 void
 TimerInterrupts::remove(uint8_t id)
 {
-    funcs.erase(std::remove_if(funcs.begin(), funcs.end(), [&id](const FuncEntry& fe) { return fe.id == id; }));
+    funcs.erase(std::remove_if(funcs.begin(), funcs.end(), [&id](const FuncEntry& fe) { return fe.id == id; }), funcs.end());
     if (funcs.empty()) {
         TIM_Cmd(TIM4, DISABLE);
     }
