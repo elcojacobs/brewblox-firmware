@@ -24,10 +24,12 @@ void
 Pid::update()
 {
     auto input = m_inputPtr();
+    auto setpoint = in_t{0};
     if (input && input->settingValid() && input->valueValid()) {
         if (m_enabled) {
             active(true);
         }
+        setpoint = input->setting();
         m_error = input->error();
         m_derivative = m_td ? input->derivative(m_td / 2) : 0;
 
@@ -55,6 +57,11 @@ Pid::update()
     auto pidResult = m_p + m_i + m_d;
 
     out_t outputValue = pidResult;
+
+    m_boilModeActive = setpoint >= in_t{100} + m_boilPointAdjust;
+    if (m_boilModeActive) {
+        outputValue = std::max(outputValue, m_boilMinOutput);
+    }
 
     // try to set the output to the desired setting
     if (m_enabled) {
