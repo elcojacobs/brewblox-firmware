@@ -924,6 +924,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
     WHEN("The boil min output is set to 40")
     {
+        input->filterChoice(0); // no filtering
         pid.boilMinOutput(40);
         pid.update();
         pid.kp(10);
@@ -931,7 +932,6 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         {
             input->setting(99);
             sensor->value(98);
-            input->resetFilter();
             input->update();
             pid.update();
 
@@ -947,13 +947,13 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         {
             input->setting(100);
             sensor->value(99);
-            input->resetFilter();
             input->update();
             pid.update();
 
-            THEN("The output of the PID is 40")
+            THEN("The output of the PID is 40 and the integral zero (boil mode active)")
             {
                 CHECK(pid.boilModeActive());
+                CHECK(pid.i() == 0);
                 CHECK(actuator->settingValid() == true);
                 CHECK(actuator->setting() == 40.0);
             }

@@ -30,10 +30,10 @@ Pid::update()
             active(true);
         }
         setpoint = input->setting();
+        m_boilModeActive = setpoint >= in_t{100} + m_boilPointAdjust;
         m_error = input->error();
         m_derivative = m_td ? input->derivative(m_td / 2) : 0;
-
-        m_integral = m_ti ? m_integral + m_error : 0;
+        m_integral = (m_ti && !m_boilModeActive) ? m_integral + m_error : 0;
     } else {
         if (active()) {
             active(false);
@@ -58,7 +58,6 @@ Pid::update()
 
     out_t outputValue = pidResult;
 
-    m_boilModeActive = setpoint >= in_t{100} + m_boilPointAdjust;
     if (m_boilModeActive) {
         outputValue = std::max(outputValue, m_boilMinOutput);
     }
@@ -70,7 +69,11 @@ Pid::update()
             output->settingValid(true);
             output->setting(outputValue);
 
-            // get the clipped setting from the actuator
+            if (m_boilModeActive) {
+                return;
+            }
+
+            // get the clipped setting from the actuator for anti-windup
             if (output->settingValid()) {
                 auto outputSetting = output->setting();
 
