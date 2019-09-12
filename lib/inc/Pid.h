@@ -50,6 +50,12 @@ private:
     bool m_enabled = false; // persisted setting to manually disable the pid
     bool m_active = false;  // automatically set when input is invalid
 
+    in_t m_boilPointAdjust = in_t{0}; // offset from 100C for lower limit to activate boil mode
+
+    out_t m_boilMinOutput = out_t{0}; // minimum output when boiling (to control boil intensity)
+
+    bool m_boilModeActive = false;
+
 public:
     explicit Pid(
         std::function<std::shared_ptr<SetpointSensorPair>()>&& input,
@@ -156,6 +162,31 @@ public:
             return;
         }
         m_integral = newIntegratorPart * m_ti / m_kp;
+    }
+
+    bool boilModeActive() const
+    {
+        return m_boilModeActive;
+    }
+
+    in_t boilPointAdjust() const
+    {
+        return m_boilPointAdjust;
+    }
+
+    void boilPointAdjust(const in_t& v)
+    {
+        m_boilPointAdjust = v;
+    }
+
+    out_t boilMinOutput() const
+    {
+        return m_boilMinOutput;
+    }
+
+    void boilMinOutput(const out_t& v)
+    {
+        m_boilMinOutput = v;
     }
 
 private:
