@@ -921,4 +921,70 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             }
         }
     }
+
+    WHEN("The boil min output is set to 40")
+    {
+        input->filterChoice(0); // no filtering
+        pid.boilMinOutput(40);
+        pid.update();
+        pid.kp(10);
+        AND_WHEN("The setpoint is 99 and the actual temp is 98")
+        {
+            input->setting(99);
+            sensor->value(98);
+            input->update();
+            pid.update();
+
+            THEN("The output of the PID is 10 (normal)")
+            {
+                CHECK(!pid.boilModeActive());
+                CHECK(actuator->settingValid() == true);
+                CHECK(actuator->setting() == 10.0);
+            }
+        }
+
+        AND_WHEN("The setpoint is 100 and the actual temp is 99")
+        {
+            input->setting(100);
+            sensor->value(99);
+            input->update();
+            pid.update();
+
+            THEN("The output of the PID is 40 and the integral zero (boil mode active)")
+            {
+                CHECK(pid.boilModeActive());
+                CHECK(pid.i() == 0);
+                CHECK(actuator->settingValid() == true);
+                CHECK(actuator->setting() == 40.0);
+            }
+        }
+
+        AND_WHEN("The setpoint is 100 and the actual temp is 100")
+        {
+            input->setting(100);
+            sensor->value(100);
+            input->resetFilter();
+            input->update();
+            pid.update();
+
+            THEN("The output of the PID is 40")
+            {
+                CHECK(pid.boilModeActive());
+                CHECK(actuator->settingValid() == true);
+                CHECK(actuator->setting() == 40.0);
+            }
+
+            AND_WHEN("The the boil point is adjusted by +1")
+            {
+                pid.boilPointAdjust(1);
+                pid.update();
+                THEN("The boil mode doesn't trigger and the output of the PID is 0")
+                {
+                    CHECK(!pid.boilModeActive());
+                    CHECK(actuator->settingValid() == true);
+                    CHECK(actuator->setting() == 0.0);
+                }
+            }
+        }
+    }
 }

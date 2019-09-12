@@ -47,6 +47,8 @@ public:
             if (newData.integralReset != 0) {
                 pid.setIntegral(cnl::wrap<Pid::out_t>(newData.integralReset));
             }
+            pid.boilPointAdjust(cnl::wrap<Pid::in_t>(newData.boilPointAdjust));
+            pid.boilMinOutput(cnl::wrap<Pid::out_t>(newData.boilMinOutput));
             pid.update(); // force an update that bypasses the update interval
         }
         return res;
@@ -106,6 +108,9 @@ public:
         message.error = cnl::unwrap(pid.error());
         message.integral = cnl::unwrap(pid.integral());
         message.derivative = cnl::unwrap(pid.derivative());
+        message.boilPointAdjust = cnl::unwrap(pid.boilPointAdjust());
+        message.boilMinOutput = cnl::unwrap(pid.boilMinOutput());
+        message.boilModeActive = pid.boilModeActive();
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 4);
 
@@ -122,6 +127,8 @@ public:
         message.kp = cnl::unwrap(pid.kp());
         message.ti = pid.ti();
         message.td = pid.td();
+        message.boilPointAdjust = cnl::unwrap(pid.boilPointAdjust());
+        message.boilMinOutput = cnl::unwrap(pid.boilMinOutput());
 
         return streamProtoTo(out, &message, blox_Pid_fields, blox_Pid_size);
     }

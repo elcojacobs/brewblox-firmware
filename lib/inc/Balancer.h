@@ -68,10 +68,11 @@ public:
 
     void unregisterEntry(const uint8_t& requester_id)
     {
-        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }));
+        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }),
+                         requesters.end());
     }
 
-    value_t constrain(const uint8_t& requester_id, const value_t& val)
+    value_t constrain(uint8_t& requester_id, const value_t& val)
     {
         auto match = find_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) {
             return r.id == requester_id;
@@ -82,7 +83,10 @@ public:
             return std::min(val, match->granted);
         };
 
-        return 0; // not found. Should not be possible because Balanced registers in constructor
+        // not found. Could happen is actuator was created before the balancer.
+        // assign new requester id
+        requester_id = registerEntry();
+        return 0;
     }
 
     value_t granted(const uint8_t& requester_id) const
@@ -137,7 +141,7 @@ template <uint8_t ID>
 class Balanced : public Base {
 private:
     const std::function<std::shared_ptr<Balancer<ID>>()> m_balancer;
-    uint8_t m_req_id;
+    mutable uint8_t m_req_id; // can be updated by balancer in request
 
 public:
     explicit Balanced(
