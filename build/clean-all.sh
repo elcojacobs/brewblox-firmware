@@ -8,4 +8,6 @@ sudo chown -R $USER "$ROOT_DIR"
 make -C "../app/brewblox/test" clean
 make -C "../lib/test" clean
 make -C "../controlbox" clean
-make clean
+make clean PLATFORM=gcc
+make clean PLATFORM=p1
+make clean PLATFORM=photon

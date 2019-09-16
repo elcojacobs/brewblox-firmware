@@ -292,7 +292,8 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
                 nextUpdateTime = pwm.update(now);
             }
             INFO(now);
-            CHECK(pwm.value() == Approx(50).margin(2));
+            CHECK(pwm.value() == Approx(50).margin(3));
+            INFO(double(pwm.value()));
             auto durations = constrained->activeDurations(now);
             CHECK(durations.previousActive >= 2000);
             CHECK(durations.previousActive <= 2250);
@@ -506,43 +507,44 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
 
         auto nextUpdate = pwm.update(now);
 
-        for (; now < 100000; now += 100) {
-            if (now > nextUpdate) {
-                nextUpdate = pwm.update(now);
-            }
+        while (now < 100000) {
+            nextUpdate = pwm.update(now);
+            now = nextUpdate;
         }
 
         auto durations = constrained->activeDurations(now);
-        CHECK(durations.previousPeriod == 13300); // rounded due to update interval
+        CHECK(durations.previousPeriod == Approx(13333).margin(10));
 
         pwm.setting(20);
         nextUpdate = pwm.update(now);
 
-        THEN("The output is turned off")
+        THEN("The output is turned off when the minimum ON time is elapsed")
         {
-            CHECK(mock.state() == State::Inactive);
-        }
-        THEN("The next low time is stretched to 1.5x the previous one")
-        {
-            while (mock.state() == State::Inactive) {
-                if (now > nextUpdate) {
-                    nextUpdate = pwm.update(now);
-                }
-                now += 100;
-            }
             while (mock.state() == State::Active) {
-                if (now > nextUpdate) {
-                    nextUpdate = pwm.update(now);
-                }
-                now += 100;
+                nextUpdate = pwm.update(now);
+                now = nextUpdate;
             }
-            durations = constrained->activeDurations(now);
-            CHECK(durations.previousPeriod == 18000); // 9333 * 1.5 + 4000
+            auto durations = constrained->activeDurations(now);
+            CHECK(durations.previousActive == 4000);
+
+            AND_THEN("The next low time is stretched to 1.5x the previous one")
+            {
+                while (mock.state() == State::Inactive) {
+                    nextUpdate = pwm.update(now);
+                    now = nextUpdate;
+                }
+                while (mock.state() == State::Active) {
+                    nextUpdate = pwm.update(now);
+                    now = nextUpdate;
+                }
+                durations = constrained->activeDurations(now);
+                CHECK(durations.previousPeriod == Approx(18000).margin(10)); // 9333 * 1.5 + 4000
+            }
         }
         THEN("It pwm will settle on the desired duty")
         {
             for (; now < 200000; now += 100) {
-                if (now > nextUpdate) {
+                if (now >= nextUpdate) {
                     nextUpdate = pwm.update(now);
                 }
             }
@@ -587,7 +589,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         THEN("the achieved value is always correct once adjusted")
         {
             for (; now < 100000; now += 100) {
-                if (now > nextUpdate) {
+                if (now >= nextUpdate) {
                     nextUpdate = pwm.update(now);
                 }
                 if (now > 50000) {
@@ -762,6 +764,42 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
                 CHECK(constrainedMock2->desiredState() == State::Inactive);
             }
             mut->update(now);
+        }
+    }
+
+    WHEN("A PWM actuator output goes active after being held back by the Mutex for a long time")
+    {
+        constrainedPwm1.setting(100);
+        constrainedPwm2.setting(0);
+
+        constrainedPwm1.update();
+        constrainedPwm2.update();
+        pwm1.update(now);
+        pwm2.update(now);
+
+        mut->differentActuatorWait(5 * period);
+
+        auto start = now;
+        auto turnOffPwm1 = now + 50 * period;
+        auto end = now + 100 * period;
+
+        for (; now - start <= turnOffPwm1; now += 100) {
+            constrainedPwm1.update();
+            constrainedPwm2.update();
+            pwm1.update(now);
+            pwm2.update(now);
+            mut->update(now);
+        }
+        constrainedPwm1.setting(0);
+        constrainedPwm2.setting(5);
+
+        for (; now - start <= end; now += 100) {
+            constrainedPwm1.update();
+            constrainedPwm2.update();
+            pwm1.update(now);
+            pwm2.update(now);
+            mut->update(now);
+            REQUIRE(pwm2.value() <= 5);
         }
     }
 }
