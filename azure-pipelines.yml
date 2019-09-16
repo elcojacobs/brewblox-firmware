@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - bash: |
-          git submodule update --init --recursive
+          git submodule update --init --recursive --jobs 4
         displayName: Init submodules
 
       - bash: |
@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - bash: |
-          git submodule update --init --recursive
+          git submodule update --init --recursive --jobs 4
         displayName: Init submodules
 
       - bash: |
@@ -84,7 +84,7 @@ jobs:
 
     steps:
       - bash: |
-          git submodule update --init --recursive
+          git submodule update --init --recursive --jobs 4
         displayName: Init submodules
 
       - bash: |

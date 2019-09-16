@@ -308,7 +308,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
             CHECK(decoded.ShortDebugString() == "actuatorId: 102 "
-                                                "period: 4000 setting: 204800 "
+                                                "period: 4000 setting: 204800 value: 163758 "
                                                 "constrainedBy { "
                                                 "constraints { "
                                                 "balanced { balancerId: 200 granted: 204800 id: 1 } "
@@ -351,7 +351,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         {
             auto decoded = blox::ActuatorPwm();
             testBox.processInputToProto(decoded);
-            CHECK(decoded.value() == Approx(cnl::unwrap(ActuatorAnalog::value_t(50))).epsilon(0.03));
+            CHECK(decoded.value() == Approx(cnl::unwrap(ActuatorAnalog::value_t(50))).epsilon(0.05));
         }
 
         // read a pwm actuator 2
@@ -362,7 +362,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
         {
             auto decoded = blox::ActuatorPwm();
             testBox.processInputToProto(decoded);
-            CHECK(decoded.value() == Approx(cnl::unwrap(ActuatorAnalog::value_t(50))).epsilon(0.03));
+            CHECK(decoded.value() == Approx(cnl::unwrap(ActuatorAnalog::value_t(50))).epsilon(0.05));
         }
     }
 }
