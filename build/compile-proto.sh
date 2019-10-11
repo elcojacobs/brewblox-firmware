@@ -9,6 +9,7 @@ handle_error() {
 trap handle_error ERR
 
 pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" > /dev/null
+rm nanopb_pb2.py
 make
 popd > /dev/null
 
@@ -21,4 +22,7 @@ bash generate_proto_test_cpp.sh;
 popd > /dev/null
 
 echo "Done"
+
+pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" > /dev/null
+git checkout nanopb_pb2.py # revert submodule changes
 exit
