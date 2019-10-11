@@ -10,7 +10,7 @@
 template <int N, std::array<uint8_t, N> pinList>
 class IoPinsBlock : public IoArray {
 private:
-    static const std::array<uin8t_t, N> pins  =pinList;
+    static const std::array<uin8t_t, N> pins = pinList;
 
 public:
     Spark3PinsBlock()
@@ -48,7 +48,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_Spark3Pins) {
+        if (iface == BrewBloxTypes_BlockType_Spark3Pins) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<IoArray>()) {

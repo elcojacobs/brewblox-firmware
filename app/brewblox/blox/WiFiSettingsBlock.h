@@ -24,7 +24,7 @@
 #include "proto/cpp/WiFiSettings.pb.h"
 
 // provides a protobuf interface to the read only system info
-class WiFiSettingsBlock : public cbox::ObjectBase<BrewbloxOptions_BlockType_WiFiSettings> {
+class WiFiSettingsBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_WiFiSettings> {
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final;

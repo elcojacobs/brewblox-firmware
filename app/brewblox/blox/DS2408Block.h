@@ -27,7 +27,7 @@
 OneWire&
 theOneWire();
 
-class DS2408Block : public Block<BrewbloxOptions_BlockType_DS2408> {
+class DS2408Block : public Block<BrewBloxTypes_BlockType_DS2408> {
 private:
     DS2408 device;
 
@@ -92,7 +92,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_DS2408) {
+        if (iface == BrewBloxTypes_BlockType_DS2408) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<IoArray>()) {

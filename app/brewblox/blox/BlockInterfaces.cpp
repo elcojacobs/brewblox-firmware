@@ -37,70 +37,70 @@ template <>
 const obj_type_t
 interfaceIdImpl<ProcessValue<fp12_t>>()
 {
-    return BrewbloxOptions_BlockType_ProcessValueInterface;
+    return BrewBloxTypes_BlockType_ProcessValueInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<TempSensor>()
 {
-    return BrewbloxOptions_BlockType_TempSensorInterface;
+    return BrewBloxTypes_BlockType_TempSensorInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<SetpointSensorPair>()
 {
-    return BrewbloxOptions_BlockType_SetpointSensorPairInterface;
+    return BrewBloxTypes_BlockType_SetpointSensorPairInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<ActuatorAnalogConstrained>()
 {
-    return BrewbloxOptions_BlockType_ActuatorAnalogInterface;
+    return BrewBloxTypes_BlockType_ActuatorAnalogInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<ActuatorDigitalConstrained>()
 {
-    return BrewbloxOptions_BlockType_ActuatorDigitalInterface;
+    return BrewBloxTypes_BlockType_ActuatorDigitalInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<TimedMutex>()
 {
-    return BrewbloxOptions_BlockType_MutexInterface;
+    return BrewBloxTypes_BlockType_MutexInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<Balancer<blox_DigitalConstraint_mutex_tag>>()
 {
-    return BrewbloxOptions_BlockType_BalancerInterface;
+    return BrewBloxTypes_BlockType_BalancerInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<OneWireDevice>()
 {
-    return BrewbloxOptions_BlockType_OneWireDeviceInterface;
+    return BrewBloxTypes_BlockType_OneWireDeviceInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<IoArray>()
 {
-    return BrewbloxOptions_BlockType_IoArrayInterface;
+    return BrewBloxTypes_BlockType_IoArrayInterface;
 }
 
 template <>
 const obj_type_t
 interfaceIdImpl<DS2408>()
 {
-    return BrewbloxOptions_BlockType_DS2408Interface;
+    return BrewBloxTypes_BlockType_DS2408Interface;
 }
 
 } // end namespace cbox

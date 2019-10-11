@@ -7,7 +7,7 @@
 #include "blox/FieldTags.h"
 #include "proto/cpp/ActuatorAnalogMock.pb.h"
 
-class ActuatorAnalogMockBlock : public Block<BrewbloxOptions_BlockType_ActuatorAnalogMock> {
+class ActuatorAnalogMockBlock : public Block<BrewBloxTypes_BlockType_ActuatorAnalogMock> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
     ActuatorAnalogMock actuator = ActuatorAnalogMock(0, 0, 100);
@@ -84,7 +84,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_ActuatorAnalogMock) {
+        if (iface == BrewBloxTypes_BlockType_ActuatorAnalogMock) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<ActuatorAnalogConstrained>()) {

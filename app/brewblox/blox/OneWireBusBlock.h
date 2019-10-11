@@ -9,7 +9,7 @@
 #include "nanopb_callbacks.h"
 #include "proto/cpp/OneWireBus.pb.h"
 
-class OneWireBusBlock : public Block<BrewbloxOptions_BlockType_OneWireBus> {
+class OneWireBusBlock : public Block<BrewBloxTypes_BlockType_OneWireBus> {
 private:
     OneWire& bus;
 
