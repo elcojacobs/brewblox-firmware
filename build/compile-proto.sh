@@ -8,6 +8,10 @@ handle_error() {
 }
 trap handle_error ERR
 
+pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" > /dev/null
+make
+popd > /dev/null
+
 pushd "$MY_DIR/../app/brewblox/proto" > /dev/null
 echo -e "Compiling proto files using nanopb for brewblox firmware"
 bash generate_proto_cpp.sh;
