@@ -39,6 +39,7 @@ INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
 CPPSRC += $(call here_files,lib/src,*.cpp)
 
 INCLUDE_DIRS += $(SOURCE_PATH)/platform
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/include
 
 # include boost
 ifeq ($(BOOST_ROOT),)

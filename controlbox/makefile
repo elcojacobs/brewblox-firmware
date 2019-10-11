@@ -20,6 +20,9 @@ SOURCE_PATH = $(call remove_slash,$(abspath $(mkfile_dir)))
 
 BUILD_PATH=$(TARGETDIR)
 
+# catch test
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/include
+
 # add all tests
 CPPSRC += $(patsubst $(SOURCE_PATH)/%,%,$(wildcard $(SOURCE_PATH)/test/*.cpp))
 # and sources

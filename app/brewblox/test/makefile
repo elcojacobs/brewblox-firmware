@@ -73,6 +73,9 @@ CPPSRC += /app/brewblox/nanopb_callbacks.cpp
 CPPSRC += /app/brewblox/BrewBlox.cpp
 CPPSRC += /app/brewblox/AppTicks.cpp
 
+# catch test
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/include
+
 # spark HAL includes
 INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/inc
 INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/shared
