@@ -111,7 +111,7 @@ manageConnections(uint32_t now)
             }
 
             client.write("HTTP/1.1 200 Ok\n\n<html><body>"
-                         "<p>Your BrewBlox Spark is online but it does not run its own web server."
+                         "<p>Your BrewBlox Spark is online but it does not run its own web server. "
                          "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
                          "<p>Device ID = ");
             client.write(System.deviceID());
