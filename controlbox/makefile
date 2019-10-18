@@ -21,8 +21,8 @@ SOURCE_PATH = $(call remove_slash,$(abspath $(mkfile_dir)))
 BUILD_PATH=$(TARGETDIR)
 
 # catch test
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/include
-
+INCLUDE_DIRS += $(SOURCE_PATH)/../platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
+							   
 # add all tests
 CPPSRC += $(patsubst $(SOURCE_PATH)/%,%,$(wildcard $(SOURCE_PATH)/test/*.cpp))
 # and sources
@@ -53,6 +53,8 @@ CPPFLAGS += -Wsuggest-override
 # Warn when functions and classes can be marked final
 CPPFLAGS += -Wsuggest-final-types
 CPPFLAGS += -Wsuggest-final-methods
+
+CFLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS)) -I.
 
 # doesn't work on osx
 #LDFLAGS +=  -Wl,--gc-sections 

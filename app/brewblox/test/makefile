@@ -75,7 +75,7 @@ CPPSRC += /app/brewblox/BrewBlox.cpp
 CPPSRC += /app/brewblox/AppTicks.cpp
 
 # catch test
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/include
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
 
 # spark HAL includes
 INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/inc
@@ -86,7 +86,7 @@ INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/src/newhal
 CPPSRC += /platform/spark/device-os/hal/src/gcc/gpio_hal.cpp
 CPPSRC += /platform/spark/device-os/hal/src/gcc/eeprom_hal.cpp
 CPPSRC += /platform/spark/device-os/hal/src/gcc/filesystem.cpp
-CPPSRC += /platform/spark/device-os/communication/tests/catch/hal_stubs.cpp
+CPPSRC += /platform/spark/device-os/test/unit_tests/communication/hal_stubs.cpp
 
 CFLAGS += -DPLATFORM_ID=3
 
