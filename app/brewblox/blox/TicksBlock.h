@@ -26,7 +26,7 @@
 
 // provides a protobuf interface to the ticks object
 template <typename T>
-class TicksBlock : public Block<BrewbloxOptions_BlockType_Ticks> {
+class TicksBlock : public Block<BrewBloxTypes_BlockType_Ticks> {
     T& ticks;
 
 public:

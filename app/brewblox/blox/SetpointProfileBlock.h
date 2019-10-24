@@ -9,7 +9,7 @@
 #include "pb_encode.h"
 #include "proto/cpp/SetpointProfile.pb.h"
 
-class SetpointProfileBlock : public Block<BrewbloxOptions_BlockType_SetpointProfile> {
+class SetpointProfileBlock : public Block<BrewBloxTypes_BlockType_SetpointProfile> {
 private:
     cbox::CboxPtr<SetpointSensorPair> target;
     SetpointProfile profile;
@@ -103,7 +103,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_SetpointProfile) {
+        if (iface == BrewBloxTypes_BlockType_SetpointProfile) {
             return this; // me!
         }
 

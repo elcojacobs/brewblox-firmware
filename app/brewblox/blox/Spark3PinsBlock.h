@@ -28,7 +28,7 @@
 extern BrewPiTouch touch;
 #endif
 
-class Spark3PinsBlock : public SparkIoBase, public Block<BrewbloxOptions_BlockType_Spark3Pins> {
+class Spark3PinsBlock : public SparkIoBase, public Block<BrewBloxTypes_BlockType_Spark3Pins> {
 private:
     static const uint8_t numPins = 5;
     virtual pin_t channelToPin(uint8_t channel) const override final
@@ -129,7 +129,7 @@ public:
     virtual void*
     implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_Spark3Pins) {
+        if (iface == BrewBloxTypes_BlockType_Spark3Pins) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<IoArray>()) {

@@ -12,7 +12,7 @@
 #include "proto/cpp/ActuatorPwm.pb.h"
 #include "proto/cpp/AnalogConstraints.pb.h"
 
-class ActuatorPwmBlock : public Block<BrewbloxOptions_BlockType_ActuatorPwm> {
+class ActuatorPwmBlock : public Block<BrewBloxTypes_BlockType_ActuatorPwm> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
     cbox::CboxPtr<ActuatorDigitalConstrained> actuator;
@@ -109,7 +109,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_ActuatorPwm) {
+        if (iface == BrewBloxTypes_BlockType_ActuatorPwm) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<ActuatorAnalogConstrained>()) {

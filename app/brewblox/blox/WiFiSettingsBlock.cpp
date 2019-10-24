@@ -19,9 +19,6 @@
 
 #include "WiFiSettingsBlock.h"
 #include "connectivity.h"
-#include "d4d.hpp"
-#include "deviceid_hal.h"
-#include <cstring>
 
 cbox::CboxError
 WiFiSettingsBlock::streamTo(cbox::DataOut& out) const

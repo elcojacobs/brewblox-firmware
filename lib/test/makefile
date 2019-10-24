@@ -38,7 +38,8 @@ CPPSRC += $(call here_files,lib/test,*.cpp)
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
 CPPSRC += $(call here_files,lib/src,*.cpp)
 
-INCLUDE_DIRS += $(SOURCE_PATH)/platform
+#  catch 2
+INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
 
 # include boost
 ifeq ($(BOOST_ROOT),)
@@ -71,6 +72,8 @@ CFLAGS += -Wno-system-headers
 
 # set platform flag
 CFLAGS += -DPLATFORM_ID=3
+
+CFLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS)) -I.
 
 # Collect all object and dep files
 ALLOBJ += $(addprefix $(BUILD_PATH), $(CSRC:.c=.o))
@@ -110,8 +113,7 @@ $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.cpp
 # Other Targets
 clean:	
 	$(RM) $(ALLOBJ) $(ALLDEPS) $(TARGETDIR)$(TARGET)
-	$(RMDIR) $(TARGETDIR)
-	$(RMDIR) $(SOURCE_PATH)/app/brewblox/proto/cpp
+	$(RMDIR) $(TARGETDIR)	
 	@echo
 
 # print variable by invoking make print-VARIABLE as VARIABLE = the_value_of_the_variable

@@ -24,7 +24,7 @@
 #include "proto/cpp/TouchSettings.pb.h"
 
 // provides a protobuf interface to the read only system info
-class TouchSettingsBlock : public cbox::ObjectBase<BrewbloxOptions_BlockType_TouchSettings> {
+class TouchSettingsBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_TouchSettings> {
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final;
