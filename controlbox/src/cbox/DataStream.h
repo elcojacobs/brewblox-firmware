@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include "CboxError.h"
 #include <algorithm>
 #include <cstdint>
 #include <string>
-
 namespace cbox {
 
 typedef uint16_t stream_size_t;
@@ -620,12 +620,13 @@ public:
         out.write('>');
     }
 
-    void writeError(uint8_t error)
+    void writeError(CboxError error)
     {
-        std::string msg = "Error:   ";
-        msg[7] = d2h(uint8_t(error & 0xF0) >> 4);
-        msg[8] = d2h(uint8_t(error & 0xF0));
-        writeAnnotation(std::move(msg));
+        std::string msg = "CBOXERROR:  ";
+        uint8_t asByte = uint8_t(error);
+        msg[10] = d2h(uint8_t(asByte & 0xF0) >> 4);
+        msg[11] = d2h(uint8_t(asByte & 0x0F));
+        writeEvent(std::move(msg));
     }
 };
 

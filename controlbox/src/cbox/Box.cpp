@@ -101,7 +101,7 @@ Box::readObject(DataIn& in, EncodedDataOut& out)
         // stream object as id, groups, typeId, data
         status = cobj->streamTo(out);
         if (status != CboxError::OK) {
-            out.writeError(uint8_t(status));
+            out.writeError(status);
             out.invalidateCrc();
         }
     }
@@ -179,7 +179,7 @@ Box::writeObject(DataIn& in, EncodedDataOut& out)
         cobj->forcedUpdate(lastUpdateTime); // force an update of the object
         status = cobj->streamTo(out);
         if (status != CboxError::OK) {
-            out.writeError(uint8_t(status));
+            out.writeError(status);
             out.invalidateCrc();
         }
     }
