@@ -80,13 +80,14 @@ public:
             CrcDataOut crcOut(tee, idCrc.crc());
             CboxError res = handler(crcOut);
 
-            bool crcWritten;
-            if (res == CboxError::OK) {
-                crcWritten = crcOut.writeCrc(); // write CRC after object data so we can check integrity
-            } else {
-                crcWritten = crcOut.writeInvalidCrc(); // write invalid CRC so object data will not be used on next read
+            bool error = res != CboxError::OK;
+            if (error) {
+                crcOut.invalidateCrc();
             }
-            if (!crcWritten) {
+            bool crcWritten = crcOut.writeCrc(); // write CRC after object data so we can check integrity
+            error = error || !crcWritten;
+
+            if (error) {
                 return CboxError::PERSISTED_STORAGE_WRITE_ERROR;
             }
             return CboxError::OK;
@@ -139,7 +140,8 @@ public:
      * DataIn will contain the object's data followed by a CRC.
      * @return CboxError
      */
-    virtual CboxError retrieveObject(
+    virtual CboxError
+    retrieveObject(
         const storage_id_t& id,
         const std::function<CboxError(RegionDataIn&)>& handler) override final
     {
@@ -155,7 +157,8 @@ public:
      * The handler will be called for each object and the object, with the DataIn stream containing the object's data.
      * @return
      */
-    virtual CboxError retrieveObjects(
+    virtual CboxError
+    retrieveObjects(
         const std::function<CboxError(const storage_id_t& id, RegionDataIn&)>& handler) override final
     {
         reader.reset(EepromLocation(objects), EepromLocationSize(objects));
@@ -210,7 +213,8 @@ public:
         return CboxError::OK;
     }
 
-    virtual bool disposeObject(const storage_id_t& id, bool mergeDisposed = true) override final
+    virtual bool
+    disposeObject(const storage_id_t& id, bool mergeDisposed = true) override final
     {
         RegionDataIn block = getObjectReader(id, true); // sets reader to data start of block data
         bool found = false;
@@ -227,13 +231,15 @@ public:
         return found;
     }
 
-    virtual void clear() override final
+    virtual void
+    clear() override final
     {
         eeprom.clear();
         init();
     }
 
-    stream_size_t freeSpace()
+    stream_size_t
+    freeSpace()
     {
         stream_size_t total = 0;
         resetReader();
@@ -248,7 +254,8 @@ public:
         return total - blockHeaderLength();
     }
 
-    stream_size_t continuousFreeSpace()
+    stream_size_t
+    continuousFreeSpace()
     {
         stream_size_t space = 0;
         resetReader();
@@ -261,7 +268,8 @@ public:
         return space;
     }
 
-    void defrag()
+    void
+    defrag()
     {
         do {
             mergeDisposedBlocks();
@@ -280,34 +288,41 @@ private:
     EepromDataIn reader;
     EepromDataOut writer;
 
-    inline uint8_t magicByte() const
+    inline uint8_t
+    magicByte() const
     {
         return 0x69;
     }
-    inline uint8_t storageVersion() const
+    inline uint8_t
+    storageVersion() const
     {
         return 0x01;
     }
-    inline uint16_t referenceHeader() const
+    inline uint16_t
+    referenceHeader() const
     {
         return magicByte() << 8 | storageVersion();
     }
 
-    void resetReader()
+    void
+    resetReader()
     {
         reader.reset(EepromLocation(objects), EepromLocationSize(objects));
     }
-    void resetWriter()
+    void
+    resetWriter()
     {
         writer.reset(EepromLocation(objects), EepromLocationSize(objects));
     }
 
-    static const uint16_t blockHeaderLength()
+    static const uint16_t
+    blockHeaderLength()
     {
         return sizeof(BlockType) + sizeof(uint16_t);
     }
 
-    static const uint16_t objectHeaderLength()
+    static const uint16_t
+    objectHeaderLength()
     {
         // actual size + id
         return blockHeaderLength() + sizeof(uint16_t) + sizeof(storage_id_t);
@@ -315,7 +330,8 @@ private:
 
     // This function assumes that the reader is at the start of a block.
     // To ensure this, after using the RegionDataIn object, skip to the end of the block.
-    RegionDataIn getBlockReader(const BlockType requestedType)
+    RegionDataIn
+    getBlockReader(const BlockType requestedType)
     {
         while (reader.hasNext()) {
             uint8_t type = reader.next();
@@ -333,7 +349,8 @@ private:
     }
 
     // This function assumes that the reader is at the start of a block.
-    RegionDataOut getBlockWriter(const BlockType requestedType, uint16_t minSize)
+    RegionDataOut
+    getBlockWriter(const BlockType requestedType, uint16_t minSize)
     {
         // this sets the eeprom to the object location, with the full block size available
         RegionDataIn objectData = getBlockReader(requestedType);
@@ -350,7 +367,8 @@ private:
     // If usedSize is true, only the length that was written previously is made available, not the reserved size
     // This function assumes that the reader is at the start of a block.
     // To ensure this, after using the RegionDataIn object, skip to the end of the block.
-    RegionDataIn getObjectReader(const storage_id_t id, bool usedSize)
+    RegionDataIn
+    getObjectReader(const storage_id_t id, bool usedSize)
     {
         resetReader();
         while (reader.hasNext()) {
@@ -372,7 +390,8 @@ private:
         return RegionDataIn(reader, 0);
     }
 
-    RegionDataOut getObjectWriter(const storage_id_t id)
+    RegionDataOut
+    getObjectWriter(const storage_id_t id)
     {
         // this sets the eeprom to the object location and requestes the full available object size for writing
         RegionDataIn objectData = getObjectReader(id, false);
@@ -385,7 +404,8 @@ private:
     }
 
     // gets a block large enough to write storage id, actual size and data. objectSize is length of data
-    RegionDataOut newObjectWriter(const storage_id_t id, uint16_t objectSize)
+    RegionDataOut
+    newObjectWriter(const storage_id_t id, uint16_t objectSize)
     {
         // find a disposed block with enough size available
         resetReader();
@@ -434,7 +454,8 @@ private:
         return RegionDataOut(writer, 0); // length 0 writer
     }
 
-    void init()
+    void
+    init()
     {
         uint16_t header;
         eeprom.get(EepromLocation(header), header);
@@ -450,7 +471,8 @@ private:
     }
 
     // move a single disposed block backwards by swapping it with an object
-    bool moveDisposedBackwards()
+    bool
+    moveDisposedBackwards()
     {
         resetReader();
         RegionDataIn disposedBlock = getBlockReader(BlockType::disposed_block);
@@ -492,7 +514,8 @@ private:
         return true;
     }
 
-    bool mergeDisposedBlocks()
+    bool
+    mergeDisposedBlocks()
     {
         resetReader();
         bool didMerge = false;

@@ -259,7 +259,7 @@ connectionStarted(DataOut& out)
     out.writeBuffer(versionCsv(), strlen(versionCsv()));
     out.write(',');
 
-    cbox::BinaryToHexTextOut hexOut(out);
+    cbox::EncodedDataOut hexOut(out);
 #if PLATFORM_ID == 3
     int resetReason = 0;
 #else
@@ -277,7 +277,7 @@ connectionStarted(DataOut& out)
 }
 
 bool
-applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
+applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
 {
     switch (cmdId) {
     case 100: // firmware update

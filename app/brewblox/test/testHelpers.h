@@ -32,8 +32,8 @@ namespace protobuf {
 
 class ProtoDataOut {
 public:
-    cbox::HexCrcDataOut& out;
-    ProtoDataOut(cbox::HexCrcDataOut& target)
+    cbox::EncodedDataOut& out;
+    ProtoDataOut(cbox::EncodedDataOut& target)
         : out(target)
     {
     }

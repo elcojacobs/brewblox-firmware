@@ -58,7 +58,7 @@ Box::Box(ObjectFactory& _factory,
  * The no-op command simply echoes the response until the end of stream.
  */
 void
-Box::noop(DataIn& in, HexCrcDataOut& out)
+Box::noop(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     out.writeResponseSeparator();
@@ -69,7 +69,7 @@ Box::noop(DataIn& in, HexCrcDataOut& out)
  * The no-op command simply echoes the response until the end of stream.
  */
 void
-Box::invalidCommand(DataIn& in, HexCrcDataOut& out)
+Box::invalidCommand(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     out.writeResponseSeparator();
@@ -77,7 +77,7 @@ Box::invalidCommand(DataIn& in, HexCrcDataOut& out)
 }
 
 void
-Box::readObject(DataIn& in, HexCrcDataOut& out)
+Box::readObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id = 0;
@@ -100,12 +100,15 @@ Box::readObject(DataIn& in, HexCrcDataOut& out)
     if (status == CboxError::OK) {
         // stream object as id, groups, typeId, data
         status = cobj->streamTo(out);
-        // todo handle status?
+        if (status != CboxError::OK) {
+            out.writeError(uint8_t(status));
+            out.invalidateCrc();
+        }
     }
 }
 
 void
-Box::writeObject(DataIn& in, HexCrcDataOut& out)
+Box::writeObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id = 0;
@@ -174,7 +177,11 @@ Box::writeObject(DataIn& in, HexCrcDataOut& out)
     out.write(asUint8(status));
     if (cobj != nullptr && status == CboxError::OK) {
         cobj->forcedUpdate(lastUpdateTime); // force an update of the object
-        status = cobj->streamTo(out);       // TODO: handle status ?
+        status = cobj->streamTo(out);
+        if (status != CboxError::OK) {
+            out.writeError(uint8_t(status));
+            out.invalidateCrc();
+        }
     }
 }
 
@@ -207,7 +214,7 @@ Box::createObjectFromStream(DataIn& in)
  * Creates a new object and adds it to the container
  */
 void
-Box::createObject(DataIn& in, HexCrcDataOut& out)
+Box::createObject(DataIn& in, EncodedDataOut& out)
 {
     obj_id_t id;
     obj_type_t typeId;
@@ -265,7 +272,7 @@ Box::createObject(DataIn& in, HexCrcDataOut& out)
  *
  */
 void
-Box::deleteObject(DataIn& in, HexCrcDataOut& out)
+Box::deleteObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id;
@@ -300,7 +307,7 @@ Box::deleteObject(DataIn& in, HexCrcDataOut& out)
  * Walks the object container and lists all objects.
  */
 void
-Box::listActiveObjects(DataIn& in, HexCrcDataOut& out)
+Box::listActiveObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -323,7 +330,7 @@ Box::listActiveObjects(DataIn& in, HexCrcDataOut& out)
  * Walks the object container and lists all objects that implement a certain interface
  */
 void
-Box::listCompatibleObjects(DataIn& in, HexCrcDataOut& out)
+Box::listCompatibleObjects(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_type_t interfaceType = 0;
@@ -350,7 +357,7 @@ Box::listCompatibleObjects(DataIn& in, HexCrcDataOut& out)
 }
 
 void
-Box::readStoredObject(DataIn& in, HexCrcDataOut& out)
+Box::readStoredObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id = 0;
@@ -391,7 +398,7 @@ Box::readStoredObject(DataIn& in, HexCrcDataOut& out)
 }
 
 void
-Box::listStoredObjects(DataIn& in, HexCrcDataOut& out)
+Box::listStoredObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -478,7 +485,7 @@ Box::loadObjectsFromStorage()
 }
 
 void
-Box::reboot(DataIn& in, HexCrcDataOut& out)
+Box::reboot(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -496,7 +503,7 @@ Box::reboot(DataIn& in, HexCrcDataOut& out)
 }
 
 void
-Box::factoryReset(DataIn& in, HexCrcDataOut& out)
+Box::factoryReset(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -521,7 +528,7 @@ Box::factoryReset(DataIn& in, HexCrcDataOut& out)
  */
 
 void
-Box::clearObjects(DataIn& in, HexCrcDataOut& out)
+Box::clearObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -554,7 +561,7 @@ Box::clearObjects(DataIn& in, HexCrcDataOut& out)
  */
 
 void
-Box::discoverNewObjects(DataIn& in, HexCrcDataOut& out)
+Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -599,10 +606,8 @@ void
 Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
 {
     HexTextToBinaryIn hexIn(dataIn);
-    BinaryToHexTextOut hexOut(dataOut);
-
-    HexCrcDataOut out(hexOut); // write CRC after response
-    TeeDataIn in(hexIn, out);  // ensure command input is also echoed to output
+    EncodedDataOut out(dataOut); // hex encodes and adds CRC after response, supports protocol special characters
+    TeeDataIn in(hexIn, out);    // ensure command input is also echoed to output
     uint16_t msg_id;
     in.get(msg_id);             // echo message id back
     uint8_t cmd_id = in.next(); // get command type code

@@ -107,7 +107,7 @@ SCENARIO("A container to hold objects")
         {
             char buf[1000] = {0};
             BufferDataOut outBuffer(reinterpret_cast<uint8_t*>(buf), sizeof(buf));
-            BinaryToHexTextOut out(outBuffer);
+            EncodedDataOut out(outBuffer);
             CboxError res = CboxError::OK;
 
             for (auto it = container.cbegin(); it != container.cend() && res == CboxError::OK; it++) {
@@ -157,7 +157,7 @@ SCENARIO("A container with system objects passed in the initializer list")
     {
         uint8_t buf[100] = {0};
         BufferDataOut out(buf, sizeof(buf));
-        BinaryToHexTextOut hexOut(out);
+        EncodedDataOut hexOut(out);
         auto spobj = objects.fetch(1).lock();
         REQUIRE(spobj);
         spobj->streamTo(hexOut);
