@@ -44,6 +44,7 @@ STARTUP(System.enableFeature(FEATURE_RESET_INFO));
 void
 signal_handler(int signal)
 {
+
     exit(signal);
 }
 #endif
@@ -90,6 +91,7 @@ setup()
     // Install a signal handler
 #if PLATFORM_ID == PLATFORM_GCC
     std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
 #endif
     boardInit();
     Buzzer.beep(2, 50);
