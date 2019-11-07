@@ -27,7 +27,7 @@ lcov -q --remove coverage/total.info '/boost/*' '/usr/*' 'build/target/*' -o cov
 
 echo "generating html"
 mkdir -p coverage/html
-genhtml -q --prefix /firmware/ coverage/filtered.info --ignore-errors source --output-directory=coverage/html
+genhtml -q --prefix /firmware/ coverage/filtered.info --output-directory=coverage/html
 
 popd > /dev/null
 exit $exit_status

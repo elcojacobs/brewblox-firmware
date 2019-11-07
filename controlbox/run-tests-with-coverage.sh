@@ -1,24 +1,28 @@
 #!/bin/bash
-pushd build
-mkdir -p coverage
+MY_DIR=$(dirname $(readlink -f $0))
+BUILD_DIR="$MY_DIR/build"
+OUTPUT_DIR="$BUILD_DIR/coverage"
+
+mkdir -p "$OUTPUT_DIR"
 
 echo "resetting lcov counters"
-lcov --zerocounters --directory .
+lcov --zerocounters --directory "$BUILD_DIR"
 
 echo "running lcov initial"
-lcov -q --capture --initial --directory . --output-file coverage/base.info
-./cbox_test_runner
+lcov --capture --initial --directory "$BUILD_DIR" --output-file "$OUTPUT_DIR/base.info"
+
+echo "running tests"
+$BUILD_DIR/cbox_test_runner
 
 echo "running lcov"
-lcov -q --capture --directory . --output-file coverage/test.info
+lcov --capture --directory "$BUILD_DIR" --output-file "$OUTPUT_DIR/test.info"
 
 echo "combining tracefiles"
-lcov -q --add-tracefile coverage/base.info --add-tracefile coverage/test.info --output-file coverage/total.info
+lcov --add-tracefile "$OUTPUT_DIR/base.info" --add-tracefile "$OUTPUT_DIR/test.info" --output-file "$OUTPUT_DIR/total.info"
 
 echo "filtering tracefiles"
-lcov -q --remove coverage/total.info '/usr/*' -o coverage/filtered.info
+lcov --remove "$OUTPUT_DIR/total.info" '/boost/*' '/usr/*' "*/platform/spark/device-os/**" -o "$OUTPUT_DIR/filtered.info"
 
 echo "generating html"
-mkdir -p coverage/html
-genhtml -q --prefix /firmware/controlbox coverage/filtered.info --ignore-errors source --output-directory=coverage/html
-popd
+mkdir -p "$OUTPUT_DIR/html"
+genhtml --prefix /firmware/controlbox/ "$OUTPUT_DIR/filtered.info" --ignore-errors source --output-directory="$OUTPUT_DIR/html"
