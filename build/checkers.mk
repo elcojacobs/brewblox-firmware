@@ -1,5 +1,5 @@
 # enable coverage for gcc builds
-CFLAGS += -g -O0 -fno-inline -fkeep-inline-functions
+CFLAGS += -g -O0 -fno-inline
 CFLAGS += --coverage
 
 TEST_BUILD=y
