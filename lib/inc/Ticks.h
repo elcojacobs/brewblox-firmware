@@ -25,55 +25,57 @@
 template <typename Impl>
 class Ticks {
     Impl impl;
-    ticks_seconds_t& utcStart;
 
 public:
-    Ticks(ticks_seconds_t& utcStartRef)
+    Ticks()
         : impl()
-        , utcStart(utcStartRef)
     {
     }
 
-    inline void delayMillis(const duration_millis_t& val)
+    inline void delayMillis(const duration_millis_t& val) const
     {
         return impl.delayMillis(val);
     }
 
-    inline ticks_millis_t millis()
+    inline ticks_millis_t millis() const
     {
         return impl.millis();
     }
-    inline ticks_micros_t micros()
+
+    inline ticks_micros_t micros() const
     {
         return impl.micros();
     }
-    inline ticks_seconds_t seconds()
+
+    /*inline utc_seconds_t seconds()
     {
         return impl.seconds();
-    }
-    inline ticks_seconds_t secondsSince(ticks_seconds_t timeStamp)
+    }*/
+
+    inline utc_seconds_t utc() const
     {
-        return ::secondsSince(seconds(), timeStamp);
+        return impl.utc();
     }
-    inline ticks_millis_t millisSince(ticks_millis_t timeStamp)
+
+    void setUtc(const utc_seconds_t& utcNow)
+    {
+        impl.setUtc(utcNow);
+    }
+
+    inline utc_seconds_t secondsSince(utc_seconds_t timeStamp) const
+    {
+        return ::secondsSince(utc(), timeStamp);
+    }
+
+    inline ticks_millis_t millisSince(ticks_millis_t timeStamp) const
     {
         return ::millisSince(millis(), timeStamp);
     }
 
-    void setNow(const ticks_seconds_t& utcNow)
-    {
-        utcStart = utcNow - seconds();
-    }
-
-    ticks_seconds_t getNow()
-    {
-        return utcStart + seconds();
-    }
-
-    struct tm calendarTime()
+    struct tm calendarTime() const
     {
         struct tm* calendar_time;
-        calendar_time = getNow();
+        calendar_time = utc();
         calendar_time->tm_year += 1900;
         return *calendar_time;
     }
@@ -101,7 +103,7 @@ public:
         lastTimerTick = now;
     }
 
-    ticks_millis_t taskTime(uint8_t id)
+    ticks_millis_t taskTime(uint8_t id) const
     {
         return timers[id];
     }

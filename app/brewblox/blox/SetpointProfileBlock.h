@@ -2,6 +2,7 @@
 
 #include "SetpointProfile.h"
 #include "SetpointSensorPair.h"
+#include "TicksBlock.h"
 #include "blox/Block.h"
 #include "blox/FieldTags.h"
 #include "cbox/CboxPtr.h"
@@ -11,6 +12,7 @@
 
 class SetpointProfileBlock : public Block<BrewBloxTypes_BlockType_SetpointProfile> {
 private:
+    cbox::CboxPtr<TicksBlock<TicksClass>> ticksPtr;
     cbox::CboxPtr<SetpointSensorPair> target;
     SetpointProfile profile;
     using Point = SetpointProfile::Point;
@@ -49,9 +51,10 @@ protected:
     }
 
 public:
-    SetpointProfileBlock(cbox::ObjectContainer& objects, const ticks_millis_t& bootTimeRef)
-        : target(objects)
-        , profile(target.lockFunctor(), bootTimeRef)
+    SetpointProfileBlock(cbox::ObjectContainer& objects)
+        : ticksPtr(objects, 3)
+        , target(objects)
+        , profile(target.lockFunctor())
     {
     }
 
@@ -97,7 +100,10 @@ public:
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
-        profile.update(now);
+        if (auto pTicks = ticksPtr.const_lock()) {
+            auto time = pTicks->const_get().utc();
+            profile.update(time);
+        }
         return update_1s(now);
     }
 
