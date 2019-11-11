@@ -85,17 +85,22 @@ displayTick()
     }
 }
 
+#if PLATFORM_ID != PLATFORM_GCC
 STARTUP(
     boardInit();
     Buzzer.beep(2, 50););
+#endif
 
 void
 setup()
 {
-    // Install a signal handler
+// Install a signal handler
 #if PLATFORM_ID == PLATFORM_GCC
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
+    // pin map is not initialized properly in gcc build before setup runs
+    boardInit();
+    Buzzer.beep(2, 50);
 #endif
 
     System.on(setup_update, watchdogCheckin);

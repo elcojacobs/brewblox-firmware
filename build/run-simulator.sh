@@ -2,7 +2,7 @@
 MY_DIR=$(dirname $(readlink -f $0))
 BUILD_DIR="$MY_DIR/target/user/platform-3/firmware/brewblox"
 EXECUTABLE_DIR="$MY_DIR/target/brewblox-gcc"
-EXECUTABLE="$EXECUTABLE_DIR/firmware"
+EXECUTABLE="$EXECUTABLE_DIR/brewblox"
 OUTPUT_DIR="$MY_DIR/coverage"
 DEVICE_KEY="$EXECUTABLE_DIR/device_key.der"
 SERVER_KEY="$EXECUTABLE_DIR/server_key.der"

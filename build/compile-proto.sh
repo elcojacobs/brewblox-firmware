@@ -8,8 +8,11 @@ handle_error() {
 }
 trap handle_error ERR
 
+# rebuild generator, particle doesn't keep the compiled version up to date
 pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" > /dev/null
-rm nanopb_pb2.py
+if [ -f nanopb_pb2.py ]; then
+  rm nanopb_pb2.py 
+fi
 make
 popd > /dev/null
 
