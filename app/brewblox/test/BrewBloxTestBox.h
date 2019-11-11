@@ -34,8 +34,8 @@ public:
     std::shared_ptr<std::stringstream> in;
     std::shared_ptr<std::stringstream> out;
     cbox::OStreamDataOut inOs;
-    cbox::BinaryToHexTextOut toHex;
-    cbox::HexCrcDataOut inEncoder;
+    cbox::EncodedDataOut toHex;
+    cbox::EncodedDataOut inEncoder;
     ProtoDataOut inProto;
     bool lastReplyOk = false;
     TicksClass& ticks;

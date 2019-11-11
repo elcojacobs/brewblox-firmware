@@ -4,10 +4,13 @@ set -e
 MY_DIR=$(dirname "$(readlink -f "$0")")
 ROOT_DIR=$(dirname "$(readlink -f "$MY_DIR")")
 
-sudo chown -R $USER "$ROOT_DIR"
-make -C "../app/brewblox/test" clean
-make -C "../lib/test" clean
-make -C "../controlbox" clean
-make clean PLATFORM=gcc
-make clean PLATFORM=p1
-make clean PLATFORM=photon
+pushd "$ROOT_DIR"/docker > /dev/null
+docker-compose exec compiler make -C "../app/brewblox/test" clean
+docker-compose exec compiler make -C "../lib/test" clean
+docker-compose exec compiler make -C "../controlbox" clean
+
+docker-compose exec compiler make clean PLATFORM=gcc
+docker-compose exec compiler make clean PLATFORM=p1
+docker-compose exec compiler make clean PLATFORM=photon
+popd > /dev/null
+

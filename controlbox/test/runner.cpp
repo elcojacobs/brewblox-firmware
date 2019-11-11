@@ -22,7 +22,7 @@ connectionStarted(DataOut& out)
 }
 
 bool
-applicationCommand(uint8_t cmdId, DataIn& in, HexCrcDataOut& out)
+applicationCommand(uint8_t cmdId, DataIn& in, EncodedDataOut& out)
 {
 
     switch (cmdId) {

@@ -48,20 +48,20 @@ private:
     update_t lastUpdateTime = 0;
 
     // command handlers
-    void noop(DataIn& in, HexCrcDataOut& out);
-    void invalidCommand(DataIn& in, HexCrcDataOut& out);
-    void readObject(DataIn& in, HexCrcDataOut& out);
-    void writeObject(DataIn& in, HexCrcDataOut& out);
-    void createObject(DataIn& in, HexCrcDataOut& out);
-    void deleteObject(DataIn& in, HexCrcDataOut& out);
-    void listActiveObjects(DataIn& in, HexCrcDataOut& out);
-    void readStoredObject(DataIn& in, HexCrcDataOut& out);
-    void listStoredObjects(DataIn& in, HexCrcDataOut& out);
-    void clearObjects(DataIn& in, HexCrcDataOut& out);
-    void reboot(DataIn& in, HexCrcDataOut& out);
-    void factoryReset(DataIn& in, HexCrcDataOut& out);
-    void listCompatibleObjects(DataIn& in, HexCrcDataOut& out);
-    void discoverNewObjects(DataIn& in, HexCrcDataOut& out);
+    void noop(DataIn& in, EncodedDataOut& out);
+    void invalidCommand(DataIn& in, EncodedDataOut& out);
+    void readObject(DataIn& in, EncodedDataOut& out);
+    void writeObject(DataIn& in, EncodedDataOut& out);
+    void createObject(DataIn& in, EncodedDataOut& out);
+    void deleteObject(DataIn& in, EncodedDataOut& out);
+    void listActiveObjects(DataIn& in, EncodedDataOut& out);
+    void readStoredObject(DataIn& in, EncodedDataOut& out);
+    void listStoredObjects(DataIn& in, EncodedDataOut& out);
+    void clearObjects(DataIn& in, EncodedDataOut& out);
+    void reboot(DataIn& in, EncodedDataOut& out);
+    void factoryReset(DataIn& in, EncodedDataOut& out);
+    void listCompatibleObjects(DataIn& in, EncodedDataOut& out);
+    void discoverNewObjects(DataIn& in, EncodedDataOut& out);
 
     std::tuple<CboxError, std::shared_ptr<Object>, uint8_t> createObjectFromStream(DataIn& in);
     CboxError loadSingleObjectFromStorage(const storage_id_t& id, RegionDataIn& objInStorage);
@@ -147,6 +147,6 @@ public:
 };
 
 bool
-applicationCommand(uint8_t cmdId, DataIn& in, HexCrcDataOut& out); // command handler specified by application to add additional commands
+applicationCommand(uint8_t cmdId, DataIn& in, EncodedDataOut& out); // command handler specified by application to add additional commands
 
 } // end namespace cbox

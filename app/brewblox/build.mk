@@ -38,7 +38,6 @@ CSRC += app/brewblox/nanopb_not_in_particle_dynalib.c
 endif
 # enable message id's
 CFLAGS += -DPB_MSGID=1
-CFLAGS += -DPB_FIELD_16BIT=1
 
 # define platform parameters to avoid -Wundef warnings
 CFLAGS += -DLITTLE_ENDIAN=1234

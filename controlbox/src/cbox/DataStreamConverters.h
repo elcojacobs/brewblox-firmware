@@ -87,36 +87,6 @@ public:
 };
 #endif
 
-inline bool
-isdigit(char c)
-{
-    return c >= '0' && c <= '9';
-}
-
-inline bool
-isxdigit(char c)
-{
-    return isdigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
-}
-
-/**
- * Converts a hex digit to the corresponding binary value.
- */
-inline uint8_t
-h2d(unsigned char hex)
-{
-    if (hex > '9') {
-        hex -= 7; // 'A' is 0x41, 'a' is 0x61. -7 =  0x3A, 0x5A
-    }
-    return uint8_t(hex & 0xf);
-}
-
-inline uint8_t
-d2h(uint8_t bin)
-{
-    return uint8_t(bin + (bin > 9 ? 'A' - 10 : '0'));
-}
-
 /*
  * Converts pairs of hex digit characters into the corresponding binary value.
  */
@@ -180,49 +150,6 @@ public:
     virtual StreamType streamType() const override final
     {
         return textIn.streamType();
-    }
-};
-
-/**
- * A DataOut decorator that converts from the 8-bit data bytes to ASCII Hex.
- */
-class BinaryToHexTextOut final : public DataOutEncoded {
-private:
-    DataOut& out;
-
-public:
-    BinaryToHexTextOut(DataOut& _out)
-        : out(_out)
-    {
-    }
-
-    virtual void writeResponseSeparator() override final
-    {
-        out.write('|');
-    }
-
-    virtual void writeListSeparator() override final
-    {
-        out.write(',');
-    }
-
-    /**
-	 * Data is written as hex-encoded
-	 */
-    virtual bool write(uint8_t data) override final
-    {
-        out.write(d2h(uint8_t(data & 0xF0) >> 4));
-        out.write(d2h(uint8_t(data & 0xF)));
-        //	out.write(' ');
-        return true;
-    }
-
-    /**
-	 * Rather than closing the global stream, write a newline to signify the end of this command.
-	 */
-    virtual void endMessage() override final
-    {
-        out.write('\n');
     }
 };
 
