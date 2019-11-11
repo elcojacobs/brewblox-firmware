@@ -85,6 +85,10 @@ displayTick()
     }
 }
 
+STARTUP(
+    boardInit();
+    Buzzer.beep(2, 50););
+
 void
 setup()
 {
@@ -93,8 +97,6 @@ setup()
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 #endif
-    boardInit();
-    Buzzer.beep(2, 50);
 
     System.on(setup_update, watchdogCheckin);
 
