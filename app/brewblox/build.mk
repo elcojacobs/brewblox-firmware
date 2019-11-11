@@ -36,8 +36,6 @@ ifeq ($(MODULAR),y)
 # include sources that are part of nanopb, but not included in shared libraries of particle
 CSRC += app/brewblox/nanopb_not_in_particle_dynalib.c
 endif
-# enable message id's
-CFLAGS += -DPB_MSGID=1
 
 # define platform parameters to avoid -Wundef warnings
 CFLAGS += -DLITTLE_ENDIAN=1234
