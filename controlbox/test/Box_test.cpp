@@ -90,14 +90,15 @@ SCENARIO("A controlbox Box")
         CHECK(out->str() == expected.str());
     }
 
-    WHEN("A connection sends a read stored object command for a non-existing object, INVALID_OBJECT_ID is returned")
+    WHEN("A connection sends a read stored object command for a non-existing object, "
+         "INVALID_OBJECT_ID is returned, and an error event is sent with PERSISTED_OBJECT_NOT_FOUND")
     {
         *in << "0000060800"; // read stored object 8
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
         expected << addCrc("0000060800")
-                 << "|" << addCrc("40")
+                 << "|<!CBOXERROR:11>" << addCrc("40")
                  << "\n";
         CHECK(out->str() == expected.str());
     }

@@ -302,10 +302,6 @@ Box::deleteObject(DataIn& in, EncodedDataOut& out)
         storage.disposeObject(storageId);
     }
 
-    if (status != CboxError::OK) {
-        out.writeError(status);
-    }
-
     out.writeResponseSeparator();
     out.write(asUint8(status));
 }
