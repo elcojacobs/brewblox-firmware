@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -e
 
-PARTICLE_VERSION=1.2.1-rc.2
+PARTICLE_VERSION=1.4.2
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/v${PARTICLE_VERSION}
 
 MY_DIR=$(dirname $(readlink -f $0))
