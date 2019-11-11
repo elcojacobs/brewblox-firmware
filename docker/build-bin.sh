@@ -1,8 +1,9 @@
 #! /usr/bin/env bash
 set -e
 
-PARTICLE_VERSION=1.4.2
-PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/v${PARTICLE_VERSION}
+PARTICLE_TAG=$(git --git-dir ../platform/spark/device-os/.git describe --tags)
+PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
+PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 
 MY_DIR=$(dirname $(readlink -f $0))
 OUT_DIR="./firmware-bin/source"
