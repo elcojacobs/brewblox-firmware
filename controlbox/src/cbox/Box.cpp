@@ -263,7 +263,10 @@ Box::createObject(DataIn& in, EncodedDataOut& out)
     out.write(asUint8(status));
     if (ptrCobj != nullptr && status == CboxError::OK) {
         ptrCobj->forcedUpdate(lastUpdateTime); // force an update of the object
-        status = ptrCobj->streamTo(out);       // TODO: handle status ?
+        status = ptrCobj->streamTo(out);
+        if (status != CboxError::OK) {
+            out.writeError(status);
+        }
     }
 }
 
@@ -296,7 +299,11 @@ Box::deleteObject(DataIn& in, EncodedDataOut& out)
 
     if (status == CboxError::OK) {
         status = objects.remove(id);
-        storage.disposeObject(storageId); // todo: event if error?
+        storage.disposeObject(storageId);
+    }
+
+    if (status != CboxError::OK) {
+        out.writeError(status);
     }
 
     out.writeResponseSeparator();
@@ -392,6 +399,9 @@ Box::readStoredObject(DataIn& in, EncodedDataOut& out)
         return CboxError::OK;
     };
     status = storage.retrieveObject(storage_id_t(id), objectStreamer);
+    if (status != CboxError::OK) {
+        out.writeError(status);
+    }
     if (!handlerCalled) {
         out.write(asUint8(CboxError::INVALID_OBJECT_ID)); // write status if handler has not written it
     }
@@ -723,7 +733,7 @@ Box::setActiveGroupsAndUpdateObjects(const uint8_t newGroups)
 
             CboxError status = storage.retrieveObject(storage_id_t(objId), retrieveContained);
             if (status != CboxError::OK) {
-                // TODO emit log event about reloading object from storage failing;
+                // TODO emit log event about reloading object from storage failing?
             }
         }
 
