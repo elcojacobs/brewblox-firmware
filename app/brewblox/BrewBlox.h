@@ -45,3 +45,6 @@ updateBrewbloxBox();
 
 const char*
 versionCsv();
+
+void
+logEvent(const std::string& event);

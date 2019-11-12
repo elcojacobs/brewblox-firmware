@@ -224,6 +224,18 @@ logger()
 }
 
 void
+logEvent(const std::string& event)
+{
+    cbox::DataOut& out = theConnectionPool().logDataOut();
+    out.write('<');
+    out.write('!');
+    for (const auto& c : event) {
+        out.write(c);
+    }
+    out.write('>');
+}
+
+void
 updateBrewbloxBox()
 {
     brewbloxBox().update(ticks.millis());

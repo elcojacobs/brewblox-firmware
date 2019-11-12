@@ -87,6 +87,13 @@ displayTick()
     }
 }
 
+void
+onSetupModeBegin()
+{
+    logEvent("SETUP_MODE");
+    HAL_Delay_Milliseconds(100);
+}
+
 #if PLATFORM_ID != PLATFORM_GCC
 STARTUP(
     boardInit();
@@ -106,6 +113,7 @@ setup()
 #endif
 
     System.on(setup_update, watchdogCheckin);
+    System.on(setup_begin, onSetupModeBegin);
     HAL_Delay_Milliseconds(1);
 
 #if PLATFORM_ID == PLATFORM_GCC
