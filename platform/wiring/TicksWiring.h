@@ -28,9 +28,11 @@
 class TicksWiring {
 public:
     TicksWiring() {}
-    ticks_millis_t millis();
-    ticks_micros_t micros();
-    ticks_seconds_t seconds();
+    ticks_millis_t millis() const;
+    ticks_micros_t micros() const;
 
-    void delayMillis(const duration_millis_t& millis);
+    utc_seconds_t utc() const;
+    void setUtc(const utc_seconds_t& t);
+
+    void delayMillis(const duration_millis_t& millis) const;
 };

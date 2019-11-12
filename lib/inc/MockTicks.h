@@ -34,69 +34,41 @@ public:
     {
     }
 
-    ticks_millis_t millis() { return _ticks += _increment; }
-    ticks_micros_t micros() { return 1000 * _ticks++; }
-    ticks_seconds_t seconds() { return millis() / 1000; }
-    ticks_seconds_t timeSinceSeconds(ticks_seconds_t timeStamp) { return ::secondsSince(seconds(), timeStamp); }
-    ticks_millis_t timeSinceMillis(ticks_millis_t timeStamp) { return ::millisSince(millis(), timeStamp); }
+    ticks_millis_t millis() const
+    {
+        return _ticks += _increment;
+    }
+    ticks_micros_t micros() const
+    {
+        return 1000 * _ticks++;
+    }
+    utc_seconds_t utc() const
+    {
+        if (_utc_boot_time) {
+            return _utc_boot_time + millis() / 1000;
+        }
+        return 0;
+    }
+    void setUtc(const utc_seconds_t& t)
+    {
+        _utc_boot_time = t - millis() / 1000;
+    }
+    utc_seconds_t timeSinceSeconds(utc_seconds_t timeStamp) const
+    {
+        return ::secondsSince(utc(), timeStamp);
+    }
+    ticks_millis_t timeSinceMillis(ticks_millis_t timeStamp) const
+    {
+        return ::millisSince(millis(), timeStamp);
+    }
     void reset(ticks_millis_t v = 0) { _ticks = v; };
-    void delayMillis(const duration_millis_t& duration)
+    void delayMillis(const duration_millis_t& duration) const
     {
         _ticks += duration;
     };
 
 private:
-    uint32_t _increment;
-    uint32_t _ticks;
+    ticks_millis_t _increment;
+    mutable ticks_millis_t _ticks;
+    utc_seconds_t _utc_boot_time;
 };
-
-/**
- * Externally provided millis timer. The calling code takes care of advancing the timer by calling setMillis or incMillis.
- * This is used for testing and also by the simulator to provide simulated time.
- */
-class ExternalTicks {
-public:
-    ExternalTicks()
-        : _ticks(0)
-    {
-    }
-
-    ticks_millis_t millis() { return _ticks; }
-    ticks_micros_t micros() { return _ticks * 1000; }
-    ticks_seconds_t seconds() { return millis() / 1000; }
-    ticks_seconds_t timeSinceSeconds(ticks_seconds_t timeStamp) { return ::secondsSince(seconds(), timeStamp); }
-    ticks_millis_t timeSinceMillis(ticks_millis_t timeStamp) { return ::millisSince(millis(), timeStamp); }
-    void reset(void) { _ticks = 0; };
-
-    void setMillis(ticks_millis_t now) { _ticks = now; }
-    void incMillis(ticks_millis_t advance) { _ticks += advance; }
-
-private:
-    ticks_millis_t _ticks;
-};
-
-/**
- * A delay class that does nothing.
- * In the AVR simulator, delays using millis() take a very long time. Using this class makes it possible to step through the code.
- */
-class NoOpDelay {
-public:
-    void seconds(uint16_t seconds) { millis(seconds << 10); }
-    void millis(uint32_t millis) {}
-    void microseconds(uint32_t micros) {}
-};
-
-/*
-class MockDelay {
-public:
-    MockDelay() {}
-    void seconds(uint16_t seconds){
-        baseticks.advance(ticks_millis_t(1000) * ticks_millis_t(seconds));
-    }
-    void millis(uint16_t millis){
-        baseticks.advance(millis);
-    }
-    void microseconds(uint32_t micros) {}
-};
-
-*/

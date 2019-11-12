@@ -811,8 +811,8 @@ WHEN("Actuator PWM value is alternated between zero and a low value, the average
     auto onOffAct = ActuatorTimeLimited(vAct, 20, 50);
     auto act = ActuatorPwm(onOffAct, 100);
 
-    ticks_seconds_t timeHigh = 0;
-    ticks_seconds_t timeLow = 0;
+    utc_seconds_t timeHigh = 0;
+    utc_seconds_t timeLow = 0;
 
     ofstream csv("./test_results/" + boost_test_name() + ".csv");
     csv << "1#value, 2a#pin" << endl;
@@ -841,7 +841,6 @@ WHEN("Actuator PWM value is alternated between zero and a low value, the average
 
     double avgDuty = double(timeHigh) * 100.0 / (timeHigh + timeLow);
     BOOST_CHECK_CLOSE(avgDuty, 2, 25); // value is between 1.5 and 2.5
-}
 }
 
 BOOST_AUTO_TEST_CASE(on_big_positive_changes_shortened_cycle_has_correct_value)
@@ -951,8 +950,8 @@ BOOST_AUTO_TEST_CASE(ramping_PWM_up_faster_than_period_gives_correct_average)
 {
     auto vAct = ActuatorBool();
     auto act = ActuatorPwm(vAct, 20);
-    ticks_seconds_t timeHigh = 0;
-    ticks_seconds_t timeLow = 0;
+    utc_seconds_t timeHigh = 0;
+    utc_seconds_t timeLow = 0;
 
     for (int ramps = 0; ramps < 100; ramps++) { // enough ramps to not be affected by time window
         for (value_t v = value_t(40.0); v <= value_t(60.0); v = v + value_t(0.25)) {
@@ -977,8 +976,8 @@ BOOST_AUTO_TEST_CASE(ramping_PWM_down_faster_than_period_gives_correct_average)
 {
     auto vAct = ActuatorBool();
     auto act = ActuatorPwm(vAct, 20);
-    ticks_seconds_t timeHigh = 0;
-    ticks_seconds_t timeLow = 0;
+    utc_seconds_t timeHigh = 0;
+    utc_seconds_t timeLow = 0;
 
     for (int ramps = 0; ramps < 100; ramps++) { // enough ramps to not be affected by time window
         for (value_t v = value_t(60.0); v >= value_t(40.0); v = v - value_t(0.25)) {
@@ -1012,10 +1011,10 @@ BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_equal_duty)
 
     mutex.setDeadTime(0);
 
-    ticks_seconds_t timeLow1 = 0;
-    ticks_seconds_t timeHigh1 = 0;
-    ticks_seconds_t timeHigh2 = 0;
-    ticks_seconds_t timeLow2 = 0;
+    utc_seconds_t timeLow1 = 0;
+    utc_seconds_t timeHigh1 = 0;
+    utc_seconds_t timeHigh2 = 0;
+    utc_seconds_t timeLow2 = 0;
 
     act1.set(20.0);
     act2.set(20.0);
@@ -1052,10 +1051,10 @@ BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_equal_duty)
     BOOST_CHECK_CLOSE(avgDuty1, 20.0, 2); // small error possible due to test window influence
 
     double avgDuty2 = double(timeHigh2) * 100.0 / (timeHigh2 + timeLow2);
-    BOOST_CHECK_CLOSE(avgDuty2, 20.0, 2); // small error possible due to test window influenceticks_seconds_t timeLow1 = 0;
-    ticks_seconds_t timeHigh1 = 0;
-    ticks_seconds_t timeHigh2 = 0;
-    ticks_seconds_t timeLow2 = 0;
+    BOOST_CHECK_CLOSE(avgDuty2, 20.0, 2); // small error possible due to test window influenceutc_seconds_t timeLow1 = 0;
+    utc_seconds_t timeHigh1 = 0;
+    utc_seconds_t timeHigh2 = 0;
+    utc_seconds_t timeLow2 = 0;
 
     act1.set(20.0);
     act2.set(20.0);
@@ -1108,10 +1107,10 @@ BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_different_duty)
 
     mutex.setDeadTime(0);
 
-    ticks_seconds_t timeHigh1 = 0;
-    ticks_seconds_t timeLow1 = 0;
-    ticks_seconds_t timeHigh2 = 0;
-    ticks_seconds_t timeLow2 = 0;
+    utc_seconds_t timeHigh1 = 0;
+    utc_seconds_t timeLow1 = 0;
+    utc_seconds_t timeHigh2 = 0;
+    utc_seconds_t timeLow2 = 0;
 
     act1.set(60.0);
     act2.set(20.0);
@@ -1164,10 +1163,10 @@ BOOST_AUTO_TEST_CASE(mutex_actuator_which_cannot_go_active_cannot_block_other_ac
 
     mutex.setDeadTime(0);
 
-    ticks_seconds_t timeHigh1 = 0;
-    ticks_seconds_t timeLow1 = 0;
-    ticks_seconds_t timeHigh2 = 0;
-    ticks_seconds_t timeLow2 = 0;
+    utc_seconds_t timeHigh1 = 0;
+    utc_seconds_t timeLow1 = 0;
+    utc_seconds_t timeHigh2 = 0;
+    utc_seconds_t timeLow2 = 0;
 
     act1.set(20.0);
     act2.set(40.0); // <-- act2 will have higher priority due to higher duty cycle

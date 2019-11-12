@@ -19,6 +19,7 @@
 
 #include "ActuatorAnalogConstrained.h"
 #include "ActuatorDigitalConstrained.h"
+#include "AppTicks.h"
 #include "Balancer.h"
 #include "DS2408.h"
 #include "DigitalConstraints.pb.h"
