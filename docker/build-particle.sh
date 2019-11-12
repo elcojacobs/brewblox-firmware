@@ -8,3 +8,8 @@ docker run --rm --privileged multiarch/qemu-user-static:register --reset
 
 docker build -t brewblox/firmware-particle:latest particle/amd
 docker build -t brewblox/firmware-particle:rpi-latest particle/arm
+
+if [[ $1 == "--push" ]]; then
+    docker push brewblox/firmware-particle:latest
+    docker push brewblox/firmware-particle:rpi-latest
+fi
