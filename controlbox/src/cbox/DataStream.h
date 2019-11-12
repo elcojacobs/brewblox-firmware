@@ -19,13 +19,43 @@
 
 #pragma once
 
+#include "CboxError.h"
 #include <algorithm>
 #include <cstdint>
 #include <string>
-
 namespace cbox {
 
 typedef uint16_t stream_size_t;
+
+inline bool
+isdigit(char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+inline bool
+isxdigit(char c)
+{
+    return isdigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+}
+
+/**
+ * Converts a hex digit to the corresponding binary value.
+ */
+inline uint8_t
+h2d(unsigned char hex)
+{
+    if (hex > '9') {
+        hex -= 7; // 'A' is 0x41, 'a' is 0x61. -7 =  0x3A, 0x5A
+    }
+    return uint8_t(hex & 0xf);
+}
+
+inline uint8_t
+d2h(uint8_t bin)
+{
+    return uint8_t(bin + (bin > 9 ? 'A' - 10 : '0'));
+}
 
 /**
  * An output stream that supports writing data.
@@ -41,10 +71,6 @@ public:
 	 * @return {@code true} if the byte was successfully written, false otherwise.
 	 */
     virtual bool write(uint8_t data) = 0;
-
-    bool write(int8_t data) { return write(uint8_t(data)); }
-    bool write(char data) { return write(uint8_t(data)); }
-    bool write(int data) { return write(uint8_t(data)); }
 
     template <typename T>
     bool put(const T& t)
@@ -78,35 +104,21 @@ public:
  * , list separator
  * \n end of message
  */
-class DataOutEncoded : public DataOut {
+class DataOutEncoded {
+private:
+    DataOut& out;
+
 public:
-    DataOutEncoded() = default;
+    DataOutEncoded(DataOut& _out)
+        : out(_out){};
     virtual ~DataOutEncoded() = default;
 
     virtual void writeResponseSeparator() = 0;
     virtual void writeListSeparator() = 0;
     virtual void endMessage() = 0;
 
-    /**
-	 * Annotations are written as is to the stream, surrounded by annotation marks.
-	 */
-    void writeAnnotation(std::string&& ann)
+    void writeWithoutEncoding()
     {
-        write('<');
-        for (auto c : ann) {
-            write(c);
-        }
-        write('>');
-    }
-
-    void writeEvent(std::string&& ann)
-    {
-        write('<');
-        write('!');
-        for (auto c : ann) {
-            write(c);
-        }
-        write('>');
     }
 };
 
@@ -495,53 +507,6 @@ static const uint8_t dscrc_table[] = {
     116, 42, 200, 150, 21, 75, 169, 247, 182, 232, 10, 84, 215, 137, 107, 53};
 
 /**
- * CRC data out. Sends running CRC of data that was sent on endMessage()
- */
-class HexCrcDataOut final : public DataOutEncoded {
-    DataOutEncoded& out;
-    uint8_t crcValue;
-
-public:
-    HexCrcDataOut(DataOutEncoded& _out)
-        : out(_out)
-        , crcValue(0)
-    {
-    }
-    virtual ~HexCrcDataOut() = default;
-
-    virtual bool write(uint8_t data) override final
-    {
-        crcValue = *(dscrc_table + (crcValue ^ data));
-        return out.write(data);
-    }
-
-    virtual void endMessage() override final
-    {
-        out.write(crcValue);
-        crcValue = 0;
-        out.endMessage();
-    }
-
-    virtual void writeResponseSeparator() override final
-    {
-        // don't add CRC for the input, because it is already sent with the input command
-        crcValue = 0;
-        out.writeResponseSeparator();
-    };
-    virtual void writeListSeparator() override final
-    {
-        out.write(crcValue);
-        crcValue = 0;
-        out.writeListSeparator();
-    };
-
-    uint8_t crc()
-    {
-        return crcValue;
-    }
-};
-
-/**
  * CRC data out. Sends running CRC of data on request
  */
 class CrcDataOut final : public DataOut {
@@ -567,14 +532,101 @@ public:
         return out.write(crcValue);
     }
 
-    bool writeInvalidCrc()
+    void invalidateCrc()
     {
-        return out.write(crcValue + 1);
+        crcValue += 1;
     }
 
     uint8_t crc()
     {
         return crcValue;
+    }
+};
+
+/**
+ * A DataOut decorator that converts from the 8-bit data bytes to ASCII Hex.
+ */
+class EncodedDataOut final : public DataOut {
+private:
+    uint8_t crcValue = 0;
+    DataOut& out;
+
+public:
+    EncodedDataOut(DataOut& _out)
+        : out(_out)
+    {
+    }
+
+    void writeResponseSeparator()
+    {
+        // don't add CRC for the input, because it is already part of the input command
+        crcValue = 0;
+        out.write('|');
+    }
+
+    virtual void writeListSeparator()
+    {
+        write(crcValue);
+        out.write(',');
+    }
+
+    /**
+	 * Data is written as hex-encoded
+	 */
+    virtual bool write(uint8_t data) override final
+    {
+        crcValue = *(dscrc_table + (crcValue ^ data));
+        bool success = out.write(d2h(uint8_t(data & 0xF0) >> 4));
+        success = success && out.write(d2h(uint8_t(data & 0xF)));
+        return success;
+    }
+
+    uint8_t crc()
+    {
+        return crcValue;
+    }
+
+    void invalidateCrc()
+    {
+        crcValue += 1;
+    }
+
+    /**
+	 * Rather than closing the global stream, write a newline to signify the end of this command.
+	 */
+    void endMessage()
+    {
+        write(crcValue);
+        crcValue = 0;
+        out.write('\n');
+    }
+
+    void writeAnnotation(std::string&& ann)
+    {
+        out.write('<');
+        for (auto c : ann) {
+            out.write(c);
+        }
+        out.write('>');
+    }
+
+    void writeEvent(std::string&& ann)
+    {
+        out.write('<');
+        out.write('!');
+        for (auto c : ann) {
+            out.write(c);
+        }
+        out.write('>');
+    }
+
+    void writeError(CboxError error)
+    {
+        std::string msg = "CBOXERROR:  ";
+        uint8_t asByte = uint8_t(error);
+        msg[10] = d2h(uint8_t(asByte & 0xF0) >> 4);
+        msg[11] = d2h(uint8_t(asByte & 0x0F));
+        writeEvent(std::move(msg));
     }
 };
 

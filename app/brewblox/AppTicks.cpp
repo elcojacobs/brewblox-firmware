@@ -19,23 +19,4 @@
 
 #include "AppTicks.h"
 
-static ticks_seconds_t bootTimeInSeconsSinceEpoch = 0;
-TicksClass ticks(bootTimeInSeconsSinceEpoch);
-
-const ticks_seconds_t&
-bootTimeRef()
-{
-    return bootTimeInSeconsSinceEpoch;
-}
-
-ticks_seconds_t&
-writableBootTimeRef()
-{
-    return bootTimeInSeconsSinceEpoch;
-}
-
-void
-setBootTime(const ticks_seconds_t& bootTime)
-{
-    bootTimeInSeconsSinceEpoch = bootTime;
-}
+TicksClass ticks;

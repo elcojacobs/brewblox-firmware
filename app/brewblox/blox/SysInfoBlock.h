@@ -24,7 +24,7 @@
 #include "proto/cpp/SysInfo.pb.h"
 
 // provides a protobuf interface to the read only system info
-class SysInfoBlock : public cbox::ObjectBase<BrewbloxOptions_BlockType_SysInfo> {
+class SysInfoBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_SysInfo> {
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final;

@@ -27,12 +27,11 @@
 
 SCENARIO("SetpointProfile test", "[SetpointProfile]")
 {
-    auto deviceStartTime = ticks_seconds_t(10);
     auto sensor = std::make_shared<TempSensorMock>(20.0);
     auto sspair = std::make_shared<SetpointSensorPair>([sensor]() { return sensor; });
     sspair->setting(99);
     sspair->settingValid(true);
-    auto profile = SetpointProfile([sspair]() { return sspair; }, deviceStartTime);
+    auto profile = SetpointProfile([sspair]() { return sspair; });
 
     WHEN("the profile has no values, it does not change the setpoint")
     {
@@ -48,17 +47,17 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     WHEN("the profile contains a single temp")
     {
         profile.startTime(10);
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(1), temp_t(10)});
 
         AND_WHEN("the timestamp is in the future")
         {
 
             THEN("The profile doesn't change the setpoint, but does indicate it as driving")
             {
-                profile.update(0);
+                profile.update(1);
                 CHECK(sspair->setting() == temp_t(99));
                 CHECK(profile.isDriving() == true);
-                profile.update(999);
+                profile.update(5);
                 CHECK(sspair->setting() == temp_t(99));
                 CHECK(profile.isDriving() == true);
             }
@@ -77,41 +76,41 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     WHEN("the profile contains two temperatures")
     {
         profile.startTime(10);
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(11), temp_t(20)});
 
         AND_WHEN("The time is before the first point, it doesn't change the setpoint, but it is shown as driving")
         {
-            profile.update(500);
+            profile.update(5);
             CHECK(sspair->setting() == temp_t(99));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time is after the last point, the last temp is used")
         {
-            profile.update(12000);
+            profile.update(22);
             CHECK(sspair->setting() == temp_t(20));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time between the 2 points, it is correctly interpolated")
         {
-            profile.update(2000);
+            profile.update(12);
             CHECK(sspair->setting() == temp_t(11));
             CHECK(profile.isDriving() == true);
 
-            profile.update(6000);
+            profile.update(16);
             CHECK(sspair->setting() == temp_t(15));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time is exactly at a point, that temp is used")
         {
-            profile.update(1000);
+            profile.update(11);
             CHECK(sspair->setting() == temp_t(10));
             CHECK(profile.isDriving() == true);
 
-            profile.update(11000);
+            profile.update(21);
             CHECK(sspair->setting() == temp_t(20));
             CHECK(profile.isDriving() == true);
         }
@@ -120,54 +119,54 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     WHEN("the profile contains multiple temperatures")
     {
         profile.startTime(10);
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(40)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(11), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(21), temp_t(40)});
 
         AND_WHEN("The time is before the first point, it doesn't change the setpoint but is indicated as driving")
         {
-            profile.update(500);
+            profile.update(5);
             CHECK(sspair->setting() == temp_t(99));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time is after the last point, the last temp is used")
         {
-            profile.update(22000);
+            profile.update(32);
             CHECK(sspair->setting() == temp_t(40));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time between the 2 points, it is correctly interpolated")
         {
-            profile.update(2000);
+            profile.update(12);
             CHECK(sspair->setting() == temp_t(11));
             CHECK(profile.isDriving() == true);
 
-            profile.update(6000);
+            profile.update(16);
             CHECK(sspair->setting() == temp_t(15));
             CHECK(profile.isDriving() == true);
 
-            profile.update(12000);
+            profile.update(22);
             CHECK(sspair->setting() == temp_t(22));
             CHECK(profile.isDriving() == true);
 
-            profile.update(20000);
+            profile.update(30);
             CHECK(sspair->setting() == temp_t(38));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time is exactly at a point, that temp is used")
         {
-            profile.update(1000);
+            profile.update(11);
             CHECK(sspair->setting() == temp_t(10));
             CHECK(profile.isDriving() == true);
 
-            profile.update(11000);
+            profile.update(21);
             CHECK(sspair->setting() == temp_t(20));
             CHECK(profile.isDriving() == true);
 
-            profile.update(21000);
+            profile.update(31);
             CHECK(sspair->setting() == temp_t(40));
             CHECK(profile.isDriving() == true);
         }
@@ -176,25 +175,25 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     WHEN("the profile contains two temperatures with the same time")
     {
         profile.startTime(10);
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(30)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(21), temp_t(40)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(11), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(11), temp_t(30)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(21), temp_t(40)});
 
         AND_WHEN("The time is before the step, it is correctly interpolated with the first point of the step")
         {
-            profile.update(2000);
+            profile.update(12);
             CHECK(sspair->setting() == temp_t(11));
             CHECK(profile.isDriving() == true);
 
-            profile.update(6000);
+            profile.update(16);
             CHECK(sspair->setting() == temp_t(15));
             CHECK(profile.isDriving() == true);
         }
 
         AND_WHEN("The time is at the step (rounded down to whole seconds), it is equal to the last point of the step")
         {
-            profile.update(11000);
+            profile.update(21);
             CHECK(sspair->setting() == temp_t(30));
             CHECK(profile.isDriving() == true);
         }
@@ -202,29 +201,25 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
         AND_WHEN("The time is after the step, it is correctly interpolated with the second point of the step")
         {
 
-            profile.update(12000);
+            profile.update(22);
             CHECK(sspair->setting() == temp_t(31));
             CHECK(profile.isDriving() == true);
 
-            profile.update(21000);
+            profile.update(31);
             CHECK(sspair->setting() == temp_t(40));
             CHECK(profile.isDriving() == true);
         }
     }
 
-    WHEN("The device start time is still at 0, the setpoint is unchanged")
+    WHEN("The utc time is still at 0, the setpoint is unchanged, but the profile still reports to be driving")
     {
-        deviceStartTime = 0;
         profile.startTime(10);
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(1), temp_t(10)});
-        profile.addPoint(SetpointProfile::Point{ticks_seconds_t(11), temp_t(20)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(1), temp_t(10)});
+        profile.addPoint(SetpointProfile::Point{utc_seconds_t(11), temp_t(20)});
 
-        profile.update(1000);
+        profile.update(0);
         CHECK(sspair->setting() == temp_t(99));
-        CHECK(profile.isDriving() == false);
 
-        profile.update(10000);
-        CHECK(sspair->setting() == temp_t(99));
-        CHECK(profile.isDriving() == false);
+        CHECK(profile.isDriving() == true);
     }
 }

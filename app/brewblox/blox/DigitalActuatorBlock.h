@@ -9,7 +9,7 @@
 #include "proto/cpp/DigitalActuator.pb.h"
 #include <cstdint>
 
-class DigitalActuatorBlock : public Block<BrewbloxOptions_BlockType_DigitalActuator> {
+class DigitalActuatorBlock : public Block<BrewBloxTypes_BlockType_DigitalActuator> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
     cbox::CboxPtr<IoArray> hwDevice;
@@ -88,7 +88,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_DigitalActuator) {
+        if (iface == BrewBloxTypes_BlockType_DigitalActuator) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<ActuatorDigitalConstrained>()) {

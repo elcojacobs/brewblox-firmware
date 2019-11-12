@@ -26,7 +26,7 @@
 
 // provides a protobuf interface to the ticks object
 template <typename T>
-class TicksBlock : public Block<BrewbloxOptions_BlockType_Ticks> {
+class TicksBlock : public Block<BrewBloxTypes_BlockType_Ticks> {
     T& ticks;
 
 public:
@@ -41,7 +41,7 @@ public:
         blox_Ticks newData = blox_Ticks_init_zero;
         cbox::CboxError result = streamProtoFrom(dataIn, &newData, blox_Ticks_fields, blox_Ticks_size);
         if (result == cbox::CboxError::OK) {
-            ticks.setNow(newData.secondsSinceEpoch);
+            ticks.setUtc(newData.secondsSinceEpoch);
         }
         return result;
     }
@@ -49,7 +49,7 @@ public:
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
     {
         blox_Ticks message = blox_Ticks_init_zero;
-        message.secondsSinceEpoch = ticks.getNow();
+        message.secondsSinceEpoch = ticks.utc();
         message.millisSinceBoot = ticks.millis();
 
         message.avgCommunicationTask = ticks.taskTime(0);
@@ -71,6 +71,11 @@ public:
     }
 
     T& get()
+    {
+        return ticks;
+    }
+
+    const T& const_get() const
     {
         return ticks;
     }

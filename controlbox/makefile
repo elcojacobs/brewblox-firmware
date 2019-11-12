@@ -1,9 +1,9 @@
 ## -*- Makefile -*-
 
+
 CCC = gcc
 CXX = g++
 LD = g++
-CFLAGS = -g
 CCFLAGS = $(CFLAGS)
 CXXFLAGS = $(CFLAGS)
 RM = rm -f
@@ -18,8 +18,13 @@ mkfile_dir := $(dir $(mkfile_path))
 remove_slash = $(patsubst %/,%,$1)
 SOURCE_PATH = $(call remove_slash,$(abspath $(mkfile_dir)))
 
+include $(SOURCE_PATH)/../build/checkers.mk # sanitizer and gcov
+
 BUILD_PATH=$(TARGETDIR)
 
+# catch test
+INCLUDE_DIRS += $(SOURCE_PATH)/../platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
+							   
 # add all tests
 CPPSRC += $(patsubst $(SOURCE_PATH)/%,%,$(wildcard $(SOURCE_PATH)/test/*.cpp))
 # and sources
@@ -40,9 +45,6 @@ CFLAGS += -DDEBUG_BUILD
 CPPFLAGS += -std=gnu++14
 CFLAGS += -pthread
 
-# compile with coverage
-CFLAGS += -g -fprofile-arcs -ftest-coverage
-LDFLAGS += -lgcov
 
 # the following warnings can help find opportunities for impromevent in virtual functions
 # Warn when virtual functions are overriden without override/override final specifier (requires gcc 5.1)
@@ -50,6 +52,8 @@ CPPFLAGS += -Wsuggest-override
 # Warn when functions and classes can be marked final
 CPPFLAGS += -Wsuggest-final-types
 CPPFLAGS += -Wsuggest-final-methods
+
+CFLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS)) -I.
 
 # doesn't work on osx
 #LDFLAGS +=  -Wl,--gc-sections 
@@ -91,7 +95,7 @@ $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.cpp
 	@echo Building file: $<
 	@echo Invoking: GCC CPP Compiler
 	$(MKDIR) $(dir $@)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CXX) $(CFLAGS) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 	@echo
 
 # Other Targets

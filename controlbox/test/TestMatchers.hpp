@@ -7,11 +7,11 @@
 // LCOV_EXCL_START
 
 template <typename T, int n>
-class ArrayMatcher : public Catch::MatcherBase<T const*> {
+class ArrayMatcher : public Catch::MatcherBase<T const* const&> {
     T target[n];
 
 public:
-    ArrayMatcher(const T*& _target)
+    ArrayMatcher(T const* const& _target)
     {
         for (int i = 0; i < n; i++) {
             target[i] = _target[i];
@@ -20,7 +20,7 @@ public:
     virtual ~ArrayMatcher() = default;
 
     // Performs the test for this matcher
-    virtual bool match(T const* const other) const override
+    virtual bool match(T const* const& other) const override
     {
         for (int i = 0; i < n; i++) {
             if (other[i] != target[i]) {
@@ -45,7 +45,7 @@ public:
 // The builder function
 template <typename T, int n>
 inline ArrayMatcher<T, n>
-equalsArray(const T* target)
+equalsArray(T const* const& target)
 {
     return ArrayMatcher<T, n>(target);
 }

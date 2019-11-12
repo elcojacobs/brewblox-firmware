@@ -18,7 +18,6 @@
  */
 
 #include "DisplaySettingsBlock.h"
-#include "deviceid_hal.h"
 #include <cstring>
 
 cbox::CboxError

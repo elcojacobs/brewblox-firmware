@@ -9,7 +9,7 @@
 
 using std::placeholders::_1;
 
-class SetpointSensorPairBlock : public Block<BrewbloxOptions_BlockType_SetpointSensorPair> {
+class SetpointSensorPairBlock : public Block<BrewBloxTypes_BlockType_SetpointSensorPair> {
 private:
     cbox::CboxPtr<TempSensor> sensor;
     SetpointSensorPair pair;
@@ -100,7 +100,7 @@ public:
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_SetpointSensorPair) {
+        if (iface == BrewBloxTypes_BlockType_SetpointSensorPair) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<ProcessValue<temp_t>>()) {

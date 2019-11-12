@@ -26,7 +26,10 @@
         "showReuseMessage": false,
         "clear": false
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     },
     {
       "label": "build_photon",
@@ -51,12 +54,19 @@
         "showReuseMessage": false,
         "clear": false
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     },
     {
       "label": "build_gcc_local",
       "command": "bash",
-      "args": ["../wrapped_make.sh", "APP=brewblox", "PLATFORM=gcc"],
+      "args": [
+        "../wrapped_make.sh",
+        "APP=brewblox",
+        "PLATFORM=gcc"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/build"
@@ -69,7 +79,10 @@
         "showReuseMessage": false,
         "clear": false
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     },
     {
       "label": "flash_p1",
@@ -97,7 +110,10 @@
         "clear": false
       },
       "problemMatcher": "$gcc",
-      "dependsOn": ["trigger_dfu", "restart_compiler"]
+      "dependsOn": [
+        "trigger_dfu",
+        "restart_compiler"
+      ]
     },
     {
       "label": "flash_photon",
@@ -125,7 +141,10 @@
         "clear": false
       },
       "problemMatcher": "$gcc",
-      "dependsOn": ["trigger_dfu", "restart_compiler"]
+      "dependsOn": [
+        "trigger_dfu",
+        "restart_compiler"
+      ]
     },
     {
       "label": "trigger_dfu",
@@ -154,7 +173,9 @@
     {
       "label": "restart_compiler",
       "command": "bash",
-      "args": ["start-compiler.sh"],
+      "args": [
+        "start-compiler.sh"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -173,7 +194,11 @@
       "label": "touch_gcc",
       "type": "shell",
       "command": "touch",
-      "args": ["device_key.der", "server_key.der", "eeprom.bin"],
+      "args": [
+        "device_key.der",
+        "server_key.der",
+        "eeprom.bin"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/build/target/brewblox-gcc"
       },
@@ -188,13 +213,21 @@
     },
     {
       "label": "build_and_touch_gcc",
-      "dependsOn": ["build_gcc", "touch_gcc"]
+      "dependsOn": [
+        "build_gcc",
+        "touch_gcc"
+      ]
     },
     {
       "label": "compile proto",
       "type": "shell",
       "command": "docker-compose",
-      "args": ["exec", "compiler", "bash", "compile-proto.sh"],
+      "args": [
+        "exec",
+        "compiler",
+        "bash",
+        "compile-proto.sh"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -233,7 +266,10 @@
         "showReuseMessage": false,
         "clear": true
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     },
     {
       "label": "build lib tests",
@@ -285,13 +321,20 @@
         "showReuseMessage": false,
         "clear": true
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     },
     {
       "label": "build cbox tests local",
       "type": "shell",
       "command": "bash",
-      "args": ["../wrapped_make.sh", "-C", "../controlbox"],
+      "args": [
+        "../wrapped_make.sh",
+        "-C",
+        "../controlbox"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -309,7 +352,12 @@
     {
       "label": "ci",
       "command": "docker-compose",
-      "args": ["exec", "compiler", "bash", "run-ci.sh"],
+      "args": [
+        "exec",
+        "compiler",
+        "bash",
+        "run-ci.sh"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -327,7 +375,11 @@
     {
       "label": "build lib tests local",
       "command": "bash",
-      "args": ["../wrapped_make.sh", "-C", "../lib/test"],
+      "args": [
+        "../wrapped_make.sh",
+        "-C",
+        "../lib/test"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -346,7 +398,11 @@
       "label": "build app tests local",
       "type": "shell",
       "command": "bash",
-      "args": ["../wrapped_make.sh", "-C", "../app/brewblox/test"],
+      "args": [
+        "../wrapped_make.sh",
+        "-C",
+        "../app/brewblox/test"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/docker"
@@ -359,13 +415,18 @@
         "showReuseMessage": false,
         "clear": true
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     },
     {
       "label": "clean all",
       "type": "shell",
       "command": "bash",
-      "args": ["clean-all.sh"],
+      "args": [
+        "clean-all.sh"
+      ],
       "group": "build",
       "options": {
         "cwd": "${workspaceFolder}/build"
@@ -404,7 +465,10 @@
         "showReuseMessage": false,
         "clear": false
       },
-      "problemMatcher": "$gcc"
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
     }
   ]
 }

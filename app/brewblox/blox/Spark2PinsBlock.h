@@ -23,7 +23,7 @@
 #include "blox/SparkIoBase.h"
 #include "proto/cpp/Spark2Pins.pb.h"
 
-class Spark2PinsBlock : public SparkIoBase, public Block<BrewbloxOptions_BlockType_Spark2Pins> {
+class Spark2PinsBlock : public SparkIoBase, public Block<BrewBloxTypes_BlockType_Spark2Pins> {
 private:
     static const uint8_t numPins = 4;
     virtual pin_t channelToPin(uint8_t channel) const override final
@@ -108,7 +108,7 @@ public:
     virtual void*
     implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_Spark2Pins) {
+        if (iface == BrewBloxTypes_BlockType_Spark2Pins) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<IoArray>()) {

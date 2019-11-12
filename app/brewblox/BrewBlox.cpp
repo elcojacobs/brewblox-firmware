@@ -151,7 +151,7 @@ makeBrewBloxBox()
         {ActuatorOffsetBlock::staticTypeId(), []() { return std::make_shared<ActuatorOffsetBlock>(objects); }},
         {BalancerBlock::staticTypeId(), std::make_shared<BalancerBlock>},
         {MutexBlock::staticTypeId(), std::make_shared<MutexBlock>},
-        {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(objects, bootTimeRef()); }},
+        {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(objects); }},
         {DS2413Block::staticTypeId(), std::make_shared<DS2413Block>},
         {DigitalActuatorBlock::staticTypeId(), []() { return std::make_shared<DigitalActuatorBlock>(objects); }},
         {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>},
@@ -224,6 +224,18 @@ logger()
 }
 
 void
+logEvent(const std::string& event)
+{
+    cbox::DataOut& out = theConnectionPool().logDataOut();
+    out.write('<');
+    out.write('!');
+    for (const auto& c : event) {
+        out.write(c);
+    }
+    out.write('>');
+}
+
+void
 updateBrewbloxBox()
 {
     brewbloxBox().update(ticks.millis());
@@ -259,7 +271,7 @@ connectionStarted(DataOut& out)
     out.writeBuffer(versionCsv(), strlen(versionCsv()));
     out.write(',');
 
-    cbox::BinaryToHexTextOut hexOut(out);
+    cbox::EncodedDataOut hexOut(out);
 #if PLATFORM_ID == 3
     int resetReason = 0;
 #else
@@ -277,7 +289,7 @@ connectionStarted(DataOut& out)
 }
 
 bool
-applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::HexCrcDataOut& out)
+applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
 {
     switch (cmdId) {
     case 100: // firmware update

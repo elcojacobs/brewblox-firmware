@@ -1,4 +1,4 @@
-FROM brewblox/rpi-node:10-alpine
+FROM brewblox/rpi-node:12-alpine
 
 WORKDIR /app
 

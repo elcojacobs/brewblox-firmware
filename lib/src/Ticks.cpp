@@ -22,7 +22,7 @@
 
 // return time that has passed since timeStamp, take overflow into account
 duration_seconds_t
-secondsSince(ticks_seconds_t currentTime, ticks_seconds_t previousTime)
+secondsSince(utc_seconds_t currentTime, utc_seconds_t previousTime)
 {
     if (currentTime >= previousTime) {
         return currentTime - previousTime;

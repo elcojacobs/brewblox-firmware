@@ -1,8 +1,9 @@
 #! /usr/bin/env bash
 set -e
 
-PARTICLE_VERSION=1.2.1-rc.2
-PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/v${PARTICLE_VERSION}
+PARTICLE_TAG=$(git --git-dir ../platform/spark/device-os/.git describe --tags)
+PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
+PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 
 MY_DIR=$(dirname $(readlink -f $0))
 OUT_DIR="./firmware-bin/source"
@@ -19,14 +20,14 @@ docker-compose exec -T compiler \
     '
 
 cp ../build/target/brewblox-p1/brewblox.bin "${OUT_DIR}"/brewblox-p1.bin
-curl -sL -o "${OUT_DIR}"/bootloader-p1.bin ${PARTICLE_RELEASES}/p1-bootloader@${PARTICLE_VERSION}.bin
-curl -sL -o "${OUT_DIR}"/system-part1-p1.bin ${PARTICLE_RELEASES}/p1-system-part1@${PARTICLE_VERSION}.bin
-curl -sL -o "${OUT_DIR}"/system-part2-p1.bin ${PARTICLE_RELEASES}/p1-system-part2@${PARTICLE_VERSION}.bin
+curl -sfL -o "${OUT_DIR}"/bootloader-p1.bin ${PARTICLE_RELEASES}/p1-bootloader@${PARTICLE_VERSION}+lto.bin
+curl -sfL -o "${OUT_DIR}"/system-part1-p1.bin ${PARTICLE_RELEASES}/p1-system-part1@${PARTICLE_VERSION}.bin
+curl -sfL -o "${OUT_DIR}"/system-part2-p1.bin ${PARTICLE_RELEASES}/p1-system-part2@${PARTICLE_VERSION}.bin
 
 cp ../build/target/brewblox-photon/brewblox.bin "${OUT_DIR}"/brewblox-photon.bin
-curl -sL -o "${OUT_DIR}"/bootloader-photon.bin ${PARTICLE_RELEASES}/photon-bootloader@${PARTICLE_VERSION}.bin
-curl -sL -o "${OUT_DIR}"/system-part1-photon.bin ${PARTICLE_RELEASES}/photon-system-part1@${PARTICLE_VERSION}.bin
-curl -sL -o "${OUT_DIR}"/system-part2-photon.bin ${PARTICLE_RELEASES}/photon-system-part2@${PARTICLE_VERSION}.bin
+curl -sfL -o "${OUT_DIR}"/bootloader-photon.bin ${PARTICLE_RELEASES}/photon-bootloader@${PARTICLE_VERSION}+lto.bin
+curl -sfL -o "${OUT_DIR}"/system-part1-photon.bin ${PARTICLE_RELEASES}/photon-system-part1@${PARTICLE_VERSION}.bin
+curl -sfL -o "${OUT_DIR}"/system-part2-photon.bin ${PARTICLE_RELEASES}/photon-system-part2@${PARTICLE_VERSION}.bin
 
 FILE="${OUT_DIR}"/firmware.ini
 touch $FILE

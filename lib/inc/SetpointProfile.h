@@ -28,24 +28,21 @@
 class SetpointProfile {
 public:
     struct Point {
-        ticks_seconds_t time;
+        utc_seconds_t time;
         temp_t temp;
     };
 
 private:
     const std::function<std::shared_ptr<SetpointSensorPair>()> m_target;
-    const ticks_seconds_t& m_deviceStartTime;
-    ticks_seconds_t m_profileStartTime = 0;
+    utc_seconds_t m_profileStartTime = 0;
     bool m_enabled = true;
 
     std::vector<Point> m_points;
 
 public:
     explicit SetpointProfile(
-        std::function<std::shared_ptr<SetpointSensorPair>()>&& target, // process value to manipulate setpoint of
-        const ticks_seconds_t& deviceStartTimeRef)
+        std::function<std::shared_ptr<SetpointSensorPair>()>&& target) // process value to manipulate setpoint of
         : m_target(target)
-        , m_deviceStartTime(deviceStartTimeRef)
     {
     }
 
@@ -61,14 +58,14 @@ public:
 
     bool isDriving() const
     {
-        return (m_enabled && !m_points.empty() && m_deviceStartTime != 0);
+        return (m_enabled && !m_points.empty());
     }
 
-    void update(const ticks_millis_t& now)
+    void update(const utc_seconds_t& time)
     {
         struct TimeStampLessEqual {
-            bool operator()(const Point& p, const ticks_seconds_t& time) const { return p.time <= time; }
-            bool operator()(const ticks_seconds_t& time, const Point& p) const { return time <= p.time; }
+            bool operator()(const Point& p, const utc_seconds_t& time) const { return p.time <= time; }
+            bool operator()(const utc_seconds_t& time, const Point& p) const { return time <= p.time; }
         };
 
         if (!isDriving()) {
@@ -77,10 +74,12 @@ public:
 
         auto newTemp = temp_t(0);
 
-        if (!m_points.empty() && m_deviceStartTime != 0) {
+        if (!m_points.empty() && time != 0) {
 
-            auto nowSeconds = ticks_seconds_t(now / 1000) + m_deviceStartTime;
-            auto elapsed = nowSeconds - m_profileStartTime;
+            if (m_profileStartTime > time) {
+                return;
+            }
+            auto elapsed = time - m_profileStartTime;
             auto upper = std::lower_bound(m_points.cbegin(), m_points.cend(), elapsed, TimeStampLessEqual{});
             if (upper == m_points.cend()) { // every point is in the past, use the last point
                 newTemp = m_points.back().temp;
@@ -120,12 +119,12 @@ public:
         m_points = newPoints;
     }
 
-    ticks_seconds_t startTime() const
+    utc_seconds_t startTime() const
     {
         return m_profileStartTime;
     }
 
-    void startTime(ticks_seconds_t v)
+    void startTime(utc_seconds_t v)
     {
         m_profileStartTime = v;
     }

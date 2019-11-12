@@ -32,7 +32,7 @@ namespace cbox {
  */
 class ContainedObject {
 public:
-    explicit ContainedObject(obj_id_t id, uint8_t groups, std::shared_ptr<Object> obj)
+    explicit ContainedObject(obj_id_t id, uint8_t groups, std::shared_ptr<Object>&& obj)
         : _id(std::move(id))
         , _groups(std::move(groups))
         , _obj(std::move(obj))

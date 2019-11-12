@@ -5,7 +5,7 @@
 #include "nanopb_callbacks.h"
 #include "proto/cpp/Mutex.pb.h"
 
-class MutexBlock : public Block<BrewbloxOptions_BlockType_Mutex> {
+class MutexBlock : public Block<BrewBloxTypes_BlockType_Mutex> {
 private:
     TimedMutex m_mutex;
 
@@ -51,7 +51,7 @@ public:
     virtual void*
     implements(const cbox::obj_type_t& iface) override final
     {
-        if (iface == BrewbloxOptions_BlockType_Mutex) {
+        if (iface == BrewBloxTypes_BlockType_Mutex) {
             return this; // me!
         }
         if (iface == cbox::interfaceId<TimedMutex>()) {

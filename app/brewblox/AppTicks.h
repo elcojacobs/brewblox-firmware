@@ -29,13 +29,4 @@ using TicksClass = Ticks<TicksWiring>;
 using TicksClass = Ticks<MockTicks>;
 #endif
 
-const ticks_seconds_t&
-bootTimeRef();
-
-ticks_seconds_t&
-writableBootTimeRef();
-
-void
-setBootTime(const ticks_seconds_t& bootTime);
-
 extern TicksClass ticks;
