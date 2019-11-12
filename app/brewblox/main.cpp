@@ -27,6 +27,7 @@
 #include "cbox/Object.h"
 #include "connectivity.h"
 #include "d4d.hpp"
+#include "delay_hal.h"
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
@@ -86,6 +87,13 @@ displayTick()
     }
 }
 
+void
+onSetupModeBegin()
+{
+    logEvent("SETUP_MODE");
+    HAL_Delay_Milliseconds(100);
+}
+
 #if PLATFORM_ID != PLATFORM_GCC
 STARTUP(
     boardInit();
@@ -105,6 +113,8 @@ setup()
 #endif
 
     System.on(setup_update, watchdogCheckin);
+    System.on(setup_begin, onSetupModeBegin);
+    HAL_Delay_Milliseconds(1);
 
 #if PLATFORM_ID == PLATFORM_GCC
     manageConnections(0); // init network early to websocket display emulation works during setup()
@@ -116,6 +126,7 @@ setup()
     D4D_TCH_SetCalibration(defaultCalib);
 
     StartupScreen::activate();
+    HAL_Delay_Milliseconds(1);
 
     StartupScreen::setProgress(10);
     StartupScreen::setStep("Power cycling peripherals");
@@ -124,18 +135,22 @@ setup()
         displayTick();
     };
     enablePheripheral5V(true);
+    HAL_Delay_Milliseconds(1);
 
     StartupScreen::setProgress(30);
     StartupScreen::setStep("Init OneWire");
     theOneWire();
 
+    HAL_Delay_Milliseconds(1);
     StartupScreen::setProgress(40);
     StartupScreen::setStep("Init BrewBlox framework");
     brewbloxBox();
 
+    HAL_Delay_Milliseconds(1);
     StartupScreen::setProgress(80);
     StartupScreen::setStep("Loading objects");
     brewbloxBox().loadObjectsFromStorage(); // init box and load stored objects
+    HAL_Delay_Milliseconds(1);
     StartupScreen::setProgress(100);
 
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
@@ -146,6 +161,7 @@ setup()
 
     while (ticks.millis() < 5000) {
         displayTick();
+        HAL_Delay_Milliseconds(1);
     };
 
     WidgetsScreen::activate();
@@ -154,6 +170,7 @@ setup()
 #endif
 
     wifiInit();
+    HAL_Delay_Milliseconds(1);
 }
 
 void
@@ -164,6 +181,7 @@ loop()
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
     }
+
     ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
     updateBrewbloxBox();
 
@@ -172,6 +190,7 @@ loop()
 
     ticks.switchTaskTimer(TicksClass::TaskId::System);
     watchdogCheckin();
+    HAL_Delay_Milliseconds(1);
 }
 
 void
