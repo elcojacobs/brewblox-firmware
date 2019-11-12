@@ -117,7 +117,7 @@ manageConnections(uint32_t now)
             client.write(System.deviceID());
             client.write("</p></body></html>\n\n");
             client.flush();
-            delay(5);
+            HAL_Delay_Milliseconds(5);
             client.stop();
         }
         return;
@@ -202,7 +202,7 @@ updateFirmwareStreamHandler(Stream& stream)
     uint8_t invalidCommands = 0;
 
     while (true) {
-        delay(1);
+        HAL_Delay_Milliseconds(1);
         int recv = stream.read();
         switch (recv) {
         case 'F':
