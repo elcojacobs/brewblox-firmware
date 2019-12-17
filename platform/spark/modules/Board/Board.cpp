@@ -20,8 +20,6 @@
 
 #include "Board.h"
 #include "delay_hal.h"
-#include "fast_pin.h"
-#include "gpio_hal.h"
 #include "pwm_hal.h"
 
 bool

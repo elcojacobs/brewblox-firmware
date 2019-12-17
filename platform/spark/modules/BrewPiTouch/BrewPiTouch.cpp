@@ -18,11 +18,7 @@
  */
 
 #include "BrewPiTouch.h"
-#include "spark_wiring_constants.h"
-
-#include "fast_pin.h"
-#include "gpio_hal.h"
-#include "pinmap_hal.h"
+#include "Board.h"
 
 #include <algorithm>
 #include <cstdint>
