@@ -22,10 +22,7 @@
 #include "Buzzer.h"
 #include "Board.h"
 #include "delay_hal.h"
-#include "spark_wiring.h"
-#include "spark_wiring_constants.h"
-
-#include "fast_pin.h"
+#include "pwm_hal.h"
 
 void
 BuzzerClass::setActive(bool active)
@@ -38,7 +35,7 @@ BuzzerClass::setActive(bool active)
         digitalWriteFast(PIN_ALARM, active);
         break;
     case SparkVersion::V3:
-        analogWrite(PIN_ALARM, active ? 128 : 0, 3000);
+        HAL_PWM_Write_With_Frequency(PIN_ALARM, active ? 128 : 0, 3000);
         break;
     }
 }

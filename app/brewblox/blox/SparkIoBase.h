@@ -24,11 +24,6 @@
 #include "IoArray.h"
 #include "IoArrayHelpers.h"
 #include "blox/Block.h"
-#include "spark_wiring_constants.h"
-
-#include "fast_pin.h"
-#include "gpio_hal.h"
-#include "pinmap_hal.h"
 
 class SparkIoBase : public IoArray {
 protected:
