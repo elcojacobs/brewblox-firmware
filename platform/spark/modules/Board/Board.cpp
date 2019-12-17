@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "spark_wiring_constants.h"
 
 #include "Board.h"
 #include "delay_hal.h"
