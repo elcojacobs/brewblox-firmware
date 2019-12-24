@@ -59,7 +59,7 @@ public:
                 digitalWriteFast(PIN_V3_TOP1_DIR, isOutput);
             }
 #endif
-#ifdef PIN_V3_TOP1_DIR
+#ifdef PIN_V3_TOP2_DIR
             if (pin == PIN_V3_TOP2) {
                 bool isOutput = (config == ChannelConfig::ACTIVE_HIGH || config == ChannelConfig::ACTIVE_LOW);
                 HAL_Pin_Mode(PIN_V3_TOP2_DIR, OUTPUT);
