@@ -52,29 +52,29 @@ boardInit()
 {
 #if PLATFORM_ID == 8 || PLATFORM_ID == 3 // P1 or simulation
     HAL_Pin_Mode(PIN_V3_BOTTOM1, OUTPUT);
-    HAL_Pin_Mode(PIN_V3_BOTTOM2, OUTPUT);
-    HAL_Pin_Mode(PIN_V3_TOP2, OUTPUT);
-    HAL_Pin_Mode(PIN_V3_TOP3, OUTPUT);
-
     digitalWriteFast(PIN_V3_BOTTOM1, LOW);
+
+    HAL_Pin_Mode(PIN_V3_BOTTOM2, OUTPUT);
     digitalWriteFast(PIN_V3_BOTTOM2, LOW);
-    digitalWriteFast(PIN_V3_TOP2, INPUT_PULLDOWN);
-    digitalWriteFast(PIN_V3_TOP3, LOW);
 
 #ifdef PIN_V3_TOP1
     HAL_Pin_Mode(PIN_V3_TOP1, INPUT_PULLDOWN);
-    digitalWriteFast(PIN_V3_TOP1, LOW);
 #endif
 
 #ifdef PIN_V3_TOP1_DIR
     HAL_Pin_Mode(PIN_V3_TOP1_DIR, OUTPUT);
-    digitalWriteFast(PIN_V3_TOP1_DIR, HIGH); // configure as input
+    digitalWriteFast(PIN_V3_TOP1_DIR, LOW); // configure as input
 #endif
+
+    HAL_Pin_Mode(PIN_V3_TOP2, INPUT_PULLDOWN);
 
 #ifdef PIN_V3_TOP2_DIR
     HAL_Pin_Mode(PIN_V3_TOP2_DIR, OUTPUT);
     digitalWriteFast(PIN_V3_TOP2_DIR, LOW); // configure as input
 #endif
+
+    HAL_Pin_Mode(PIN_V3_TOP3, OUTPUT);
+    digitalWriteFast(PIN_V3_TOP3, LOW);
 
 #ifdef PIN_12V_ENABLE
     HAL_Pin_Mode(PIN_12V_ENABLE, OUTPUT);
