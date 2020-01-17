@@ -19,7 +19,7 @@
 
 #include "startup_screen.h"
 #include "../fonts/fonts.h"
-#include "../logo/brewblox_logo_stacked.h"
+#include "../logo/brewblox_logo.h"
 #include "BrewBlox.h"
 #include "blox/stringify.h"
 #include "d4d.hpp"
@@ -40,7 +40,7 @@ extern BrewPiTouch touch;
 char stepTxt[32] = "Init board";
 char versionString[] = "version: " stringify(GIT_VERSION) " (" stringify(GIT_DATE) ")";
 
-D4D_DECLARE_STD_PICTURE(scrStartup_logo, 112, 74, 96, 80, &bmp_logo_stacked)
+D4D_DECLARE_STD_PICTURE(scrStartup_logo, 70, 100, 180, 34, &bmp_brewblox_logo)
 D4D_DECLARE_STD_LABEL(scrStartup_step, stepTxt, 0, 193, 320, 15, FONT_REGULAR)
 D4D_DECLARE_STD_PROGRESS_BAR(scrStartup_progress, 0, 212, 320, 12, 0)
 D4D_DECLARE_STD_LABEL(scrStartup_version, versionString, 0, 224, 320, 15, FONT_REGULAR)
