@@ -262,13 +262,13 @@ updateFirmwareFromStream(cbox::StreamType streamType)
     } else {
         TCPServer server(8332); // re-open TCP server
 
-        TCPClient client;
         while (true) {
-            client = server.available();
+            TCPClient client = server.available();
             if (client) {
                 updateFirmwareStreamHandler(client);
                 client.stop();
             }
+            HAL_Delay_Milliseconds(1); // allow thread switch so system thread can set up client
         }
     }
 }
