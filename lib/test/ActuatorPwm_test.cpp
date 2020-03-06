@@ -591,9 +591,9 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
             for (; now < 100000; now += 100) {
                 if (now >= nextUpdate) {
                     nextUpdate = pwm.update(now);
-                }
-                if (now > 50000) {
-                    CHECK(pwm.value() == Approx(10).margin(2));
+                    if (now > 60000) {
+                        CHECK(pwm.value() == Approx(10).margin(2));
+                    }
                 }
             }
         }
