@@ -788,6 +788,66 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
             REQUIRE(pwm2.value() <= 5);
         }
     }
+
+    WHEN("A PWM actuator that with a blocked target is set to 100%, followed by 0%, the desired state of the target goes from high to low")
+    {
+        constrainedMock1->removeAllConstraints();
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+            [mut]() {
+                return mut;
+            },
+            5 * period,
+            true));
+        constrainedMock2->removeAllConstraints();
+        constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+            [mut]() {
+                return mut;
+            },
+            5 * period,
+            true));
+
+        constrainedPwm1.setting(100);
+        constrainedPwm2.setting(100);
+        constrainedPwm1.update();
+        constrainedPwm2.update();
+        pwm1.update(now++);
+        pwm2.update(now++);
+
+        // actuator 1 now holds the mutex
+        CHECK(constrainedMock1->desiredState() == State::Active);
+        CHECK(constrainedMock2->desiredState() == State::Active);
+        CHECK(constrainedMock1->state() == State::Active);
+        CHECK(constrainedMock2->state() == State::Inactive);
+
+        constrainedPwm1.setting(0);
+        constrainedPwm2.setting(100);
+
+        constrainedPwm1.update();
+        constrainedPwm2.update();
+        pwm1.update(now++);
+        pwm2.update(now++);
+
+        // actuator 1 still holds the mutex, due to the wait time
+
+        CHECK(constrainedMock1->desiredState() == State::Inactive);
+        CHECK(constrainedMock2->desiredState() == State::Active);
+        CHECK(constrainedMock1->state() == State::Inactive);
+        CHECK(constrainedMock2->state() == State::Inactive);
+
+        constrainedPwm1.setting(0);
+        constrainedPwm2.setting(0);
+
+        constrainedPwm1.update();
+        constrainedPwm2.update();
+        pwm1.update(now++);
+        pwm2.update(now++);
+
+        // actuator 1 still holds the mutex, but actuator 2 should have an updated desired state
+        CHECK(constrainedMock1->desiredState() == State::Inactive);
+        CHECK(constrainedMock2->desiredState() == State::Inactive);
+        CHECK(constrainedMock1->state() == State::Inactive);
+        CHECK(constrainedMock2->state() == State::Inactive);
+    }
 }
 #if 0
 WHEN("Actuator PWM value is alternated between zero and a low value, the average is correct")
