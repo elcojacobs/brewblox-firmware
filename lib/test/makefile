@@ -58,21 +58,18 @@ CFLAGS += -Wnull-dereference
 CPPFLAGS += -fdiagnostics-show-template-tree -fno-elide-type # GCC8 required
 CFLAGS += -Wextra
 CPPFLAGS += -Wextra-semi
-
-# CFLAGS += -Wpedantic -Wvla -Wswitch-enum -fvar-tracking-assignments 
-# CFLAGS += -Wduplicated-cond -Wduplicated-branches -rdynamic
-
+CFLAGS += -Wpedantic -Wvla -Wswitch-enum -fvar-tracking-assignments 
+CFLAGS += -Wduplicated-cond -Wduplicated-branches -rdynamic
 
 # Flag compiler error for [-Wdeprecated-declarations]
 CFLAGS += -Werror=deprecated-declarations
 
 # the following warnings can help find opportunities for impromevent in virtual functions
 # Warn when virtual functions are overriden without override/override final specifier (requires gcc 5.1)
-# CPPFLAGS += -Wsuggest-override
+CPPFLAGS += -Wsuggest-override
 # Warn when functions and classes can be marked final
-# CPPFLAGS += -Wsuggest-final-types
-# CPPFLAGS += -Wsuggest-final-methods
-
+CPPFLAGS += -Wsuggest-final-types
+CPPFLAGS += -Wsuggest-final-methods
 
 # Generate dependency files automatically.
 CFLAGS += -MD -MP -MF $@.d
