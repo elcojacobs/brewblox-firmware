@@ -77,12 +77,13 @@ CPPSRC += /app/brewblox/AppTicks.cpp
 INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
 
 # spark HAL includes
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/inc
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/shared
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/services/inc
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/src/gcc
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/hal/src/newhal
-INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/wiring/inc
+CPPFLAGS += -isystem $(SOURCE_PATH)/platform/spark/device-os/hal/inc
+CPPFLAGS += -isystem $(SOURCE_PATH)/platform/spark/device-os/hal/shared
+CPPFLAGS += -isystem $(SOURCE_PATH)/platform/spark/device-os/services/inc
+CPPFLAGS += -isystem $(SOURCE_PATH)/platform/spark/device-os/hal/src/gcc
+CPPFLAGS += -isystem $(SOURCE_PATH)/platform/spark/device-os/hal/src/newhal
+CPPFLAGS += -isystem $(SOURCE_PATH)/platform/spark/device-os/wiring/inc
+
 CPPSRC += /platform/spark/device-os/hal/src/gcc/gpio_hal.cpp
 CPPSRC += /platform/spark/device-os/hal/src/gcc/eeprom_hal.cpp
 CPPSRC += /platform/spark/device-os/hal/src/gcc/filesystem.cpp
@@ -101,11 +102,10 @@ CFLAGS += -ffunction-sections -Wall
 CFLAGS += -Wno-deprecated
 CFLAGS += -Wnull-dereference 
 CPPFLAGS += -fdiagnostics-show-template-tree -fno-elide-type # GCC8 required
-# CFLAGS += -Wextra
-# CFLAGS += -Wpedantic -Wvla -Wswitch-enum -fvar-tracking-assignments 
-# CFLAGS += -Wduplicated-cond -Wduplicated-branches -rdynamic
-# CPPFLAGS += -Wextra-semi -fno-elide-type 
-# CPPFLAGS += -Wsuggest-override
+CFLAGS += -Wextra
+CFLAGS += -Wpedantic -Wvla -Wswitch-enum -fvar-tracking-assignments 
+CFLAGS += -Wduplicated-cond -Wduplicated-branches -rdynamic
+CPPFLAGS += -Wextra-semi
 
 # Flag compiler error for [-Wdeprecated-declarations]
 CFLAGS += -Werror=deprecated-declarations
@@ -127,6 +127,9 @@ include $(SOURCE_PATH)/build/checkers.mk # sanitizer and gcov
 # Warn when functions and classes can be marked final
 # CPPFLAGS += -Wsuggest-final-types
 # CPPFLAGS += -Wsuggest-final-methods
+
+# set cnl as system includes to suppress warnings
+CPPFLAGS += -isystem $(SOURCE_PATH)/lib/cnl/include
 
 # include google protobuf dependencies
 CPPFLAGS += $(shell pkg-config --cflags protobuf)

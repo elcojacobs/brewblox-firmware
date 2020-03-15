@@ -66,8 +66,9 @@ public:
 };
 BlinkFirmwareUpdateMock BlinkFirmwareUpdate;
 
-void
-updateFirmwareFromStream(cbox::StreamType streamType){};
+void updateFirmwareFromStream(cbox::StreamType)
+{
+}
 #endif
 
 // Include OneWire implementation depending on platform
