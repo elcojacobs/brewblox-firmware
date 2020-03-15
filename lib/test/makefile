@@ -49,6 +49,15 @@ CPPFLAGS += -isystem $(BOOST_ROOT)
 
 CFLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS)) -I.
 CFLAGS += -ffunction-sections -Wall
+CFLAGS += -ffunction-sections -Wall
+CFLAGS += -Wno-deprecated
+CFLAGS += -Wnull-dereference 
+CPPFLAGS += -fdiagnostics-show-template-tree -fno-elide-type # GCC8 required
+CFLAGS += -Wextra
+# CFLAGS += -Wpedantic -Wvla -Wswitch-enum -fvar-tracking-assignments 
+# CFLAGS += -Wduplicated-cond -Wduplicated-branches -rdynamic
+# CPPFLAGS += -Wextra-semi -fno-elide-type 
+# CPPFLAGS += -Wsuggest-override
 
 
 # Flag compiler error for [-Wdeprecated-declarations]
@@ -88,8 +97,8 @@ runner: $(TARGETDIR)$(TARGET)
 
 $(TARGETDIR)$(TARGET) : $(BUILD_PATH) $(ALLOBJ)
 	@echo Building target: $@
-	$(MKDIR) $(dir $@)
-	$(LD) $(CFLAGS) $(ALLOBJ) --output $@ $(LDFLAGS)
+	@$(MKDIR) $(dir $@)
+	@$(LD) $(CFLAGS) $(ALLOBJ) --output $@ $(LDFLAGS)
 	@echo
 
 $(BUILD_PATH): 
@@ -100,15 +109,15 @@ $(BUILD_PATH):
 # C compiler to build .o from .c in $(BUILD_DIR)
 $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.c
 	@echo Building file: $<
-	$(MKDIR) $(dir $@)
-	$(CCC) $(CCFLAGS) -c -o $@ $<
+	@$(MKDIR) $(dir $@)
+	@$(CCC) $(CCFLAGS) -c -o $@ $<
 
 # CPP compiler to build .o from .cpp in $(BUILD_DIR)
 # Note: Calls standard $(CC) - gcc will invoke g++ as appropriate
 $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.cpp
 	@echo Building file: $<
-	$(MKDIR) $(dir $@)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	@$(MKDIR) $(dir $@)
+	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 # Other Targets
 clean:	
