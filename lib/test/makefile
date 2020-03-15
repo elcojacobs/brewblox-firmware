@@ -38,6 +38,9 @@ CPPSRC += $(call here_files,lib/test,*.cpp)
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
 CPPSRC += $(call here_files,lib/src,*.cpp)
 
+# set cnl as system includes to suppress warnings
+CPPFLAGS += -isystem $(SOURCE_PATH)/lib/cnl/include
+
 #  catch 2
 INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
 
@@ -54,14 +57,22 @@ CFLAGS += -Wno-deprecated
 CFLAGS += -Wnull-dereference 
 CPPFLAGS += -fdiagnostics-show-template-tree -fno-elide-type # GCC8 required
 CFLAGS += -Wextra
+CPPFLAGS += -Wextra-semi
+
 # CFLAGS += -Wpedantic -Wvla -Wswitch-enum -fvar-tracking-assignments 
 # CFLAGS += -Wduplicated-cond -Wduplicated-branches -rdynamic
-# CPPFLAGS += -Wextra-semi -fno-elide-type 
-# CPPFLAGS += -Wsuggest-override
 
 
 # Flag compiler error for [-Wdeprecated-declarations]
 CFLAGS += -Werror=deprecated-declarations
+
+# the following warnings can help find opportunities for impromevent in virtual functions
+# Warn when virtual functions are overriden without override/override final specifier (requires gcc 5.1)
+# CPPFLAGS += -Wsuggest-override
+# Warn when functions and classes can be marked final
+# CPPFLAGS += -Wsuggest-final-types
+# CPPFLAGS += -Wsuggest-final-methods
+
 
 # Generate dependency files automatically.
 CFLAGS += -MD -MP -MF $@.d
