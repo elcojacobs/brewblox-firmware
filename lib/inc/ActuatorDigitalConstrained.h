@@ -56,7 +56,7 @@ public:
     {
         m_timeRemaining = allowedImpl(newState, now, act);
         return m_timeRemaining;
-    };
+    }
 
 private:
     duration_millis_t m_timeRemaining = 0;
@@ -163,7 +163,7 @@ public:
     constraintsList() const
     {
         return constraints;
-    };
+    }
 };
 
 class MutexTarget {

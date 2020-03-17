@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ActuatorDigitalConstrained.h"
-#include "blox/Block.h"
+#include "Block.h"
 #include "nanopb_callbacks.h"
 #include "proto/cpp/Mutex.pb.h"
 
