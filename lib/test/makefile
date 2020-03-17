@@ -3,7 +3,7 @@
 CCC = gcc
 CXX = g++
 LD = g++
-CFLAGS = -g
+CFLAGS = -Og -Wfatal-errors
 CCFLAGS = $(CFLAGS)
 CXXFLAGS = $(CFLAGS)
 RM = rm -f
@@ -84,6 +84,12 @@ CFLAGS += -pthread
 CFLAGS += -g -fprofile-arcs -ftest-coverage
 LDFLAGS += -lgcov
 
+# compile with coverage and sanitizer (uncommented because cnl doesn't work well with it)
+# include $(SOURCE_PATH)/build/checkers.mk # sanitizer and gcov
+
+# generate map file
+LDFLAGS += -Xlinker -Map=build/libtest.map 
+
 # don't generate warnings for system headers
 CFLAGS += -Wno-system-headers
 
@@ -118,14 +124,14 @@ $(BUILD_PATH):
 $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.c
 	@echo Building file: $<
 	@$(MKDIR) $(dir $@)
-	@$(CCC) $(CCFLAGS) -c -o $@ $<
+	@$(CCC) $(CFLAGS) $(CCFLAGS) -c -o $@ $<
 
 # CPP compiler to build .o from .cpp in $(BUILD_DIR)
 # Note: Calls standard $(CC) - gcc will invoke g++ as appropriate
 $(BUILD_PATH)%.o : $(SOURCE_PATH)/%.cpp
 	@echo Building file: $<
 	@$(MKDIR) $(dir $@)
-	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	@$(CXX) $(CFLAGS) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 # Other Targets
 clean:	

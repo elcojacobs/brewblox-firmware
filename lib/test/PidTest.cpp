@@ -130,7 +130,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         fp12_t mockVal;
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 900; ++i) {
-            mockVal = fp12_t(20) + (fp12_t(9) * i) / 900;
+            mockVal = fp12_t(20.0 + 9.0 * i / 900);
             sensor->value(mockVal);
             input->update();
             pid.update();
@@ -160,7 +160,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         fp12_t mockVal;
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 900; ++i) {
-            mockVal = fp12_t(30) - (fp12_t(9) * i) / 900;
+            mockVal = fp12_t(30.0 - (9.0 * i) / 900);
             sensor->value(mockVal);
             input->update();
             pid.update();
@@ -873,7 +873,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         THEN("The new output matches what whas set")
         {
-            CHECK(pid.i() == 20);
+            CHECK(pid.i() == Approx(20).epsilon(0.001));
         }
     }
 
@@ -914,7 +914,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         THEN("A derivative filter is selected so that derivative output is max 30%-150% of proportional gain")
         {
             for (uint16_t td = 20; td < 1200; td = td * 5 / 4) {
-                INFO("td=" + std::to_string(td));
+                // INFO("td=" + std::to_string(td));
 
                 CHECK(testStep(td) >= -150);
                 CHECK(testStep(td) <= -30);
