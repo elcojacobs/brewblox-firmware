@@ -37,7 +37,9 @@ public:
     using value_type = T;
 
     FpFilterChain(uint8_t idx)
-        : readIdx(idx){};
+        : readIdx(idx)
+    {
+    }
     ~FpFilterChain() = default;
 
     void add(const value_type& val)
@@ -85,15 +87,15 @@ public:
     uint8_t length() const
     {
         return chain.length();
-    };
+    }
 
     // get the derivative from the chain with max precision and convert to the requested FP precision
     template <typename U>
     U readDerivative(uint8_t idx) const
     {
         auto derivative = chain.readDerivative(idx);
-        uint8_t destFractionBits = -U::exponent;
-        uint8_t filterFactionBits = -T::exponent + derivative.fractionBits;
+        uint8_t destFractionBits = cnl::_impl::fractional_digits<U>();
+        uint8_t filterFactionBits = cnl::_impl::fractional_digits<T>() + derivative.fractionBits;
         int64_t result;
         if (destFractionBits >= filterFactionBits) {
             result = derivative.result << (destFractionBits - filterFactionBits);

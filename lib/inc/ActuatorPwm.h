@@ -48,6 +48,16 @@ private:
     bool m_settingValid = true;
     bool m_valueValid = true;
 
+    static constexpr const auto maxDuty()
+    {
+        return value_t{100};
+    }
+
+    auto dutyFraction() const
+    {
+        return safe_elastic_fixed_point<2, 29>(cnl::quotient(m_dutySetting + (cnl::numeric_limits<value_t>::min() >> 1), maxDuty()));
+    }
+
     // separate flag for manually disabling the pwm actuator
     bool m_enabled = true;
 
@@ -71,7 +81,7 @@ public:
     {
         // ensure that interrupts are removed before destruction.
         enabled(false);
-    };
+    }
 
     /** ActuatorPWM keeps track of the last high and low transition.
      *  This function returns the actually achieved value. This can differ from
@@ -93,7 +103,7 @@ public:
     /** Sets a new duty cycle
      * @param val new duty cycle in fixed point
      */
-    virtual void setting(value_t const& val) override final;
+    virtual void setting(const value_t& val) override final;
 
     update_t update(const update_t& now);
 

@@ -37,7 +37,7 @@ public:
     virtual duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {
         return m_mutexConstraint.allowedImpl(newState, now, act);
-    };
+    }
 
     virtual uint8_t order() const override final
     {

@@ -1,4 +1,4 @@
-# enable coverage for gcc builds
+# enable coverage for gcc builds.
 CFLAGS += -g -O0 -fno-inline
 CFLAGS += --coverage
 

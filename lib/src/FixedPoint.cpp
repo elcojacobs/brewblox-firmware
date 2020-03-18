@@ -18,39 +18,27 @@
  */
 
 #include "FixedPoint.h"
-#include "Logger.h"
-#include <algorithm>
-#include <cstring>
-#include <stdlib.h>
 
 std::string
 to_string_dec(const fp12_t& t, uint8_t decimals)
 {
-    // shift to right number of digits
-    auto shifted = t;
-    for (uint8_t i = decimals; i > 0; --i) {
-        shifted = shifted * 10;
+    using calc_t = cnl::set_rounding_t<safe_elastic_fixed_point<14, 16>, cnl::native_rounding_tag>;
+
+    int scale = 10;
+    for (uint8_t i = decimals; i > 1; --i) {
+        scale *= 10;
     }
 
-    // ensure correct rounding
-    auto rounder = fp12_t(0.5);
-    shifted = t >= fp12_t(0) ? shifted + rounder : shifted - rounder;
+    auto rounder = (t >= 0) ? calc_t{0.5} : calc_t{-0.5};
+    auto asInt = static_cast<int32_t>(scale * calc_t{t} + rounder);
+    auto s = std::to_string(asInt);
 
-    // convert to int
-    auto intValue = int32_t(shifted);
-
-    // convert to string
-    auto s = std::string();
-    s = s << intValue;
-
-    // prefix zeros for values smaller than 1
-    uint8_t insertPos = (intValue < 0) ? 1 : 0; // handle minus sign
-    uint8_t minChars = decimals + insertPos + 1;
-    if (minChars > s.size()) {
-        s.insert(insertPos, minChars - s.size(), '0');
+    int missingZeros = int(decimals) + 1 - s.length() + (asInt < 0);
+    auto insertAt = s.begin() + (asInt < 0);
+    if (missingZeros > 0) {
+        insertAt = s.insert(insertAt, missingZeros, '0'); // leading zeros
     }
-
-    // insert decimal point
-    s.insert(s.end() - decimals, '.');
+    auto periodPos = s.end() - decimals;
+    s.insert(periodPos, '.');
     return s;
 }
