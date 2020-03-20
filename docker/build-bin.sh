@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -e
 
-PARTICLE_TAG=$(git --git-dir ../platform/spark/device-os/.git describe --tags)
+PARTICLE_TAG="v0.5.0-rc.2" # temporary workaround instead of $(git --git-dir ../platform/spark/device-os/.git describe --tags)
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
 PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 
