@@ -100,9 +100,12 @@ void
 manageConnections(uint32_t now)
 {
     static uint32_t lastConnect = 0;
+    static uint32_t lastAnnounce = 0;
     if (wifiIsConnected) {
-        if (!mdns_started) {
+        if ((!mdns_started) || ((now - lastAnnounce) > 300000)) {
+            // explicit announce every 5 minutes
             mdns_started = mdns.begin(true);
+            lastAnnounce = now;
         }
         if (!http_started) {
             http_started = httpserver.begin();
