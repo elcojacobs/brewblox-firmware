@@ -3,7 +3,7 @@ resources:
     - repository: self
   containers: 
     - container: compiler
-      image: brewblox/firmware-compiler:arm-gcc-8
+      image: brewblox/firmware-compiler:arm-gcc-5
       
 trigger:
   tags:
