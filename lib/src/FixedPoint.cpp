@@ -19,6 +19,9 @@
 
 #include "FixedPoint.h"
 
+// workaround for arm 5.3 not having some to_string functions
+#include <string_operators.h>
+
 std::string
 to_string_dec(const fp12_t& t, uint8_t decimals)
 {
@@ -31,7 +34,9 @@ to_string_dec(const fp12_t& t, uint8_t decimals)
 
     auto rounder = (t >= 0) ? calc_t{0.5} : calc_t{-0.5};
     auto asInt = static_cast<int32_t>(scale * calc_t{t} + rounder);
-    auto s = std::to_string(asInt);
+
+    std::string s;
+    s << asInt;
 
     int missingZeros = int(decimals) + 1 - s.length() + (asInt < 0);
     auto insertAt = s.begin() + (asInt < 0);

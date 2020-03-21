@@ -2,6 +2,14 @@
 
 #ifdef __arm__
 #define CNL_RELEASE true
+
+#include <string>
+// forward declare std::to_string. Arm gcc 5.3 compiler cannot find it in headers and cnl has references to it in headers
+namespace std {
+template <typename T>
+string to_string(T);
+}
+
 #endif
 
 #define CNL_USE_INT128 false
