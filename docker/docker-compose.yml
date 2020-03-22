@@ -10,6 +10,7 @@ services:
         volumes:
             - ../:${MOUNTDIR}
         working_dir: ${MOUNTDIR}/build
+        user: ${DOCKER_UID}
         command: tail -f /dev/null
 
     simulator:

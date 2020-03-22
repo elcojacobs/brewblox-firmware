@@ -13,13 +13,13 @@ fi
 pushd "$MY_DIR/../platform/spark/device-os/modules" > /dev/null
 
 echo "Building system modules for P1 with SWD"
-make -s clean all PLATFORM=p1 PARTICLE_DEVELOP=y USE_SWD_JTAG=y
+make -s clean all PLATFORM=p1 PARTICLE_DEVELOP=y USE_SWD=y
 (( result = $? ))
 status $result
 (( exit_status = exit_status || result ))
 
 echo "Flashing system modules with SWD"
-make -s program-dfu PLATFORM=p1 PARTICLE_DEVELOP=y USE_SWD_JTAG=y
+make -s program-dfu PLATFORM=p1 PARTICLE_DEVELOP=y USE_SWD=y
 (( result = $? ))
 status $result
 (( exit_status = exit_status || result ))
