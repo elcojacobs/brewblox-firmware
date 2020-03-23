@@ -144,7 +144,7 @@ jobs:
     pool:
       vmImage: "Ubuntu-18.04"
 
-      dependsOn:
+    dependsOn:
       - Tests
       - SimulatorAMD
       - SimulatorARM
