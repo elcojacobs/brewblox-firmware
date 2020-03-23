@@ -21,11 +21,23 @@
 
 #include "TempSensor.h"
 #include "Temperature.h"
+#include "TicksTypes.h"
+#include <vector>
 
 class TempSensorMock final : public TempSensor {
 private:
     temp_t m_value = 0;
+    temp_t m_valueWithFluctuations = 0;
     bool m_connected = false;
+
+public:
+    struct Fluctuation {
+        temp_t amplitude;
+        duration_millis_t period;
+    };
+
+private:
+    std::vector<Fluctuation> m_fluctuations;
 
 public:
     TempSensorMock()
@@ -34,9 +46,14 @@ public:
 
     TempSensorMock(temp_t initial)
         : m_value(initial)
+        , m_valueWithFluctuations(initial)
         , m_connected(true)
     {
     }
+
+    void fluctuations(std::vector<Fluctuation>&& arg);
+
+    const std::vector<Fluctuation>& fluctuations();
 
     void connected(bool _connected)
     {
@@ -51,11 +68,12 @@ public:
     void value(temp_t val)
     {
         m_value = val;
+        m_valueWithFluctuations = val;
     }
 
     temp_t value() const override final
     {
-        return m_value;
+        return m_valueWithFluctuations;
     }
 
     virtual bool valid() const override final
@@ -67,4 +85,6 @@ public:
     {
         m_value += delta;
     }
+
+    void update(ticks_millis_t now);
 };

@@ -58,4 +58,15 @@ SCENARIO("TempSensorMockTest")
             CHECK(mock.value() == temp_t(20.0));
         }
     }
+
+    WHEN("Fluctuation test, WIP")
+    {
+        auto mock = TempSensorMock(20.0);
+        mock.fluctuations({{temp_t{1}, 3000}});
+
+        for (ticks_millis_t t = 0; t <= 3000; t += 100) {
+            mock.update(t);
+            CHECK(mock.value() == 0);
+        }
+    }
 }
