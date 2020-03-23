@@ -43,7 +43,7 @@ DS248x::setReadPtr(uint8_t readPtr)
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_SRP);
     Wire.write(readPtr);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 }
 
 uint8_t
@@ -66,13 +66,13 @@ uint8_t
 DS248x::busyWait(bool setReadPtr)
 {
     uint8_t status;
-    int loopCount = 100;
+    int loopCount = 5;
     while ((status = wireReadStatus(setReadPtr)) & DS248X_STATUS_BUSY) {
         if (--loopCount <= 0) {
             mTimeout = 1;
             break;
         }
-        delayMicroseconds(200);
+        delayMicroseconds(50);
     }
     return status;
 }
@@ -93,7 +93,7 @@ DS248x::resetMaster()
     mTimeout = 0;
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_DRST);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 }
 
 bool
@@ -103,7 +103,7 @@ DS248x::configure(uint8_t config)
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_WCFG);
     Wire.write(config | (~config) << 4);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 
     return readByte() == config;
 }
@@ -153,7 +153,7 @@ DS248x::selectChannel(uint8_t channel)
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_CHSL);
     Wire.write(ch);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
     busyWait();
 
     uint8_t check = readByte();
@@ -167,7 +167,7 @@ DS248x::reset()
     busyWait(true);
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_1WRS);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 
     uint8_t status = busyWait();
 
@@ -181,7 +181,7 @@ DS248x::write(uint8_t b, uint8_t power)
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_1WWB);
     Wire.write(b);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 }
 
 uint8_t
@@ -190,7 +190,7 @@ DS248x::read()
     busyWait(true);
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_1WRB);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
     busyWait();
     setReadPtr(PTR_READ);
     return readByte();
@@ -203,7 +203,7 @@ DS248x::write_bit(uint8_t bit)
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_1WSB);
     Wire.write(bit ? 0x80 : 0);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 }
 
 uint8_t
@@ -227,7 +227,7 @@ DS248x::search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_1WT);
     Wire.write(*search_direction ? 0x80 : 0x00);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 
     uint8_t status = busyWait();
 

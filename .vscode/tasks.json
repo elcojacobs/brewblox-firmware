@@ -451,7 +451,7 @@
         "../wrapped_make.sh",
         "APP=brewblox",
         "PLATFORM=p1",
-        "USE_SWD_JTAG=y"
+        "USE_SWD=y"
       ],
       "group": "build",
       "options": {

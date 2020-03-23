@@ -59,10 +59,10 @@ watchdogReset()
 
 #if PLATFORM_THREADING
 #include "spark_wiring_watchdog.h"
-ApplicationWatchdog appWatchdog(60000, watchdogReset);
 inline void
 watchdogCheckin()
 {
+    static ApplicationWatchdog appWatchdog = ApplicationWatchdog(60000, watchdogReset);
     appWatchdog.checkin();
 }
 #else
@@ -96,8 +96,7 @@ onSetupModeBegin()
 
 #if PLATFORM_ID != PLATFORM_GCC
 STARTUP(
-    boardInit();
-    Buzzer.beep(2, 50););
+    boardInit(););
 #endif
 
 void
@@ -109,8 +108,8 @@ setup()
     std::signal(SIGTERM, signal_handler);
     // pin map is not initialized properly in gcc build before setup runs
     boardInit();
-    Buzzer.beep(2, 50);
 #endif
+    Buzzer.beep(2, 50);
 
     System.on(setup_update, watchdogCheckin);
     System.on(setup_begin, onSetupModeBegin);
