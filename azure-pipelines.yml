@@ -5,6 +5,9 @@ resources:
     - container: compiler
       image: brewblox/firmware-compiler:latest
 
+pool:
+  vmImage: "Ubuntu-18.04"
+
 trigger:
   tags:
     include:
@@ -23,8 +26,6 @@ jobs:
   # Tests
   #########################################################
   - job: Tests
-    pool:
-      vmImage: "Ubuntu-18.04"
 
     steps:
       - checkout: self
@@ -47,8 +48,6 @@ jobs:
   # Build Simulator AMD
   #########################################################
   - job: SimulatorAMD
-    pool:
-      vmImage: "Ubuntu-18.04"
 
     steps:
       - checkout: self
@@ -70,8 +69,6 @@ jobs:
   # Build Simulator ARM
   #########################################################
   - job: SimulatorARM
-    pool:
-      vmImage: "Ubuntu-18.04"
 
     steps:
       - checkout: self
@@ -93,8 +90,6 @@ jobs:
   # Build Firmware P1
   #########################################################
   - job: FirmwareP1
-    pool:
-      vmImage: "Ubuntu-18.04"
 
     steps:
       - checkout: self
@@ -117,8 +112,6 @@ jobs:
   # Build Firmware Photon
   #########################################################
   - job: FirmwarePhoton
-    pool:
-      vmImage: "Ubuntu-18.04"
 
     steps:
       - checkout: self
@@ -141,8 +134,6 @@ jobs:
   # Deployment
   #########################################################
   - job: Deploy
-    pool:
-      vmImage: "Ubuntu-18.04"
 
     dependsOn:
       - Tests
