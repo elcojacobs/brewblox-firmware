@@ -25,19 +25,21 @@ jobs:
   - job: Tests
     pool:
       vmImage: "Ubuntu-18.04"
-    container: compiler
 
     steps:
       - checkout: self
         submodules: recursive
       
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
       - bash: build/build-tests.sh
+        target: compiler
         displayName: Build tests
 
       - bash: build/run-tests.sh
+        target: compiler
         displayName: Run tests
 
 
@@ -47,16 +49,17 @@ jobs:
   - job: SimulatorAMD
     pool:
       vmImage: "Ubuntu-18.04"
-    container: compiler
 
     steps:
       - checkout: self
         submodules: recursive
 
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
       - script: build/build-sim-amd.sh
+        target: compiler
         displayName: Build executable
 
       - publish: build/target/brewblox-gcc
@@ -69,7 +72,6 @@ jobs:
   - job: SimulatorARM
     pool:
       vmImage: "Ubuntu-18.04"
-    # Not all commands should be run in the compiler container
 
     steps:
       - checkout: self
@@ -79,6 +81,7 @@ jobs:
         target: compiler
         displayName: Compile proto
 
+        # should not be run in compiler
       - script: build/build-sim-arm.sh
         displayName: Build executable
 
@@ -92,16 +95,17 @@ jobs:
   - job: FirmwareP1
     pool:
       vmImage: "Ubuntu-18.04"
-    container: compiler
 
     steps:
       - checkout: self
         submodules: recursive
 
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
       - script: make APP=brewblox PLATFORM=p1
+        target: compiler
         workingDirectory: build
         displayName: Build p1
 
@@ -115,16 +119,17 @@ jobs:
   - job: FirmwarePhoton
     pool:
       vmImage: "Ubuntu-18.04"
-    container: compiler
 
     steps:
       - checkout: self
         submodules: recursive
 
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
       - script: make APP=brewblox PLATFORM=photon
+        target: compiler
         workingDirectory: build
         displayName: Build photon
 
@@ -138,7 +143,8 @@ jobs:
   - job: Deploy
     pool:
       vmImage: "Ubuntu-18.04"
-    dependsOn:
+
+      dependsOn:
       - Tests
       - SimulatorAMD
       - SimulatorARM
