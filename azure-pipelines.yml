@@ -138,7 +138,7 @@ jobs:
     dependsOn:
       - Tests
       - SimulatorAMD
-      - SimulatorARM
+      # - SimulatorARM
       - FirmwareP1
       - FirmwarePhoton
 
