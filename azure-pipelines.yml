@@ -205,20 +205,20 @@ jobs:
 
       - bash: >
           docker buildx build
-            --push
-            --tag $(BIN_REPO):$(TAG)
-            firmware-bin
+          --push
+          --tag $(BIN_REPO):$(TAG)
+          firmware-bin
         displayName: (firmware-bin) Deploy Docker images with branch tags
         condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
         workingDirectory: docker
 
       - bash: >
           docker buildx build 
-            --push 
-            --tag $(SIM_REPO):$TAG
-            --tag $(SIM_REPO):rpi-$TAG
-            --platform linux/amd64
-            firmware-simulator
+          --push
+          --tag $(SIM_REPO):$TAG
+          --tag $(SIM_REPO):rpi-$TAG
+          --platform linux/amd64
+          firmware-simulator
         displayName: (firmware-simulator) Deploy Docker images with branch tags
         condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
         workingDirectory: docker
