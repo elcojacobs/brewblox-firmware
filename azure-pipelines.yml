@@ -68,22 +68,22 @@ jobs:
   #########################################################
   # Build Simulator ARM
   #########################################################
-  - job: SimulatorARM
+  # - job: SimulatorARM
 
-    steps:
-      - checkout: self
-        submodules: recursive
+  #   steps:
+  #     - checkout: self
+  #       submodules: recursive
 
-      - bash: build/compile-proto.sh
-        target: compiler
-        displayName: Compile proto
+  #     - bash: build/compile-proto.sh
+  #       target: compiler
+  #       displayName: Compile proto
 
-        # should not be run in compiler
-      - script: build/build-sim-arm.sh
-        displayName: Build executable
+  #       # should not be run in compiler
+  #     - script: build/build-sim-arm.sh
+  #       displayName: Build executable
 
-      - publish: build/target/brewblox-gcc
-        artifact: SimulatorBinARM
+  #     - publish: build/target/brewblox-gcc
+  #       artifact: SimulatorBinARM
 
 
   #########################################################
@@ -183,20 +183,22 @@ jobs:
       # Download all published artifacts
       - download: current
 
+      # cp SimulatorBinARM/brewblox ${SRC}/brewblox-arm
       - bash: |
           mkdir ${SRC}
-          cp SimulatorBinARM/brewblox ${SRC}/brewblox-arm
           cp SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
         displayName: Copy to firmware-simulator context
         env:
           SRC: docker/simulator/source
 
       - bash: |
+          echo "$(Pipeline.Workspace)"
+          pwd
           bash docker/copy-bin.sh
-          cp SimulatorBinARM/brewblox ${SRC}/brewblox-arm
-          cp SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
-          cp FirmwareBinP1/brewblox.bin ${SRC}/brewblox-p1.bin
-          cp FirmwareBinPhoton/brewblox.bin ${SRC}/brewblox-photon.bin
+          cp "$(Pipeline.Workspace)"/SimulatorBinARM/brewblox ${SRC}/brewblox-arm
+          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
+          cp "$(Pipeline.Workspace)"/FirmwareBinP1/brewblox.bin ${SRC}/brewblox-p1.bin
+          cp "$(Pipeline.Workspace)"/FirmwareBinPhoton/brewblox.bin ${SRC}/brewblox-photon.bin
         displayName: Copy to firmware-bin context
         env:
           SRC: docker/firmware-bin/source
@@ -215,7 +217,8 @@ jobs:
             --push 
             --tag $(SIM_REPO):$TAG
             --tag $(SIM_REPO):rpi-$TAG
-            --platform linux/amd64,linux/arm/v7
+            --platform linux/amd64
+            firmware-simulator
         displayName: (firmware-simulator) Deploy Docker images with branch tags
         condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
         workingDirectory: docker
