@@ -4,6 +4,9 @@ set -e
 # The compiler image is expected to remain relatively stable
 # It does not contain any firmware code - just the software required to compile the firmware
 
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+pushd "$SCRIPT_DIR" > /dev/null
+
 bash ./enable-experimental.sh
 bash ./prepare-buildx.sh
 
@@ -33,3 +36,5 @@ docker manifest create "$IMAGE":"$TAG" \
     --amend "$IMAGE":arm-"$TAG"
 
 docker manifest push "$IMAGE":"$TAG"
+
+popd > /dev/null

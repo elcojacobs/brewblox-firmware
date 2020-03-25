@@ -1,4 +1,4 @@
-FROM ubuntu:19.10
+FROM debian:buster
 
 ENV TZ=Europe/Amsterdam \
   DEBIAN_FRONTEND=noninteractive \
