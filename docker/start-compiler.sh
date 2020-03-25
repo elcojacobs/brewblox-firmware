@@ -1,4 +1,7 @@
 #! /usr/bin/env bash
+set -e
+
+pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
 
 docker-compose down
 touch .env
@@ -45,3 +48,4 @@ else
 fi
 
 docker-compose up -d compiler
+popd > /dev/null
