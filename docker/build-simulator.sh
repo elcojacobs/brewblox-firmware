@@ -1,49 +1,37 @@
 #! /usr/bin/env bash
 set -e
 
+pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
+
 IMAGE=brewblox/firmware-simulator
+SRC=firmware-simulator/source
 
-# build AMD
+mkdir -p ../build/target
+sudo chown -R "$USER" ../build/target
 
+mkdir -p $SRC
+rm -rf ${SRC:?}/*
+
+bash start-compiler.sh
+
+# Build and copy AMD simulator
 docker-compose exec -T compiler \
     bash -c "
         set -e
-        rm -rf ../docker/simulator/amd/target
         bash compile-proto.sh
-        make $MAKE_ARGS APP=brewblox PLATFORM=gcc
-        cp -r target ../docker/simulator/amd/target
+        bash build-sim-amd.sh
     "
+cp ../build/target/brewblox-gcc/brewblox $SRC/brewblox-amd
 
-docker build \
+# Build and copy ARM simulator
+# Proto was already built by AMD simulator
+bash ../build/build-sim-arm.sh
+
+# Build AMD image
+docker buildx build \
+    --load \
     --tag $IMAGE:amd-local \
-    simulator/amd
+    --platform linux/amd64 \
+    firmware-simulator
 
-# build ARM
-
-docker run \
-    --rm \
-    --privileged \
-    docker/binfmt:a7996909642ee92942dcd6cff44b9b95f08dad64
-
-rm -rf ../docker/simulator/arm/target
-
-# remove unsupported arg
-sed -i 's/-m64//g' ../platform/spark/device-os/build/gcc-tools.mk 
-
-docker run \
-    -v "$(pwd)"/../:/firmware/ \
-    brewblox/firmware-compiler:arm-latest \
-    make APP=brewblox PLATFORM=gcc
-
-# reset modified file
-pushd ../platform/spark/device-os > /dev/null
-git checkout -- build/gcc-tools.mk 
 popd > /dev/null
-
-# copy build files to context
-cp -r ../build/target simulator/arm/target
-
-docker build \
-    --tag $IMAGE:arm-local \
-    --platform linux/arm/v7 \
-    simulator/arm

@@ -14,8 +14,9 @@ sed -i 's/-m64//g' "$ROOT_DIR"/platform/spark/device-os/build/gcc-tools.mk
 
 # build
 docker run \
+    -it --rm \
     -v "$ROOT_DIR"/:/firmware/ \
-    brewblox/firmware-compiler-arm:latest \
+    brewblox/firmware-compiler:latest \
     make APP=brewblox PLATFORM=gcc
 
 # reset modified file
