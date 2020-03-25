@@ -3,16 +3,19 @@ set -e
 
 pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
 
+bash ./enable-experimental.sh
+bash ./prepare-buildx.sh
+bash ./start-compiler.sh
+
 IMAGE=brewblox/firmware-simulator
 SRC=firmware-simulator/source
 
 mkdir -p ../build/target
 sudo chown -R "$USER" ../build/target
+rm -rf build/target/*
 
 mkdir -p $SRC
 rm -rf ${SRC:?}/*
-
-bash start-compiler.sh
 
 # Build and copy AMD simulator
 docker-compose exec -T compiler \
@@ -22,10 +25,6 @@ docker-compose exec -T compiler \
         bash build-sim-amd.sh
     "
 cp ../build/target/brewblox-gcc/brewblox $SRC/brewblox-amd
-
-# Build and copy ARM simulator
-# Proto was already built by AMD simulator
-bash ../build/build-sim-arm.sh
 
 # Build AMD image
 docker buildx build \
