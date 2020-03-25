@@ -1,4 +1,4 @@
-FROM multiarch/ubuntu-core:armhf-bionic
+FROM gcc:8
 
 ENV DEBIAN_FRONTEND=noninteractive \
   DEBCONF_NONINTERACTIVE_SEEN=true

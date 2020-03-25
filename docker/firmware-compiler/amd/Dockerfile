@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM gcc:8
 
 ENV TZ=Europe/Amsterdam \
   DEBIAN_FRONTEND=noninteractive \
