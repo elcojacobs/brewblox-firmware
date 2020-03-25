@@ -1,4 +1,4 @@
-FROM brewblox/brewblox-devcon-spark:develop
+FROM debian:buster
 WORKDIR /app
 
 # set by buildx
@@ -15,6 +15,11 @@ EXPOSE 5353/udp
 # websocket display emulation
 EXPOSE 7376
 
-COPY source/brewblox-amd/brewblox-gcc/brewblox .
+COPY source/* /app/source/
+COPY ./pick-binary.sh /app/pick-binary.sh
+
+RUN bash ./pick-binary.sh "${TARGETPLATFORM}" \
+    && rm -rf source \
+    && rm ./pick-binary.sh
 
 CMD ./brewblox --device_id=123456789012345678901234
