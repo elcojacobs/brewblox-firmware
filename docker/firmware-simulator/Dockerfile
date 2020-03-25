@@ -1,4 +1,4 @@
-FROM ubuntu:19.10
+FROM debian:buster
 WORKDIR /app
 
 # set by buildx
