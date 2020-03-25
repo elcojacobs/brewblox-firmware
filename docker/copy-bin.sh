@@ -22,10 +22,10 @@ curl -fL -o "${OUT_DIR}"/system-part1-photon.bin "${PARTICLE_RELEASES}/photon-sy
 curl -fL -o "${OUT_DIR}"/system-part2-photon.bin "${PARTICLE_RELEASES}/photon-system-part2@${PARTICLE_VERSION}.bin"
 
 {
-    echo "[FIRMWARE]",
-    echo "firmware_version=$(git rev-parse --short HEAD)",
-    echo "firmware_date=$(git show -s --format=%ci)",
-    echo "proto_version=$(cd "$ROOT_DIR"/app/brewblox/proto; git rev-parse --short HEAD)",
-    echo "proto_date=$(cd "$ROOT_DIR"/app/brewblox/proto; git show -s --format=%ci)",
+    echo "[FIRMWARE]"
+    echo "firmware_version=$(git rev-parse --short HEAD)"
+    echo "firmware_date=$(git show -s --format=%ci)"
+    echo "proto_version=$(cd "$ROOT_DIR"/app/brewblox/proto; git rev-parse --short HEAD)"
+    echo "proto_date=$(cd "$ROOT_DIR"/app/brewblox/proto; git show -s --format=%ci)"
     echo "system_version=${PARTICLE_VERSION}"
 } | tee "${OUT_DIR}"/firmware.ini
