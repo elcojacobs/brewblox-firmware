@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # install various build deps
 RUN apt-get update -q \
-  && apt-get install -qy --no-install-recommends build-essential autoconf automake libtool unzip pkg-config libprotobuf-dev protobuf-compiler git bash python python-pip rsync curl \
+  && apt-get install -qy --no-install-recommends build-essential autoconf automake libtool unzip pkg-config libprotobuf-dev protobuf-compiler git bash python python-pip rsync curl libboost-dev \
   && pip install --upgrade pip setuptools \
   # and install protobuf python package (used by nanopb), and pyserial (used by program-dfu)
   && pip install protobuf \
@@ -15,16 +15,10 @@ RUN apt-get update -q \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# download and compile boost and install as system includes (/usr/local)
-ENV BOOST_VERSION=1_72_0 \
-  BOOST_ROOT=/boost/boost_1_72_0
+# use boost from apt
 
-RUN mkdir -p /boost && curl -sSL https://s3.amazonaws.com/spark-assets/boost_$BOOST_VERSION.tar.gz | tar -xz -C /boost \
-  && export DYLD_LIBRARY_PATH="$BOOST_ROOT/stage/lib:$DYLD_LIBRARY_PATH" \
-  && export LD_LIBRARY_PATH="$BOOST_ROOT/stage/lib:$LD_LIBRARY_PATH" \
-  && cd $BOOST_ROOT \
-  && ./bootstrap.sh \  
-  && ./b2  --with-thread --with-system --with-program_options --with-random --with-regex --threading=multi link=static runtime-link=static
+
+ENV BOOST_ROOT=/usr/include/boost  
 
 WORKDIR /firmware/build
 CMD bash
