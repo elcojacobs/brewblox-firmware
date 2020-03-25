@@ -4,33 +4,33 @@ set -e
 # Enables experimental features for both the Docker daemon and the Docker CLI
 
 # Configuration files
-CFG_CLI="$HOME/.docker/config.json"
-CFG_DAEMON="/etc/docker/daemon.json"
+CLIENT_CFG="$HOME/.docker/config.json"
+SERVER_CFG="/etc/docker/daemon.json"
 
 # Ensure "jq" is installed.
 command -v jq > /dev/null || sudo apt-get install -y jq
 
-if [ ! -f "$CFG_CLI" ]; then
-    echo "Creating $CFG_CLI"
-    echo '{}' > "$CFG_CLI"
+if [ ! -f "$CLIENT_CFG" ]; then
+    echo "Creating $CLIENT_CFG"
+    echo '{}' > "$CLIENT_CFG"
 fi;
 
-CURRENT=$(jq -r '.experimental' "$CFG_CLI")
-if [[ "$CURRENT" != "enabled" ]]; then
-    echo "Updating $CFG_CLI"
-    OUTPUT=$(jq '. + {"experimental":"enabled"}' "$CFG_CLI")
-    echo "$OUTPUT" > "$CFG_CLI"
+CLIENT_EXP=$(docker version --format '{{.Client.Experimental}}')
+if [[ "$CLIENT_EXP" != "true" ]]; then
+    echo "Updating $CLIENT_CFG"
+    OUTPUT=$(jq '. + {"experimental":"enabled"}' "$CLIENT_CFG")
+    echo "$OUTPUT" > "$CLIENT_CFG"
 fi;
 
-if [ ! -f "$CFG_DAEMON" ]; then
-    echo "Creating $CFG_DAEMON"
-    echo '{}' | sudo tee "$CFG_DAEMON"
+if [ ! -f "$SERVER_CFG" ]; then
+    echo "Creating $SERVER_CFG"
+    echo '{}' | sudo tee "$SERVER_CFG"
 fi;
 
-CURRENT=$(jq -r '.experimental' "$CFG_DAEMON")
-if [[ "$CURRENT" != "true" ]]; then
-    echo "Updating $CFG_DAEMON"
-    OUTPUT=$(jq '. + {"experimental":true}' "$CFG_DAEMON")
-    echo "$OUTPUT" | sudo tee "$CFG_DAEMON"
+SERVER_EXP=$(docker version --format '{{.Server.Experimental}}')
+if [[ "$SERVER_EXP" != "true" ]]; then
+    echo "Updating $SERVER_CFG"
+    OUTPUT=$(sudo jq '. + {"experimental":true}' "$SERVER_CFG")
+    echo "$OUTPUT" | sudo tee "$SERVER_CFG"
     sudo service docker restart
 fi;
