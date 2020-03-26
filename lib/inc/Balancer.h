@@ -30,11 +30,11 @@ template <uint8_t ID>
 class Balanced;
 }
 
-template <uint8_t ID>
-class Balancer {
-private:
+class BalancerImpl {
+public:
     using value_t = ActuatorAnalog::value_t;
-    using Balanced = AAConstraints::Balanced<ID>;
+    BalancerImpl() = default;
+    virtual ~BalancerImpl() = default;
 
     struct Request {
         uint8_t id;
@@ -46,92 +46,30 @@ private:
 
     std::vector<Request> requesters;
 
-public:
-    Balancer() = default;
-    virtual ~Balancer() = default;
+    uint8_t registerEntry();
 
-    uint8_t registerEntry()
-    {
-        for (uint8_t id = 1; id < 255; id++) {
-            // find free id
-            auto match = find_if(requesters.begin(), requesters.end(), [&id](const Request& r) {
-                return r.id == id;
-            });
+    void unregisterEntry(const uint8_t& requester_id);
 
-            if (match == requesters.end()) {
-                requesters.push_back(Request{id, available, 0});
-                return id;
-            }
-        };
-        return 0;
-    }
+    value_t constrain(uint8_t& requester_id, const value_t& val);
 
-    void unregisterEntry(const uint8_t& requester_id)
-    {
-        requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }),
-                         requesters.end());
-    }
+    value_t granted(const uint8_t& requester_id) const;
 
-    value_t constrain(uint8_t& requester_id, const value_t& val)
-    {
-        auto match = find_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) {
-            return r.id == requester_id;
-        });
-
-        if (match != requesters.end()) {
-            match->requested = val;
-            return std::min(val, match->granted);
-        };
-
-        // not found. Could happen is actuator was created before the balancer.
-        // assign new requester id
-        requester_id = registerEntry();
-        return 0;
-    }
-
-    value_t granted(const uint8_t& requester_id) const
-    {
-        auto match = find_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) {
-            return r.id == requester_id;
-        });
-
-        if (match == requesters.end()) {
-            return 0;
-        }
-
-        return match->granted;
-    }
-
-    void update()
-    {
-        int8_t numActuators = requesters.size(); // signed, because value_t is signed too
-        if (numActuators == 0) {
-            return;
-        }
-
-        auto requestedTotal = value_t(0);
-        for (const auto& a : requesters) {
-            requestedTotal += a.requested;
-        }
-        auto budgetLeft = value_t(0);
-        if (available > requestedTotal) {
-            budgetLeft = available - requestedTotal;
-            requestedTotal = available;
-        }
-        auto budgetLeftPerActuator = value_t(cnl::quotient(budgetLeft, numActuators));
-
-        safe_elastic_fixed_point<10, 21> scale = cnl::quotient(available, requestedTotal);
-
-        for (auto& a : requesters) {
-            a.granted = a.requested * scale;
-            a.granted += budgetLeftPerActuator;
-        }
-    }
+    void update();
 
     const std::vector<Request>& clients() const
     {
         return requesters;
     }
+};
+
+template <uint8_t ID>
+class Balancer : public BalancerImpl {
+private:
+    using Balanced = AAConstraints::Balanced<ID>;
+
+public:
+    Balancer() = default;
+    virtual ~Balancer() = default;
 };
 
 namespace AAConstraints {

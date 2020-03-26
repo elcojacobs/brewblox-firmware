@@ -30,7 +30,7 @@ calcFluctuation(const TempSensorMock::Fluctuation& f, ticks_millis_t now)
     // This crosses zero at crosses -1/sqrt(6) and 1/sqrt(6), scale so -500 and 500 will cross zero:
     // t / 240 - t^3 / 50937984, for -500 < t < 500, max amplitude still 1.
     int32_t t = 500 - ((now * 1000 / f.period)) % 1000; // value -500 to 499
-    auto result = (t * f.amplitude) / 204 - (int32_t(t * t * t) * f.amplitude) / int32_t{50937984};
+    temp_t result = temp_t{safe_elastic_fixed_point<2, 28>(cnl::quotient(t, int32_t{204})) * f.amplitude} - temp_t{safe_elastic_fixed_point<2, 28>(cnl::quotient(int32_t(t * t * t), int32_t{50937984})) * f.amplitude};
     return result;
 }
 

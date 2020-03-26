@@ -24,7 +24,7 @@
 
 #include <math.h>
 
-SCENARIO("TempSensorMockTest")
+SCENARIO("TempSensorMockTest", "[mocktest]")
 {
 
     WHEN("A mock sensor is initialized without providing an initial value, it reads as invalid and 0")

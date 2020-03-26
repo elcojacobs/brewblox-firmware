@@ -48,15 +48,12 @@ private:
     bool m_settingValid = true;
     bool m_valueValid = true;
 
-    static constexpr const auto maxDuty()
+    static constexpr value_t maxDuty()
     {
         return value_t{100};
     }
 
-    auto dutyFraction() const
-    {
-        return safe_elastic_fixed_point<2, 29>(cnl::quotient(m_dutySetting + (cnl::numeric_limits<value_t>::min() >> 1), maxDuty()));
-    }
+    safe_elastic_fixed_point<2, 28> dutyFraction() const;
 
     // separate flag for manually disabling the pwm actuator
     bool m_enabled = true;
