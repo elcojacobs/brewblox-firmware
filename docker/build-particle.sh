@@ -4,12 +4,11 @@ set -e
 # The particle image is expected to remain relatively stable
 # It wraps the Particle CLI in a docker image, so it can easily be used to flash the firmware
 
-export DOCKER_CLI_EXPERIMENTAL=enabled
-docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+pushd "$SCRIPT_DIR" > /dev/null
 
-docker buildx rm bricklayer || true
-docker buildx create --use --name bricklayer
-docker buildx inspect --bootstrap
+bash ./enable-experimental.sh
+bash ./prepare-buildx.sh
 
 # Don't forget to call with --push
 docker buildx build \
@@ -17,4 +16,6 @@ docker buildx build \
     --tag brewblox/firmware-particle:latest \
     --tag brewblox/firmware-particle:rpi-latest \
     "$@" \
-    particle
+    firmware-particle
+
+popd > /dev/null

@@ -1,8 +1,9 @@
-version: "2"
+version: "3.7"
 services:
     compiler:
-        image: brewblox/firmware-compiler:arm-gcc-5
+        image: brewblox/firmware-compiler:latest
         container_name: firmware-compiler
+        init: true
         privileged: true
         environment:
             - MOUNTDIR=/firmware
