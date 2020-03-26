@@ -84,6 +84,20 @@ SCENARIO("TempSensorMockTest")
         }
     }
 
+    WHEN("Mock the fluctuation period is zero")
+    {
+        auto mock = TempSensorMock(20.0);
+        mock.fluctuations({{temp_t{2}, 0}});
+
+        for (ticks_millis_t t = 0; t <= 1000; t += 100) {
+            mock.update(t);
+        }
+        THEN("The amplitude is added as a constant value")
+        {
+            CHECK(mock.value() == temp_t{22});
+        }
+    }
+
     WHEN("Mock sensor has 2 fluctuations configured")
     {
         auto mock1 = TempSensorMock(20.0);

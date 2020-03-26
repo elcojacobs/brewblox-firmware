@@ -21,6 +21,10 @@
 temp_t
 calcFluctuation(const TempSensorMock::Fluctuation& f, ticks_millis_t now)
 {
+    if (f.period == 0) {
+        return f.amplitude;
+    }
+
     // use simple first order approximation of sinus for periodic signal, without using floats
     // sin(x) -> x - x^3 / 3!
     // This crosses zero at crosses -1/sqrt(6) and 1/sqrt(6), scale so -500 and 500 will cross zero:

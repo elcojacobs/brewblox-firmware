@@ -52,7 +52,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
     testBox.put(TempSensorMockBlock::staticTypeId());
 
     auto newSensor = blox::TempSensorMock();
-    newSensor.set_value(cnl::unwrap(temp_t(20.0)));
+    newSensor.set_setting(cnl::unwrap(temp_t(20.0)));
     newSensor.set_connected(true);
     testBox.put(newSensor);
 
@@ -222,7 +222,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
         testBox.put(TempSensorMockBlock::staticTypeId());
 
         auto newSensor = blox::TempSensorMock();
-        newSensor.set_value(cnl::unwrap(temp_t(99.5)));
+        newSensor.set_setting(cnl::unwrap(temp_t(99.5)));
         newSensor.set_connected(true);
         testBox.put(newSensor);
 
