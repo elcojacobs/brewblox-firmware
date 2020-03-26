@@ -3,7 +3,17 @@ set -e
 
 pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
 
-docker-compose down
+while getopts ":r" opt; do
+  case $opt in
+    r)
+      docker-compose down # pass -r to restart, without -r will only guarantee up
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+
 touch .env
 ENV_MOUNTDIR="$(grep MOUNTDIR .env)"
 
