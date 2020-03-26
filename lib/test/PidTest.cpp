@@ -56,7 +56,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         for (int32_t i = 0; i < 1000; ++i) {
             input->setting(21);
-            sensor->value(20);
+            sensor->setting(20);
         }
 
         input->update();
@@ -72,7 +72,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(100);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         for (int32_t i = 0; i < 1000; ++i) {
@@ -93,7 +93,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(0);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         for (int32_t i = 0; i < 1000; ++i) {
@@ -124,14 +124,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(30);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         fp12_t mockVal;
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 900; ++i) {
             mockVal = fp12_t(20.0 + 9.0 * i / 900);
-            sensor->value(mockVal);
+            sensor->setting(mockVal);
             input->update();
             pid.update();
             accumulatedError += pid.error();
@@ -154,14 +154,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(20);
-        sensor->value(30);
+        sensor->setting(30);
         input->resetFilter();
 
         fp12_t mockVal;
         double accumulatedError = 0;
         for (int32_t i = 0; i <= 900; ++i) {
             mockVal = fp12_t(30.0 - (9.0 * i) / 900);
-            sensor->value(mockVal);
+            sensor->setting(mockVal);
             input->update();
             pid.update();
             accumulatedError += pid.error();
@@ -184,7 +184,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
         actuator->minSetting(0);
         actuator->maxSetting(20);
@@ -230,7 +230,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(19);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
         actuator->minSetting(0);
         actuator->maxSetting(20);
@@ -275,7 +275,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
         actuator->minValue(5);
         actuator->maxValue(20);
@@ -319,7 +319,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(19);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
         actuator->minValue(5);
         actuator->maxValue(20);
@@ -363,7 +363,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         pid.td(200);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         int32_t i = 0;
@@ -554,7 +554,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.td(0);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         run1000seconds();
@@ -569,7 +569,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.td(0);
 
         input->setting(21);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         run1000seconds();
@@ -594,7 +594,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.td(200);
 
         input->setting(30);
-        sensor->value(20);
+        sensor->setting(20);
         input->resetFilter();
 
         fp12_t mockVal;
@@ -607,7 +607,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             }
             if (now >= nextPidUpdate) {
                 mockVal = fp12_t(20.0 + 9.0 * (now - start) / 900'000);
-                sensor->value(mockVal);
+                sensor->setting(mockVal);
                 input->update();
                 pid.update();
                 actuator->update();
@@ -633,7 +633,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         pid.td(200);
 
         input->setting(20);
-        sensor->value(30);
+        sensor->setting(30);
         input->resetFilter();
 
         fp12_t mockVal;
@@ -646,7 +646,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             }
             if (now >= nextPidUpdate) {
                 mockVal = fp12_t(30.0 - 9.0 * (now - start) / 900'000);
-                sensor->value(mockVal);
+                sensor->setting(mockVal);
                 input->update();
                 pid.update();
                 actuator->update();
@@ -887,7 +887,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             pid.td(td);
             auto start = now;
             auto dMin = Pid::out_t(0);
-            sensor->value(20);
+            sensor->setting(20);
             input->resetFilter();
 
             while (now <= start + 2000'000) {
@@ -895,7 +895,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     nextPwmUpdate = pwm.update(now);
                 }
                 if (now == start + 10'000) {
-                    sensor->value(30);
+                    sensor->setting(30);
                 }
                 if (now >= nextPidUpdate) {
                     input->update();
@@ -931,7 +931,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         AND_WHEN("The setpoint is 99 and the actual temp is 98")
         {
             input->setting(99);
-            sensor->value(98);
+            sensor->setting(98);
             input->update();
             pid.update();
 
@@ -946,7 +946,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         AND_WHEN("The setpoint is 100 and the actual temp is 99")
         {
             input->setting(100);
-            sensor->value(99);
+            sensor->setting(99);
             input->update();
             pid.update();
 
@@ -962,7 +962,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         AND_WHEN("The setpoint is 100 and the actual temp is 100")
         {
             input->setting(100);
-            sensor->value(100);
+            sensor->setting(100);
             input->resetFilter();
             input->update();
             pid.update();

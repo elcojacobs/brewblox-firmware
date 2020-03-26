@@ -26,8 +26,8 @@
 
 class TempSensorMock final : public TempSensor {
 private:
-    temp_t m_value = 0;
-    temp_t m_valueWithFluctuations = 0;
+    temp_t m_setting = 0;
+    temp_t m_fluctuationsSum = 0;
     bool m_connected = false;
 
 public:
@@ -45,15 +45,18 @@ public:
     }
 
     TempSensorMock(temp_t initial)
-        : m_value(initial)
-        , m_valueWithFluctuations(initial)
+        : m_setting(initial)
+        , m_fluctuationsSum(0)
         , m_connected(true)
     {
     }
 
     void fluctuations(std::vector<Fluctuation>&& arg);
 
-    const std::vector<Fluctuation>& fluctuations();
+    const std::vector<Fluctuation>& fluctuations() const
+    {
+        return m_fluctuations;
+    }
 
     void connected(bool _connected)
     {
@@ -65,15 +68,19 @@ public:
         return m_connected;
     }
 
-    void value(temp_t val)
+    void setting(temp_t val)
     {
-        m_value = val;
-        m_valueWithFluctuations = val;
+        m_setting = val;
+    }
+
+    temp_t setting() const
+    {
+        return m_setting;
     }
 
     temp_t value() const override final
     {
-        return m_valueWithFluctuations;
+        return m_setting + m_fluctuationsSum;
     }
 
     virtual bool valid() const override final
@@ -83,7 +90,7 @@ public:
 
     void add(temp_t delta)
     {
-        m_value += delta;
+        m_setting += delta;
     }
 
     void update(ticks_millis_t now);
