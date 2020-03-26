@@ -14,6 +14,18 @@ services:
         user: ${DOCKER_UID}
         command: tail -f /dev/null
 
+    compiler-cross:
+        image: brewblox/firmware-compiler:cross-latest
+        container_name: firmware-compiler-cross
+        init: true
+        privileged: true
+        environment:
+            - MOUNTDIR=/firmware
+            - MAKE_ARGS
+        volumes:
+            - ../:${MOUNTDIR}
+        command: bash build-cross.sh
+
     simulator:
         image: brewblox/firmware-simulator:local
         privileged: true

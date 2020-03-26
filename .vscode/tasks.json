@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build_p1",
+      "label": "build_p1_docker",
       "command": "docker-compose",
       "args": [
         "exec",
@@ -32,7 +32,7 @@
       ]
     },
     {
-      "label": "build_photon",
+      "label": "build_photon_docker",
       "command": "docker-compose",
       "args": [
         "exec",
@@ -41,6 +41,34 @@
         "../wrapped_make.sh",
         "APP=brewblox",
         "PLATFORM=photon"
+      ],
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}/docker"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": "$gcc",
+      "dependsOn": [
+        "compile proto"
+      ]
+    },
+    {
+      "label": "build_gcc_docker",
+      "command": "docker-compose",
+      "args": [
+        "exec",
+        "compiler",
+        "bash",
+        "../wrapped_make.sh",
+        "APP=brewblox",
+        "PLATFORM=gcc"
       ],
       "group": "build",
       "options": {
@@ -85,7 +113,7 @@
       ]
     },
     {
-      "label": "flash_p1",
+      "label": "flash_p1_docker",
       "command": "docker-compose",
       "args": [
         "exec",
@@ -116,7 +144,7 @@
       ]
     },
     {
-      "label": "flash_photon",
+      "label": "flash_photon_docker",
       "command": "docker-compose",
       "args": [
         "exec",
@@ -147,7 +175,7 @@
       ]
     },
     {
-      "label": "trigger_dfu",
+      "label": "trigger_dfu_docker",
       "command": "docker",
       "args": [
         "run",
@@ -212,14 +240,14 @@
       }
     },
     {
-      "label": "build_and_touch_gcc",
+      "label": "build_and_touch_gcc_docker",
       "dependsOn": [
         "build_gcc",
         "touch_gcc"
       ]
     },
     {
-      "label": "compile proto",
+      "label": "compile proto docker",
       "type": "shell",
       "command": "docker-compose",
       "args": [
@@ -243,7 +271,7 @@
       "problemMatcher": []
     },
     {
-      "label": "build app tests",
+      "label": "build app tests docker",
       "type": "shell",
       "command": "docker-compose",
       "args": [
@@ -272,7 +300,7 @@
       ]
     },
     {
-      "label": "build lib tests",
+      "label": "build lib tests docker",
       "type": "shell",
       "command": "docker-compose",
       "args": [
@@ -298,7 +326,7 @@
       "problemMatcher": "$gcc"
     },
     {
-      "label": "build cbox tests",
+      "label": "build cbox tests docker",
       "type": "shell",
       "command": "docker-compose",
       "args": [
@@ -350,7 +378,7 @@
       "problemMatcher": "$gcc"
     },
     {
-      "label": "ci",
+      "label": "ci docker",
       "command": "docker-compose",
       "args": [
         "exec",
@@ -442,7 +470,7 @@
       "problemMatcher": "$gcc"
     },
     {
-      "label": "build_p1 swd",
+      "label": "build_p1 swd docker",
       "command": "docker-compose",
       "args": [
         "exec",
