@@ -20,7 +20,6 @@
 #pragma once
 
 #include "ActuatorAnalog.h"
-#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -133,58 +132,16 @@ public:
     ActuatorAnalogConstrained(const ActuatorAnalogConstrained&) = delete;
     ActuatorAnalogConstrained& operator=(const ActuatorAnalogConstrained&) = delete;
     ActuatorAnalogConstrained(ActuatorAnalogConstrained&&) = default;
-    ActuatorAnalogConstrained& operator=(ActuatorAnalogConstrained&&) = default;
 
     virtual ~ActuatorAnalogConstrained() = default;
 
-    void addConstraint(std::unique_ptr<Constraint>&& newConstraint)
-    {
-        if (constraints.size() < 8) {
-            constraints.push_back(std::move(newConstraint));
-        }
+    void addConstraint(std::unique_ptr<Constraint>&& newConstraint);
 
-        std::sort(constraints.begin(), constraints.end(),
-                  [](const std::unique_ptr<Constraint>& a, const std::unique_ptr<Constraint>& b) { return a->order() < b->order(); });
-    }
+    void removeAllConstraints();
 
-    void removeAllConstraints()
-    {
-        constraints.clear();
-    }
+    value_t constrain(const value_t& val);
 
-    value_t constrain(const value_t& val)
-    {
-        // keep track of which constraints limit the setting in a bitfield
-        m_limiting = 0x00;
-        uint8_t bit = 0x01;
-
-        value_t result = val;
-
-        for (auto& c : constraints) {
-            auto constrained = c->constrain(result);
-            if (constrained != result) {
-                m_limiting = m_limiting | bit;
-                result = constrained;
-            }
-            bit = bit << 1;
-        }
-
-        return result;
-    }
-
-    virtual void setting(const value_t& val) override final
-    {
-        // first set actuator to requested value to check whether it constrains the setting itself
-        actuator.setting(val);
-        m_desiredSetting = actuator.setting();
-
-        // then set it to the constrained value
-        if (actuator.settingValid()) {
-            actuator.setting(constrain(m_desiredSetting));
-        } else {
-            constrain(0);
-        }
-    }
+    virtual void setting(const value_t& val) override final;
 
     void update()
     {
@@ -193,47 +150,47 @@ public:
         }
     }
 
-    virtual value_t setting() const override final
+    virtual value_t
+    setting() const override final
     {
         return actuator.setting();
     }
 
-    virtual value_t value() const override final
+    virtual value_t
+    value() const override final
     {
         return actuator.value();
     }
 
-    virtual bool valueValid() const override final
+    virtual bool
+    valueValid() const override final
     {
         return actuator.valueValid();
     }
 
-    virtual bool settingValid() const override final
+    virtual bool
+    settingValid() const override final
     {
         return actuator.settingValid();
     }
 
-    virtual void settingValid(bool v) override final
-    {
-        auto old = actuator.settingValid();
-        actuator.settingValid(v);
-        if (old != actuator.settingValid()) {
-            // update constraints state in case setting valid has changed the limits inside the actuator itself
-            constrain(actuator.setting());
-        }
-    }
+    virtual void
+    settingValid(bool v) override final;
 
-    value_t desiredSetting() const
+    value_t
+    desiredSetting() const
     {
         return m_desiredSetting;
     }
 
-    uint8_t limiting() const
+    uint8_t
+    limiting() const
     {
         return m_limiting;
     }
 
-    const std::vector<std::unique_ptr<Constraint>>& constraintsList() const
+    const auto&
+    constraintsList() const
     {
         return constraints;
     }

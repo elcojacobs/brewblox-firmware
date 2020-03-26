@@ -51,7 +51,7 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(act->setting() == 10.0); // difference between setpoints is now 10
         CHECK(act->value() == 0.0);    // actual value is still zero, because targetSensor has not changed
 
-        targetSensor->value(30.0);
+        targetSensor->setting(30.0);
         target->resetFilter();
         act->update();
         CHECK(act->value() == 10.0); // actual value is 10 when sensor has reached setpoint
@@ -64,16 +64,16 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
 
         CHECK(act->value() == 10.0); // value is still 10, because targetSensor has not changed
 
-        targetSensor->value(10.0);
+        targetSensor->setting(10.0);
         target->resetFilter();
         act->update();
         CHECK(act->value() == -10.0); // value is -10 when sensor has reached setpoint
 
         reference->setting(10.0);
-        referenceSensor->value(15.0);
+        referenceSensor->setting(15.0);
         reference->resetFilter();
         target->setting(20.0);
-        targetSensor->value(20.0);
+        targetSensor->setting(20.0);
         target->resetFilter();
         act->setting(12.0);
 

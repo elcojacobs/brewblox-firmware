@@ -159,7 +159,7 @@ public:
         return m_desiredState;
     }
 
-    const std::vector<std::unique_ptr<Constraint>>&
+    const auto&
     constraintsList() const
     {
         return constraints;

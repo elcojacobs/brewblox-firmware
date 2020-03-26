@@ -39,6 +39,13 @@ ActuatorPwm::value() const
     return m_dutyAchieved;
 }
 
+safe_elastic_fixed_point<2, 28>
+ActuatorPwm::dutyFraction() const
+{
+    constexpr auto rounder = (cnl::numeric_limits<value_t>::min() >> 1);
+    return safe_elastic_fixed_point<2, 28>{cnl::quotient(m_dutySetting + rounder, maxDuty())};
+}
+
 #if PLATFORM_ID != PLATFORM_GCC
 void
 ActuatorPwm::manageTimerTask()
@@ -159,7 +166,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 return now + 1000;
             }
 
-            if (m_dutySetting <= maxDuty() >> 1) {
+            if (m_dutySetting <= (maxDuty() >> 1)) {
                 // high period is fixed, low period adapts
                 if (currentHighTime < m_dutyTime) {
                     wait = m_dutyTime - currentHighTime;
@@ -180,7 +187,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                     // if previous high time is twice the unadjusted high time
                     // use at least normal high time, because this is a due to a big duty setting decrease
                     // not a slight adjustment for contraints or jitter
-                    if (previousHighTime > invDutyTime * 2) {
+                    if (previousHighTime > invDutyTime) {
                         twoPeriodTargetHighTime = std::max(twoPeriodTargetHighTime, previousHighTime + invDutyTime);
                     }
 
@@ -202,7 +209,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             }
             auto currentLowTime = currentPeriod - currentHighTime;
 
-            if (m_dutySetting > value_t{50}) {
+            if (m_dutySetting > (maxDuty() >> 1)) {
                 // low period is fixed, high period adapts
                 if (currentLowTime < invDutyTime) {
                     wait = invDutyTime - currentLowTime;
@@ -263,7 +270,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 m_valueValid = false;
             } else {
                 // calculate achieved duty cycle
-                auto dutyAchieved = (value_t(100) * twoPeriodHighTime) / twoPeriodElapsed;
+                auto dutyAchieved = value_t{cnl::quotient(100 * twoPeriodHighTime, twoPeriodElapsed)};
                 if (toggled // end of high or low time or
                             // current period is long enough to start using the current achieved value including this period
                     || (currentState == State::Inactive && dutyAchieved < m_dutyAchieved)
