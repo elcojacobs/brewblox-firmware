@@ -29,7 +29,9 @@ using State = ActuatorDigital::State;
 enum class LogicOp : uint8_t {
     OR,
     AND,
-    XOR
+    NOR,
+    NAND,
+    XOR,
 };
 
 class Section {
@@ -60,7 +62,7 @@ public:
     OR() = default;
     virtual ~OR() = default;
 
-    virtual State eval() const override final
+    virtual State eval() const override
     {
         for (auto& lookup : lookups) {
             if (lookup()->state() == State::Active) {
@@ -70,7 +72,7 @@ public:
         return State::Inactive;
     }
 
-    virtual LogicOp op() const override final
+    virtual LogicOp op() const override
     {
         return LogicOp::OR;
     }
@@ -81,7 +83,7 @@ public:
     AND() = default;
     virtual ~AND() = default;
 
-    virtual State eval() const override final
+    virtual State eval() const override
     {
         if (lookups.size() == 0) {
             return State::Inactive;
@@ -94,9 +96,41 @@ public:
         return State::Active;
     }
 
-    virtual LogicOp op() const override final
+    virtual LogicOp op() const override
     {
         return LogicOp::AND;
+    }
+};
+
+class NOR : public OR {
+public:
+    NOR() = default;
+    virtual ~NOR() = default;
+
+    virtual State eval() const override final
+    {
+        return OR::eval() ? State::Inactive : State::Active;
+    }
+
+    virtual LogicOp op() const override final
+    {
+        return LogicOp::NOR;
+    }
+};
+
+class NAND : public AND {
+public:
+    NAND() = default;
+    virtual ~NAND() = default;
+
+    virtual State eval() const override final
+    {
+        return AND::eval() ? State::Inactive : State::Active;
+    }
+
+    virtual LogicOp op() const override final
+    {
+        return LogicOp::NAND;
     }
 };
 
@@ -165,25 +199,19 @@ public:
             auto sectionResult = s.section->eval();
             switch (s.rootOp) {
             case LogicOp::OR:
-                if (sectionResult == State::Active) {
-                    result = State::Active;
-                }
+                result = (result == State::Active || sectionResult == State::Active) ? State::Active : State::Inactive;
                 break;
             case LogicOp::AND:
-                if (result == State::Active && sectionResult == State::Active) {
-                    result = State::Active;
-                } else {
-                    result = State::Inactive;
-                }
+                result = (result == State::Active && sectionResult == State::Active) ? State::Active : State::Inactive;
+                break;
+            case LogicOp::NOR:
+                result = (result == State::Active || sectionResult == State::Active) ? State::Inactive : State::Active;
+                break;
+            case LogicOp::NAND:
+                result = (result == State::Active && sectionResult == State::Active) ? State::Inactive : State::Active;
                 break;
             case LogicOp::XOR:
-                if (result == State::Active && sectionResult == State::Inactive) {
-                    result = State::Active;
-                } else if (result == State::Inactive && sectionResult == State::Active) {
-                    result = State::Active;
-                } else {
-                    result = State::Inactive;
-                }
+                result = (result == State::Active ^ sectionResult == State::Active) ? State::Active : State::Inactive;
                 break;
             default:
                 result = State::Inactive;

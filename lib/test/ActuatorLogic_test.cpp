@@ -172,6 +172,91 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
             CHECK(target->state() == State::Inactive);
         }
     }
+    WHEN("Three mock actuators are combined using NOR")
+    {
+        auto newSection = std::make_unique<ADLogic::NOR>();
+        newSection->add([mock1]() { return mock1; });
+        newSection->add([mock2]() { return mock2; });
+        newSection->add([mock3]() { return mock3; });
+
+        logic->addSection(ADLogic::LogicOp::OR, std::move(newSection));
+
+        THEN("The target is active when one or more of the mocks is active")
+        {
+            mock1->state(State::Inactive);
+            mock2->state(State::Inactive);
+            mock3->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Active);
+            mock2->state(State::Inactive);
+            mock3->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Active);
+            mock3->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Active);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+        }
+    }
+
+    WHEN("Three mock actuators are combined using NAND")
+    {
+        auto newSection = std::make_unique<ADLogic::NAND>();
+        newSection->add([mock1]() { return mock1; });
+        newSection->add([mock2]() { return mock2; });
+        newSection->add([mock3]() { return mock3; });
+
+        logic->addSection(ADLogic::LogicOp::OR, std::move(newSection));
+
+        THEN("The target is active when all of the mocks are active")
+        {
+            mock1->state(State::Inactive);
+            mock2->state(State::Inactive);
+            mock3->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Active);
+            mock2->state(State::Inactive);
+            mock3->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Active);
+            mock3->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Active);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+        }
+    }
 
     WHEN("Two AND sections are combined with OR")
     {
@@ -280,6 +365,116 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
             mock4->state(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
+        }
+    }
+
+    WHEN("Two OR sections are combined with NOR")
+    {
+        {
+            auto newSection = std::make_unique<ADLogic::OR>();
+            newSection->add([mock1]() { return mock1; });
+            newSection->add([mock2]() { return mock2; });
+            logic->addSection(ADLogic::LogicOp::OR, std::move(newSection));
+        }
+
+        {
+            auto newSection = std::make_unique<ADLogic::OR>();
+            newSection->add([mock3]() { return mock3; });
+            newSection->add([mock4]() { return mock4; });
+            logic->addSection(ADLogic::LogicOp::NOR, std::move(newSection));
+        }
+
+        THEN("The target is inactive when any of the OR sections are active")
+        {
+            mock1->state(State::Inactive);
+            mock2->state(State::Inactive);
+            mock3->state(State::Inactive);
+            mock4->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            mock4->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Inactive);
+            mock3->state(State::Active);
+            mock4->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Active);
+            mock2->state(State::Active);
+            mock3->state(State::Inactive);
+            mock4->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Active);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            mock4->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+        }
+    }
+
+    WHEN("Two OR sections are combined with NAND")
+    {
+        {
+            auto newSection = std::make_unique<ADLogic::OR>();
+            newSection->add([mock1]() { return mock1; });
+            newSection->add([mock2]() { return mock2; });
+            logic->addSection(ADLogic::LogicOp::OR, std::move(newSection));
+        }
+
+        {
+            auto newSection = std::make_unique<ADLogic::OR>();
+            newSection->add([mock3]() { return mock3; });
+            newSection->add([mock4]() { return mock4; });
+            logic->addSection(ADLogic::LogicOp::NAND, std::move(newSection));
+        }
+
+        THEN("The target is inactive when both of the OR sections are active")
+        {
+            mock1->state(State::Inactive);
+            mock2->state(State::Inactive);
+            mock3->state(State::Inactive);
+            mock4->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            mock4->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->state(State::Inactive);
+            mock2->state(State::Inactive);
+            mock3->state(State::Active);
+            mock4->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Active);
+            mock2->state(State::Active);
+            mock3->state(State::Inactive);
+            mock4->state(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->state(State::Active);
+            mock2->state(State::Active);
+            mock3->state(State::Active);
+            mock4->state(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
         }
     }
 }
