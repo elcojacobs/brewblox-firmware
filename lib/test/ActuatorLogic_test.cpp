@@ -29,12 +29,19 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     using State = ActuatorDigital::State;
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock1 = std::make_shared<ActuatorDigital>([mockIo]() { return mockIo; }, 1);
-    auto mock2 = std::make_shared<ActuatorDigital>([mockIo]() { return mockIo; }, 2);
-    auto mock3 = std::make_shared<ActuatorDigital>([mockIo]() { return mockIo; }, 3);
-    auto mock4 = std::make_shared<ActuatorDigital>([mockIo]() { return mockIo; }, 4);
 
-    auto target = std::make_shared<ActuatorDigital>([mockIo]() { return mockIo; }, 5);
+    auto act1 = ActuatorDigital([mockIo]() { return mockIo; }, 1);
+    auto act2 = ActuatorDigital([mockIo]() { return mockIo; }, 2);
+    auto act3 = ActuatorDigital([mockIo]() { return mockIo; }, 3);
+    auto act4 = ActuatorDigital([mockIo]() { return mockIo; }, 4);
+    auto act5 = ActuatorDigital([mockIo]() { return mockIo; }, 5);
+
+    auto mock1 = std::make_shared<ActuatorDigitalConstrained>(act1);
+    auto mock2 = std::make_shared<ActuatorDigitalConstrained>(act2);
+    auto mock3 = std::make_shared<ActuatorDigitalConstrained>(act3);
+    auto mock4 = std::make_shared<ActuatorDigitalConstrained>(act4);
+
+    auto target = std::make_shared<ActuatorDigitalConstrained>(act5);
     auto logic = std::make_shared<ActuatorLogic>([target]() { return target; });
 
     WHEN("ActuatorLogic is empty, it evaluates to Inactive")
@@ -55,33 +62,33 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active when one or more of the mocks is active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
         }
@@ -98,33 +105,33 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active when all of the mocks are active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
         }
@@ -141,33 +148,33 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active only when just 1 of the mocks is active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
         }
@@ -183,33 +190,33 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active when one or more of the mocks is active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
         }
@@ -226,33 +233,33 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active when all of the mocks are active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
         }
@@ -276,38 +283,38 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active when one of the AND sections is active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
         }
@@ -331,38 +338,38 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is active when both of the OR sections are active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
         }
@@ -386,38 +393,38 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is inactive when any of the OR sections are active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
         }
@@ -441,38 +448,38 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
         THEN("The target is inactive when both of the OR sections are active")
         {
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Inactive);
 
-            mock1->state(State::Inactive);
-            mock2->state(State::Inactive);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Inactive);
-            mock4->state(State::Inactive);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
             logic->update();
             CHECK(target->state() == State::Active);
 
-            mock1->state(State::Active);
-            mock2->state(State::Active);
-            mock3->state(State::Active);
-            mock4->state(State::Active);
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Active);
             logic->update();
             CHECK(target->state() == State::Inactive);
         }

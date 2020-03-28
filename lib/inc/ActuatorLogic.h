@@ -20,6 +20,7 @@
 #pragma once
 
 #include "ActuatorDigital.h"
+#include "ActuatorDigitalConstrained.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -36,7 +37,7 @@ enum class LogicOp : uint8_t {
 
 class Section {
 protected:
-    using lookup_t = std::function<std::shared_ptr<ActuatorDigitalBase>()>;
+    using lookup_t = std::function<std::shared_ptr<ActuatorDigitalConstrained>()>;
     std::vector<lookup_t> lookups;
 
 public:
@@ -45,12 +46,20 @@ public:
 
     void add(lookup_t&& act)
     {
-        lookups.push_back(act);
+        if (lookups.size() < 8) {
+            lookups.push_back(act);
+        }
     }
 
-    void clear()
+    void
+    clear()
     {
         lookups.clear();
+    }
+
+    const auto& lookupsList()
+    {
+        return lookups;
     }
 
     virtual LogicOp op() const = 0;
@@ -159,14 +168,14 @@ public:
 class ActuatorLogic {
 private:
     struct LogicSection {
-        LogicOp rootOp;
+        LogicOp combineOp;
         std::unique_ptr<Section> section;
     };
     std::vector<LogicSection> sections;
-    std::function<std::shared_ptr<ActuatorDigitalBase>()> target;
+    std::function<std::shared_ptr<ActuatorDigitalConstrained>()> target;
 
 public:
-    ActuatorLogic(std::function<std::shared_ptr<ActuatorDigitalBase>()>&& target_)
+    ActuatorLogic(std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target_)
         : target(target_)
     {
     }
@@ -182,7 +191,7 @@ public:
         if (sections.size() == 0) {
             op = LogicOp::OR;
         }
-        if (sections.size() < 8) {
+        if (sections.size() < 4) {
             sections.push_back({op, std::move(newSection)});
         }
     }
@@ -197,7 +206,7 @@ public:
         auto result = State::Inactive;
         for (auto& s : sections) {
             auto sectionResult = s.section->eval();
-            switch (s.rootOp) {
+            switch (s.combineOp) {
             case LogicOp::OR:
                 result = (result == State::Active || sectionResult == State::Active) ? State::Active : State::Inactive;
                 break;
@@ -224,7 +233,7 @@ public:
     update()
     {
         if (auto actPtr = target()) {
-            actPtr->state(state());
+            actPtr->desiredState(state());
         }
     }
 
@@ -234,6 +243,24 @@ public:
         return sections;
     }
 };
+
+std::unique_ptr<Section>
+makeSection(LogicOp op)
+{
+    switch (op) {
+    case LogicOp::OR:
+        return std::make_unique<ADLogic::OR>();
+    case LogicOp::AND:
+        return std::make_unique<ADLogic::OR>();
+    case LogicOp::NOR:
+        return std::make_unique<ADLogic::OR>();
+    case LogicOp::NAND:
+        return std::make_unique<ADLogic::OR>();
+    case LogicOp::XOR:
+        return std::make_unique<ADLogic::OR>();
+    }
+    return std::unique_ptr<Section>(); // nullptr if invalid op
+}
 } // end namespace ADLogic
 
 using ActuatorLogic = ADLogic::ActuatorLogic;
