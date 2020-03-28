@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 BrewPi B.V.
+ * Copyright 2020 BrewPi B.V.
  *
  * This file is part of the BrewBlox Control Library.
  *
@@ -28,12 +28,13 @@ namespace ADLogic {
 using State = ActuatorDigital::State;
 enum class LogicOp : uint8_t {
     OR,
-    AND
+    AND,
+    XOR
 };
 
 class Section {
 protected:
-    using lookup_t = std::function<std::shared_ptr<ActuatorDigital>()>;
+    using lookup_t = std::function<std::shared_ptr<ActuatorDigitalBase>()>;
     std::vector<lookup_t> lookups;
 
 public:
@@ -43,7 +44,7 @@ public:
     void add(lookup_t&& act)
     {
         lookups.push_back(act);
-    };
+    }
 
     void clear()
     {
@@ -67,7 +68,7 @@ public:
             }
         }
         return State::Inactive;
-    };
+    }
 
     virtual LogicOp op() const override final
     {
@@ -91,7 +92,7 @@ public:
             }
         }
         return State::Active;
-    };
+    }
 
     virtual LogicOp op() const override final
     {
@@ -99,23 +100,46 @@ public:
     }
 };
 
+class XOR : public Section {
+public:
+    XOR() = default;
+    virtual ~XOR() = default;
+
+    virtual State eval() const override final
+    {
+        uint16_t count = 0;
+        for (auto& lookup : lookups) {
+            if (lookup()->state() == State::Active) {
+                ++count;
+            }
+        }
+        return count == 1 ? State::Active : State::Inactive;
+    }
+
+    virtual LogicOp op() const override final
+    {
+        return LogicOp::XOR;
+    }
+};
+
 class ActuatorLogic {
 private:
     struct LogicSection {
-        LogicOp op;
+        LogicOp rootOp;
         std::unique_ptr<Section> section;
     };
     std::vector<LogicSection> sections;
-    ActuatorDigital& target;
+    std::function<std::shared_ptr<ActuatorDigitalBase>()> target;
 
 public:
-    ActuatorLogic(ActuatorDigital& act)
-        : target(act){};
+    ActuatorLogic(std::function<std::shared_ptr<ActuatorDigitalBase>()>&& target_)
+        : target(target_)
+    {
+    }
 
     ActuatorLogic(const ActuatorLogic&) = delete;
     ActuatorLogic& operator=(const ActuatorLogic&) = delete;
     ActuatorLogic(ActuatorLogic&&) = default;
-    ActuatorLogic& operator=(ActuatorLogic&&) = default;
 
     virtual ~ActuatorLogic() = default;
 
@@ -139,32 +163,48 @@ public:
         auto result = State::Inactive;
         for (auto& s : sections) {
             auto sectionResult = s.section->eval();
-            if (s.op == LogicOp::OR) {
+            switch (s.rootOp) {
+            case LogicOp::OR:
                 if (sectionResult == State::Active) {
                     result = State::Active;
                 }
-            } else if (s.op == LogicOp::AND) {
-                if (result == State::Active && sectionResult) {
+                break;
+            case LogicOp::AND:
+                if (result == State::Active && sectionResult == State::Active) {
                     result = State::Active;
                 } else {
                     result = State::Inactive;
                 }
-            } else {
-                return State::Unknown;
+                break;
+            case LogicOp::XOR:
+                if (result == State::Active && sectionResult == State::Inactive) {
+                    result = State::Active;
+                } else if (result == State::Inactive && sectionResult == State::Active) {
+                    result = State::Active;
+                } else {
+                    result = State::Inactive;
+                }
+                break;
+            default:
+                result = State::Inactive;
             }
         }
         return result;
     }
 
-    void update()
+    void
+    update()
     {
-        target.state(state());
+        if (auto actPtr = target()) {
+            actPtr->state(state());
+        }
     }
 
-    const std::vector<LogicSection>& sectionList() const
+    const std::vector<LogicSection>&
+    sectionList() const
     {
         return sections;
-    };
+    }
 };
 } // end namespace ADLogic
 
