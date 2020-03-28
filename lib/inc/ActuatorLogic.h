@@ -57,7 +57,7 @@ public:
         lookups.clear();
     }
 
-    const auto& lookupsList()
+    const auto& lookupsList() const
     {
         return lookups;
     }
@@ -171,12 +171,13 @@ private:
         LogicOp combineOp;
         std::unique_ptr<Section> section;
     };
-    std::vector<LogicSection> sections;
-    std::function<std::shared_ptr<ActuatorDigitalConstrained>()> target;
+    std::vector<LogicSection> m_sections;
+    std::function<std::shared_ptr<ActuatorDigitalConstrained>()> m_target;
+    State m_result = State::Inactive;
 
 public:
     ActuatorLogic(std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target_)
-        : target(target_)
+        : m_target(target_)
     {
     }
 
@@ -188,39 +189,57 @@ public:
 
     void addSection(LogicOp op, std::unique_ptr<Section>&& newSection)
     {
-        if (sections.size() == 0) {
+        if (m_sections.size() == 0) {
             op = LogicOp::OR;
         }
-        if (sections.size() < 4) {
-            sections.push_back({op, std::move(newSection)});
+        if (m_sections.size() < 4) {
+            m_sections.push_back({op, std::move(newSection)});
         }
+    }
+
+    static std::unique_ptr<Section>
+    makeSection(LogicOp op)
+    {
+        switch (op) {
+        case LogicOp::OR:
+            return std::make_unique<ADLogic::OR>();
+        case LogicOp::AND:
+            return std::make_unique<ADLogic::AND>();
+        case LogicOp::NOR:
+            return std::make_unique<ADLogic::NOR>();
+        case LogicOp::NAND:
+            return std::make_unique<ADLogic::NAND>();
+        case LogicOp::XOR:
+            return std::make_unique<ADLogic::XOR>();
+        }
+        return std::unique_ptr<Section>(); // nullptr if invalid op
     }
 
     void clear()
     {
-        sections.clear();
+        m_sections.clear();
     }
 
-    State state() const
+    State evaluate() const
     {
         auto result = State::Inactive;
-        for (auto& s : sections) {
+        for (auto& s : m_sections) {
             auto sectionResult = s.section->eval();
             switch (s.combineOp) {
             case LogicOp::OR:
-                result = (result == State::Active || sectionResult == State::Active) ? State::Active : State::Inactive;
+                result = ((result == State::Active) || (sectionResult == State::Active)) ? State::Active : State::Inactive;
                 break;
             case LogicOp::AND:
-                result = (result == State::Active && sectionResult == State::Active) ? State::Active : State::Inactive;
+                result = ((result == State::Active) && (sectionResult == State::Active)) ? State::Active : State::Inactive;
                 break;
             case LogicOp::NOR:
-                result = (result == State::Active || sectionResult == State::Active) ? State::Inactive : State::Active;
+                result = ((result == State::Active) || (sectionResult == State::Active)) ? State::Inactive : State::Active;
                 break;
             case LogicOp::NAND:
-                result = (result == State::Active && sectionResult == State::Active) ? State::Inactive : State::Active;
+                result = ((result == State::Active) && (sectionResult == State::Active)) ? State::Inactive : State::Active;
                 break;
             case LogicOp::XOR:
-                result = (result == State::Active ^ sectionResult == State::Active) ? State::Active : State::Inactive;
+                result = ((result == State::Active) ^ (sectionResult == State::Active)) ? State::Active : State::Inactive;
                 break;
             default:
                 result = State::Inactive;
@@ -229,38 +248,25 @@ public:
         return result;
     }
 
-    void
-    update()
+    State result()
     {
-        if (auto actPtr = target()) {
-            actPtr->desiredState(state());
+        return m_result;
+    }
+
+    void update()
+    {
+        m_result = evaluate();
+        if (auto actPtr = m_target()) {
+            actPtr->desiredState(m_result);
         }
     }
 
-    const std::vector<LogicSection>&
-    sectionList() const
+    const auto& sectionsList() const
     {
-        return sections;
+        return m_sections;
     }
 };
 
-std::unique_ptr<Section>
-makeSection(LogicOp op)
-{
-    switch (op) {
-    case LogicOp::OR:
-        return std::make_unique<ADLogic::OR>();
-    case LogicOp::AND:
-        return std::make_unique<ADLogic::OR>();
-    case LogicOp::NOR:
-        return std::make_unique<ADLogic::OR>();
-    case LogicOp::NAND:
-        return std::make_unique<ADLogic::OR>();
-    case LogicOp::XOR:
-        return std::make_unique<ADLogic::OR>();
-    }
-    return std::unique_ptr<Section>(); // nullptr if invalid op
-}
 } // end namespace ADLogic
 
 using ActuatorLogic = ADLogic::ActuatorLogic;

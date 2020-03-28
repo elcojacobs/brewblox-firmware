@@ -46,7 +46,7 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
 
     WHEN("ActuatorLogic is empty, it evaluates to Inactive")
     {
-        CHECK(logic->state() == State::Inactive);
+        CHECK(logic->evaluate() == State::Inactive);
         logic->update();
         CHECK(target->state() == State::Inactive);
     }
