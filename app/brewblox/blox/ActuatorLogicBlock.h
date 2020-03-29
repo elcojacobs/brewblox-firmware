@@ -41,7 +41,7 @@ public:
                 auto msgSection = newData.section[s];
                 if (msgSection.which_section == blox_ActuatorLogic_Section_actuators_tag) {
                     for (pb_size_t i = 0; i < msgSection.section.actuators.actuator_count; i++) {
-                        cbox::obj_id_t id = msgSection.section.actuators.actuator[i];
+                        cbox::obj_id_t id = msgSection.section.actuators.actuator[i].id;
                         actuatorLookups.emplace_back(objectsRef, id);
                     }
                 } else if (msgSection.which_section == blox_ActuatorLogic_Section_comparison_tag) { // compare section
@@ -59,7 +59,8 @@ public:
                         ADLogic::SectionOp(msgSection.sectionOp),
                         ADLogic::CombineOp(msgSection.combineOp));
                     for (pb_size_t i = 0; i < msgSection.section.actuators.actuator_count; i++) {
-                        newSection->add(actuatorLookupsIt->lockFunctor());
+                        bool invert = msgSection.section.actuators.actuator[i].invert;
+                        newSection->add(actuatorLookupsIt->lockFunctor(), invert);
                         actuatorLookupsIt++;
                     }
                     logic.addSection(std::move(newSection));
@@ -94,9 +95,10 @@ public:
 
             if (auto ptr = section->asActuatorSection()) {
                 msgSection.which_section = blox_ActuatorLogic_Section_actuators_tag;
-                for (uint8_t i = 0; i < ptr->lookupsList().size(); i++) {
-                    auto& msgInput = msgSection.section.actuators.actuator[msgSection.section.actuators.actuator_count];
-                    msgInput = actuatorLookupsIt->getId();
+                for (const auto& act : ptr->actuatorList()) {
+                    auto& msgAct = msgSection.section.actuators.actuator[msgSection.section.actuators.actuator_count];
+                    msgAct.id = actuatorLookupsIt->getId();
+                    msgAct.invert = act.invert;
                     ++actuatorLookupsIt;
                     msgSection.section.actuators.actuator_count = msgSection.section.actuators.actuator_count + 1;
                 }

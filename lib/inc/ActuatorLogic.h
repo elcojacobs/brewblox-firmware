@@ -81,7 +81,11 @@ private:
 class ActuatorSection : public Section {
 protected:
     using lookup_t = std::function<std::shared_ptr<const ActuatorDigitalConstrained>()>;
-    std::vector<lookup_t> lookups;
+    struct ActuatorRef {
+        lookup_t lookup;
+        bool invert;
+    };
+    std::vector<ActuatorRef> actuators;
 
 public:
     ActuatorSection(SectionOp o, CombineOp c)
@@ -91,26 +95,26 @@ public:
 
     virtual ~ActuatorSection() = default;
 
-    void add(lookup_t&& act)
+    void add(lookup_t&& act, bool invert)
     {
-        if (lookups.size() < 8) {
-            lookups.push_back(std::move(act));
+        if (actuators.size() < 8) {
+            actuators.push_back({std::move(act), invert});
         }
     }
 
     void
     clear()
     {
-        lookups.clear();
+        actuators.clear();
     }
 
-    const auto& lookupsList() const
+    const auto& actuatorList() const
     {
-        return lookups;
+        return actuators;
     }
     virtual bool eval() const override final
     {
-        if (lookups.size() == 0) {
+        if (actuators.size() == 0) {
             return false;
         }
         switch (sectionOp()) {
@@ -136,9 +140,10 @@ public:
 private:
     bool evalOr() const
     {
-        for (auto& lookup : lookups) {
-            if (auto actPtr = lookup()) {
-                if (actPtr->state() == State::Active) {
+        for (auto& act : actuators) {
+            if (auto actPtr = act.lookup()) {
+                bool isActive = actPtr->state() == State::Active;
+                if (isActive ^ act.invert) {
                     return true;
                 }
             }
@@ -148,9 +153,10 @@ private:
 
     bool evalAnd() const
     {
-        for (auto& lookup : lookups) {
-            if (auto actPtr = lookup()) {
-                if (actPtr->state() != State::Active) {
+        for (auto& act : actuators) {
+            if (auto actPtr = act.lookup()) {
+                bool isActive = actPtr->state() == State::Active;
+                if (!(isActive ^ act.invert)) {
                     return false;
                 }
             } else {
@@ -163,9 +169,10 @@ private:
     bool evalXor() const
     {
         uint16_t count = 0;
-        for (auto& lookup : lookups) {
-            if (auto actPtr = lookup()) {
-                if (actPtr->state() == State::Active) {
+        for (auto& act : actuators) {
+            if (auto actPtr = act.lookup()) {
+                bool isActive = actPtr->state() == State::Active;
+                if (isActive ^ act.invert) {
                     ++count;
                 }
             }

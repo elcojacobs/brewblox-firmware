@@ -56,9 +56,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     WHEN("Three mock actuators are combined using OR")
     {
         auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR);
-        newSection->add([mock1]() { return mock1; });
-        newSection->add([mock2]() { return mock2; });
-        newSection->add([mock3]() { return mock3; });
+        newSection->add([mock1]() { return mock1; }, false);
+        newSection->add([mock2]() { return mock2; }, false);
+        newSection->add([mock3]() { return mock3; }, false);
 
         logic->addSection(std::move(newSection));
 
@@ -99,9 +99,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     WHEN("Three mock actuators are combined using AND")
     {
         auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR);
-        newSection->add([mock1]() { return mock1; });
-        newSection->add([mock2]() { return mock2; });
-        newSection->add([mock3]() { return mock3; });
+        newSection->add([mock1]() { return mock1; }, false);
+        newSection->add([mock2]() { return mock2; }, false);
+        newSection->add([mock3]() { return mock3; }, false);
 
         logic->addSection(std::move(newSection));
 
@@ -142,9 +142,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     WHEN("Three mock actuators are combined using XOR")
     {
         auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::XOR, ADLogic::CombineOp::OR);
-        newSection->add([mock1]() { return mock1; });
-        newSection->add([mock2]() { return mock2; });
-        newSection->add([mock3]() { return mock3; });
+        newSection->add([mock1]() { return mock1; }, false);
+        newSection->add([mock2]() { return mock2; }, false);
+        newSection->add([mock3]() { return mock3; }, false);
 
         logic->addSection(std::move(newSection));
 
@@ -184,9 +184,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     WHEN("Three mock actuators are combined using OR and combine op OR_NOT")
     {
         auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR_NOT);
-        newSection->add([mock1]() { return mock1; });
-        newSection->add([mock2]() { return mock2; });
-        newSection->add([mock3]() { return mock3; });
+        newSection->add([mock1]() { return mock1; }, false);
+        newSection->add([mock2]() { return mock2; }, false);
+        newSection->add([mock3]() { return mock3; }, false);
 
         logic->addSection(std::move(newSection));
 
@@ -227,9 +227,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     WHEN("Three mock actuators are combined using AND and combine op OR_NOT")
     {
         auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR_NOT);
-        newSection->add([mock1]() { return mock1; });
-        newSection->add([mock2]() { return mock2; });
-        newSection->add([mock3]() { return mock3; });
+        newSection->add([mock1]() { return mock1; }, false);
+        newSection->add([mock2]() { return mock2; }, false);
+        newSection->add([mock3]() { return mock3; }, false);
 
         logic->addSection(std::move(newSection));
 
@@ -369,15 +369,15 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     {
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR);
-            newSection->add([mock1]() { return mock1; });
-            newSection->add([mock2]() { return mock2; });
+            newSection->add([mock1]() { return mock1; }, false);
+            newSection->add([mock2]() { return mock2; }, false);
             logic->addSection(std::move(newSection));
         }
 
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR);
-            newSection->add([mock3]() { return mock3; });
-            newSection->add([mock4]() { return mock4; });
+            newSection->add([mock3]() { return mock3; }, false);
+            newSection->add([mock4]() { return mock4; }, false);
             logic->addSection(std::move(newSection));
         }
 
@@ -420,19 +420,74 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
         }
     }
 
+    WHEN("Two AND sections are combined with OR, with some actuators inverted")
+    {
+        {
+            auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR);
+            newSection->add([mock1]() { return mock1; }, true);
+            newSection->add([mock2]() { return mock2; }, false);
+            logic->addSection(std::move(newSection));
+        }
+
+        {
+            auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR);
+            newSection->add([mock3]() { return mock3; }, true);
+            newSection->add([mock4]() { return mock4; }, false);
+            logic->addSection(std::move(newSection));
+        }
+
+        THEN("The target is active when one of the AND sections is active")
+        {
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Inactive);
+
+            mock1->desiredState(State::Active);
+            mock2->desiredState(State::Inactive);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Active);
+            mock4->desiredState(State::Inactive);
+            logic->update();
+            CHECK(target->state() == State::Active);
+
+            mock1->desiredState(State::Inactive);
+            mock2->desiredState(State::Active);
+            mock3->desiredState(State::Inactive);
+            mock4->desiredState(State::Active);
+            logic->update();
+            CHECK(target->state() == State::Active);
+        }
+    }
+
     WHEN("Two OR sections are combined with AND")
     {
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR);
-            newSection->add([mock1]() { return mock1; });
-            newSection->add([mock2]() { return mock2; });
+            newSection->add([mock1]() { return mock1; }, false);
+            newSection->add([mock2]() { return mock2; }, false);
             logic->addSection(std::move(newSection));
         }
 
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::AND);
-            newSection->add([mock3]() { return mock3; });
-            newSection->add([mock4]() { return mock4; });
+            newSection->add([mock3]() { return mock3; }, false);
+            newSection->add([mock4]() { return mock4; }, false);
             logic->addSection(std::move(newSection));
         }
 
@@ -479,15 +534,15 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     {
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR);
-            newSection->add([mock1]() { return mock1; });
-            newSection->add([mock2]() { return mock2; });
+            newSection->add([mock1]() { return mock1; }, false);
+            newSection->add([mock2]() { return mock2; }, false);
             logic->addSection(std::move(newSection));
         }
 
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR_NOT);
-            newSection->add([mock3]() { return mock3; });
-            newSection->add([mock4]() { return mock4; });
+            newSection->add([mock3]() { return mock3; }, false);
+            newSection->add([mock4]() { return mock4; }, false);
             logic->addSection(std::move(newSection));
         }
 
@@ -534,15 +589,15 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
     {
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR);
-            newSection->add([mock1]() { return mock1; });
-            newSection->add([mock2]() { return mock2; });
+            newSection->add([mock1]() { return mock1; }, false);
+            newSection->add([mock2]() { return mock2; }, false);
             logic->addSection(std::move(newSection));
         }
 
         {
             auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::AND_NOT);
-            newSection->add([mock3]() { return mock3; });
-            newSection->add([mock4]() { return mock4; });
+            newSection->add([mock3]() { return mock3; }, false);
+            newSection->add([mock4]() { return mock4; }, false);
             logic->addSection(std::move(newSection));
         }
 

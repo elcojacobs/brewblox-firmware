@@ -107,9 +107,15 @@ SCENARIO("Test")
             auto acts = newSection->mutable_actuators();
             newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
             newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
-            acts->add_actuator(101);
-            acts->add_actuator(102);
-            acts->add_actuator(103);
+            auto act = acts->add_actuator();
+            act->set_id(101);
+            act->set_invert(false);
+            act = acts->add_actuator();
+            act->set_id(102);
+            act->set_invert(false);
+            act = acts->add_actuator();
+            act->set_id(103);
+            act->set_invert(false);
         }
 
         testBox.put(message);
@@ -119,7 +125,7 @@ SCENARIO("Test")
         auto decoded = blox::ActuatorLogic();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator: 101 actuator: 102 actuator: 103 } }");
+        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator { id: 101 } actuator { id: 102 } actuator { id: 103 } } }");
 
         THEN("The target is active when one or more of the mocks is active")
         {
@@ -137,7 +143,7 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator: 101 actuator: 102 actuator: 103 } }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator { id: 101 } actuator { id: 102 } actuator { id: 103 } } }");
             }
             {
                 setAct(actId1, blox::DigitalState::Active);
@@ -153,7 +159,81 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator: 101 actuator: 102 actuator: 103 } }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator { id: 101 } actuator { id: 102 } actuator { id: 103 } } }");
+            }
+        }
+    }
+
+    WHEN("Three mock actuators are combined using OR, with the second actuator inverted")
+    {
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(logicId);
+        testBox.put(uint8_t(0xFF));
+        testBox.put(ActuatorLogicBlock::staticTypeId());
+
+        auto message = blox::ActuatorLogic();
+        message.set_targetid(actId5);
+        message.set_enabled(true);
+
+        {
+            auto newSection = message.add_section();
+            auto acts = newSection->mutable_actuators();
+            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
+            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
+            auto act = acts->add_actuator();
+            act->set_id(101);
+            act->set_invert(false);
+            act = acts->add_actuator();
+            act->set_id(102);
+            act->set_invert(true);
+            act = acts->add_actuator();
+            act->set_id(103);
+            act->set_invert(false);
+        }
+
+        testBox.put(message);
+
+        testBox.put(message);
+
+        auto decoded = blox::ActuatorLogic();
+        testBox.processInputToProto(decoded);
+        CHECK(testBox.lastReplyHasStatusOk());
+        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator { id: 101 } actuator { id: 102 invert: true } actuator { id: 103 } } }");
+
+        THEN("The target is active when one or more of the mocks is active")
+        {
+            {
+                setAct(actId1, blox::DigitalState::Inactive);
+                setAct(actId2, blox::DigitalState::Active);
+                setAct(actId3, blox::DigitalState::Inactive);
+
+                testBox.update(1000);
+
+                testBox.put(uint16_t(0));
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(logicId);
+
+                auto decoded = blox::ActuatorLogic();
+                testBox.processInputToProto(decoded);
+                CHECK(testBox.lastReplyHasStatusOk());
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator { id: 101 } actuator { id: 102 invert: true } actuator { id: 103 } } }");
+            }
+            {
+                setAct(actId1, blox::DigitalState::Active);
+                setAct(actId2, blox::DigitalState::Active);
+                setAct(actId3, blox::DigitalState::Inactive);
+
+                testBox.update(2000);
+
+                testBox.put(uint16_t(0));
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(logicId);
+
+                auto decoded = blox::ActuatorLogic();
+                testBox.processInputToProto(decoded);
+                CHECK(testBox.lastReplyHasStatusOk());
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator { id: 101 } actuator { id: 102 invert: true } actuator { id: 103 } } }");
             }
         }
     }
@@ -175,16 +255,24 @@ SCENARIO("Test")
             auto acts = newSection->mutable_actuators();
             newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
             newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
-            acts->add_actuator(101);
-            acts->add_actuator(102);
+            auto act = acts->add_actuator();
+            act->set_id(101);
+            act->set_invert(false);
+            act = acts->add_actuator();
+            act->set_id(102);
+            act->set_invert(false);
         }
         {
             auto newSection = message.add_section();
             auto acts = newSection->mutable_actuators();
             newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
             newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
-            acts->add_actuator(103);
-            acts->add_actuator(104);
+            auto act = acts->add_actuator();
+            act->set_id(103);
+            act->set_invert(false);
+            act = acts->add_actuator();
+            act->set_id(104);
+            act->set_invert(false);
         }
 
         testBox.put(message);
@@ -192,7 +280,7 @@ SCENARIO("Test")
         auto decoded = blox::ActuatorLogic();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator: 101 actuator: 102 } } section { actuators { actuator: 103 actuator: 104 } }");
+        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator { id: 101 } actuator { id: 102 } } } section { actuators { actuator { id: 103 } actuator { id: 104 } } }");
 
         THEN("The target is active when at least 1 mock is active on each section")
         {
@@ -212,7 +300,7 @@ SCENARIO("Test")
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
 
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator: 101 actuator: 102 } } section { actuators { actuator: 103 actuator: 104 } }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator { id: 101 } actuator { id: 102 } } } section { actuators { actuator { id: 103 } actuator { id: 104 } } }");
             }
             {
                 setAct(actId1, blox::DigitalState::Inactive);
@@ -229,7 +317,7 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator: 101 actuator: 102 } } section { actuators { actuator: 103 actuator: 104 } }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator { id: 101 } actuator { id: 102 } } } section { actuators { actuator { id: 103 } actuator { id: 104 } } }");
             }
         }
     }
