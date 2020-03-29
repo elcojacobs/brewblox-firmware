@@ -21,6 +21,7 @@
 
 #include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
+#include "ProcessValue.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -33,16 +34,53 @@ enum class LogicOp : uint8_t {
     NOR,
     NAND,
     XOR,
+    LE,
+    GE,
+};
+
+enum class CombineOp : uint8_t {
+    OR,
+    AND,
+    OR_NOT,
+    AND_NOT
 };
 
 class Section {
+public:
+    Section(LogicOp o, CombineOp c)
+        : m_op(o)
+        , m_combineOp(c)
+    {
+    }
+    virtual ~Section() = default;
+
+    LogicOp op() const
+    {
+        return m_op;
+    }
+    CombineOp combineOp() const
+    {
+        return m_combineOp;
+    }
+    virtual bool eval() const = 0;
+
+private:
+    LogicOp m_op;
+    CombineOp m_combineOp;
+};
+
+class ActuatorSection : public Section {
 protected:
     using lookup_t = std::function<std::shared_ptr<const ActuatorDigitalConstrained>()>;
     std::vector<lookup_t> lookups;
 
 public:
-    Section() = default;
-    virtual ~Section() = default;
+    ActuatorSection(LogicOp o, CombineOp c)
+        : Section(o, c)
+    {
+    }
+
+    virtual ~ActuatorSection() = default;
 
     void add(lookup_t&& act)
     {
@@ -61,103 +99,58 @@ public:
     {
         return lookups;
     }
+    virtual bool eval() const override final
+    {
+        if (lookups.size() == 0) {
+            return false;
+        }
+        switch (op()) {
+        case LogicOp::OR:
+            return evalOr();
+        case LogicOp::AND:
+            return evalAnd();
+        case LogicOp::NOR:
+            return !evalOr();
+        case LogicOp::NAND:
+            return !evalAnd();
+        case LogicOp::XOR:
+            return evalXor();
+        case LogicOp::GE:
+            return false;
+        case LogicOp::LE:
+            return false;
+        }
+        return false;
+    }
 
-    virtual LogicOp op() const = 0;
-    virtual State eval() const = 0;
-};
-
-class OR : public Section {
-public:
-    OR() = default;
-    virtual ~OR() = default;
-
-    virtual State eval() const override
+private:
+    bool evalOr() const
     {
         for (auto& lookup : lookups) {
             if (auto actPtr = lookup()) {
                 if (actPtr->state() == State::Active) {
-                    return State::Active;
+                    return true;
                 }
             }
         }
-
-        return State::Inactive;
+        return false;
     }
 
-    virtual LogicOp op() const override
+    bool evalAnd() const
     {
-        return LogicOp::OR;
-    }
-};
-
-class AND : public Section {
-public:
-    AND() = default;
-    virtual ~AND() = default;
-
-    virtual State eval() const override
-    {
-        if (lookups.size() == 0) {
-            return State::Inactive;
-        }
-
         for (auto& lookup : lookups) {
             if (auto actPtr = lookup()) {
                 if (actPtr->state() != State::Active) {
-                    return State::Inactive;
+                    return false;
                 }
             } else {
-                return State::Inactive;
+                return false;
             }
         }
-
-        return State::Active;
+        return true;
     }
 
-    virtual LogicOp op() const override
-    {
-        return LogicOp::AND;
-    }
-};
-
-class NOR : public OR {
-public:
-    NOR() = default;
-    virtual ~NOR() = default;
-
-    virtual State eval() const override final
-    {
-        return OR::eval() ? State::Inactive : State::Active;
-    }
-
-    virtual LogicOp op() const override final
-    {
-        return LogicOp::NOR;
-    }
-};
-
-class NAND : public AND {
-public:
-    NAND() = default;
-    virtual ~NAND() = default;
-
-    virtual State eval() const override final
-    {
-        return AND::eval() ? State::Inactive : State::Active;
-    }
-
-    virtual LogicOp op() const override final
-    {
-        return LogicOp::NAND;
-    }
-};
-
-class XOR : public Section {
-public:
-    XOR() = default;
-    virtual ~XOR() = default;
-
-    virtual State eval() const override final
+    bool evalXor() const
     {
         uint16_t count = 0;
         for (auto& lookup : lookups) {
@@ -167,24 +160,58 @@ public:
                 }
             }
         }
-        return count == 1 ? State::Active : State::Inactive;
+        return count == 1;
     }
+};
 
-    virtual LogicOp op() const override final
+class CompareSection : public Section {
+protected:
+    using lookup_t = std::function<std::shared_ptr<const ProcessValue<fp12_t>>()>;
+    lookup_t target;
+    bool useSetting; // when true use setting instead of value
+    fp12_t threshold;
+
+public:
+    CompareSection(LogicOp o, CombineOp c, lookup_t&& l, bool u, fp12_t t)
+        : Section(o, c)
+        , target(l)
+        , useSetting(u)
+        , threshold(t)
     {
-        return LogicOp::XOR;
+    }
+    virtual ~CompareSection() = default;
+
+    virtual bool eval() const override final
+    {
+        if (auto targetPtr = target()) {
+            fp12_t val = 0;
+            if (useSetting) {
+                if (!targetPtr->settingValid()) {
+                    return false;
+                }
+                val = targetPtr->setting();
+            } else {
+                if (!targetPtr->valueValid()) {
+                    return false;
+                }
+                val = targetPtr->value();
+            }
+            if (op() == LogicOp::GE) {
+                return (val >= threshold);
+            }
+            if (op() == LogicOp::LE) {
+                return (val <= threshold);
+            }
+        }
+        return false;
     }
 };
 
 class ActuatorLogic {
 private:
-    struct LogicSection {
-        LogicOp combineOp;
-        std::unique_ptr<Section> section;
-    };
-    std::vector<LogicSection> m_sections;
+    std::vector<std::unique_ptr<Section>> m_sections;
     std::function<std::shared_ptr<ActuatorDigitalConstrained>()> m_target;
-    State m_result = State::Inactive;
+    bool m_result = false;
 
 public:
     ActuatorLogic(std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target_)
@@ -198,81 +225,64 @@ public:
 
     virtual ~ActuatorLogic() = default;
 
-    void addSection(LogicOp op, std::unique_ptr<Section>&& newSection)
+    void addSection(std::unique_ptr<Section>&& newSection)
     {
-        if (m_sections.size() == 0) {
-            op = LogicOp::OR;
-        }
         if (m_sections.size() < 4) {
-            m_sections.push_back({op, std::move(newSection)});
+            m_sections.push_back(std::move(newSection));
         }
     }
 
-    static std::unique_ptr<Section>
-    makeSection(LogicOp op)
-    {
-        switch (op) {
-        case LogicOp::OR:
-            return std::make_unique<ADLogic::OR>();
-        case LogicOp::AND:
-            return std::make_unique<ADLogic::AND>();
-        case LogicOp::NOR:
-            return std::make_unique<ADLogic::NOR>();
-        case LogicOp::NAND:
-            return std::make_unique<ADLogic::NAND>();
-        case LogicOp::XOR:
-            return std::make_unique<ADLogic::XOR>();
-        }
-        return std::unique_ptr<Section>(); // nullptr if invalid op
-    }
-
-    void clear()
+    void
+    clear()
     {
         m_sections.clear();
     }
 
-    State evaluate() const
+    bool
+    evaluate() const
     {
-        auto result = State::Inactive;
-        for (auto& s : m_sections) {
-            auto sectionResult = s.section->eval();
-            switch (s.combineOp) {
-            case LogicOp::OR:
-                result = ((result == State::Active) || (sectionResult == State::Active)) ? State::Active : State::Inactive;
+        bool result = false;
+        for (auto s = m_sections.cbegin(); s < m_sections.cend(); s++) {
+            bool sectionResult = s->get()->eval();
+            // always use OR for first element
+            auto cop = (s == m_sections.cbegin()) ? CombineOp::OR : s->get()->combineOp();
+            switch (cop) {
+            case CombineOp::OR:
+                result = result || sectionResult;
                 break;
-            case LogicOp::AND:
-                result = ((result == State::Active) && (sectionResult == State::Active)) ? State::Active : State::Inactive;
+            case CombineOp::AND:
+                result = result && sectionResult;
                 break;
-            case LogicOp::NOR:
-                result = ((result == State::Active) || (sectionResult == State::Active)) ? State::Inactive : State::Active;
+            case CombineOp::OR_NOT:
+                result = result || !sectionResult;
                 break;
-            case LogicOp::NAND:
-                result = ((result == State::Active) && (sectionResult == State::Active)) ? State::Inactive : State::Active;
-                break;
-            case LogicOp::XOR:
-                result = ((result == State::Active) ^ (sectionResult == State::Active)) ? State::Active : State::Inactive;
+            case CombineOp::AND_NOT:
+                result = result && !sectionResult;
                 break;
             default:
-                result = State::Inactive;
+                result = false;
             }
         }
         return result;
     }
 
-    State result() const
+    bool
+    result() const
     {
         return m_result;
     }
 
-    void update()
+    void
+    update()
     {
         m_result = evaluate();
         if (auto actPtr = m_target()) {
-            actPtr->desiredState(m_result);
+            actPtr->desiredState(m_result ? State::Active : State::Inactive);
         }
     }
 
-    const auto& sectionsList() const
+    const auto&
+    sectionsList() const
     {
         return m_sections;
     }
