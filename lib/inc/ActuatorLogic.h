@@ -31,8 +31,6 @@ using State = ActuatorDigital::State;
 enum class SectionOp : uint8_t {
     OR,
     AND,
-    NOR,
-    NAND,
     XOR,
     LE,
     GE,
@@ -120,10 +118,6 @@ public:
             return evalOr();
         case SectionOp::AND:
             return evalAnd();
-        case SectionOp::NOR:
-            return !evalOr();
-        case SectionOp::NAND:
-            return !evalAnd();
         case SectionOp::XOR:
             return evalXor();
         case SectionOp::GE:
@@ -276,7 +270,7 @@ public:
         for (auto s = m_sections.cbegin(); s < m_sections.cend(); s++) {
             bool sectionResult = s->get()->eval();
             // always use OR for first element
-            auto cop = (s == m_sections.cbegin()) ? CombineOp::OR : s->get()->combineOp();
+            auto cop = s->get()->combineOp();
             switch (cop) {
             case CombineOp::OR:
                 result = result || sectionResult;

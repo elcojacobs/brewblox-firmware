@@ -181,9 +181,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
             CHECK(target->state() == State::Inactive);
         }
     }
-    WHEN("Three mock actuators are combined using NOR")
+    WHEN("Three mock actuators are combined using OR and combine op OR_NOT")
     {
-        auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::NOR, ADLogic::CombineOp::OR);
+        auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::OR, ADLogic::CombineOp::OR_NOT);
         newSection->add([mock1]() { return mock1; });
         newSection->add([mock2]() { return mock2; });
         newSection->add([mock3]() { return mock3; });
@@ -224,9 +224,9 @@ SCENARIO("ActuatorLogic test", "[ActuatorLogic]")
         }
     }
 
-    WHEN("Three mock actuators are combined using NAND")
+    WHEN("Three mock actuators are combined using AND and combine op OR_NOT")
     {
-        auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::NAND, ADLogic::CombineOp::OR);
+        auto newSection = std::make_unique<ADLogic::ActuatorSection>(ADLogic::SectionOp::AND, ADLogic::CombineOp::OR_NOT);
         newSection->add([mock1]() { return mock1; });
         newSection->add([mock2]() { return mock2; });
         newSection->add([mock3]() { return mock3; });
