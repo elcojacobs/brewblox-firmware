@@ -120,7 +120,7 @@ public:
         return std::bind(&cbox::CboxPtr<T>::lock, this);
     }
 
-    std::function<std::shared_ptr<T>()> lockFunctor() const
+    std::function<std::shared_ptr<const T>()> lockFunctor() const
     {
         return std::bind(&cbox::CboxPtr<T>::const_lock, this);
     }

@@ -37,7 +37,7 @@ enum class LogicOp : uint8_t {
 
 class Section {
 protected:
-    using lookup_t = std::function<std::shared_ptr<ActuatorDigitalConstrained>()>;
+    using lookup_t = std::function<std::shared_ptr<const ActuatorDigitalConstrained>()>;
     std::vector<lookup_t> lookups;
 
 public:
@@ -47,7 +47,7 @@ public:
     void add(lookup_t&& act)
     {
         if (lookups.size() < 8) {
-            lookups.push_back(act);
+            lookups.push_back(std::move(act));
         }
     }
 
@@ -74,10 +74,13 @@ public:
     virtual State eval() const override
     {
         for (auto& lookup : lookups) {
-            if (lookup()->state() == State::Active) {
-                return State::Active;
+            if (auto actPtr = lookup()) {
+                if (actPtr->state() == State::Active) {
+                    return State::Active;
+                }
             }
         }
+
         return State::Inactive;
     }
 
@@ -97,11 +100,17 @@ public:
         if (lookups.size() == 0) {
             return State::Inactive;
         }
+
         for (auto& lookup : lookups) {
-            if (lookup()->state() != State::Active) {
+            if (auto actPtr = lookup()) {
+                if (actPtr->state() != State::Active) {
+                    return State::Inactive;
+                }
+            } else {
                 return State::Inactive;
             }
         }
+
         return State::Active;
     }
 
@@ -152,8 +161,10 @@ public:
     {
         uint16_t count = 0;
         for (auto& lookup : lookups) {
-            if (lookup()->state() == State::Active) {
-                ++count;
+            if (auto actPtr = lookup()) {
+                if (actPtr->state() == State::Active) {
+                    ++count;
+                }
             }
         }
         return count == 1 ? State::Active : State::Inactive;
@@ -177,7 +188,7 @@ private:
 
 public:
     ActuatorLogic(std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target_)
-        : m_target(target_)
+        : m_target(std::move(target_))
     {
     }
 
@@ -248,7 +259,7 @@ public:
         return result;
     }
 
-    State result()
+    State result() const
     {
         return m_result;
     }
