@@ -21,9 +21,13 @@
 
 #include "BrewBloxTestBox.h"
 #include "blox/ActuatorLogicBlock.h"
+#include "blox/SetpointSensorPairBlock.h"
+#include "blox/TempSensorMockBlock.h"
 #include "cbox/DataStreamIo.h"
 #include "proto/test/cpp/ActuatorLogic_test.pb.h"
 #include "proto/test/cpp/DigitalActuator_test.pb.h"
+#include "proto/test/cpp/SetpointSensorPair_test.pb.h"
+#include "proto/test/cpp/TempSensorMock_test.pb.h"
 #include <sstream>
 
 SCENARIO("Test")
@@ -39,6 +43,8 @@ SCENARIO("Test")
     auto actId4 = cbox::obj_id_t(104);
     auto actId5 = cbox::obj_id_t(105);
     auto logicId = cbox::obj_id_t(106);
+    auto sensorId = cbox::obj_id_t(107);
+    auto setpointId = cbox::obj_id_t(108);
 
     auto setAct = [&testBox](cbox::obj_id_t id, blox::DigitalState state, bool firstCreate = false) {
         // configure digital actuator by writing to the object
@@ -97,12 +103,13 @@ SCENARIO("Test")
         message.set_enabled(true);
 
         {
-            auto newSection = message.add_sections();
-            newSection->set_combineop(blox::ActuatorLogic_LogicOp_OR);
-            newSection->set_sectionop(blox::ActuatorLogic_LogicOp_OR);
-            newSection->add_inputs(101);
-            newSection->add_inputs(102);
-            newSection->add_inputs(103);
+            auto newSection = message.add_section();
+            auto acts = newSection->mutable_actuators();
+            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
+            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
+            acts->add_actuator(101);
+            acts->add_actuator(102);
+            acts->add_actuator(103);
         }
 
         testBox.put(message);
@@ -112,7 +119,7 @@ SCENARIO("Test")
         auto decoded = blox::ActuatorLogic();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "targetId: 105 sections { inputs: 101 inputs: 102 inputs: 103 } enabled: true");
+        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator: 101 actuator: 102 actuator: 103 } }");
 
         THEN("The target is active when one or more of the mocks is active")
         {
@@ -130,7 +137,7 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 sections { inputs: 101 inputs: 102 inputs: 103 } enabled: true");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator: 101 actuator: 102 actuator: 103 } }");
             }
             {
                 setAct(actId1, blox::DigitalState::Active);
@@ -146,12 +153,12 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 sections { inputs: 101 inputs: 102 inputs: 103 } enabled: true result: Active");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator: 101 actuator: 102 actuator: 103 } }");
             }
         }
     }
 
-    WHEN("Four mock actuators are combined using two OR sections combined with AND")
+    WHEN("Four mock actuators are combined using two OR section combined with AND")
     {
         testBox.put(uint16_t(0)); // msg id
         testBox.put(commands::WRITE_OBJECT);
@@ -164,18 +171,20 @@ SCENARIO("Test")
         message.set_enabled(true);
 
         {
-            auto newSection = message.add_sections();
-            newSection->set_combineop(blox::ActuatorLogic_LogicOp_OR);
-            newSection->set_sectionop(blox::ActuatorLogic_LogicOp_OR);
-            newSection->add_inputs(101);
-            newSection->add_inputs(102);
+            auto newSection = message.add_section();
+            auto acts = newSection->mutable_actuators();
+            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
+            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
+            acts->add_actuator(101);
+            acts->add_actuator(102);
         }
         {
-            auto newSection = message.add_sections();
-            newSection->set_combineop(blox::ActuatorLogic_LogicOp_AND);
-            newSection->set_sectionop(blox::ActuatorLogic_LogicOp_OR);
-            newSection->add_inputs(103);
-            newSection->add_inputs(104);
+            auto newSection = message.add_section();
+            auto acts = newSection->mutable_actuators();
+            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
+            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
+            acts->add_actuator(103);
+            acts->add_actuator(104);
         }
 
         testBox.put(message);
@@ -183,7 +192,7 @@ SCENARIO("Test")
         auto decoded = blox::ActuatorLogic();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "targetId: 105 sections { inputs: 101 inputs: 102 } sections { combineOp: AND inputs: 103 inputs: 104 } enabled: true");
+        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator: 101 actuator: 102 } } section { actuators { actuator: 103 actuator: 104 } }");
 
         THEN("The target is active when at least 1 mock is active on each section")
         {
@@ -202,7 +211,8 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 sections { inputs: 101 inputs: 102 } sections { combineOp: AND inputs: 103 inputs: 104 } enabled: true");
+
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator: 101 actuator: 102 } } section { actuators { actuator: 103 actuator: 104 } }");
             }
             {
                 setAct(actId1, blox::DigitalState::Inactive);
@@ -219,7 +229,145 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 sections { inputs: 101 inputs: 102 } sections { combineOp: AND inputs: 103 inputs: 104 } enabled: true result: Active");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator: 101 actuator: 102 } } section { actuators { actuator: 103 actuator: 104 } }");
+            }
+        }
+    }
+
+    WHEN("2 comparions for an out of range compare are added (LE || GE")
+    {
+        // create mock sensor
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::CREATE_OBJECT);
+        testBox.put(cbox::obj_id_t(sensorId));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(TempSensorMockBlock::staticTypeId());
+
+        auto newSensor = blox::TempSensorMock();
+        newSensor.set_setting(cnl::unwrap(temp_t(20.0)));
+        newSensor.set_connected(true);
+        testBox.put(newSensor);
+
+        testBox.processInput();
+        CHECK(testBox.lastReplyHasStatusOk());
+
+        // create pair
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::CREATE_OBJECT);
+        testBox.put(cbox::obj_id_t(setpointId));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(SetpointSensorPairBlock::staticTypeId());
+
+        blox::SetpointSensorPair newPair;
+        newPair.set_sensorid(sensorId);
+        newPair.set_settingenabled(true);
+        newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
+        newPair.set_filter(blox::SetpointSensorPair::FilterChoice::SetpointSensorPair_FilterChoice_FILT_NONE);
+        newPair.set_filterthreshold(cnl::unwrap(temp_t(0.5)));
+        testBox.put(newPair);
+
+        testBox.processInput();
+        CHECK(testBox.lastReplyHasStatusOk());
+
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(logicId);
+        testBox.put(uint8_t(0xFF));
+        testBox.put(ActuatorLogicBlock::staticTypeId());
+
+        auto message = blox::ActuatorLogic();
+        message.set_targetid(actId5);
+        message.set_enabled(true);
+
+        {
+            auto newSection = message.add_section();
+            auto comp = newSection->mutable_comparison();
+            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_GE);
+            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
+            comp->set_threshold(cnl::unwrap(temp_t{21.0}));
+            comp->set_usesetting(false);
+            comp->set_compared(setpointId);
+        }
+        {
+            auto newSection = message.add_section();
+            auto comp = newSection->mutable_comparison();
+            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_LE);
+            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
+            comp->set_threshold(cnl::unwrap(temp_t{19.0}));
+            comp->set_usesetting(false);
+            comp->set_compared(setpointId);
+        }
+
+        testBox.put(message);
+
+        auto decoded = blox::ActuatorLogic();
+        testBox.processInputToProto(decoded);
+        CHECK(testBox.lastReplyHasStatusOk());
+        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { sectionOp: GE comparison { compared: 108 threshold: 86016 } } section { sectionOp: LE comparison { compared: 108 threshold: 77824 } }");
+
+        auto sensorCboxPtr = brewbloxBox().makeCboxPtr<TempSensorMockBlock>(sensorId);
+        auto sensorPtr = sensorCboxPtr.lock();
+        REQUIRE(sensorPtr);
+
+        auto setpointCboxPtr = brewbloxBox().makeCboxPtr<SetpointSensorPairBlock>(setpointId);
+        auto setpointPtr = setpointCboxPtr.lock();
+        REQUIRE(setpointPtr);
+
+        THEN("The target is active when the sensor is out of the range")
+        {
+            ticks_millis_t now = 1000;
+            {
+                sensorPtr->get().setting(temp_t{20});
+                while (now < 10000) {
+                    // give filter time to update
+                    testBox.update(now);
+                    now += 1000;
+                }
+
+                testBox.put(uint16_t(0));
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(logicId);
+
+                auto decoded = blox::ActuatorLogic();
+                testBox.processInputToProto(decoded);
+                CHECK(testBox.lastReplyHasStatusOk());
+
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { sectionOp: GE comparison { compared: 108 threshold: 86016 } } section { sectionOp: LE comparison { compared: 108 threshold: 77824 } }");
+            }
+            {
+                sensorPtr->get().setting(temp_t{15});
+                while (now < 20000) {
+                    // give filter time to update
+                    testBox.update(now);
+                    now += 1000;
+                }
+
+                testBox.put(uint16_t(0));
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(logicId);
+
+                auto decoded = blox::ActuatorLogic();
+                testBox.processInputToProto(decoded);
+                CHECK(testBox.lastReplyHasStatusOk());
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { sectionOp: GE comparison { compared: 108 threshold: 86016 } } section { sectionOp: LE comparison { compared: 108 threshold: 77824 } }");
+            }
+
+            {
+                sensorPtr->get().setting(temp_t{25});
+                while (now < 30000) {
+                    // give filter time to update
+                    testBox.update(now);
+                    now += 1000;
+                }
+
+                testBox.put(uint16_t(0));
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(logicId);
+
+                auto decoded = blox::ActuatorLogic();
+                testBox.processInputToProto(decoded);
+                CHECK(testBox.lastReplyHasStatusOk());
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { sectionOp: GE comparison { compared: 108 threshold: 86016 } } section { sectionOp: LE comparison { compared: 108 threshold: 77824 } }");
             }
         }
     }

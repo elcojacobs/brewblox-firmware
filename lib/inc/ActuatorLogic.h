@@ -28,7 +28,7 @@
 
 namespace ADLogic {
 using State = ActuatorDigital::State;
-enum class LogicOp : uint8_t {
+enum class SectionOp : uint8_t {
     OR,
     AND,
     NOR,
@@ -45,27 +45,38 @@ enum class CombineOp : uint8_t {
     AND_NOT
 };
 
+class ActuatorSection;
+class CompareSection;
+
 class Section {
 public:
-    Section(LogicOp o, CombineOp c)
-        : m_op(o)
+    Section(SectionOp o, CombineOp c)
+        : m_sectionOp(o)
         , m_combineOp(c)
     {
     }
     virtual ~Section() = default;
 
-    LogicOp op() const
+    SectionOp sectionOp() const
     {
-        return m_op;
+        return m_sectionOp;
     }
     CombineOp combineOp() const
     {
         return m_combineOp;
     }
     virtual bool eval() const = 0;
+    virtual ActuatorSection* asActuatorSection()
+    {
+        return nullptr;
+    }
+    virtual CompareSection* asCompareSection()
+    {
+        return nullptr;
+    }
 
 private:
-    LogicOp m_op;
+    SectionOp m_sectionOp;
     CombineOp m_combineOp;
 };
 
@@ -75,7 +86,7 @@ protected:
     std::vector<lookup_t> lookups;
 
 public:
-    ActuatorSection(LogicOp o, CombineOp c)
+    ActuatorSection(SectionOp o, CombineOp c)
         : Section(o, c)
     {
     }
@@ -104,23 +115,28 @@ public:
         if (lookups.size() == 0) {
             return false;
         }
-        switch (op()) {
-        case LogicOp::OR:
+        switch (sectionOp()) {
+        case SectionOp::OR:
             return evalOr();
-        case LogicOp::AND:
+        case SectionOp::AND:
             return evalAnd();
-        case LogicOp::NOR:
+        case SectionOp::NOR:
             return !evalOr();
-        case LogicOp::NAND:
+        case SectionOp::NAND:
             return !evalAnd();
-        case LogicOp::XOR:
+        case SectionOp::XOR:
             return evalXor();
-        case LogicOp::GE:
+        case SectionOp::GE:
             return false;
-        case LogicOp::LE:
+        case SectionOp::LE:
             return false;
         }
         return false;
+    }
+
+    virtual ActuatorSection* asActuatorSection() override final
+    {
+        return this;
     }
 
 private:
@@ -167,43 +183,58 @@ private:
 class CompareSection : public Section {
 protected:
     using lookup_t = std::function<std::shared_ptr<const ProcessValue<fp12_t>>()>;
-    lookup_t target;
-    bool useSetting; // when true use setting instead of value
-    fp12_t threshold;
+    lookup_t m_source;
+    bool m_useSetting; // when true use setting instead of value
+    fp12_t m_threshold;
 
 public:
-    CompareSection(LogicOp o, CombineOp c, lookup_t&& l, bool u, fp12_t t)
+    CompareSection(SectionOp o, CombineOp c, lookup_t&& l, bool u, fp12_t t)
         : Section(o, c)
-        , target(l)
-        , useSetting(u)
-        , threshold(t)
+        , m_source(l)
+        , m_useSetting(u)
+        , m_threshold(t)
     {
     }
     virtual ~CompareSection() = default;
 
     virtual bool eval() const override final
     {
-        if (auto targetPtr = target()) {
+        if (auto sourcePtr = m_source()) {
             fp12_t val = 0;
-            if (useSetting) {
-                if (!targetPtr->settingValid()) {
+            if (m_useSetting) {
+                if (!sourcePtr->settingValid()) {
                     return false;
                 }
-                val = targetPtr->setting();
+                val = sourcePtr->setting();
             } else {
-                if (!targetPtr->valueValid()) {
+                if (!sourcePtr->valueValid()) {
                     return false;
                 }
-                val = targetPtr->value();
+                val = sourcePtr->value();
             }
-            if (op() == LogicOp::GE) {
-                return (val >= threshold);
+            if (sectionOp() == SectionOp::GE) {
+                return (val >= m_threshold);
             }
-            if (op() == LogicOp::LE) {
-                return (val <= threshold);
+            if (sectionOp() == SectionOp::LE) {
+                return (val <= m_threshold);
             }
         }
         return false;
+    }
+
+    bool useSetting() const
+    {
+        return m_useSetting;
+    }
+
+    fp12_t threshold() const
+    {
+        return m_threshold;
+    }
+
+    virtual CompareSection* asCompareSection() override final
+    {
+        return this;
     }
 };
 
