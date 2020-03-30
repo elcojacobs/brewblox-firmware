@@ -31,7 +31,7 @@
 #include "proto/test/cpp/TempSensorMock_test.pb.h"
 #include <sstream>
 
-SCENARIO("Test")
+SCENARIO("Test", "[maklogicblock]")
 {
     CHECK(true);
     BrewBloxTestBox testBox;
@@ -89,13 +89,13 @@ SCENARIO("Test")
         auto decoded = blox::ActuatorLogic();
         testBox.processInputToProto(decoded);
         REQUIRE(testBox.lastReplyHasStatusOk());
-        return decoded.ShortDebugString();
+        return decoded;
     };
 
     // create logic block with emty logic
     auto message = blox::ActuatorLogic();
     auto result = setLogic(message, true);
-    CHECK(result == "targetId: 105 enabled: true result: UNEXPECTED_END");
+    CHECK(result.ShortDebugString() == "targetId: 105 enabled: true result: EMPTY");
 
     WHEN("4 digital actuators are combined with various expressions")
     {
@@ -128,7 +128,7 @@ SCENARIO("Test")
         message.set_expression("a|b|c");
 
         auto result = setLogic(message);
-        CHECK(result == "targetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
+        CHECK(result.ShortDebugString() == "targetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
 
         THEN("The target is active when one or more of the mocks is active")
         {
@@ -164,6 +164,36 @@ SCENARIO("Test")
                 CHECK(testBox.lastReplyHasStatusOk());
                 CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
+
+            message.set_expression("a(|b&c)");
+            auto result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET);
+            CHECK(result.errorpos() == 2);
+
+            message.set_expression("a|(b&c))");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET);
+            CHECK(result.errorpos() == 8);
+
+            message.set_expression("a|(b&)");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_EMPTY);
+            CHECK(result.errorpos() == 6);
+
+            message.set_expression("a|(b&c)");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
+            CHECK(result.errorpos() == 0);
+
+            setAct(101, blox::DigitalState::Inactive);
+            setAct(102, blox::DigitalState::Active);
+            setAct(103, blox::DigitalState::Active);
+
+            testBox.update(2000);
+
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_TRUE);
+            CHECK(result.errorpos() == 0);
         }
     }
     /*

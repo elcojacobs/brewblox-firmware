@@ -142,6 +142,7 @@ private:
     std::vector<AnalogCompare> analogs;
     std::string expression;
     blox_ActuatorLogic_Result m_result = blox_ActuatorLogic_Result_FALSE;
+    uint8_t m_errorPos = 0;
 
 public:
     ActuatorLogicBlock(cbox::ObjectContainer& objects)
@@ -180,6 +181,7 @@ public:
         message.enabled = enabled;
         if (includeNotPersisted) {
             message.result = m_result;
+            message.errorPos = m_errorPos;
         }
 
         for (pb_size_t i = 0; i < digitals.size() && i < 16; i++) {
@@ -246,21 +248,21 @@ public:
         for (auto& a : analogs) {
             a.update();
         }
-
+        m_errorPos = 0;
         auto it = expression.cbegin();
-        auto result = eval(it);
+        auto result = eval(it, 0);
+        if (result > blox_ActuatorLogic_Result_TRUE) {
+            m_errorPos = it - expression.cbegin();
+        }
         return result;
     }
 
 private:
-    blox_ActuatorLogic_Result eval(std::string::const_iterator& it) const
+    blox_ActuatorLogic_Result eval(std::string::const_iterator& it, uint8_t level) const
     {
-        blox_ActuatorLogic_Result res = blox_ActuatorLogic_Result_UNEXPECTED_END;
+        blox_ActuatorLogic_Result res = blox_ActuatorLogic_Result_EMPTY;
         while (it < expression.cend()) {
             auto c = *it;
-            if (c == ')') {
-                return blox_ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET;
-            }
             ++it;
             if ('a' <= c && c <= 'z') {
                 auto compare = digitals.cbegin() + (c - 'a');
@@ -275,16 +277,25 @@ private:
                 }
                 res = compare->result();
             } else if (c == '|') {
+                auto rhs = eval(it, level);
+                if (rhs > blox_ActuatorLogic_Result_TRUE) {
+                    return rhs; // error
+                }
                 if (res == blox_ActuatorLogic_Result_TRUE) {
                     return res;
                 }
-                return eval(it);
+                return rhs;
             } else if (c == '&') {
-                if (res == blox_ActuatorLogic_Result_TRUE) {
-                    return eval(it);
+                auto rhs = eval(it, level);
+                if (rhs > blox_ActuatorLogic_Result_TRUE) {
+                    return rhs; // error
                 }
+                if (res == blox_ActuatorLogic_Result_TRUE) {
+                    return rhs;
+                }
+                return res;
             } else if (c == '^') {
-                auto rhs = eval(it);
+                auto rhs = eval(it, level);
                 if (rhs != blox_ActuatorLogic_Result_TRUE && rhs != blox_ActuatorLogic_Result_FALSE) {
                     return rhs; // error
                 }
@@ -293,23 +304,24 @@ private:
                 }
                 return blox_ActuatorLogic_Result_FALSE;
             } else if (c == '(') {
-                return bracket_open(it);
+                if (res == blox_ActuatorLogic_Result_EMPTY) {
+                    res = eval(it, level + 1);
+                } else {
+                    return blox_ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET;
+                }
+
+            } else if (c == ')') {
+                if (level == 0) {
+                    return blox_ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET;
+                }
+                return res;
             } else {
                 return blox_ActuatorLogic_Result_UNEXPECTED_CHARACTER;
             }
         }
-        return res;
-    }
-
-    blox_ActuatorLogic_Result bracket_open(std::string::const_iterator& it) const
-    {
-        auto res = eval(it);
-        if (it < expression.cend()) {
-            if (*it == ')') {
-                ++it;
-                return res;
-            }
+        if (level > 0) {
+            return blox_ActuatorLogic_Result_MISSING_CLOSING_BRACKET;
         }
-        return blox_ActuatorLogic_Result_MISSING_CLOSING_BRACKET;
+        return res;
     }
 };
