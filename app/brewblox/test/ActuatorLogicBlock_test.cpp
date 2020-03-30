@@ -21,6 +21,7 @@
 
 #include "BrewBloxTestBox.h"
 #include "blox/ActuatorLogicBlock.h"
+#include "blox/DigitalActuatorBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "cbox/DataStreamIo.h"
@@ -32,6 +33,7 @@
 
 SCENARIO("Test")
 {
+    CHECK(true);
     BrewBloxTestBox testBox;
     using commands = cbox::Box::CommandID;
 
@@ -72,67 +74,68 @@ SCENARIO("Test")
         setAct(i, blox::DigitalState::Inactive, true);
     }
 
-    // create logic block
-    testBox.put(uint16_t(0)); // msg id
-    testBox.put(commands::CREATE_OBJECT);
-    testBox.put(logicId);
-    testBox.put(uint8_t(0xFF));
-    testBox.put(ActuatorLogicBlock::staticTypeId());
-
-    auto message = blox::ActuatorLogic();
-    message.set_targetid(actId5);
-    message.set_enabled(true);
-
-    testBox.put(message);
-
-    auto decoded = blox::ActuatorLogic();
-    testBox.processInputToProto(decoded);
-    CHECK(testBox.lastReplyHasStatusOk());
-    CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true");
-
-    WHEN("Three mock actuators are combined using OR")
-    {
+    auto setLogic = [&testBox, &logicId, &actId5](blox::ActuatorLogic& message, bool firstCreate = false) {
         testBox.put(uint16_t(0)); // msg id
-        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(firstCreate ? commands::CREATE_OBJECT : commands::WRITE_OBJECT);
         testBox.put(logicId);
         testBox.put(uint8_t(0xFF));
         testBox.put(ActuatorLogicBlock::staticTypeId());
 
-        auto message = blox::ActuatorLogic();
         message.set_targetid(actId5);
         message.set_enabled(true);
-
-        {
-            auto newSection = message.add_section();
-            auto acts = newSection->mutable_actuators();
-            newSection->set_sectionop(blox::ActuatorLogic_SectionOp_OR);
-            newSection->set_combineop(blox::ActuatorLogic_CombineOp_C_OR);
-            auto act = acts->add_actuator();
-            act->set_id(101);
-            act->set_invert(false);
-            act = acts->add_actuator();
-            act->set_id(102);
-            act->set_invert(false);
-            act = acts->add_actuator();
-            act->set_id(103);
-            act->set_invert(false);
-        }
-
-        testBox.put(message);
 
         testBox.put(message);
 
         auto decoded = blox::ActuatorLogic();
         testBox.processInputToProto(decoded);
-        CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator { id: 101 } actuator { id: 102 } actuator { id: 103 } } }");
+        REQUIRE(testBox.lastReplyHasStatusOk());
+        return decoded.ShortDebugString();
+    };
+
+    // create logic block with emty logic
+    auto message = blox::ActuatorLogic();
+    auto result = setLogic(message, true);
+    CHECK(result == "targetId: 105 enabled: true result: UNEXPECTED_END");
+
+    WHEN("4 digital actuators are combined with various expressions")
+    {
+        auto message = blox::ActuatorLogic();
+        {
+            auto d = message.add_digital();
+            d->set_id(101);
+            d->set_rhs(blox::DigitalState::Active);
+            d->set_op(blox::ActuatorLogic_DigitalCompareOp_DESIRED_IS);
+        }
+        {
+            auto d = message.add_digital();
+            d->set_id(102);
+            d->set_rhs(blox::DigitalState::Active);
+            d->set_op(blox::ActuatorLogic_DigitalCompareOp_DESIRED_IS);
+        }
+        {
+            auto d = message.add_digital();
+            d->set_id(103);
+            d->set_rhs(blox::DigitalState::Active);
+            d->set_op(blox::ActuatorLogic_DigitalCompareOp_DESIRED_IS);
+        }
+        {
+            auto d = message.add_digital();
+            d->set_id(104);
+            d->set_rhs(blox::DigitalState::Active);
+            d->set_op(blox::ActuatorLogic_DigitalCompareOp_DESIRED_IS);
+        }
+
+        message.set_expression("a|b|c");
+
+        auto result = setLogic(message);
+        CHECK(result == "targetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
 
         THEN("The target is active when one or more of the mocks is active")
         {
             {
-                setAct(actId1, blox::DigitalState::Inactive);
-                setAct(actId2, blox::DigitalState::Inactive);
-                setAct(actId3, blox::DigitalState::Inactive);
+                setAct(101, blox::DigitalState::Inactive);
+                setAct(102, blox::DigitalState::Active);
+                setAct(103, blox::DigitalState::Inactive);
 
                 testBox.update(1000);
 
@@ -143,12 +146,12 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true section { actuators { actuator { id: 101 } actuator { id: 102 } actuator { id: 103 } } }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
             {
-                setAct(actId1, blox::DigitalState::Active);
-                setAct(actId2, blox::DigitalState::Inactive);
-                setAct(actId3, blox::DigitalState::Inactive);
+                setAct(101, blox::DigitalState::Inactive);
+                setAct(102, blox::DigitalState::Inactive);
+                setAct(103, blox::DigitalState::Active);
 
                 testBox.update(2000);
 
@@ -159,11 +162,11 @@ SCENARIO("Test")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: true section { actuators { actuator { id: 101 } actuator { id: 102 } actuator { id: 103 } } }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
         }
     }
-
+    /*
     WHEN("Three mock actuators are combined using OR, with the second actuator inverted")
     {
         testBox.put(uint16_t(0)); // msg id
@@ -459,4 +462,5 @@ SCENARIO("Test")
             }
         }
     }
+    */
 }
