@@ -39,14 +39,10 @@ SCENARIO("Test", "[maklogicblock]")
 
     testBox.reset();
 
-    auto actId1 = cbox::obj_id_t(101);
-    auto actId2 = cbox::obj_id_t(102);
-    auto actId3 = cbox::obj_id_t(103);
-    auto actId4 = cbox::obj_id_t(104);
-    auto actId5 = cbox::obj_id_t(105);
-    auto logicId = cbox::obj_id_t(106);
-    auto sensorId = cbox::obj_id_t(107);
-    auto setpointId = cbox::obj_id_t(108);
+    // acuators 101-105
+    // sensors 111-115
+    // setpoints 121-125
+    // logic 130
 
     auto setAct = [&testBox](cbox::obj_id_t id, blox::DigitalState state, bool firstCreate = false) {
         // configure digital actuator by writing to the object
@@ -66,22 +62,68 @@ SCENARIO("Test", "[maklogicblock]")
         testBox.put(message);
 
         testBox.processInput();
-        CHECK(testBox.lastReplyHasStatusOk());
+        REQUIRE(testBox.lastReplyHasStatusOk());
+    };
+
+    auto setSensor = [&testBox](cbox::obj_id_t id, temp_t setting, bool firstCreate = false) {
+        // create mock sensor or write to existing
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(firstCreate ? commands::CREATE_OBJECT : commands::WRITE_OBJECT);
+        testBox.put(id);
+        testBox.put(uint8_t(0xFF));
+        testBox.put(TempSensorMockBlock::staticTypeId());
+
+        auto newSensor = blox::TempSensorMock();
+        newSensor.set_setting(cnl::unwrap(setting));
+        newSensor.set_connected(true);
+        testBox.put(newSensor);
+
+        testBox.processInput();
+        REQUIRE(testBox.lastReplyHasStatusOk());
+    };
+
+    auto setSetpoint = [&testBox](cbox::obj_id_t id, temp_t setting, bool firstCreate = false) {
+        // create setpoint or write to existing
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(firstCreate ? commands::CREATE_OBJECT : commands::WRITE_OBJECT);
+        testBox.put(id);
+        testBox.put(uint8_t(0xFF));
+        testBox.put(SetpointSensorPairBlock::staticTypeId());
+
+        blox::SetpointSensorPair newPair;
+        newPair.set_sensorid(id - 10);
+        newPair.set_settingenabled(true);
+        newPair.set_setting(cnl::unwrap(setting));
+        newPair.set_filter(blox::SetpointSensorPair::FilterChoice::SetpointSensorPair_FilterChoice_FILT_NONE);
+        newPair.set_filterthreshold(cnl::unwrap(temp_t(0.5)));
+        testBox.put(newPair);
+        testBox.processInput();
+        REQUIRE(testBox.lastReplyHasStatusOk());
     };
 
     // create 5 digital actuators
-    for (cbox::obj_id_t i = actId1; i <= actId5; i++) {
+    for (cbox::obj_id_t i = 101; i <= 105; i++) {
         setAct(i, blox::DigitalState::Inactive, true);
     }
 
-    auto setLogic = [&testBox, &logicId, &actId5](blox::ActuatorLogic& message, bool firstCreate = false) {
+    // create 5 mock sensors
+    for (cbox::obj_id_t i = 111; i <= 115; i++) {
+        setSensor(i, temp_t{20.0}, true);
+    }
+
+    // create 5 setpoints
+    for (cbox::obj_id_t i = 121; i <= 125; i++) {
+        setSetpoint(i, temp_t{20.0}, true);
+    }
+
+    auto setLogic = [&testBox](blox::ActuatorLogic& message, bool firstCreate = false) {
         testBox.put(uint16_t(0)); // msg id
         testBox.put(firstCreate ? commands::CREATE_OBJECT : commands::WRITE_OBJECT);
-        testBox.put(logicId);
+        testBox.put(cbox::obj_id_t{130});
         testBox.put(uint8_t(0xFF));
         testBox.put(ActuatorLogicBlock::staticTypeId());
 
-        message.set_targetid(actId5);
+        message.set_targetid(105);
         message.set_enabled(true);
 
         testBox.put(message);
@@ -125,39 +167,40 @@ SCENARIO("Test", "[maklogicblock]")
             d->set_op(blox::ActuatorLogic_DigitalCompareOp_DESIRED_IS);
         }
 
-        message.set_expression("a|b|c");
-
-        auto result = setLogic(message);
-        CHECK(result.ShortDebugString() == "targetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
-
-        THEN("The target is active when one or more of the mocks is active")
+        THEN("The target is active when the expression is true")
         {
+            // or
+            message.set_expression("a|b|c");
+
+            auto result = setLogic(message);
+            CHECK(result.ShortDebugString() == "targetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
+
+            setAct(101, blox::DigitalState::Inactive);
+            setAct(102, blox::DigitalState::Active);
+            setAct(103, blox::DigitalState::Inactive);
+
+            testBox.update(1000);
+
             {
-                setAct(101, blox::DigitalState::Inactive);
-                setAct(102, blox::DigitalState::Active);
-                setAct(103, blox::DigitalState::Inactive);
-
-                testBox.update(1000);
-
                 testBox.put(uint16_t(0));
                 testBox.put(commands::READ_OBJECT);
-                testBox.put(logicId);
-
+                testBox.put(cbox::obj_id_t{130});
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
                 CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
-            {
-                setAct(101, blox::DigitalState::Inactive);
-                setAct(102, blox::DigitalState::Inactive);
-                setAct(103, blox::DigitalState::Active);
 
+            setAct(101, blox::DigitalState::Inactive);
+            setAct(102, blox::DigitalState::Inactive);
+            setAct(103, blox::DigitalState::Active);
+
+            {
                 testBox.update(2000);
 
                 testBox.put(uint16_t(0));
                 testBox.put(commands::READ_OBJECT);
-                testBox.put(logicId);
+                testBox.put(cbox::obj_id_t{130});
 
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
@@ -165,26 +208,13 @@ SCENARIO("Test", "[maklogicblock]")
                 CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
 
-            message.set_expression("a(|b&c)");
-            auto result = setLogic(message);
-            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET);
-            CHECK(result.errorpos() == 1);
-
-            message.set_expression("a|(b&c))");
-            result = setLogic(message);
-            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET);
-            CHECK(result.errorpos() == 7);
-
-            message.set_expression("a|(b&)");
-            result = setLogic(message);
-            CHECK(result.result() == blox::ActuatorLogic_Result_EMPTY);
-            CHECK(result.errorpos() == 5);
-
+            // brackets
             message.set_expression("a|(b&c)");
             result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
             CHECK(result.errorpos() == 0);
 
+            // invert
             message.set_expression("a|!(b&c)");
             result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_TRUE);
@@ -194,10 +224,100 @@ SCENARIO("Test", "[maklogicblock]")
             setAct(102, blox::DigitalState::Active);
             setAct(103, blox::DigitalState::Active);
 
-            testBox.update(2000);
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
+            CHECK(result.errorpos() == 0);
+
+            // xor
+            message.set_expression("a^b^c");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
+            CHECK(result.errorpos() == 0);
+
+            setAct(101, blox::DigitalState::Inactive);
+            setAct(102, blox::DigitalState::Active);
+            setAct(103, blox::DigitalState::Inactive);
 
             result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_TRUE);
+            CHECK(result.errorpos() == 0);
+
+            // nested brackets and all operators
+            message.set_expression("a^!((b|c)&(c|d))");
+            setAct(101, blox::DigitalState::Inactive);
+            setAct(102, blox::DigitalState::Active);
+            setAct(103, blox::DigitalState::Inactive);
+            setAct(104, blox::DigitalState::Active);
+
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
+            CHECK(result.errorpos() == 0);
+
+            setAct(101, blox::DigitalState::Inactive);
+            setAct(102, blox::DigitalState::Active);
+            setAct(103, blox::DigitalState::Inactive);
+            setAct(104, blox::DigitalState::Inactive);
+
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_TRUE);
+            CHECK(result.errorpos() == 0);
+
+            setAct(101, blox::DigitalState::Active);
+            setAct(102, blox::DigitalState::Active);
+            setAct(103, blox::DigitalState::Inactive);
+            setAct(104, blox::DigitalState::Inactive);
+
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
+            CHECK(result.errorpos() == 0);
+        }
+
+        THEN("The target is inactive when the expression has an error and the correct error code and pos is returned")
+        {
+            message.set_expression("e&c");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_INVALID_DIG_COMPARE_IDX);
+            CHECK(result.errorpos() == 0);
+
+            message.set_expression("E&c");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_INVALID_ANA_COMPARE_IDX);
+            CHECK(result.errorpos() == 0);
+
+            message.set_expression("a(|b&c)");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET);
+            CHECK(result.errorpos() == 1);
+
+            message.set_expression("a|(b&c");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_MISSING_CLOSING_BRACKET);
+            CHECK(result.errorpos() == 5);
+
+            message.set_expression("a|(b&c))");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET);
+            CHECK(result.errorpos() == 7);
+
+            message.set_expression("a|(b&.)");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_CHARACTER);
+            CHECK(result.errorpos() == 5);
+
+            message.set_expression("a|(b&)");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_EMPTY_SUBSTRING);
+            CHECK(result.errorpos() == 5);
+
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::DELETE_OBJECT);
+            testBox.put(cbox::obj_id_t(102));
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
+
+            message.set_expression("b");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_BLOCK_NOT_FOUND);
             CHECK(result.errorpos() == 0);
         }
     }

@@ -249,9 +249,13 @@ public:
             a.update();
         }
         m_errorPos = 0;
+        if (expression.empty()) {
+            return blox_ActuatorLogic_Result_EMPTY;
+        }
         auto it = expression.cbegin();
         auto result = eval(it, 0);
-        if (!expression.empty() && result > blox_ActuatorLogic_Result_TRUE) {
+
+        if (result > blox_ActuatorLogic_Result_TRUE) {
             m_errorPos = it - expression.cbegin() - 1;
         }
         return result;
@@ -260,8 +264,11 @@ public:
 private:
     blox_ActuatorLogic_Result eval(std::string::const_iterator& it, uint8_t level) const
     {
-        blox_ActuatorLogic_Result res = blox_ActuatorLogic_Result_EMPTY;
+        blox_ActuatorLogic_Result res = blox_ActuatorLogic_Result_EMPTY_SUBSTRING;
         while (it < expression.cend()) {
+            if (res > blox_ActuatorLogic_Result_EMPTY_SUBSTRING) {
+                return res;
+            }
             auto c = *it;
             ++it;
             if ('a' <= c && c <= 'z') {
@@ -281,7 +288,7 @@ private:
                 if (rhs > blox_ActuatorLogic_Result_TRUE) {
                     return rhs; // error
                 }
-                if (res == blox_ActuatorLogic_Result_TRUE) {
+                if (rhs == blox_ActuatorLogic_Result_TRUE) {
                     return blox_ActuatorLogic_Result_FALSE;
                 }
                 return blox_ActuatorLogic_Result_TRUE;
@@ -313,13 +320,14 @@ private:
                 }
                 return blox_ActuatorLogic_Result_FALSE;
             } else if (c == '(') {
-                if (res == blox_ActuatorLogic_Result_EMPTY) {
+                if (res == blox_ActuatorLogic_Result_EMPTY_SUBSTRING) {
                     res = eval(it, level + 1);
                 } else {
                     return blox_ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET;
                 }
             } else if (c == ')') {
                 if (level == 0) {
+                    // first check is to not overwrite earlier error
                     return blox_ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET;
                 }
                 return res;
