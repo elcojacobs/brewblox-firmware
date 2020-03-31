@@ -276,6 +276,15 @@ private:
                     return blox_ActuatorLogic_Result_INVALID_ANA_COMPARE_IDX;
                 }
                 res = compare->result();
+            } else if (c == '!') {
+                auto rhs = eval(it, level);
+                if (rhs > blox_ActuatorLogic_Result_TRUE) {
+                    return rhs; // error
+                }
+                if (res == blox_ActuatorLogic_Result_TRUE) {
+                    return blox_ActuatorLogic_Result_FALSE;
+                }
+                return blox_ActuatorLogic_Result_TRUE;
             } else if (c == '|') {
                 auto rhs = eval(it, level);
                 if (rhs > blox_ActuatorLogic_Result_TRUE) {
@@ -309,7 +318,6 @@ private:
                 } else {
                     return blox_ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET;
                 }
-
             } else if (c == ')') {
                 if (level == 0) {
                     return blox_ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET;

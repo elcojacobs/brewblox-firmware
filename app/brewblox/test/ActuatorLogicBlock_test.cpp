@@ -185,6 +185,11 @@ SCENARIO("Test", "[maklogicblock]")
             CHECK(result.result() == blox::ActuatorLogic_Result_FALSE);
             CHECK(result.errorpos() == 0);
 
+            message.set_expression("a|!(b&c)");
+            result = setLogic(message);
+            CHECK(result.result() == blox::ActuatorLogic_Result_TRUE);
+            CHECK(result.errorpos() == 0);
+
             setAct(101, blox::DigitalState::Inactive);
             setAct(102, blox::DigitalState::Active);
             setAct(103, blox::DigitalState::Active);
