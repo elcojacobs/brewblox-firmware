@@ -26,7 +26,7 @@ public:
             case blox_ActuatorLogic_DigitalCompareOp_VALUE_IS:
                 return blox_ActuatorLogic_Result(actPtr->state() == m_rhs);
             case blox_ActuatorLogic_DigitalCompareOp_VALUE_ISNOT:
-                return blox_ActuatorLogic_Result(actPtr->desiredState() != m_rhs);
+                return blox_ActuatorLogic_Result(actPtr->state() != m_rhs);
             case blox_ActuatorLogic_DigitalCompareOp_DESIRED_IS:
                 return blox_ActuatorLogic_Result(actPtr->desiredState() == m_rhs);
             case blox_ActuatorLogic_DigitalCompareOp_DESIRED_ISNOT:
