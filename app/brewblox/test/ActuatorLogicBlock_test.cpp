@@ -168,17 +168,17 @@ SCENARIO("Test", "[maklogicblock]")
             message.set_expression("a(|b&c)");
             auto result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_OPENING_BRACKET);
-            CHECK(result.errorpos() == 2);
+            CHECK(result.errorpos() == 1);
 
             message.set_expression("a|(b&c))");
             result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_UNEXPECTED_CLOSING_BRACKET);
-            CHECK(result.errorpos() == 8);
+            CHECK(result.errorpos() == 7);
 
             message.set_expression("a|(b&)");
             result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_EMPTY);
-            CHECK(result.errorpos() == 6);
+            CHECK(result.errorpos() == 5);
 
             message.set_expression("a|(b&c)");
             result = setLogic(message);

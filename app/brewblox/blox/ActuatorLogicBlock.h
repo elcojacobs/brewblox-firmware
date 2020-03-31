@@ -251,8 +251,8 @@ public:
         m_errorPos = 0;
         auto it = expression.cbegin();
         auto result = eval(it, 0);
-        if (result > blox_ActuatorLogic_Result_TRUE) {
-            m_errorPos = it - expression.cbegin();
+        if (!expression.empty() && result > blox_ActuatorLogic_Result_TRUE) {
+            m_errorPos = it - expression.cbegin() - 1;
         }
         return result;
     }
