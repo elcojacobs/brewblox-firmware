@@ -22,10 +22,12 @@
 #include "BrewBloxTestBox.h"
 #include "blox/DS2413Block.h"
 #include "blox/DigitalActuatorBlock.h"
+#include "blox/MockPinsBlock.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
 #include "proto/test/cpp/DS2413_test.pb.h"
 #include "proto/test/cpp/DigitalActuator_test.pb.h"
+#include "proto/test/cpp/MockPins_test.pb.h"
 #include <sstream>
 
 SCENARIO("A DigitalActuator Block with a DS2413 target")
@@ -149,6 +151,86 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
                 CHECK(decoded.ShortDebugString() == "hwDevice: 102 channel: 1 desiredState: Active strippedFields: 3");
+            }
+        }
+    }
+}
+
+SCENARIO("A DigitalActuator Block with Mockpins as target")
+{
+    WHEN("a MockPins block is created")
+    {
+        BrewBloxTestBox testBox;
+        using commands = cbox::Box::CommandID;
+        auto arrayId = cbox::obj_id_t(100);
+        auto actId = cbox::obj_id_t(101);
+
+        testBox.reset();
+
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::CREATE_OBJECT);
+        testBox.put(cbox::obj_id_t(arrayId));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(MockPinsBlock::staticTypeId());
+
+        auto message = blox::MockPins();
+
+        testBox.put(message);
+
+        testBox.processInput();
+        CHECK(testBox.lastReplyHasStatusOk());
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::READ_OBJECT);
+        testBox.put(cbox::obj_id_t(arrayId));
+
+        auto decoded = blox::MockPins();
+        testBox.processInputToProto(decoded);
+
+        THEN("The returned mock protobuf data is as expected")
+        {
+            CHECK(testBox.lastReplyHasStatusOk());
+            CHECK(decoded.ShortDebugString() == "pins { mock1 { } } pins { mock2 { } } pins { mock3 { } } pins { mock4 { } } pins { mock5 { } } pins { mock6 { } } pins { mock7 { } } pins { mock8 { } }");
+        }
+
+        AND_WHEN("A DigitalActuator block is created that uses one of the channels")
+        {
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::CREATE_OBJECT);
+            testBox.put(cbox::obj_id_t(actId));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(DigitalActuatorBlock::staticTypeId());
+
+            auto message = blox::DigitalActuator();
+            message.set_hwdevice(arrayId);
+            message.set_channel(1);
+            message.set_desiredstate(blox::DigitalState::Active);
+
+            testBox.put(message);
+
+            testBox.processInput();
+            CHECK(testBox.lastReplyHasStatusOk());
+
+            THEN("A read of the actuator is as expected")
+            {
+                testBox.put(uint16_t(0)); // msg id
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(cbox::obj_id_t(actId));
+
+                auto decoded = blox::DigitalActuator();
+                testBox.processInputToProto(decoded);
+
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 state: Active desiredState: Active");
+            }
+            THEN("A read of the DS2413 is as expected")
+            {
+                testBox.put(uint16_t(0)); // msg id
+                testBox.put(commands::READ_OBJECT);
+                testBox.put(cbox::obj_id_t(arrayId));
+
+                auto decoded = blox::MockPins();
+                testBox.processInputToProto(decoded);
+
+                CHECK(decoded.ShortDebugString() == "pins { mock1 { config: ACTIVE_HIGH state: Active } } pins { mock2 { } } pins { mock3 { } } pins { mock4 { } } pins { mock5 { } } pins { mock6 { } } pins { mock7 { } } pins { mock8 { } }");
             }
         }
     }
