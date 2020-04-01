@@ -159,7 +159,7 @@ getDigitalConstraints(blox_DigitalConstraints& msg, const ActuatorDigitalConstra
             auto obj = reinterpret_cast<DelayedOn*>((*it).get());
             msg.constraints[i].constraint.delayedOn = obj->limit();
         } break;
-        case blox_DigitalConstraint_minOn_tag: {
+        case blox_DigitalConstraint_delayedOff_tag: {
             auto obj = reinterpret_cast<DelayedOff*>((*it).get());
             msg.constraints[i].constraint.delayedOff = obj->limit();
         } break;
