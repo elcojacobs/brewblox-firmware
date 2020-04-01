@@ -185,17 +185,19 @@ jobs:
 
       # cp SimulatorBinARM/brewblox ${SRC}/brewblox-arm
       - bash: |
+          set -e
           mkdir ${SRC}
           cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
         displayName: Copy to firmware-simulator context
         env:
           SRC: docker/firmware-simulator/source
 
+      # cp "$(Pipeline.Workspace)"/SimulatorBinARM/brewblox ${SRC}/brewblox-arm
       - bash: |
+          set -e
           echo "$(Pipeline.Workspace)"/FirmwareBinPhoton/
           mkdir -p ${SRC}
           bash docker/copy-bin.sh
-          cp "$(Pipeline.Workspace)"/SimulatorBinARM/brewblox ${SRC}/brewblox-arm
           cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
           cp "$(Pipeline.Workspace)"/FirmwareBinP1/brewblox.bin ${SRC}/brewblox-p1.bin
           cp "$(Pipeline.Workspace)"/FirmwareBinPhoton/brewblox.bin ${SRC}/brewblox-photon.bin
