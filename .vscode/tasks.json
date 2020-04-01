@@ -192,7 +192,7 @@
     },
     {
       "label": "restart_compiler",
-      "command": "ls",
+      "command": "bash",
       "args": [
         "start-compiler.sh",
         "-r"
