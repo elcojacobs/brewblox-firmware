@@ -31,6 +31,7 @@
 #include "blox/DS2413Block.h"
 #include "blox/DigitalActuatorBlock.h"
 #include "blox/DisplaySettingsBlock.h"
+#include "blox/MockPinsBlock.h"
 #include "blox/MotorValveBlock.h"
 #include "blox/MutexBlock.h"
 #include "blox/OneWireBusBlock.h"
@@ -160,6 +161,7 @@ makeBrewBloxBox()
         {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>},
         {MotorValveBlock::staticTypeId(), []() { return std::make_shared<MotorValveBlock>(objects); }},
         {ActuatorLogicBlock::staticTypeId(), []() { return std::make_shared<ActuatorLogicBlock>(objects); }},
+        {MockPinsBlock::staticTypeId(), []() { return std::make_shared<MockPinsBlock>(); }},
     };
 
     static EepromAccessImpl eeprom;
