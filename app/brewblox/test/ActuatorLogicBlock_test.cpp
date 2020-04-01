@@ -137,7 +137,7 @@ SCENARIO("Test", "[maklogicblock]")
     // create logic block with emty logic
     auto message = blox::ActuatorLogic();
     auto result = setLogic(message, true);
-    CHECK(result.ShortDebugString() == "targetId: 105 enabled: true result: EMPTY");
+    CHECK(result.ShortDebugString() == "targetId: 105 drivenTargetId: 105 enabled: true result: EMPTY");
 
     WHEN("4 digital actuators are combined with various expressions")
     {
@@ -173,7 +173,7 @@ SCENARIO("Test", "[maklogicblock]")
             message.set_expression("a|b|c");
 
             auto result = setLogic(message);
-            CHECK(result.ShortDebugString() == "targetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
+            CHECK(result.ShortDebugString() == "targetId: 105 drivenTargetId: 105 enabled: true expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
 
             setAct(101, blox::DigitalState::Inactive);
             setAct(102, blox::DigitalState::Active);
@@ -188,7 +188,7 @@ SCENARIO("Test", "[maklogicblock]")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 drivenTargetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 102 rhs: Active } digital { op: DESIRED_IS id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
 
             setAct(101, blox::DigitalState::Inactive);
@@ -205,7 +205,7 @@ SCENARIO("Test", "[maklogicblock]")
                 auto decoded = blox::ActuatorLogic();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
+                CHECK(decoded.ShortDebugString() == "targetId: 105 drivenTargetId: 105 enabled: true result: TRUE expression: \"a|b|c\" digital { op: DESIRED_IS id: 101 rhs: Active } digital { op: DESIRED_IS id: 102 rhs: Active } digital { op: DESIRED_IS result: TRUE id: 103 rhs: Active } digital { op: DESIRED_IS id: 104 rhs: Active }");
             }
 
             // brackets
@@ -357,7 +357,7 @@ SCENARIO("Test", "[maklogicblock]")
             message.set_expression("A|B|C|D");
             result = setLogic(message);
             CHECK(result.result() == blox::ActuatorLogic_Result_TRUE);
-            CHECK(result.ShortDebugString() == "targetId: 105 enabled: true result: TRUE expression: \"A|B|C|D\" analog { op: VALUE_GE id: 121 rhs: 86016 } analog { op: SETTING_GE result: TRUE id: 122 rhs: 86016 } analog { result: TRUE id: 123 rhs: 86016 } analog { op: SETTING_LE id: 124 rhs: 83968 }");
+            CHECK(result.ShortDebugString() == "targetId: 105 drivenTargetId: 105 enabled: true result: TRUE expression: \"A|B|C|D\" analog { op: VALUE_GE id: 121 rhs: 86016 } analog { op: SETTING_GE result: TRUE id: 122 rhs: 86016 } analog { result: TRUE id: 123 rhs: 86016 } analog { op: SETTING_LE id: 124 rhs: 83968 }");
 
             message.set_expression("(A|B)&(C|D)");
             result = setLogic(message);

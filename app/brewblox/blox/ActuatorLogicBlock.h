@@ -182,6 +182,9 @@ public:
         if (includeNotPersisted) {
             message.result = m_result;
             message.errorPos = m_errorPos;
+            if (enabled) {
+                message.drivenTargetId = message.targetId;
+            }
         }
 
         for (pb_size_t i = 0; i < digitals.size() && i < 16; i++) {
