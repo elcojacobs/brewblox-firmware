@@ -23,6 +23,7 @@
 #include "Logger.h"
 #include "OneWireScanningFactory.h"
 #include "blox/ActuatorAnalogMockBlock.h"
+#include "blox/ActuatorLogicBlock.h"
 #include "blox/ActuatorOffsetBlock.h"
 #include "blox/ActuatorPwmBlock.h"
 #include "blox/BalancerBlock.h"
@@ -158,6 +159,7 @@ makeBrewBloxBox()
         {DigitalActuatorBlock::staticTypeId(), []() { return std::make_shared<DigitalActuatorBlock>(objects); }},
         {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>},
         {MotorValveBlock::staticTypeId(), []() { return std::make_shared<MotorValveBlock>(objects); }},
+        {ActuatorLogicBlock::staticTypeId(), []() { return std::make_shared<ActuatorLogicBlock>(objects); }},
     };
 
     static EepromAccessImpl eeprom;
