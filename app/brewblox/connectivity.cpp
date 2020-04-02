@@ -180,15 +180,10 @@ handleNetworkEvent(system_event_t event, int param)
         IPAddress ip = spark::WiFi.localIP();
         localIp = ip.raw().ipv4;
         wifiIsConnected = true;
-#if PLATFORM_ID != PLATFORM_GCC
-        // Particle.connect();
-
-#endif
     } break;
     default:
         localIp = uint32_t(0);
         wifiIsConnected = false;
-        // Particle.disconnect();
         break;
     }
 }
@@ -228,11 +223,16 @@ updateFirmwareStreamHandler(Stream& stream)
                 stream.write(versionCsv());
                 stream.write(">\n");
                 stream.flush();
-            }
-            if (command == DCMD::FlashFirmware) {
+            } else if (command == DCMD::FlashFirmware) {
                 stream.write("<!READY_FOR_FIRMWARE>\n");
                 stream.flush();
+#if PLATFORM_ID != PLATFORM_GCC
                 system_firmwareUpdate(&stream);
+#else
+                // just exit for sim
+                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
+#endif
+
                 break;
             } else {
                 stream.write("<Invalid command received>\n");
