@@ -3,8 +3,11 @@ resources:
     - repository: self
   containers: 
     - container: compiler
-      image: brewblox/firmware-compiler:arm-gcc-8
-      
+      image: brewblox/firmware-compiler:latest
+
+pool:
+  vmImage: "Ubuntu-18.04"
+
 trigger:
   tags:
     include:
@@ -17,210 +20,216 @@ pr:
     include:
       - '*'
 
-#########################################################
-# Tests
-#########################################################
 jobs:
+
+  #########################################################
+  # Tests
+  #########################################################
   - job: Tests
-    pool:
-      vmImage: "Ubuntu-18.04"
-    container: compiler
 
     steps:
       - checkout: self
         submodules: recursive
       
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
       - bash: build/build-tests.sh
+        target: compiler
         displayName: Build tests
 
       - bash: build/run-tests.sh
+        target: compiler
         displayName: Run tests
 
+
   #########################################################
-  # Simulator
+  # Build Simulator AMD
   #########################################################
-  - job: SimulatorBinary
-    pool:
-      vmImage: "Ubuntu-18.04"
-    container: compiler
+  - job: SimulatorAMD
 
     steps:
       - checkout: self
         submodules: recursive
-      
+
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
-      - script: make APP=brewblox PLATFORM=gcc
-        workingDirectory: build
+      - script: build/build-sim-amd.sh
+        target: compiler
         displayName: Build executable
 
-      - publish: $(System.DefaultWorkingDirectory)/build/target
-        artifact: SimulatorBin
+      - publish: build/target/brewblox-gcc
+        artifact: SimulatorBinAMD
 
 
   #########################################################
-  # Firmware Binaries
+  # Build Simulator ARM
   #########################################################
-  - job: FirmwareBinaries
-    pool:
-      vmImage: "Ubuntu-18.04"
-    container: compiler
+  # - job: SimulatorARM
+
+  #   steps:
+  #     - checkout: self
+  #       submodules: recursive
+
+  #     - bash: build/compile-proto.sh
+  #       target: compiler
+  #       displayName: Compile proto
+
+  #       # should not be run in compiler
+  #     - script: build/build-sim-arm.sh
+  #       displayName: Build executable
+
+  #     - publish: build/target/brewblox-gcc
+  #       artifact: SimulatorBinARM
+
+
+  #########################################################
+  # Build Firmware P1
+  #########################################################
+  - job: FirmwareP1
 
     steps:
       - checkout: self
         submodules: recursive
-      
+
       - bash: build/compile-proto.sh
+        target: compiler
         displayName: Compile proto
 
       - script: make APP=brewblox PLATFORM=p1
+        target: compiler
         workingDirectory: build
         displayName: Build p1
-      
+
+      - publish: build/target/brewblox-p1
+        artifact: FirmwareBinP1
+
+
+  #########################################################
+  # Build Firmware Photon
+  #########################################################
+  - job: FirmwarePhoton
+
+    steps:
+      - checkout: self
+        submodules: recursive
+
+      - bash: build/compile-proto.sh
+        target: compiler
+        displayName: Compile proto
+
       - script: make APP=brewblox PLATFORM=photon
+        target: compiler
         workingDirectory: build
         displayName: Build photon
-        
-      - publish: $(System.DefaultWorkingDirectory)/build/target
-        artifact: FirmwareBin
 
+      - publish: build/target/brewblox-photon
+        artifact: FirmwareBinPhoton
 
-  #########################################################
-  # Simulator Image
-  #########################################################
-  - job: SimulatorImage
-    pool:
-      vmImage: "Ubuntu-18.04"
-    dependsOn:
-      - Tests
-      - SimulatorBinary
-
-    steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:  
-          artifact: SimulatorBin
-          path: $(Build.SourcesDirectory)/docker/simulator/target
-
-      - script: docker build --no-cache -t brewblox/firmware-simulator:local simulator
-        displayName: Build Image
-        workingDirectory: docker
-
-      - script: docker save brewblox/firmware-simulator:local > $(Build.ArtifactStagingDirectory)/simulator.tar
-        workingDirectory: docker
-        displayName: Save image
-
-      - task: PublishBuildArtifacts@1
-        inputs:
-          pathtoPublish: "$(Build.ArtifactStagingDirectory)"
-          artifactName: simulator      
-
-  #########################################################
-  # Firmware Binaries Image
-  #########################################################
-  - job: BinariesImage
-    pool:
-      vmImage: "Ubuntu-18.04"
-    dependsOn:
-      - Tests
-      - FirmwareBinaries
-
-    steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:  
-          artifact: FirmwareBin
-          path: $(Build.SourcesDirectory)/build/target
-      
-      - script: |
-          git submodule update --init ../platform/spark/device-os
-          bash build-bin.sh
-        workingDirectory: docker
-        displayName: Build Firmare binaries image
-        env:
-          SKIP_BUILD: 1
-  
-      - script: docker save brewblox/firmware-bin:local > $(Build.ArtifactStagingDirectory)/bin.tar
-        workingDirectory: docker
-        displayName: Save image
-  
-      - task: PublishBuildArtifacts@1
-        inputs:
-          path: 
-          pathtoPublish: "$(Build.ArtifactStagingDirectory)"
-          artifactName: bin
 
   #########################################################
   # Deployment
   #########################################################
   - job: Deploy
-    pool:
-      vmImage: "Ubuntu-18.04"
+
     dependsOn:
       - Tests
-      - SimulatorImage
-      - BinariesImage
+      - SimulatorAMD
+      # - SimulatorARM
+      - FirmwareP1
+      - FirmwarePhoton
 
     variables:
       # Variables imported from brewblox group:
       # DOCKER_USER
       # DOCKER_PASSWORD
-      # PYPI_USER
-      # PYPI_PASSWORD
       - group: brewblox
+      - name: SIM_REPO
+        value: brewblox/firmware-simulator
+      - name: BIN_REPO
+        value: brewblox/firmware-bin
 
     steps:
       - bash: |
+          RELEASE=$(git describe --tags | grep "^[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]$")
           BRANCH=$(echo $(Build.SourceBranch) | grep -oP "^refs/heads/\K.*")
-          TAG=$(git describe --tags | grep "^[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]$")
-          echo "##vso[task.setvariable variable=brewblox.branch]$BRANCH"
-          echo "##vso[task.setvariable variable=brewblox.tag]$TAG"
-        displayName: export build variables
+          TAG=$(echo $BRANCH | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          echo "##vso[task.setvariable variable=RELEASE]$RELEASE"
+          echo "##vso[task.setvariable variable=BRANCH]$BRANCH"
+          echo "##vso[task.setvariable variable=TAG]$TAG"
+        displayName: Export build variables
 
       - bash: echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin docker.io
         displayName: Docker login
         condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
-      - task: DownloadBuildArtifacts@0
-        inputs:
-          buildType: current
-          downloadType: single
-          artifactName: simulator
-          downloadPath: $(System.ArtifactsDirectory)
-
-      - task: DownloadBuildArtifacts@0
-        inputs:
-          buildType: current
-          downloadType: single
-          artifactName: bin
-          downloadPath: $(System.ArtifactsDirectory)
+      - bash: docker/enable-experimental.sh
+        displayName: Enable experimental Docker features
 
       - bash: |
-          docker load -i $(System.ArtifactsDirectory)/simulator/simulator.tar
-          docker load -i $(System.ArtifactsDirectory)/bin/bin.tar
-        displayName: Import images
-
-      - bash: |
-          bash push-local.sh ${SIM_REPO} newest-tag
-          bash push-local.sh ${SIM_REPO} $(brewblox.tag)
-          bash push-local.sh ${BIN_REPO} newest-tag
-          bash push-local.sh ${BIN_REPO} $(brewblox.tag)
-        displayName: Deploy newest-tag and version tag to Docker Hub on tagged commits
-        condition: and(succeeded(), variables['brewblox.tag'])
-        workingDirectory: docker
+          curl -L -o ~/.docker/cli-plugins/docker-buildx --create-dirs ${BUILDX_URL}
+          chmod a+x ~/.docker/cli-plugins/docker-buildx
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --use
+          docker buildx inspect --bootstrap
+        displayName: Prepare buildx
+        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
         env:
-          SIM_REPO: brewblox/firmware-simulator
-          BIN_REPO: brewblox/firmware-bin
+          BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
 
+      # Download all published artifacts
+      - download: current
+
+      # cp SimulatorBinARM/brewblox ${SRC}/brewblox-arm
       - bash: |
-          CLEAN_BRANCH=$(echo $(brewblox.branch) | tr '/' '-' | tr '[:upper:]' '[:lower:]')
-          bash push-local.sh ${SIM_REPO} ${CLEAN_BRANCH}
-          bash push-local.sh ${BIN_REPO} ${CLEAN_BRANCH}
-        displayName: Deploy branch to Docker Hub on any push to the GitHub repository
-        condition: and(succeeded(), variables['brewblox.branch'], not(variables['brewblox.tag']))
-        workingDirectory: docker
+          set -e
+          mkdir ${SRC}
+          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
+        displayName: Copy to firmware-simulator context
         env:
-          SIM_REPO: brewblox/firmware-simulator
-          BIN_REPO: brewblox/firmware-bin
+          SRC: docker/firmware-simulator/source
+
+      # cp "$(Pipeline.Workspace)"/SimulatorBinARM/brewblox ${SRC}/brewblox-arm
+      - bash: |
+          set -e
+          echo "$(Pipeline.Workspace)"/FirmwareBinPhoton/
+          mkdir -p ${SRC}
+          bash docker/copy-bin.sh
+          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
+          cp "$(Pipeline.Workspace)"/FirmwareBinP1/brewblox.bin ${SRC}/brewblox-p1.bin
+          cp "$(Pipeline.Workspace)"/FirmwareBinPhoton/brewblox.bin ${SRC}/brewblox-photon.bin
+        displayName: Copy to firmware-bin context
+        env:
+          SRC: docker/firmware-bin/source
+
+      - bash: >
+          docker buildx build
+          --push
+          --tag $(BIN_REPO):$(TAG)
+          firmware-bin
+        displayName: (firmware-bin) Deploy Docker images with branch tags
+        condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
+        workingDirectory: docker
+
+      - bash: >
+          docker buildx build 
+          --push
+          --tag $(SIM_REPO):$TAG
+          --tag $(SIM_REPO):rpi-$TAG
+          --platform linux/amd64
+          firmware-simulator
+        displayName: (firmware-simulator) Deploy Docker images with branch tags
+        condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
+        workingDirectory: docker
+
+      # - bash: |
+      #     bash push-local.sh $(SIM_REPO) newest-tag
+      #     bash push-local.sh $(SIM_REPO) $(RELEASE)
+      #     bash push-local.sh $(BIN_REPO) newest-tag
+      #     bash push-local.sh $(BIN_REPO) $(RELEASE)
+      #   displayName: Deploy Docker images with release tags
+      #   condition: and(succeeded(), variables['RELEASE'])
+      #   workingDirectory: docker

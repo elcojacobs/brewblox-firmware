@@ -4,12 +4,18 @@ set -e
 # The particle image is expected to remain relatively stable
 # It wraps the Particle CLI in a docker image, so it can easily be used to flash the firmware
 
-docker run --rm --privileged multiarch/qemu-user-static:register --reset
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+pushd "$SCRIPT_DIR" > /dev/null
 
-docker build -t brewblox/firmware-particle:latest particle/amd
-docker build -t brewblox/firmware-particle:rpi-latest particle/arm
+bash ./enable-experimental.sh
+bash ./prepare-buildx.sh
 
-if [[ $1 == "--push" ]]; then
-    docker push brewblox/firmware-particle:latest
-    docker push brewblox/firmware-particle:rpi-latest
-fi
+# Don't forget to call with --push
+docker buildx build \
+    --platform linux/amd64,linux/arm/v7 \
+    --tag brewblox/firmware-particle:latest \
+    --tag brewblox/firmware-particle:rpi-latest \
+    "$@" \
+    firmware-particle
+
+popd > /dev/null

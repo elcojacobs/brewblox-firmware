@@ -50,7 +50,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     testBox.put(TempSensorMockBlock::staticTypeId());
 
     auto newSensor = blox::TempSensorMock();
-    newSensor.set_value(cnl::unwrap(temp_t(20.0)));
+    newSensor.set_setting(cnl::unwrap(temp_t(20.0)));
     newSensor.set_connected(true);
     testBox.put(newSensor);
 
@@ -132,7 +132,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
         auto ptr = cboxPtr.lock();
         REQUIRE(ptr);
 
-        ptr->get().value(25);
+        ptr->get().setting(25);
 
         testBox.update(1000);
 

@@ -159,7 +159,7 @@ public:
         return m_desiredState;
     }
 
-    const std::vector<std::unique_ptr<Constraint>>&
+    const auto&
     constraintsList() const
     {
         return constraints;
@@ -291,6 +291,92 @@ public:
 };
 
 template <uint8_t ID>
+class DelayedOn : public Base {
+private:
+    duration_millis_t m_limit;
+    ticks_millis_t m_time_requested = 0;
+
+public:
+    DelayedOn(const duration_millis_t& delay)
+        : m_limit(delay)
+    {
+    }
+
+    duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged&) override final
+    {
+        if (newState == State::Active) {
+            if (m_time_requested == 0) {
+                m_time_requested = now != 0 ? now : -1;
+            }
+            auto elapsed = now - m_time_requested;
+            auto wait = (m_limit > elapsed) ? m_limit - elapsed : 0;
+            return wait;
+        }
+
+        m_time_requested = 0;
+        return 0;
+    }
+
+    virtual uint8_t id() const override final
+    {
+        return ID;
+    }
+
+    duration_millis_t limit()
+    {
+        return m_limit;
+    }
+
+    virtual uint8_t order() const override final
+    {
+        return 2;
+    }
+};
+
+template <uint8_t ID>
+class DelayedOff : public Base {
+private:
+    duration_millis_t m_limit;
+    ticks_millis_t m_time_requested = 0;
+
+public:
+    DelayedOff(const duration_millis_t& delay)
+        : m_limit(delay)
+    {
+    }
+
+    duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged&) override final
+    {
+        if (newState == State::Inactive) {
+            if (m_time_requested == 0) {
+                m_time_requested = now != 0 ? now : -1;
+            }
+            auto elapsed = now - m_time_requested;
+            auto wait = (m_limit > elapsed) ? m_limit - elapsed : 0;
+            return wait;
+        }
+
+        m_time_requested = 0;
+        return 0;
+    }
+
+    virtual uint8_t id() const override final
+    {
+        return ID;
+    }
+
+    duration_millis_t limit()
+    {
+        return m_limit;
+    }
+
+    virtual uint8_t order() const override final
+    {
+        return 3;
+    }
+};
+
+template <uint8_t ID>
 class Mutex : public Base {
 private:
     const std::function<std::shared_ptr<MutexTarget>()> m_mutexTarget;
@@ -387,8 +473,7 @@ public:
     virtual uint8_t
     order() const override final
     {
-        return 2;
+        return 4;
     }
 };
-
 } // end namespace ADConstraints

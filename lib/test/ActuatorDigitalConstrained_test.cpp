@@ -88,6 +88,46 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
         auto timesOn = constrained.getLastStartEndTime(State::Active, now);
         CHECK(timesOn.end - timesOn.start == 2000);
     }
+
+    WHEN("A delayed ON constraint is added, the actuator turns ON with a delay")
+    {
+        now = 1;
+        constrained.desiredState(State::Inactive, now);
+        constrained.addConstraint(std::make_unique<ADConstraints::DelayedOn<5>>(1500));
+        constrained.desiredState(State::Active, now);
+        CHECK(constrained.state() == State::Inactive);
+        CHECK(mock.state() == State::Inactive);
+
+        now += 1499;
+        constrained.desiredState(State::Active, now);
+        CHECK(constrained.state() == State::Inactive);
+        CHECK(mock.state() == State::Inactive);
+
+        now += 1;
+        constrained.desiredState(State::Active, now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+    }
+
+    WHEN("A delayed OFF constraint is added, the actuator turns OFF with a delay")
+    {
+        now = 1;
+        constrained.desiredState(State::Active, now);
+        constrained.addConstraint(std::make_unique<ADConstraints::DelayedOff<5>>(1500));
+        constrained.desiredState(State::Inactive, now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1499;
+        constrained.desiredState(State::Inactive, now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1;
+        constrained.desiredState(State::Inactive, now);
+        CHECK(constrained.state() == State::Inactive);
+        CHECK(mock.state() == State::Inactive);
+    }
 }
 
 SCENARIO("Mutex contraint", "[constraints]")

@@ -43,7 +43,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     testBox.put(TempSensorMockBlock::staticTypeId());
 
     auto newSensor1 = blox::TempSensorMock();
-    newSensor1.set_value(cnl::unwrap(temp_t(21.0)));
+    newSensor1.set_setting(cnl::unwrap(temp_t(21.0)));
     newSensor1.set_connected(true);
     testBox.put(newSensor1);
 
@@ -74,7 +74,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     testBox.put(TempSensorMockBlock::staticTypeId());
 
     auto newSensor2 = blox::TempSensorMock();
-    newSensor2.set_value(cnl::unwrap(temp_t(27.0)));
+    newSensor2.set_setting(cnl::unwrap(temp_t(27.0)));
     newSensor2.set_connected(true);
     testBox.put(newSensor2);
 

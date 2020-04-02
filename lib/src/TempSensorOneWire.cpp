@@ -79,7 +79,9 @@ TempSensorOneWire::update()
 temp_t
 TempSensorOneWire::readAndConstrainTemp()
 {
-    int16_t tempRaw;
+    // difference in precision between DS18B20 format and temperature format
+    static constexpr const uint8_t shift = cnl::_impl::fractional_digits<temp_t>::value - ONEWIRE_TEMP_SENSOR_PRECISION;
+    int32_t tempRaw;
     bool success;
 
     tempRaw = m_sensor.getTempRaw(getDeviceAddress().asUint8ptr());
@@ -96,8 +98,7 @@ TempSensorOneWire::readAndConstrainTemp()
         return 0;
     }
 
-    // difference in precision between DS18B20 format and temperature format
-    constexpr auto shift = cnl::_impl::fractional_digits<temp_t>{} - ONEWIRE_TEMP_SENSOR_PRECISION;
-    temp_t temp = cnl::wrap<temp_t>(tempRaw << shift);
-    return temp + m_calibrationOffset;
+    temp_t temp = cnl::wrap<temp_t>(tempRaw << shift) + m_calibrationOffset;
+
+    return temp;
 }

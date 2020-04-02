@@ -10,6 +10,41 @@ class TempSensorMockBlock : public Block<BrewBloxTypes_BlockType_TempSensorMock>
 private:
     TempSensorMock sensor;
 
+    using Fluctuation = TempSensorMock::Fluctuation;
+
+protected:
+    static bool streamFluctuationsOut(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
+    {
+        const std::vector<Fluctuation>* flucts = reinterpret_cast<std::vector<Fluctuation>*>(*arg);
+        for (const auto& f : *flucts) {
+            auto submsg = blox_TempSensorMock_Fluctuation();
+            submsg.amplitude = cnl::unwrap(f.amplitude);
+            submsg.period = f.period;
+            if (!pb_encode_tag_for_field(stream, field)) {
+                return false;
+            }
+            if (!pb_encode_submessage(stream, blox_TempSensorMock_Fluctuation_fields, &submsg)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool streamFluctuationsIn(pb_istream_t* stream, const pb_field_t*, void** arg)
+    {
+        std::vector<Fluctuation>* newFlucts = reinterpret_cast<std::vector<Fluctuation>*>(*arg);
+
+        if (stream->bytes_left) {
+            blox_TempSensorMock_Fluctuation submsg = blox_TempSensorMock_Fluctuation_init_zero;
+            if (!pb_decode(stream, blox_TempSensorMock_Fluctuation_fields, &submsg)) {
+                return false;
+            }
+            newFlucts->push_back(Fluctuation{
+                cnl::wrap<decltype(Fluctuation::amplitude)>(submsg.amplitude), submsg.period});
+        }
+        return true;
+    }
+
 public:
     TempSensorMockBlock() = default;
     ~TempSensorMockBlock() = default;
@@ -17,19 +52,25 @@ public:
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
     {
         blox_TempSensorMock newData = blox_TempSensorMock_init_zero;
-        cbox::CboxError res = streamProtoFrom(in, &newData, blox_TempSensorMock_fields, blox_TempSensorMock_size);
-        /* if no errors occur, write new settings to wrapped object */
-        if (res == cbox::CboxError::OK) {
-            sensor.value(cnl::wrap<temp_t>(newData.value));
+
+        std::vector<Fluctuation> newFlucts;
+        newData.fluctuations.funcs.decode = &streamFluctuationsIn;
+        newData.fluctuations.arg = &newFlucts;
+        cbox::CboxError result = streamProtoFrom(in, &newData, blox_TempSensorMock_fields, std::numeric_limits<size_t>::max() - 1);
+        if (result == cbox::CboxError::OK) {
+            sensor.fluctuations(std::move(newFlucts));
+            sensor.setting(cnl::wrap<temp_t>(newData.setting));
             sensor.connected(newData.connected);
         }
-        return res;
+        return result;
     }
 
-    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
+    void writeMessage(blox_TempSensorMock& message) const
     {
-        blox_TempSensorMock message = blox_TempSensorMock_init_zero;
         FieldTags stripped;
+
+        message.fluctuations.funcs.encode = &streamFluctuationsOut;
+        message.fluctuations.arg = const_cast<std::vector<Fluctuation>*>(&sensor.fluctuations());
 
         if (sensor.valid()) {
             message.value = cnl::unwrap((sensor.value()));
@@ -37,24 +78,31 @@ public:
             stripped.add(blox_TempSensorMock_value_tag);
         }
 
+        message.setting = cnl::unwrap((sensor.setting()));
         message.connected = sensor.connected();
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
+    }
 
-        return streamProtoTo(out, &message, blox_TempSensorMock_fields, blox_TempSensorMock_size);
+    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
+    {
+        blox_TempSensorMock message = blox_TempSensorMock_init_zero;
+        writeMessage(message);
+
+        return streamProtoTo(out, &message, blox_TempSensorMock_fields, std::numeric_limits<size_t>::max() - 1);
     }
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
         blox_TempSensorMock message = blox_TempSensorMock_init_zero;
-        message.value = cnl::unwrap(sensor.value());
-        message.connected = sensor.connected();
-        return streamProtoTo(out, &message, blox_TempSensorMock_fields, blox_TempSensorMock_size);
+        writeMessage(message);
+        message.value = 0; // value does not need persisting
+        return streamProtoTo(out, &message, blox_TempSensorMock_fields, std::numeric_limits<size_t>::max() - 1);
     }
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
-        // No updates for now. Alternatively, a periodic bus scan for new devices?
-        return update_never(now);
+        sensor.update(now);
+        return now + 100; // every 100ms
     }
 
     virtual void* implements(const cbox::obj_type_t& iface) override final

@@ -52,7 +52,6 @@ CPPFLAGS += -isystem $(BOOST_ROOT)
 
 CFLAGS += $(patsubst %,-I%,$(INCLUDE_DIRS)) -I.
 CFLAGS += -ffunction-sections -Wall
-CFLAGS += -ffunction-sections -Wall
 CFLAGS += -Wno-deprecated
 CFLAGS += -Wnull-dereference 
 CPPFLAGS += -fdiagnostics-show-template-tree -fno-elide-type # GCC8 required

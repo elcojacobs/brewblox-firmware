@@ -10,7 +10,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/target/brewblox-gcc/brewblox",
       "args": [
-        "-i123456789012345678901234"
+        "--device_id",
+        "123456789012345678901234"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build/target/brewblox-gcc",
@@ -50,12 +51,12 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/app/brewblox/test/build/brewblox_test_runner",
-      "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [
         {
-          "LSAN_OPTIONS": "verbosity=1:log_threads=1"
+          "name": "LSAN_OPTIONS",
+          "value": "verbosity=1:log_threads=1"
         }
       ],
       "externalConsole": false,
@@ -117,13 +118,14 @@
       "executable": "./build/target/brewblox-p1/brewblox.elf",
       "device": "STM32F205RG",
       "configFiles": [
-        "/home/elco/opt/openocd/tcl/interface/stlink.cfg",
-        "/home/elco/opt/openocd/tcl/target/stm32f2x.cfg"
+        "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
+        "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-8-2019-q3-update/bin",
+      "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
       "showDevDebugOutput": true,
       "runToMain": true,
-      "rtos": "FreeRTOS"
+      "rtos": "FreeRTOS",
+      "interface": "swd"
     },
     {
       "name": "system p1 openocd debug",
@@ -134,13 +136,14 @@
       "executable": "./platform/spark/device-os/build/target/user-part/platform-8-m/user-part.elf",
       "device": "STM32F205RG",
       "configFiles": [
-        "/home/elco/opt/openocd/tcl/interface/stlink.cfg",
-        "/home/elco/opt/openocd/tcl/target/stm32f2x.cfg"
+        "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
+        "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-8-2019-q3-update/bin",
+      "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
       "showDevDebugOutput": true,
       "runToMain": true,
-      "rtos": "FreeRTOS"
+      "rtos": "FreeRTOS",
+      "interface": "swd"
     }
   ]
 }

@@ -7,6 +7,8 @@
 
 using MinOff = ADConstraints::MinOffTime<blox_DigitalConstraint_minOff_tag>;
 using MinOn = ADConstraints::MinOnTime<blox_DigitalConstraint_minOn_tag>;
+using DelayedOn = ADConstraints::DelayedOn<blox_DigitalConstraint_delayedOn_tag>;
+using DelayedOff = ADConstraints::DelayedOff<blox_DigitalConstraint_delayedOff_tag>;
 using Mutex_t = ADConstraints::Mutex<blox_DigitalConstraint_mutexed_tag>;
 using Base_t = ADConstraints::Base;
 
@@ -114,6 +116,12 @@ setDigitalConstraints(const blox_DigitalConstraints& msg, ActuatorDigitalConstra
         case blox_DigitalConstraint_mutexed_tag:
             addMutex(constraintDfn.constraint.mutexed.mutexId, constraintDfn.constraint.mutexed.extraHoldTime, constraintDfn.constraint.mutexed.hasCustomHoldTime);
             break;
+        case blox_DigitalConstraint_delayedOn_tag:
+            act.addConstraint(std::make_unique<DelayedOn>(constraintDfn.constraint.delayedOn));
+            break;
+        case blox_DigitalConstraint_delayedOff_tag:
+            act.addConstraint(std::make_unique<DelayedOff>(constraintDfn.constraint.delayedOff));
+            break;
         }
     }
 }
@@ -146,6 +154,14 @@ getDigitalConstraints(blox_DigitalConstraints& msg, const ActuatorDigitalConstra
             msg.constraints[i].constraint.mutexed.extraHoldTime = obj->holdAfterTurnOff();
             msg.constraints[i].constraint.mutexed.hasCustomHoldTime = obj->useCustomHoldDuration();
             msg.constraints[i].constraint.mutexed.hasLock = obj->hasLock();
+        } break;
+        case blox_DigitalConstraint_delayedOn_tag: {
+            auto obj = reinterpret_cast<DelayedOn*>((*it).get());
+            msg.constraints[i].constraint.delayedOn = obj->limit();
+        } break;
+        case blox_DigitalConstraint_delayedOff_tag: {
+            auto obj = reinterpret_cast<DelayedOff*>((*it).get());
+            msg.constraints[i].constraint.delayedOff = obj->limit();
         } break;
         }
         msg.constraints[i].remaining = (*it)->timeRemaining();

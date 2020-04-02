@@ -68,7 +68,7 @@ enum class SparkVersion : uint8_t {
 #define PIN_V3_TOP2_DIR D3
 #endif
 
-#if !defined(SWD_JTAG_ENABLE) && !defined(SWD_ENABLE)
+#if !defined(SWD_JTAG_ENABLE) && !defined(SWD_ENABLE_JTAG_DISABLE)
 #define PIN_12V_ENABLE D6
 #define PIN_5V_ENABLE D7
 #endif

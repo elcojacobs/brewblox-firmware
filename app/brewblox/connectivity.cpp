@@ -100,9 +100,12 @@ void
 manageConnections(uint32_t now)
 {
     static uint32_t lastConnect = 0;
+    static uint32_t lastAnnounce = 0;
     if (wifiIsConnected) {
-        if (!mdns_started) {
+        if ((!mdns_started) || ((now - lastAnnounce) > 300000)) {
+            // explicit announce every 5 minutes
             mdns_started = mdns.begin(true);
+            lastAnnounce = now;
         }
         if (!http_started) {
             http_started = httpserver.begin();
@@ -177,15 +180,10 @@ handleNetworkEvent(system_event_t event, int param)
         IPAddress ip = spark::WiFi.localIP();
         localIp = ip.raw().ipv4;
         wifiIsConnected = true;
-#if PLATFORM_ID != PLATFORM_GCC
-        // Particle.connect();
-
-#endif
     } break;
     default:
         localIp = uint32_t(0);
         wifiIsConnected = false;
-        // Particle.disconnect();
         break;
     }
 }
@@ -201,7 +199,7 @@ wifiInit()
 }
 
 void
-updateFirmwareStreamHandler(Stream& stream)
+updateFirmwareStreamHandler(Stream* stream)
 {
     enum class DCMD : uint8_t {
         None,
@@ -214,26 +212,34 @@ updateFirmwareStreamHandler(Stream& stream)
 
     while (true) {
         HAL_Delay_Milliseconds(1);
-        int recv = stream.read();
+        int recv = stream->read();
         switch (recv) {
         case 'F':
             command = DCMD::FlashFirmware;
             break;
         case '\n':
             if (command == DCMD::Ack) {
-                stream.write("<!FIRMWARE_UPDATER,");
-                stream.write(versionCsv());
-                stream.write(">\n");
-                stream.flush();
-            }
-            if (command == DCMD::FlashFirmware) {
-                stream.write("<!READY_FOR_FIRMWARE>\n");
-                stream.flush();
-                system_firmwareUpdate(&stream);
+                stream->write("<!FIRMWARE_UPDATER,");
+                stream->write(versionCsv());
+                stream->write(">\n");
+                stream->flush();
+                HAL_Delay_Milliseconds(10);
+            } else if (command == DCMD::FlashFirmware) {
+                stream->write("<!READY_FOR_FIRMWARE>\n");
+                stream->flush();
+                HAL_Delay_Milliseconds(10);
+#if PLATFORM_ID == PLATFORM_GCC
+                // just exit for sim
+                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
+#else
+                system_firmwareUpdate(stream);
+#endif
+
                 break;
             } else {
-                stream.write("<Invalid command received>\n");
-                stream.flush();
+                stream->write("<Invalid command received>\n");
+                stream->flush();
+                HAL_Delay_Milliseconds(10);
                 if (++invalidCommands > 2) {
                     return;
                 }
@@ -258,17 +264,18 @@ updateFirmwareFromStream(cbox::StreamType streamType)
         if (ser.baud() == 0) {
             ser.begin(115200);
         }
-        updateFirmwareStreamHandler(ser);
+        updateFirmwareStreamHandler(&ser);
     } else {
         TCPServer server(8332); // re-open TCP server
 
         while (true) {
-            TCPClient client = server.available();
-            if (client) {
-                updateFirmwareStreamHandler(client);
-                client.stop();
+            HAL_Delay_Milliseconds(10); // allow thread switch so system thread can set up client
+            {
+                TCPClient client = server.available();
+                if (client) {
+                    updateFirmwareStreamHandler(&client);
+                }
             }
-            HAL_Delay_Milliseconds(1); // allow thread switch so system thread can set up client
         }
     }
 }

@@ -19,19 +19,27 @@
 
 #include "FixedPoint.h"
 
+// workaround for arm 5.3 not having some to_string functions
+#include <string_operators.h>
+
 std::string
 to_string_dec(const fp12_t& t, uint8_t decimals)
 {
-    using calc_t = cnl::set_rounding_t<safe_elastic_fixed_point<14, 16>, cnl::native_rounding_tag>;
+    static constexpr const int32_t one = cnl::unwrap(fp12_t{1});
+    static constexpr const int32_t rounder_up = cnl::unwrap(fp12_t{0.5});
+    static constexpr const int32_t rounder_down = cnl::unwrap(fp12_t{-0.5});
 
-    int scale = 10;
+    int32_t scale = 10;
     for (uint8_t i = decimals; i > 1; --i) {
         scale *= 10;
     }
 
-    auto rounder = (t >= 0) ? calc_t{0.5} : calc_t{-0.5};
-    auto asInt = static_cast<int32_t>(scale * calc_t{t} + rounder);
-    auto s = std::to_string(asInt);
+    int32_t unwrapped = cnl::unwrap(t);
+    int32_t rounder = (unwrapped >= 0) ? rounder_up : rounder_down;
+    int32_t asInt = (scale * unwrapped + rounder) / one;
+
+    std::string s;
+    s << asInt;
 
     int missingZeros = int(decimals) + 1 - s.length() + (asInt < 0);
     auto insertAt = s.begin() + (asInt < 0);
