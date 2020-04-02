@@ -57,17 +57,19 @@
 using EepromAccessImpl = cbox::SparkEepromAccess;
 
 #if defined(SPARK)
-#include "spark_wiring_led.h"
-particle::LEDStatus BlinkFirmwareUpdate(RGB_COLOR_MAGENTA, LED_PATTERN_BLINK, LED_SPEED_NORMAL, LED_PRIORITY_IMPORTANT);
+#include "rgbled.h"
+void
+changeLedColor()
+{
+    LED_SetRGBColor(RGB_COLOR_MAGENTA);
+}
 extern void
 updateFirmwareFromStream(cbox::StreamType streamType);
 #else
-class BlinkFirmwareUpdateMock {
-public:
-    void setActive(bool) {}
-};
-BlinkFirmwareUpdateMock BlinkFirmwareUpdate;
-
+void
+changeLedColor()
+{
+}
 void updateFirmwareFromStream(cbox::StreamType)
 {
 }
@@ -313,11 +315,10 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
         out.write(asUint8(status));
         out.endMessage();
         if (status == CboxError::OK) {
-            BlinkFirmwareUpdate.setActive(true);
+            changeLedColor();
             theConnectionPool().closeAll();
             updateFirmwareFromStream(in.streamType());
             uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
-            BlinkFirmwareUpdate.setActive(false);
             handleReset(true, reason); // reset in case the firmware update failed
         }
         return true;
