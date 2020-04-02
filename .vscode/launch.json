@@ -10,7 +10,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/target/brewblox-gcc/brewblox",
       "args": [
-        "-i123456789012345678901234"
+        "--device_id",
+        "123456789012345678901234"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build/target/brewblox-gcc",

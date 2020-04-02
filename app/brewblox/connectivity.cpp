@@ -36,7 +36,7 @@ volatile bool http_started = false;
 #if PLATFORM_ID == PLATFORM_GCC
 auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with instructions
 #else
-auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
+auto httpserver = TCPServer(80);                                           // listen on 80 to serve a simple page with instructions
 #endif
 
 void
@@ -180,15 +180,10 @@ handleNetworkEvent(system_event_t event, int param)
         IPAddress ip = spark::WiFi.localIP();
         localIp = ip.raw().ipv4;
         wifiIsConnected = true;
-#if PLATFORM_ID != PLATFORM_GCC
-        // Particle.connect();
-
-#endif
     } break;
     default:
         localIp = uint32_t(0);
         wifiIsConnected = false;
-        // Particle.disconnect();
         break;
     }
 }
@@ -228,11 +223,15 @@ updateFirmwareStreamHandler(Stream& stream)
                 stream.write(versionCsv());
                 stream.write(">\n");
                 stream.flush();
-            }
-            if (command == DCMD::FlashFirmware) {
+            } else if (command == DCMD::FlashFirmware) {
                 stream.write("<!READY_FOR_FIRMWARE>\n");
                 stream.flush();
+#if PLATFORM_ID != PLATFORM_GCC
                 system_firmwareUpdate(&stream);
+#else
+                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr); // just exit for sim
+#endif
+
                 break;
             } else {
                 stream.write("<Invalid command received>\n");
