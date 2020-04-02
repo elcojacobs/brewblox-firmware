@@ -36,7 +36,7 @@ volatile bool http_started = false;
 #if PLATFORM_ID == PLATFORM_GCC
 auto httpserver = TCPServer(8380); // listen on 8380 to serve a simple page with instructions
 #else
-auto httpserver = TCPServer(80);                                           // listen on 80 to serve a simple page with instructions
+auto httpserver = TCPServer(80); // listen on 80 to serve a simple page with instructions
 #endif
 
 void
@@ -229,7 +229,8 @@ updateFirmwareStreamHandler(Stream& stream)
 #if PLATFORM_ID != PLATFORM_GCC
                 system_firmwareUpdate(&stream);
 #else
-                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr); // just exit for sim
+                // just exit for sim
+                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
 #endif
 
                 break;
