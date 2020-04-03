@@ -55,6 +55,7 @@ public:
 
     virtual std::unique_ptr<Connection> newConnection() = 0;
 
+    virtual void start() = 0;
     virtual void stop() = 0;
 };
 
@@ -268,7 +269,7 @@ public:
         return currentDataOut;
     }
 
-    void closeAll()
+    void stopAll()
     {
         for (auto& c : connections) {
             // don't delete connections here.
@@ -277,6 +278,13 @@ public:
         }
         for (auto& source : connectionSources) {
             source.get().stop();
+        }
+    }
+
+    void startAll()
+    {
+        for (auto& source : connectionSources) {
+            source.get().start();
         }
     }
 };

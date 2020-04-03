@@ -1,3 +1,7 @@
 compile_commands.json
 .ccls-cache/
 .vscode/.cortex-debug.*
+
+.vscode/.cortex-debug.registers.state.json
+
+.vscode/.cortex-debug.peripherals.state.json

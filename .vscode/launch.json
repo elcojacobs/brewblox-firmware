@@ -112,10 +112,14 @@
     {
       "name": "brewblox p1 openocd debug",
       "type": "cortex-debug",
-      "request": "launch",
+      "request": "attach",
       "servertype": "openocd",
       "cwd": "${workspaceRoot}",
       "executable": "./build/target/brewblox-p1/brewblox.elf",
+      "debuggerArgs": [
+        "-command=./tools/system.gdbinit",
+      ],
+      "rtos": "FreeRTOS",
       "device": "STM32F205RG",
       "configFiles": [
         "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
@@ -123,7 +127,26 @@
       ],
       "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
       "showDevDebugOutput": true,
-      "runToMain": true,
+      "svdFile": "./tools/STM32F215.svd"
+    },
+    {
+      "name": "wifi-test p1 openocd debug",
+      "type": "cortex-debug",
+      "request": "attach",
+      "servertype": "openocd",
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/target/wifi-test-p1/wifi-test.elf",
+      "debuggerArgs": [
+        "-command=./tools/system.gdbinit",
+      ],
+      "device": "STM32F205RG",
+      "configFiles": [
+        "/home/elco/opt/openocd/tcl/interface/stlink.cfg",
+        "/home/elco/opt/openocd/tcl/target/stm32f2x.cfg"
+      ],
+      "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
+      "showDevDebugOutput": true,
+      "svdFile": "./tools/STM32F215.svd",
       "rtos": "FreeRTOS",
       "interface": "swd"
     },
