@@ -50,6 +50,8 @@ public:
         , m_calibrationOffset(_calibrationOffset)
     {
     }
+    TempSensorOneWire(const TempSensorOneWire&) = delete;
+    TempSensorOneWire& operator=(const TempSensorOneWire&) = delete;
 
     virtual ~TempSensorOneWire() = default;
 

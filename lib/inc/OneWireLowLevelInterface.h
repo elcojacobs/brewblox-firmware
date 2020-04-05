@@ -22,6 +22,9 @@
 #include <cstdint>
 
 class OneWireLowLevelInterface {
+public:
+    OneWireLowLevelInterface() = default;
+
 protected:
     virtual ~OneWireLowLevelInterface() = default;
 

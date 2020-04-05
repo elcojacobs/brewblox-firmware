@@ -134,9 +134,9 @@ void
 PidWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
-        auto pid = ptr->get();
-        auto inputLookup = ptr->getInputLookup();
-        auto outputLookup = ptr->getOutputLookup();
+        auto& pid = ptr->get();
+        auto& inputLookup = ptr->getInputLookup();
+        auto& outputLookup = ptr->getOutputLookup();
         setConnected();
         auto input = inputLookup.const_lock();
         if (input && input->valueValid()) {

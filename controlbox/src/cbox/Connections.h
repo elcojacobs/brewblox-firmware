@@ -41,6 +41,8 @@ class Connection {
 public:
     Connection() = default;
     virtual ~Connection() = default;
+    Connection(const Connection&) = delete;
+    Connection& operator=(const Connection&) = delete;
 
     virtual DataOut& getDataOut() = 0;
     virtual DataIn& getDataIn() = 0;
@@ -234,16 +236,16 @@ public:
     void updateConnections()
     {
         connections.erase(
-            std::remove_if(connections.begin(), connections.end(), [](std::unique_ptr<Connection>& conn) {
+            std::remove_if(connections.begin(), connections.end(), [](const decltype(connections)::value_type& conn) {
                 return !conn->isConnected(); // remove disconnected connections from pool
             }),
             connections.end());
 
         for (auto& source : connectionSources) {
-            std::unique_ptr<Connection> newConnection = source.get().newConnection();
-            if (newConnection) {
-                connectionStarted(newConnection->getDataOut());
-                connections.push_back(std::move(newConnection));
+            auto con = source.get().newConnection();
+            if (con) {
+                connectionStarted(con->getDataOut());
+                connections.push_back(std::move(con));
             }
         }
     }

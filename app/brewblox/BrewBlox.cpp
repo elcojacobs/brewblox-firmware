@@ -201,7 +201,7 @@ theOneWire()
 Logger&
 logger()
 {
-    static auto logger = Logger([](Logger::LogLevel level, const std::string& log) {
+    static Logger logger([](Logger::LogLevel level, const std::string& log) {
         cbox::DataOut& out = theConnectionPool().logDataOut();
         out.write('<');
         const char debug[] = "DEBUG";

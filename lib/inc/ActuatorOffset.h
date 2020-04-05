@@ -54,6 +54,9 @@ public:
         , m_reference(reference)
     {
     }
+    ActuatorOffset(const ActuatorOffset&) = delete;
+    ActuatorOffset& operator=(const ActuatorOffset&) = delete;
+
     virtual ~ActuatorOffset() = default;
 
     virtual void setting(value_t const& val) override final

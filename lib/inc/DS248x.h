@@ -59,6 +59,11 @@ public:
         mAddress = 0x18 | mAddress;
         mTimeout = 0;
     }
+
+    DS248x(const DS248x&) = delete;
+    DS248x(DS248x&&) = default;
+    DS248x& operator=(const DS248x&) = delete;
+
     virtual ~DS248x() = default;
 
     virtual bool init() override final;

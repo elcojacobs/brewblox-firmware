@@ -105,8 +105,9 @@ public:
     std::shared_ptr<const U>
     const_lock_as() const
     {
-        return std::const_pointer_cast<const U>(
-            std::move(const_cast<CboxPtr<T>*>(this)->lock_as<U>()));
+        auto this_non_const = const_cast<CboxPtr<T>*>(this);
+        auto sptr = this_non_const->lock_as<U>();
+        return std::const_pointer_cast<const U>(std::move(sptr));
     }
 
     std::shared_ptr<const T>

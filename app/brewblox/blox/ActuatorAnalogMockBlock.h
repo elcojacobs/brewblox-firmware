@@ -10,12 +10,13 @@
 class ActuatorAnalogMockBlock : public Block<BrewBloxTypes_BlockType_ActuatorAnalogMock> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
-    ActuatorAnalogMock actuator = ActuatorAnalogMock(0, 0, 100);
+    ActuatorAnalogMock actuator;
     ActuatorAnalogConstrained constrained;
 
 public:
     ActuatorAnalogMockBlock(cbox::ObjectContainer& objects)
         : objectsRef(objects)
+        , actuator(0, 0, 100)
         , constrained(actuator)
     {
     }

@@ -53,6 +53,9 @@ public:
     {
         resetHistory();
     }
+    ActuatorDigitalChangeLogged(const ActuatorDigitalChangeLogged&) = delete;
+    ActuatorDigitalChangeLogged& operator=(const ActuatorDigitalChangeLogged&) = delete;
+
     virtual ~ActuatorDigitalChangeLogged() = default;
 
     void state(const State& val, const ticks_millis_t& now)

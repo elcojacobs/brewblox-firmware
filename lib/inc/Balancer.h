@@ -92,8 +92,6 @@ public:
 
     Balanced(const Balanced&) = delete;
     Balanced& operator=(const Balanced&) = delete;
-    Balanced(Balanced&&) = default;
-    Balanced& operator=(Balanced&&) = default;
 
     virtual ~Balanced()
     {

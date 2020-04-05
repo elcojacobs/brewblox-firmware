@@ -32,6 +32,8 @@ public:
         : IoArray(8)
     {
     }
+    MockIoArray(const MockIoArray&) = delete;
+    MockIoArray& operator=(const MockIoArray&) = delete;
 
     virtual ~MockIoArray() = default;
 

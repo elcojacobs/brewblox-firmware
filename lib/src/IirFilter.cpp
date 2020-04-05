@@ -5,7 +5,7 @@
 #include "../inc/IirFilter.h"
 #include <stdlib.h>
 
-IirFilter::IirFilter(const uint8_t& idx, const int32_t& threshold)
+IirFilter::IirFilter(uint8_t idx, int32_t threshold)
     : xv{0}
     , yv{0}
     , paramsIdx(idx)
@@ -123,7 +123,7 @@ IirFilter::unshift(const int64_t val) const
 int64_t
 IirFilter::unshift(const int64_t val, uint8_t shift) const
 {
-    const int64_t rounder = 1 << (shift - 1);
+    auto rounder = uint32_t{1} << (shift - 1);
     int64_t rounded = val + rounder;
     return rounded >> shift;
 }

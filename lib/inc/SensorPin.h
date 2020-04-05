@@ -22,6 +22,8 @@ public:
         this->invert = invert;
         this->pin = pin;
     }
+    DigitalPinSensor(const DigitalPinSensor&) = delete;
+    DigitalPinSensor& operator=(const DigitalPinSensor&) = delete;
     virtual ~DigitalPinSensor() = default;
 
     virtual bool sense() override final

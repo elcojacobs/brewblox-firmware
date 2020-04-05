@@ -45,6 +45,9 @@ public:
         : m_target(target)
     {
     }
+    SetpointProfile(const SetpointProfile&) = delete;
+    SetpointProfile& operator=(const SetpointProfile&) = delete;
+    ~SetpointProfile() = default;
 
     void addPoint(Point&& p)
     {

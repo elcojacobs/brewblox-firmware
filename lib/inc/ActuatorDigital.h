@@ -42,6 +42,10 @@ public:
     {
         channel(chan);
     }
+
+    ActuatorDigital(const ActuatorDigital&) = delete;
+    ActuatorDigital& operator=(const ActuatorDigital&) = delete;
+
     virtual ~ActuatorDigital()
     {
         channel(0); // release channel before destruction

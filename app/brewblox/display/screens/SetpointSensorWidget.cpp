@@ -32,7 +32,7 @@ SetpointSensorWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
         setConnected();
-        auto pair = ptr->get();
+        auto& pair = ptr->get();
 
         char icons[3] = {0};
         if (pair.valueValid()) {
