@@ -74,7 +74,7 @@ public:
         std::function<std::shared_ptr<ActuatorDigitalConstrained>()>&& target,
         duration_millis_t period = 4000);
 
-    ~ActuatorPwm()
+    virtual ~ActuatorPwm()
     {
         // ensure that interrupts are removed before destruction.
         enabled(false);

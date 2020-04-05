@@ -57,7 +57,7 @@ public:
         setting(initial);
     }
 
-    ~ActuatorAnalogMock() = default;
+    virtual ~ActuatorAnalogMock() = default;
 
     virtual void setting(const value_t& val) override final
     {

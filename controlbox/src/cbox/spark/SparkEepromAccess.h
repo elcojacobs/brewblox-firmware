@@ -11,7 +11,7 @@ public:
     {
         HAL_EEPROM_Init();
     }
-    ~SparkEepromAccess() = default;
+    virtual ~SparkEepromAccess() = default;
 
     virtual uint8_t readByte(uint16_t offset) const override final
     {

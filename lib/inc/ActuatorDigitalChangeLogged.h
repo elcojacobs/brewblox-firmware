@@ -53,7 +53,7 @@ public:
     {
         resetHistory();
     }
-    ~ActuatorDigitalChangeLogged() = default;
+    virtual ~ActuatorDigitalChangeLogged() = default;
 
     void state(const State& val, const ticks_millis_t& now)
     {

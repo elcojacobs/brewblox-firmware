@@ -394,7 +394,7 @@ public:
         , m_useCustomHoldDuration(useCustomHold)
     {
     }
-    ~Mutex() = default;
+    virtual ~Mutex() = default;
 
     virtual duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {

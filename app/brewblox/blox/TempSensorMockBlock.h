@@ -47,7 +47,7 @@ protected:
 
 public:
     TempSensorMockBlock() = default;
-    ~TempSensorMockBlock() = default;
+    virtual ~TempSensorMockBlock() = default;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
     {

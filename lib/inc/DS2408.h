@@ -77,7 +77,7 @@ public:
     /**
      * Destructor is default.
      */
-    ~DS2408() = default;
+    virtual ~DS2408() = default;
 
 private:
     /**

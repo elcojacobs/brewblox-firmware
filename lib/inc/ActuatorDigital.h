@@ -42,7 +42,7 @@ public:
     {
         channel(chan);
     }
-    ~ActuatorDigital()
+    virtual ~ActuatorDigital()
     {
         channel(0); // release channel before destruction
     }

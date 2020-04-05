@@ -54,7 +54,7 @@ public:
         , m_reference(reference)
     {
     }
-    ~ActuatorOffset() = default;
+    virtual ~ActuatorOffset() = default;
 
     virtual void setting(value_t const& val) override final
     {

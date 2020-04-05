@@ -148,6 +148,7 @@ public:
         , out(stream)
     {
     }
+    virtual ~StreamRefConnection() = default;
 
     virtual DataOut& getDataOut() override
     {
@@ -240,7 +241,7 @@ public:
 
         for (auto& source : connectionSources) {
             std::unique_ptr<Connection> newConnection = source.get().newConnection();
-            if (newConnection != nullptr) {
+            if (newConnection) {
                 connectionStarted(newConnection->getDataOut());
                 connections.push_back(std::move(newConnection));
             }

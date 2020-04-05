@@ -60,7 +60,7 @@ public:
     {
         startChannel(startChan);
     }
-    ~MotorValve()
+    virtual ~MotorValve()
     {
         startChannel(0); // release channels before destruction
     }

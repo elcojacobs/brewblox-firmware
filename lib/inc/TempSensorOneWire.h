@@ -51,7 +51,7 @@ public:
     {
     }
 
-    ~TempSensorOneWire() = default;
+    virtual ~TempSensorOneWire() = default;
 
     virtual bool valid() const override final
     {

@@ -32,9 +32,7 @@ public:
         : StreamConnection<TCPClient>(std::move(_client))
     {
     }
-    ~TcpConnection()
-    {
-    }
+    virtual ~TcpConnection() = default;
 
     virtual void stop() override final
     {
@@ -53,6 +51,7 @@ public:
         : server(port)
     {
     }
+    virtual ~TcpConnectionSource() = default;
 
     std::unique_ptr<Connection> newConnection() override final
     {
