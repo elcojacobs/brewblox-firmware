@@ -53,9 +53,10 @@ WidgetWrapper::WidgetWrapper(uint8_t pos)
 }
 
 void
-WidgetWrapper::setName(char* newName)
+WidgetWrapper::setName(std::string&& newName)
 {
-    D4D_SetText(&btnObject, newName);
+    auto txt = newName;
+    D4D_SetText(&btnObject, txt.c_str());
 }
 
 void
@@ -67,7 +68,8 @@ WidgetWrapper::setColor(uint8_t r, uint8_t g, uint8_t b)
 void
 WidgetWrapper::resetName()
 {
-    D4D_SetText(&btnObject, "unassigned");
+    static const char txt[] = "unassigned";
+    D4D_SetText(&btnObject, txt);
 }
 
 void

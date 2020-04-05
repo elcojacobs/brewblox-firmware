@@ -51,14 +51,16 @@ public:
         wrapper.setEnabled(enabled);
     }
 
-    static void setAndEnable(D4D_OBJECT* obj, const char* txt)
+    static void setAndEnable(D4D_OBJECT* obj, std::string&& txt)
     {
-        if (txt) {
-            D4D_SetText(obj, txt);
+        static const char errTxt[] = "--.-";
+        auto s = std::move(txt);
+        if (!s.empty()) {
+            D4D_SetText(obj, s.c_str());
             D4D_EnableObject(obj, true);
             return;
         }
-        D4D_SetText(obj, "--.-");
+        D4D_SetText(obj, errTxt);
         D4D_EnableObject(obj, false);
     }
 

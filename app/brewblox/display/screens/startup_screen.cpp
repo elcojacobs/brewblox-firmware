@@ -69,16 +69,17 @@ StartupScreen::calibrateTouchIfNeeded()
 }
 
 void
-StartupScreen::setProgress(const uint8_t& v)
+StartupScreen::setProgress(uint8_t v)
 {
     D4D_PrgrsBarSetValue(&scrStartup_progress, v);
     D4D_Poll();
 }
 
 void
-StartupScreen::setStep(const char* txt)
+StartupScreen::setStep(std::string&& txt)
 {
-    D4D_LabelSetText(&scrStartup_step, txt);
+    auto s = txt;
+    D4D_LabelSetText(&scrStartup_step, txt.c_str());
     D4D_Poll();
 }
 

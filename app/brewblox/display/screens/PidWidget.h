@@ -64,9 +64,9 @@ public:
     virtual ~PidWidget() = default;
 
     void
-    setIcons(const char* txt)
+    setIcons(std::string&& txt)
     {
-        setAndEnable(&icons, txt);
+        setAndEnable(&icons, std::move(txt));
     }
 
     void

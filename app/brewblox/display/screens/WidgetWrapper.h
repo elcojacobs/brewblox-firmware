@@ -99,7 +99,7 @@ public:
         return &wrapperObject;
     }
 
-    void setName(char* newName);
+    void setName(std::string&& newName);
     void resetName();
     void setColor(uint8_t r, uint8_t g, uint8_t b);
     void setClickHandler(void* obj, void (*func)(void*));

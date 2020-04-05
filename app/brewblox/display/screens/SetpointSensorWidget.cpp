@@ -36,17 +36,17 @@ SetpointSensorWidget::update(const WidgetSettings& settings)
 
         char icons[3] = {0};
         if (pair.valueValid()) {
-            setValue(temp_to_string(pair.value(), 1, settings.tempUnit).c_str());
+            setValue(temp_to_string(pair.value(), 1, settings.tempUnit));
             icons[0] = '\x29';
         } else {
-            setValue(nullptr);
+            setValue("");
             icons[0] = '\x2B';
         }
         if (pair.settingValid()) {
-            setSetting(temp_to_string(pair.setting(), 1, settings.tempUnit).c_str());
+            setSetting(temp_to_string(pair.setting(), 1, settings.tempUnit));
             icons[1] = '\x2A';
         } else {
-            setSetting(nullptr);
+            setSetting("");
         }
         setIcons(icons);
         return;
