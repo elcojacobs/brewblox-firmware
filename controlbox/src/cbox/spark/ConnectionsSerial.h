@@ -31,15 +31,17 @@ public:
     SerialConnection(USBSerial& ser)
         : StreamRefConnection(ser)
     {
+        ser.flush(); // discard tx buffer
     }
     virtual ~SerialConnection()
     {
+        stop();
         serial_connection_active = false;
     };
 
     virtual void stop() override final
     {
-        _fetch_usbserial().unlock();
+        StreamRefConnection::get().flush(); // discard tx buffer
     }
 };
 
@@ -66,13 +68,14 @@ public:
     virtual void start() override final
     {
         serial_enabled = true;
+        ser.lock();
         ser.begin(115200);
     }
 
     virtual void stop() override final
     {
-        ser.end();
         serial_enabled = false;
+        ser.unlock();
     }
 };
 
