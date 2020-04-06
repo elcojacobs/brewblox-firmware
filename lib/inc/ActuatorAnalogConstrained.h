@@ -32,8 +32,6 @@ public:
     Base() = default;
     Base(const Base&) = delete;
     Base& operator=(const Base&) = delete;
-    Base(Base&&) = default;
-    Base& operator=(Base&&) = default;
 
     virtual ~Base() = default;
 
@@ -131,7 +129,6 @@ public:
 
     ActuatorAnalogConstrained(const ActuatorAnalogConstrained&) = delete;
     ActuatorAnalogConstrained& operator=(const ActuatorAnalogConstrained&) = delete;
-    ActuatorAnalogConstrained(ActuatorAnalogConstrained&&) = default;
 
     virtual ~ActuatorAnalogConstrained() = default;
 

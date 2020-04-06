@@ -75,7 +75,8 @@ public:
     template <typename T>
     bool put(const T& t)
     {
-        return writeBuffer(std::addressof(t), sizeof(T));
+        auto p = reinterpret_cast<const uint8_t*>(std::addressof(t));
+        return writeBuffer(p, sizeof(T));
     }
 
     /**
@@ -84,14 +85,19 @@ public:
 	 * @param len	The number of bytes to write.
 	 * @return {@code true} if the byte was successfully written, false otherwise.
 	 */
-    virtual bool writeBuffer(const void* data, stream_size_t len)
+    virtual bool writeBuffer(const uint8_t* data, stream_size_t len)
     {
-        const uint8_t* d = (const uint8_t*)data;
+        const uint8_t* d = data;
         while (len-- > 0) {
             if (!write(*d++))
                 return false;
         }
         return true;
+    }
+
+    bool writeBuffer(const char* data, stream_size_t len)
+    {
+        return writeBuffer(reinterpret_cast<const uint8_t*>(data), len);
     }
 };
 
@@ -252,7 +258,7 @@ public:
     /**
 	 * Unconditional read of {@code length} bytes.
 	 */
-    bool read(void* t, stream_size_t length)
+    bool read(uint8_t* t, stream_size_t length)
     {
         uint8_t* target = (uint8_t*)t;
         while (length-- > 0) {
@@ -267,7 +273,7 @@ public:
     template <typename T>
     bool get(T& t)
     {
-        return read(&t, sizeof(T));
+        return read(reinterpret_cast<uint8_t*>(&t), sizeof(T));
     }
 
     /**

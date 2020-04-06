@@ -35,15 +35,15 @@ ActuatorAnalogWidget::update(const WidgetSettings& settings)
         setConnected();
 
         if (pAct->valueValid()) {
-            setValue(to_string_dec(pAct->value(), 1).c_str());
+            setValue(to_string_dec(pAct->value(), 1));
         } else {
-            setValue(nullptr);
+            setValue("");
         }
         if (pAct->settingValid()) {
-            setSetting(to_string_dec(pAct->setting(), 1).c_str());
+            setSetting(to_string_dec(pAct->setting(), 1));
 
         } else {
-            setSetting(nullptr);
+            setSetting("");
         }
 
         char icons[2] = {0};

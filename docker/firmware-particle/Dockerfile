@@ -2,12 +2,13 @@ FROM node:12-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache make gcc g++ python linux-headers udev py2-pip \
+RUN apk add --no-cache make gcc g++ linux-headers eudev-dev python bash usbutils \
   && apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ dfu-util \
   && npm install serialport --build-from-source --unsafe-perm \
   && npm install particle-cli --unsafe-perm \
-  && pip install --upgrade pip \
-  && pip install pyserial \
-  && apk del make gcc g++ linux-headers py2-pip
+  && npm install particle-usb \
+  && apk del make gcc g++ linux-headers
 
-ENTRYPOINT [ "node_modules/.bin/particle" ]
+COPY particle /usr/local/bin/particle
+
+ENTRYPOINT [ "/bin/bash" ]

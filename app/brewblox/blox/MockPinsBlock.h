@@ -30,7 +30,7 @@ private:
 
 public:
     MockPinsBlock() = default;
-    ~MockPinsBlock() = default;
+    virtual ~MockPinsBlock() = default;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn&) override final
     {

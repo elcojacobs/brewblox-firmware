@@ -144,6 +144,16 @@ public:
         DISCOVER_NEW_OBJECTS = 12,    // discover newly connected objects that support auto discovery
     };
     // application can add additional commands, starting at 100.
+
+    void startConnections()
+    {
+        connections.startAll();
+    }
+
+    void stopConnections()
+    {
+        connections.stopAll();
+    }
 };
 
 bool

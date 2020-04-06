@@ -22,8 +22,11 @@
 #include <cstdint>
 
 class OneWireLowLevelInterface {
+public:
+    OneWireLowLevelInterface() = default;
+
 protected:
-    ~OneWireLowLevelInterface() = default;
+    virtual ~OneWireLowLevelInterface() = default;
 
 public:
     // Configure the pin or chip

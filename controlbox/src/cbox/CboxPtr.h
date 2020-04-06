@@ -65,15 +65,13 @@ public:
         return std::shared_ptr<U>(ptr, p);
     }
 
-    std::shared_ptr<T>
-    lock()
+    std::shared_ptr<T> lock()
     {
         return lock_as<T>();
     }
 
     template <class U>
-    std::shared_ptr<U>
-    lock_as()
+    std::shared_ptr<U> lock_as()
     {
         // try to lock the weak pointer we already had. If it cannot be locked, we need to do a lookup again
         std::shared_ptr<Object> sptr;
@@ -92,7 +90,7 @@ public:
                 // If multiple-inheritance is involved, it is possible that the shared pointer and interface pointer
                 // do not point to the same address. That is why the this pointer is returned by the base that implements
                 // the interface. convert_ptr ensures the block managing the lifetime of the object is still used.
-                return convert_ptr<U>(std::move(sptr), thisPtr);
+                return this->template convert_ptr<U>(std::move(sptr), thisPtr);
             }
         }
         // the cast was not allowed, reset weak ptr
@@ -102,15 +100,14 @@ public:
     }
 
     template <class U>
-    std::shared_ptr<const U>
-    const_lock_as() const
+    std::shared_ptr<const U> const_lock_as() const
     {
-        return std::const_pointer_cast<const U>(
-            std::move(const_cast<CboxPtr<T>*>(this)->lock_as<U>()));
+        auto this_non_const = const_cast<CboxPtr<T>*>(this);
+        auto sptr = this_non_const->template lock_as<U>();
+        return std::const_pointer_cast<const U>(std::move(sptr));
     }
 
-    std::shared_ptr<const T>
-    const_lock() const
+    std::shared_ptr<const T> const_lock() const
     {
         return const_lock_as<T>();
     }

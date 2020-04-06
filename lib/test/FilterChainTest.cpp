@@ -91,16 +91,15 @@ SCENARIO("Basic test of chain of filters")
             return ampl * sin(2.0 * M_PI * t / period);
         };
 
-        auto chains
-            = std::vector<FilterChain>{
-                FilterChain({0, 0}, {2, 1}),                   // 28
-                FilterChain({2, 0}, {4, 1}),                   // 56
-                FilterChain({2, 2, 0}, {4, 3, 1}),             // 171
-                FilterChain({2, 2, 2}, {4, 3, 1}),             // 257
-                FilterChain({2, 2, 2, 0}, {4, 4, 3, 1}),       // 683
-                FilterChain({2, 2, 2, 2}, {4, 4, 4, 1}),       // 1343
-                FilterChain({2, 2, 2, 2, 0}, {4, 4, 4, 3, 1}), // 2729
-            };
+        std::vector<FilterChain> chains;
+
+        chains.push_back(FilterChain({0, 0}, {2, 1}));                   // 28
+        chains.push_back(FilterChain({2, 0}, {4, 1}));                   // 56
+        chains.push_back(FilterChain({2, 2, 0}, {4, 3, 1}));             // 171
+        chains.push_back(FilterChain({2, 2, 2}, {4, 3, 1}));             // 257
+        chains.push_back(FilterChain({2, 2, 2, 0}, {4, 4, 3, 1}));       // 683
+        chains.push_back(FilterChain({2, 2, 2, 2}, {4, 4, 4, 1}));       // 1343
+        chains.push_back(FilterChain({2, 2, 2, 2, 0}, {4, 4, 4, 3, 1})); // 2729
 
         auto findGainAtPeriod = [&sine](FilterChain& c, const uint32_t& period) {
             int32_t amplIn = 100000;

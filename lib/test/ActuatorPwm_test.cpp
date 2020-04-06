@@ -130,12 +130,10 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
     auto now = ticks_millis_t(0);
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
+    ActuatorDigital mock([mockIo]() { return mockIo; }, 1);
 
     auto constrained = std::make_shared<ActuatorDigitalConstrained>(mock);
-    auto pwm = ActuatorPwm(
-        [constrained]() { return constrained; },
-        4000);
+    ActuatorPwm pwm([constrained]() { return constrained; }, 4000);
 
     WHEN("Actuator setting is written, setting is contrained between  0-100")
     {
@@ -637,19 +635,15 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
     auto period = duration_millis_t(4000);
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock1 = ActuatorDigital([mockIo]() { return mockIo; }, 1);
+    ActuatorDigital mock1([mockIo]() { return mockIo; }, 1);
 
     auto constrainedMock1 = std::make_shared<ActuatorDigitalConstrained>(mock1);
-    auto pwm1 = ActuatorPwm(
-        [constrainedMock1]() { return constrainedMock1; },
-        4000);
-    auto constrainedPwm1 = ActuatorAnalogConstrained(pwm1);
-    auto mock2 = ActuatorDigital([mockIo]() { return mockIo; }, 2);
+    ActuatorPwm pwm1([constrainedMock1]() { return constrainedMock1; }, 4000);
+    ActuatorAnalogConstrained constrainedPwm1(pwm1);
+    ActuatorDigital mock2([mockIo]() { return mockIo; }, 2);
     auto constrainedMock2 = std::make_shared<ActuatorDigitalConstrained>(mock2);
-    auto pwm2 = ActuatorPwm(
-        [constrainedMock2]() { return constrainedMock2; },
-        4000);
-    auto constrainedPwm2 = ActuatorAnalogConstrained(pwm2);
+    ActuatorPwm pwm2([constrainedMock2]() { return constrainedMock2; }, 4000);
+    ActuatorAnalogConstrained constrainedPwm2(pwm2);
 
     auto mut = std::make_shared<MutexTarget>();
     auto balancer = std::make_shared<Balancer<2>>();
@@ -863,9 +857,9 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 WHEN("Actuator PWM value is alternated between zero and a low value, the average is correct")
 {
     // test with minimum ON of 2 seconds, minimum off of 5 seconds and period 5 seconds
-    auto vAct = ActuatorBool();
-    auto onOffAct = ActuatorTimeLimited(vAct, 20, 50);
-    auto act = ActuatorPwm(onOffAct, 100);
+    ActuatorBool vAct ();
+    ActuatorTimeLimited onOffAct (vAct, 20, 50);
+    ActuatorPwm act (onOffAct, 100);
 
     utc_seconds_t timeHigh = 0;
     utc_seconds_t timeLow = 0;
@@ -901,9 +895,9 @@ WHEN("Actuator PWM value is alternated between zero and a low value, the average
 
 BOOST_AUTO_TEST_CASE(on_big_positive_changes_shortened_cycle_has_correct_value)
 {
-    auto vAct = ActuatorBool();
-    auto limited = ActuatorTimeLimited(vAct, 0, 0);
-    auto act = ActuatorPwm(limited, 100); // period is 100 seconds
+    ActuatorBool vAct ();
+    ActuatorTimeLimited limited (vAct, 0, 0);
+    ActuatorPwm act (limited, 100); // period is 100 seconds
 
     pwm.set(short(30));
     ticks_millis_t start = ticks.millis();
@@ -945,9 +939,9 @@ BOOST_AUTO_TEST_CASE(on_big_positive_changes_shortened_cycle_has_correct_value)
 
 BOOST_AUTO_TEST_CASE(on_big_negative_changes_go_low_immediately)
 {
-    auto vAct = ActuatorBool();
-    auto limited = ActuatorTimeLimited(vAct, 0, 0);
-    auto act = ActuatorPwm(limited, 100); // period is 100 seconds
+    ActuatorBool vAct ();
+    ActuatorTimeLimited limited (vAct, 0, 0);
+    ActuatorPwm act (limited, 100); // period is 100 seconds
 
     ticks_millis_t lastLowTimeBeforeChange = ticks.millis();
     pwm.set(60.0);
@@ -991,9 +985,9 @@ BOOST_AUTO_TEST_CASE(ActuatorPWM_with_min_max_time_limited_OnOffActuator_as_driv
     // test with minimum ON of 2 seconds, minimum off of 5 seconds and period 10 seconds
 
     srand(time(NULL));
-    auto vAct = ActuatorBool();
-    auto onOffAct = ActuatorTimeLimited(vAct, 2, 5);
-    auto act = ActuatorPwm(onOffAct, 10);
+    ActuatorBool vAct ();
+    ActuatorTimeLimited onOffAct (vAct, 2, 5);
+    ActuatorPwm act (onOffAct, 10);
 
     // Test that average duty cycle is correct, even with minimum times enforced in the actuator
     BOOST_CHECK_CLOSE(randomIntervalTest(pwm, vAct, 50.0, 500), 50.0, 1);
@@ -1004,8 +998,8 @@ BOOST_AUTO_TEST_CASE(ActuatorPWM_with_min_max_time_limited_OnOffActuator_as_driv
 
 BOOST_AUTO_TEST_CASE(ramping_PWM_up_faster_than_period_gives_correct_average)
 {
-    auto vAct = ActuatorBool();
-    auto act = ActuatorPwm(vAct, 20);
+    ActuatorBool vAct ();
+    ActuatorPwm act (vAct, 20);
     utc_seconds_t timeHigh = 0;
     utc_seconds_t timeLow = 0;
 
@@ -1030,8 +1024,8 @@ BOOST_AUTO_TEST_CASE(ramping_PWM_up_faster_than_period_gives_correct_average)
 
 BOOST_AUTO_TEST_CASE(ramping_PWM_down_faster_than_period_gives_correct_average)
 {
-    auto vAct = ActuatorBool();
-    auto act = ActuatorPwm(vAct, 20);
+    ActuatorBool vAct ();
+    ActuatorPwm act (vAct, 20);
     utc_seconds_t timeHigh = 0;
     utc_seconds_t timeLow = 0;
 
@@ -1056,14 +1050,14 @@ BOOST_AUTO_TEST_CASE(ramping_PWM_down_faster_than_period_gives_correct_average)
 
 BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_equal_duty)
 {
-    auto mutex = ActuatorMutexGroup();
-    auto boolAct1 = ActuatorBool();
-    auto mutexAct1 = ActuatorMutexDriver(boolAct1, mutex);
-    auto act1 = ActuatorPwm(mutexAct1, 10);
+    ActuatorMutexGroup mutex ();
+    ActuatorBool boolAct1 ();
+    ActuatorMutexDriver mutexAct1 (boolAct1, mutex);
+    ActuatorPwm act1 (mutexAct1, 10);
 
-    auto boolAct2 = ActuatorBool();
-    auto mutexAct2 = ActuatorMutexDriver(boolAct2, mutex);
-    auto act2 = ActuatorPwm(mutexAct2, 10);
+    ActuatorBool boolAct2 ();
+    ActuatorMutexDriver mutexAct2 (boolAct2, mutex);
+    ActuatorPwm act2 (mutexAct2, 10);
 
     mutex.setDeadTime(0);
 
@@ -1152,14 +1146,14 @@ BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_equal_duty)
 
 BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_different_duty)
 {
-    auto mutex = ActuatorMutexGroup();
-    auto boolAct1 = ActuatorBool();
-    auto mutexAct1 = ActuatorMutexDriver(boolAct1, mutex);
-    auto act1 = ActuatorPwm(mutexAct1, 10);
+    ActuatorMutexGroup mutex ();
+    ActuatorBool boolAct1 ();
+    ActuatorMutexDriver mutexAct1 (boolAct1, mutex);
+    ActuatorPwm act1 (mutexAct1, 10);
 
-    auto boolAct2 = ActuatorBool();
-    auto mutexAct2 = ActuatorMutexDriver(boolAct2, mutex);
-    auto act2 = ActuatorPwm(mutexAct2, 10);
+    ActuatorBool boolAct2 ();
+    ActuatorMutexDriver mutexAct2 (boolAct2, mutex);
+    ActuatorPwm act2 (mutexAct2, 10);
 
     mutex.setDeadTime(0);
 
@@ -1208,14 +1202,14 @@ BOOST_AUTO_TEST_CASE(two_mutex_PWM_actuators_can_overlap_with_different_duty)
 
 BOOST_AUTO_TEST_CASE(mutex_actuator_which_cannot_go_active_cannot_block_other_actuator)
 {
-    auto mutex = ActuatorMutexGroup();
-    auto boolAct1 = ActuatorBool();
-    auto mutexAct1 = ActuatorMutexDriver(boolAct1, mutex);
-    auto act1 = ActuatorPwm(mutexAct1, 10);
+    ActuatorMutexGroup mutex ();
+    ActuatorBool boolAct1 ();
+    ActuatorMutexDriver mutexAct1 (boolAct1, mutex);
+    ActuatorPwm act1 (mutexAct1, 10);
 
-    auto boolAct2 = ActuatorNop(); // actuator which can never go active
-    auto mutexAct2 = ActuatorMutexDriver(boolAct2, mutex);
-    auto act2 = ActuatorPwm(mutexAct2, 10);
+    ActuatorNop boolAct2 (); // actuator which can never go active
+    ActuatorMutexDriver mutexAct2 (boolAct2, mutex);
+    ActuatorPwm act2 (mutexAct2, 10);
 
     mutex.setDeadTime(0);
 
@@ -1264,8 +1258,8 @@ BOOST_AUTO_TEST_CASE(mutex_actuator_which_cannot_go_active_cannot_block_other_ac
 
 BOOST_AUTO_TEST_CASE(actual_value_returned_by_ActuatorPwm_readValue_is_correct)
 {
-    auto boolAct = ActuatorBool();
-    auto pwmAct = ActuatorPwm(boolAct, 20);
+    ActuatorBool boolAct ();
+    ActuatorPwm pwmAct (boolAct, 20);
 
     ofstream csv("./test_results/" + boost_test_name() + ".csv");
     csv << "1#set value, 1#read value, 2a#pin" << endl;
@@ -1297,9 +1291,9 @@ BOOST_AUTO_TEST_CASE(actual_value_returned_by_ActuatorPwm_readValue_is_correct)
 
 BOOST_AUTO_TEST_CASE(actual_value_returned_by_ActuatorPwm_readValue_is_correct_with_time_limited_actuator)
 {
-    auto boolAct = ActuatorBool();
-    auto timeLimitedAct = ActuatorTimeLimited(boolAct, 2, 5);
-    auto pwmAct = ActuatorPwm(timeLimitedAct, 20);
+    ActuatorBool boolAct ();
+    ActuatorTimeLimited timeLimitedAct (boolAct, 2, 5);
+    ActuatorPwm pwmAct (timeLimitedAct, 20);
 
     ofstream csv("./test_results/" + boost_test_name() + ".csv");
     csv << "1#set value, 1#read value, 2a#pin" << endl;
@@ -1332,8 +1326,8 @@ BOOST_AUTO_TEST_CASE(actual_value_returned_by_ActuatorPwm_readValue_is_correct_w
 
 BOOST_AUTO_TEST_CASE(slowly_changing_pwm_value_reads_back_as_correct_value)
 {
-    auto boolAct = ActuatorBool();
-    auto pwmAct = ActuatorPwm(boolAct, 20);
+    ActuatorBool boolAct ();
+    ActuatorPwm pwmAct (boolAct, 20);
 
     pwmAct.set(0.0);
     ticks_millis_t start = ticks.millis();
@@ -1365,9 +1359,9 @@ BOOST_AUTO_TEST_CASE(slowly_changing_pwm_value_reads_back_as_correct_value)
 
 BOOST_AUTO_TEST_CASE(fluctuating_pwm_value_gives_correct_average_with_time_limited_actuator)
 {
-    auto boolAct = ActuatorBool();
-    auto timeLimitedAct = ActuatorTimeLimited(boolAct, 2, 5);
-    auto pwmAct = ActuatorPwm(timeLimitedAct, 20);
+    ActuatorBool boolAct ();
+    ActuatorTimeLimited timeLimitedAct (boolAct, 2, 5);
+    ActuatorPwm pwmAct (timeLimitedAct, 20);
 
     pwmAct.set(5.0); // set to a value with duty cycle lower than time limit
     ticks_millis_t start = ticks.millis();
@@ -1411,16 +1405,16 @@ BOOST_AUTO_TEST_CASE(fluctuating_pwm_value_gives_correct_average_with_time_limit
 
 BOOST_AUTO_TEST_CASE(decreasing_pwm_value_after_long_high_time_and_mutex_wait)
 {
-    auto mutex = ActuatorMutexGroup();
+    ActuatorMutexGroup mutex ();
     mutex.setDeadTime(100000);
 
     // actuator that prevents other actuator from going high
-    auto blocker = ActuatorBool();
-    auto blockerMutex = ActuatorMutexDriver(blocker, mutex);
+    ActuatorBool blocker ();
+    ActuatorMutexDriver blockerMutex (blocker, mutex);
 
-    auto boolAct = ActuatorBool();
-    auto mutexAct = ActuatorMutexDriver(boolAct, mutex);
-    auto pwmAct = ActuatorPwm(mutexAct, 20);
+    ActuatorBool boolAct ();
+    ActuatorMutexDriver mutexAct (boolAct, mutex);
+    ActuatorPwm pwmAct (mutexAct, 20);
 
     ticks_millis_t start = ticks.millis();
 

@@ -1,6 +1,9 @@
-import time;
-import serial;
+import time
+
+import serial
+
 import colorama
+
 colorama.init()
 
 # colorama is used to get some color on the terminal
@@ -13,6 +16,8 @@ ser = None
 timer = time.time()
 
 serial_buffer = ""
+
+IP="192.168.2.140"
 
 while True:
 
@@ -32,7 +37,7 @@ while True:
     try:
         if tcp is None:
             time.sleep(1)
-            tcp = serial.serial_for_url("socket://192.168.1.61:6666", baudrate=57600, timeout=0.1, write_timeout=1)
+            tcp = serial.serial_for_url(f"socket://{IP}:6666", baudrate=57600, timeout=0.1, write_timeout=1)
         
         if time.time() - timer > 1.0:
             tcp.write('t'.encode('utf-8'))

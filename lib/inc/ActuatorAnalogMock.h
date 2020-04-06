@@ -42,6 +42,8 @@ private:
 public:
     // construct without arguments, val = invalid, min and max are defaults
     ActuatorAnalogMock() {}
+    ActuatorAnalogMock(const ActuatorAnalogMock&) = delete;
+    ActuatorAnalogMock& operator=(const ActuatorAnalogMock&) = delete;
 
     // construct with just val, min and max are defaults
     ActuatorAnalogMock(const value_t& initial)
@@ -57,7 +59,7 @@ public:
         setting(initial);
     }
 
-    ~ActuatorAnalogMock() = default;
+    virtual ~ActuatorAnalogMock() = default;
 
     virtual void setting(const value_t& val) override final
     {

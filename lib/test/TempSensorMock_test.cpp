@@ -29,7 +29,7 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("A mock sensor is initialized without providing an initial value, it reads as invalid and 0")
     {
-        auto mock = TempSensorMock();
+        TempSensorMock mock;
 
         CHECK(mock.value() == temp_t(0));
         CHECK(mock.valid() == false);
@@ -37,7 +37,7 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("A mock sensor is initialized with an initial value, it reads as valid and that value")
     {
-        auto mock = TempSensorMock(20.0);
+        TempSensorMock mock(20.0);
 
         CHECK(mock.value() == temp_t(20.0));
         CHECK(mock.valid() == true);
@@ -45,7 +45,7 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("A mock sensor is disconnected, valid() returns false")
     {
-        auto mock = TempSensorMock(20.0);
+        TempSensorMock mock(20.0);
         mock.connected(false);
 
         CHECK(mock.valid() == false);
@@ -61,7 +61,7 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("Mock sensor has 1 fluctuation configured")
     {
-        auto mock = TempSensorMock(20.0);
+        TempSensorMock mock(20.0);
         mock.fluctuations({{temp_t{2}, 3000}});
 
         auto min = temp_t{20};
@@ -86,7 +86,7 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("Mock the fluctuation period is zero")
     {
-        auto mock = TempSensorMock(20.0);
+        TempSensorMock mock(20.0);
         mock.fluctuations({{temp_t{2}, 0}});
 
         for (ticks_millis_t t = 0; t <= 1000; t += 100) {
@@ -100,9 +100,9 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("Mock sensor has 2 fluctuations configured")
     {
-        auto mock1 = TempSensorMock(20.0);
-        auto mock2 = TempSensorMock(20.0);
-        auto mock3 = TempSensorMock(20.0);
+        TempSensorMock mock1(20.0);
+        TempSensorMock mock2(20.0);
+        TempSensorMock mock3(20.0);
         mock1.fluctuations({{temp_t{2}, 5000}});
         mock2.fluctuations({{temp_t{0.5}, 1000}});
         mock3.fluctuations({{temp_t{2}, 5000}, {temp_t{0.5}, 1000}});

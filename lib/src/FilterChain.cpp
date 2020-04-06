@@ -98,7 +98,9 @@ FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uin
         } else {
             interval = IirFilter::FilterDefinition(*itP).downsample;
         }
-        stages.emplace_back(Stage{IirFilter(*itP, stepThreshold), std::move(interval)});
+        auto newFilter = IirFilter{*itP, stepThreshold};
+        auto newStage = FilterChain::Stage{std::move(newFilter), interval};
+        stages.push_back(std::move(newStage));
     }
     stages.shrink_to_fit(); // remove filters if params is shorter than before
     reset(newFilterInitVal);

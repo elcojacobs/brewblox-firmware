@@ -33,10 +33,10 @@ TempSensorWidget::update(const WidgetSettings& settings)
         setConnected();
         char icons[2] = {0};
         if (ptr->valid()) {
-            setValue(temp_to_string(ptr->value(), 1, settings.tempUnit).c_str());
+            setValue(temp_to_string(ptr->value(), 1, settings.tempUnit));
             icons[0] = 0x29;
         } else {
-            setValue(nullptr);
+            setValue("");
             icons[0] = 0x2B;
         }
         setIcons(icons);

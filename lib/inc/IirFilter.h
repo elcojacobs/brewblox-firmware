@@ -28,7 +28,10 @@ private:
     int64_t unshift(const int64_t val, uint8_t shift) const;
 
 public:
-    IirFilter(const uint8_t& idx, const int32_t& threshold = std::numeric_limits<int32_t>::max());
+    IirFilter(uint8_t idx, int32_t threshold = std::numeric_limits<int32_t>::max());
+    IirFilter(const IirFilter&) = delete;
+    IirFilter(IirFilter&&) = default;
+    IirFilter& operator=(const IirFilter&) = delete;
     ~IirFilter();
     static FilterParams const& FilterDefinition(const uint8_t idx);
     static double dcGain(uint8_t idx); // mainly for testing

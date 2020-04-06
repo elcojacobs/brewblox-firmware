@@ -32,8 +32,10 @@ public:
         : IoArray(8)
     {
     }
+    MockIoArray(const MockIoArray&) = delete;
+    MockIoArray& operator=(const MockIoArray&) = delete;
 
-    ~MockIoArray() = default;
+    virtual ~MockIoArray() = default;
 
     virtual bool senseChannelImpl(uint8_t channel, State& result) const override final
     {

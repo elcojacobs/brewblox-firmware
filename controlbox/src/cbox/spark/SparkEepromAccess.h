@@ -11,7 +11,7 @@ public:
     {
         HAL_EEPROM_Init();
     }
-    ~SparkEepromAccess() = default;
+    virtual ~SparkEepromAccess() = default;
 
     virtual uint8_t readByte(uint16_t offset) const override final
     {
@@ -22,11 +22,11 @@ public:
         HAL_EEPROM_Write(offset, value);
     }
 
-    virtual void readBlock(void* target, uint16_t offset, uint16_t size) const override final
+    virtual void readBlock(uint8_t* target, uint16_t offset, uint16_t size) const override final
     {
         HAL_EEPROM_Get(offset, target, size);
     }
-    virtual void writeBlock(uint16_t target, const void* source, uint16_t size) override final
+    virtual void writeBlock(uint16_t target, const uint8_t* source, uint16_t size) override final
     {
         HAL_EEPROM_Put(target, source, size);
     }

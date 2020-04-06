@@ -50,6 +50,9 @@ public:
         , m_connected(true)
     {
     }
+    TempSensorMock(const TempSensorMock&) = delete;
+    TempSensorMock& operator=(const TempSensorMock&) = delete;
+    virtual ~TempSensorMock() = default;
 
     void fluctuations(std::vector<Fluctuation>&& arg);
 

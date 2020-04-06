@@ -53,7 +53,7 @@ public:
     ActuatorDigitalBase() = default;
 
 protected:
-    ~ActuatorDigitalBase() = default;
+    virtual ~ActuatorDigitalBase() = default;
 
 public:
     virtual void state(const State& v) = 0;

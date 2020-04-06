@@ -32,7 +32,8 @@ private:
 
 public:
     IntervalHelper() = default;
-
+    IntervalHelper(const IntervalHelper&) = delete;
+    IntervalHelper& operator=(const IntervalHelper&) = delete;
     ~IntervalHelper() = default;
 
     ticks_millis_t update(const ticks_millis_t& now, bool& doUpdate)

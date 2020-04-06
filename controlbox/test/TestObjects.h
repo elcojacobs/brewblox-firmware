@@ -12,7 +12,7 @@ private:
     std::string name;
 
 public:
-    void setName(std::string rhs)
+    void setName(std::string&& rhs)
     {
         name = std::move(rhs);
     }

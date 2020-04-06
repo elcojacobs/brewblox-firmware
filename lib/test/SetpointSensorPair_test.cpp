@@ -30,7 +30,7 @@ SCENARIO("SetpointSensorPair test")
         // usually the lookup functions are some sort of weak_pointers, we now use a simple lambda
         auto sensor = std::make_shared<TempSensorMock>(21.0);
 
-        auto pair = SetpointSensorPair([sensor]() { return sensor; });
+        SetpointSensorPair pair([sensor]() { return sensor; });
 
         CHECK(pair.setting() == 20.0);
         CHECK(pair.value() == 21.0);

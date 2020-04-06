@@ -50,6 +50,9 @@ public:
         update();
     }
 
+    SetpointSensorPair(const SetpointSensorPair&) = delete;
+    SetpointSensorPair& operator=(const SetpointSensorPair&) = delete;
+
     virtual ~SetpointSensorPair() = default;
 
     virtual void setting(temp_t const& setting) override final

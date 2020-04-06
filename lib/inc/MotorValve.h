@@ -60,7 +60,10 @@ public:
     {
         startChannel(startChan);
     }
-    ~MotorValve()
+    MotorValve(const MotorValve&) = delete;
+    MotorValve& operator=(const MotorValve&) = delete;
+
+    virtual ~MotorValve()
     {
         startChannel(0); // release channels before destruction
     }
