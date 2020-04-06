@@ -119,7 +119,8 @@ theConnectionPool()
 #if defined(SPARK)
     static cbox::TcpConnectionSource tcpSource(8332);
 #if PLATFORM_ID != 3 || defined(STDIN_SERIAL)
-    static cbox::SerialConnectionSource serialSource;
+    static auto& boxSerial = _fetch_usbserial();
+    static cbox::SerialConnectionSource serialSource(boxSerial);
     static cbox::ConnectionPool connections = {tcpSource, serialSource};
 #else
     static cbox::ConnectionPool connections = {tcpSource};
@@ -200,7 +201,7 @@ theOneWire()
 Logger&
 logger()
 {
-    static auto logger = Logger([](Logger::LogLevel level, const std::string& log) {
+    static Logger logger([](Logger::LogLevel level, const std::string& log) {
         cbox::DataOut& out = theConnectionPool().logDataOut();
         out.write('<');
         const char debug[] = "DEBUG";
@@ -316,7 +317,7 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
         out.endMessage();
         if (status == CboxError::OK) {
             changeLedColor();
-            theConnectionPool().closeAll();
+            brewbloxBox().stopConnections();
             updateFirmwareFromStream(in.streamType());
             uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
             handleReset(true, reason); // reset in case the firmware update failed

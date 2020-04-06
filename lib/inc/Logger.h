@@ -27,6 +27,11 @@
 
 class Logger {
 public:
+    Logger() = default;
+    ~Logger() = default;
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
+
     enum LogLevel : uint8_t {
         DEBUG,
         INFO,

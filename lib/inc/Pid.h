@@ -65,6 +65,9 @@ public:
     {
     }
 
+    Pid(const Pid&) = delete;
+    Pid& operator=(const Pid&) = delete;
+
     ~Pid() = default;
 
     void init();

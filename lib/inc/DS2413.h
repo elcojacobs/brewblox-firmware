@@ -61,6 +61,9 @@ public:
     {
     }
 
+    DS2413(const DS2413&) = delete;
+    DS2413& operator=(const DS2413&) = delete;
+
     /**
      * Destructor is default
      */

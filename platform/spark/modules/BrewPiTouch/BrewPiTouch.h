@@ -23,7 +23,7 @@
 #include "SPIArbiter.h"
 #include <cstdint>
 
-class BrewPiTouch final {
+class BrewPiTouch {
 public:
     BrewPiTouch(SPIArbiter& spia, const uint8_t cs, const uint8_t irq);
     ~BrewPiTouch();

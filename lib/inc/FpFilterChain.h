@@ -25,7 +25,7 @@
 template <typename T>
 class FpFilterChain {
 private:
-    FilterChain chain = FilterChain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4});
+    FilterChain chain;
     uint8_t readIdx; // 0 for no filtering, 1 - 6 for each filter stage
 
     struct FilterSpec {
@@ -37,9 +37,12 @@ public:
     using value_type = T;
 
     FpFilterChain(uint8_t idx)
-        : readIdx(idx)
+        : chain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4})
+        , readIdx(idx)
     {
     }
+    FpFilterChain(const FpFilterChain&) = delete;
+    FpFilterChain& operator=(const FpFilterChain&) = delete;
     ~FpFilterChain() = default;
 
     void add(const value_type& val)

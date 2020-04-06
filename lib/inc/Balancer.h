@@ -92,10 +92,8 @@ public:
 
     Balanced(const Balanced&) = delete;
     Balanced& operator=(const Balanced&) = delete;
-    Balanced(Balanced&&) = default;
-    Balanced& operator=(Balanced&&) = default;
 
-    ~Balanced()
+    virtual ~Balanced()
     {
         if (auto balancerPtr = m_balancer()) {
             balancerPtr->unregisterEntry(m_req_id);

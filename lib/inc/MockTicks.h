@@ -33,6 +33,9 @@ public:
         , _ticks(0)
     {
     }
+    MockTicks(const MockTicks&) = delete;
+    MockTicks& operator=(const MockTicks&) = delete;
+    ~MockTicks() = default;
 
     ticks_millis_t millis() const
     {

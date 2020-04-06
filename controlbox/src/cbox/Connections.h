@@ -41,6 +41,8 @@ class Connection {
 public:
     Connection() = default;
     virtual ~Connection() = default;
+    Connection(const Connection&) = delete;
+    Connection& operator=(const Connection&) = delete;
 
     virtual DataOut& getDataOut() = 0;
     virtual DataIn& getDataIn() = 0;
@@ -55,6 +57,7 @@ public:
 
     virtual std::unique_ptr<Connection> newConnection() = 0;
 
+    virtual void start() = 0;
     virtual void stop() = 0;
 };
 
@@ -127,9 +130,9 @@ public:
         return stream.write(data) != 0;
     }
 
-    virtual bool writeBuffer(const void* data, stream_size_t length) override final
+    virtual bool writeBuffer(const uint8_t* data, stream_size_t length) override final
     {
-        return stream.write((const uint8_t*)data, length) == length;
+        return stream.write(data, length) == length;
     }
 };
 
@@ -147,6 +150,7 @@ public:
         , out(stream)
     {
     }
+    virtual ~StreamRefConnection() = default;
 
     virtual DataOut& getDataOut() override
     {
@@ -232,16 +236,16 @@ public:
     void updateConnections()
     {
         connections.erase(
-            std::remove_if(connections.begin(), connections.end(), [](std::unique_ptr<Connection>& conn) {
+            std::remove_if(connections.begin(), connections.end(), [](const decltype(connections)::value_type& conn) {
                 return !conn->isConnected(); // remove disconnected connections from pool
             }),
             connections.end());
 
         for (auto& source : connectionSources) {
-            std::unique_ptr<Connection> newConnection = source.get().newConnection();
-            if (newConnection != nullptr) {
-                connectionStarted(newConnection->getDataOut());
-                connections.push_back(std::move(newConnection));
+            auto con = source.get().newConnection();
+            if (con) {
+                connectionStarted(con->getDataOut());
+                connections.push_back(std::move(con));
             }
         }
     }
@@ -268,7 +272,7 @@ public:
         return currentDataOut;
     }
 
-    void closeAll()
+    void stopAll()
     {
         for (auto& c : connections) {
             // don't delete connections here.
@@ -277,6 +281,13 @@ public:
         }
         for (auto& source : connectionSources) {
             source.get().stop();
+        }
+    }
+
+    void startAll()
+    {
+        for (auto& source : connectionSources) {
+            source.get().start();
         }
     }
 };

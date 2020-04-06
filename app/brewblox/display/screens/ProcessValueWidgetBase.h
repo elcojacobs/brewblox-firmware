@@ -52,21 +52,21 @@ public:
     virtual ~ProcessValueWidgetBase() = default;
 
     void
-    setValue(const char* buf)
+    setValue(std::string&& buf)
     {
-        setAndEnable(&value, buf);
+        setAndEnable(&value, std::move(buf));
     }
 
     void
-    setSetting(const char* buf)
+    setSetting(std::string&& buf)
     {
-        setAndEnable(&setting, buf);
+        setAndEnable(&setting, std::move(buf));
     }
 
     void
-    setIcons(const char* buf)
+    setIcons(std::string&& buf)
     {
-        setAndEnable(&icons, buf);
+        setAndEnable(&icons, std::move(buf));
     }
 
     void

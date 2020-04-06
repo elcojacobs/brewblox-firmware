@@ -24,43 +24,58 @@
 
 namespace cbox {
 
-static bool SerialInUse = false;
+static bool serial_connection_active = false;
+
 class SerialConnection : public StreamRefConnection<USBSerial> {
 public:
-    SerialConnection()
-        : StreamRefConnection(Serial)
+    SerialConnection(USBSerial& ser)
+        : StreamRefConnection(ser)
     {
-        SerialInUse = true;
+        ser.flush(); // discard tx buffer
     }
     virtual ~SerialConnection()
     {
         stop();
+        serial_connection_active = false;
     };
 
     virtual void stop() override final
     {
-        SerialInUse = false;
+        StreamRefConnection::get().flush(); // discard tx buffer
     }
 };
 
 class SerialConnectionSource : public ConnectionSource {
+private:
+    bool serial_enabled = false;
+    USBSerial& ser;
+
 public:
-    SerialConnectionSource()
+    SerialConnectionSource(USBSerial& serial)
+        : ser(serial)
     {
-        Serial.begin(115200);
     }
 
     std::unique_ptr<Connection> newConnection() override final
     {
-        if (Serial.isConnected() && !SerialInUse) {
-            return std::make_unique<SerialConnection>();
+        if (serial_enabled && !serial_connection_active && ser.isConnected() && ser.try_lock()) {
+            serial_connection_active = true;
+            return std::make_unique<SerialConnection>(ser);
         }
-        return nullptr;
+        return std::unique_ptr<Connection>();
+    }
+
+    virtual void start() override final
+    {
+        serial_enabled = true;
+        ser.lock();
+        ser.begin(115200);
     }
 
     virtual void stop() override final
     {
-        Serial.flush(); // only flush, leave port open
+        serial_enabled = false;
+        ser.unlock();
     }
 };
 

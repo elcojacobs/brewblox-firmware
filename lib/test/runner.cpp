@@ -8,7 +8,7 @@
 Logger&
 logger()
 {
-    static auto logger = Logger([](Logger::LogLevel level, const std::string& log) {
+    static Logger logger([](Logger::LogLevel level, const std::string& log) {
         std::cerr << "LOG (";
         switch (level) {
         case Logger::LogLevel::DEBUG:

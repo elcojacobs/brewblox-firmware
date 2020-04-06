@@ -32,9 +32,7 @@ public:
         : StreamConnection<TCPClient>(std::move(_client))
     {
     }
-    ~TcpConnection()
-    {
-    }
+    virtual ~TcpConnection() = default;
 
     virtual void stop() override final
     {
@@ -46,17 +44,19 @@ class TcpConnectionSource : public ConnectionSource {
 private:
     TCPServer server;
     bool server_started = false;
+    bool server_enabled = false;
 
 public:
     TcpConnectionSource(uint16_t port)
         : server(port)
     {
     }
+    virtual ~TcpConnectionSource() = default;
 
     std::unique_ptr<Connection> newConnection() override final
     {
         if (spark::WiFi.ready() && !spark::WiFi.listening()) {
-            if (!server_started) {
+            if (server_enabled && !server_started) {
                 server_started = server.begin();
             }
 
@@ -67,12 +67,19 @@ public:
         } else {
             server_started = false;
         }
-        return nullptr;
+        return std::unique_ptr<Connection>();
     }
 
-    void stop() override final
+    virtual void stop() override final
     {
         server.stop();
+        server_enabled = false;
+    }
+
+    virtual void start() override final
+    {
+        server_enabled = true;
+        server.begin();
     }
 };
 

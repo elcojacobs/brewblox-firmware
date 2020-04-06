@@ -53,7 +53,7 @@ class OneWire {
 public:
     // Argument is PinNr for OneWirePin device, address for bus master IC
 
-    OneWire(OneWireLowLevelInterface& driverImpl)
+    explicit OneWire(OneWireLowLevelInterface& driverImpl)
         : driver(driverImpl)
     {
         // base class OneWireLowLevelInterface configures pin or bus master IC
@@ -62,6 +62,10 @@ public:
         reset_search();
 #endif
     }
+    OneWire(const OneWire&) = delete;
+    OneWire(OneWire&&) = default;
+    OneWire& operator=(const OneWire&) = delete;
+    ~OneWire() = default;
 
 private:
 #if ONEWIRE_SEARCH

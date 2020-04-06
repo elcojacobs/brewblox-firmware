@@ -34,6 +34,9 @@ public:
     {
     }
 
+    IoArray(const IoArray&) = delete;
+    IoArray& operator=(const IoArray&) = delete;
+
     virtual ~IoArray() = default;
 
     enum class ChannelConfig {

@@ -27,8 +27,8 @@ SCENARIO("ActuatorAnalogConstrained test", "[constraints]")
 {
     WHEN("An actuator is constructed wrapped by a ActuatorAnalogConstrained")
     {
-        auto act = ActuatorAnalogMock();
-        auto cAct = ActuatorAnalogConstrained(act);
+        ActuatorAnalogMock act;
+        ActuatorAnalogConstrained cAct(act);
 
         CHECK(cAct.setting() == 0);
         CHECK(cAct.value() == 0);
@@ -91,14 +91,14 @@ SCENARIO("When two analog actuators are constrained by a balancer", "[constraint
 {
     using value_t = ActuatorAnalog::value_t;
     auto balancer = std::make_shared<Balancer<2>>();
-    auto act1 = ActuatorAnalogMock();
+    ActuatorAnalogMock act1;
     act1.minSetting(0);
     act1.maxSetting(100);
-    auto cAct1 = ActuatorAnalogConstrained(act1);
-    auto act2 = ActuatorAnalogMock();
+    ActuatorAnalogConstrained cAct1(act1);
+    ActuatorAnalogMock act2;
     act2.minSetting(0);
     act2.maxSetting(100);
-    auto cAct2 = ActuatorAnalogConstrained(act2);
+    ActuatorAnalogConstrained cAct2(act2);
 
     cAct1.addConstraint(std::make_unique<AAConstraints::Balanced<2>>([balancer]() { return balancer; }));
     cAct2.addConstraint(std::make_unique<AAConstraints::Balanced<2>>([balancer]() { return balancer; }));

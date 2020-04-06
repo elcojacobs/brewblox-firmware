@@ -30,8 +30,8 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     auto now = ticks_millis_t(0);
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
-    auto constrained = ActuatorDigitalConstrained(mock);
+    ActuatorDigital mock([mockIo]() { return mockIo; }, 1);
+    ActuatorDigitalConstrained constrained(mock);
 
     WHEN("A minimum ON time constrained is added, the actuator cannot turn off before it has passed")
     {
@@ -134,10 +134,10 @@ SCENARIO("Mutex contraint", "[constraints]")
 {
     auto now = ticks_millis_t(0);
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock1 = ActuatorDigital([mockIo]() { return mockIo; }, 1);
-    auto constrained1 = ActuatorDigitalConstrained(mock1);
-    auto mock2 = ActuatorDigital([mockIo]() { return mockIo; }, 2);
-    auto constrained2 = ActuatorDigitalConstrained(mock2);
+    ActuatorDigital mock1([mockIo]() { return mockIo; }, 1);
+    ActuatorDigitalConstrained constrained1(mock1);
+    ActuatorDigital mock2([mockIo]() { return mockIo; }, 2);
+    ActuatorDigitalConstrained constrained2(mock2);
     auto mut = std::make_shared<MutexTarget>();
 
     constrained1.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(

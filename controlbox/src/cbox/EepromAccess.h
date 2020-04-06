@@ -29,22 +29,22 @@ public:
 
     virtual uint8_t readByte(uint16_t offset) const = 0;
     virtual void writeByte(uint16_t offset, uint8_t value) = 0;
-    virtual void readBlock(void* target, uint16_t offset, uint16_t size) const = 0;
-    virtual void writeBlock(uint16_t target, const void* source, uint16_t size) = 0;
+    virtual void readBlock(uint8_t* target, uint16_t offset, uint16_t size) const = 0;
+    virtual void writeBlock(uint16_t target, const uint8_t* source, uint16_t size) = 0;
     virtual uint16_t length() const = 0;
     virtual void clear() = 0;
 
     template <typename T>
     T& get(const uint16_t& idx, T& t) const
     {
-        readBlock(&t, idx, sizeof(T));
+        readBlock(reinterpret_cast<uint8_t*>(&t), idx, sizeof(T));
         return t;
     }
 
     template <typename T>
     const T& put(const uint16_t& idx, const T& t)
     {
-        writeBlock(idx, &t, sizeof(T));
+        writeBlock(idx, reinterpret_cast<const uint8_t*>(&t), sizeof(T));
         return t;
     }
 };
