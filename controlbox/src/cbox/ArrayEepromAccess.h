@@ -53,16 +53,16 @@ public:
         }
     }
 
-    virtual void readBlock(void* target, uint16_t offset, uint16_t size) const override final
+    virtual void readBlock(uint8_t* target, uint16_t offset, uint16_t size) const override final
     {
         if (isValidRange(offset, size))
-            memcpy((uint8_t*)target, &data[offset], size);
+            memcpy(target, &data[offset], size);
     }
 
-    virtual void writeBlock(uint16_t target, const void* source, uint16_t size) override final
+    virtual void writeBlock(uint16_t offset, const uint8_t* source, uint16_t size) override final
     {
-        if (isValidRange(target, size)) {
-            memcpy(&data[target], (const uint8_t*)source, size);
+        if (isValidRange(offset, size)) {
+            memcpy(&data[offset], source, size);
             flagChanged();
         }
     }

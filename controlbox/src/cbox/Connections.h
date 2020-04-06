@@ -130,9 +130,9 @@ public:
         return stream.write(data) != 0;
     }
 
-    virtual bool writeBuffer(const void* data, stream_size_t length) override final
+    virtual bool writeBuffer(const uint8_t* data, stream_size_t length) override final
     {
-        return stream.write((const uint8_t*)data, length) == length;
+        return stream.write(data, length) == length;
     }
 };
 

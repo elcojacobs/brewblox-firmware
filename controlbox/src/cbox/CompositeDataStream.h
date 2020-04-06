@@ -54,7 +54,7 @@ public:
         return result;
     }
 
-    virtual bool writeBuffer(const void* data, stream_size_t len) override
+    virtual bool writeBuffer(const uint8_t* data, stream_size_t len) override
     {
         bool result = true;
         for (auto& source : container) {

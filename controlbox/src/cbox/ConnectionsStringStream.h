@@ -99,5 +99,9 @@ public:
     virtual void stop() override final
     {
     }
+
+    virtual void start() override final
+    {
+    }
 };
 } // end namespace cbox
