@@ -24,13 +24,18 @@
 
 namespace cbox {
 
+static bool serial_connection_active = false;
+
 class SerialConnection : public StreamRefConnection<USBSerial> {
 public:
     SerialConnection(USBSerial& ser)
         : StreamRefConnection(ser)
     {
     }
-    virtual ~SerialConnection(){};
+    virtual ~SerialConnection()
+    {
+        serial_connection_active = false;
+    };
 
     virtual void stop() override final
     {
@@ -51,10 +56,11 @@ public:
 
     std::unique_ptr<Connection> newConnection() override final
     {
-        if (serial_enabled && ser.isConnected() && ser.try_lock()) {
+        if (serial_enabled && !serial_connection_active && ser.isConnected() && ser.try_lock()) {
+            serial_connection_active = true;
             return std::make_unique<SerialConnection>(ser);
         }
-        return nullptr;
+        return std::unique_ptr<Connection>();
     }
 
     virtual void start() override final

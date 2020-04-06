@@ -67,7 +67,7 @@ public:
         } else {
             server_started = false;
         }
-        return nullptr;
+        return std::unique_ptr<Connection>();
     }
 
     virtual void stop() override final
