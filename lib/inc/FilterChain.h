@@ -39,6 +39,7 @@ public:
     FilterChain(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const int32_t& stepThreshold = std::numeric_limits<int32_t>::max());
 
     FilterChain(const FilterChain&) = delete;
+    FilterChain(FilterChain&&) = default;
     FilterChain& operator=(const FilterChain&) = delete;
 
     ~FilterChain() = default;

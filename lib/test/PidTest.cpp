@@ -42,7 +42,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
     auto actuator = std::make_shared<ActuatorAnalogMock>();
 
-    auto pid = Pid(
+    Pid pid(
         [&input]() { return input; },
         [&actuator]() { return actuator; });
 
@@ -418,7 +418,7 @@ SCENARIO("PID Test with offset actuator", "[pid]")
         [target]() { return target; },
         [reference]() { return reference; });
 
-    auto pid = Pid(
+    Pid pid(
         [&reference]() { return reference; },
         [&actuator]() { return actuator; });
 
@@ -514,16 +514,16 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     input->filterThreshold(5);
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
+    ActuatorDigital mock([mockIo]() { return mockIo; }, 1);
     auto constrainedDigital = std::make_shared<ActuatorDigitalConstrained>(mock);
 
-    auto pwm = ActuatorPwm(
+    ActuatorPwm pwm(
         [constrainedDigital]() { return constrainedDigital; },
         4000);
 
     auto actuator = std::make_shared<ActuatorAnalogConstrained>(pwm);
 
-    auto pid = Pid(
+    Pid pid(
         [&input]() { return input; },
         [&actuator]() { return actuator; });
 

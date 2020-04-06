@@ -25,32 +25,33 @@ SCENARIO("ActuatorAnalogMock test")
 {
     WHEN("An ActuatorAnalogMock is constructed, initial values are corrent and min/max is applied")
     {
-        auto act = ActuatorAnalogMock();
-
-        CHECK(act.setting() == 0);
-        CHECK(act.value() == 0);
-        CHECK(act.settingValid() == true);
-        CHECK(act.valueValid() == true);
-
-        act = ActuatorAnalogMock(50);
-
-        CHECK(act.setting() == 50);
-        CHECK(act.value() == 50);
-        CHECK(act.settingValid() == true);
-        CHECK(act.valueValid() == true);
-
-        act = ActuatorAnalogMock(110, 0, 100);
-
-        CHECK(act.setting() == 100);
-        CHECK(act.value() == 100);
-        CHECK(act.settingValid() == true);
-        CHECK(act.valueValid() == true);
-
-        act = ActuatorAnalogMock(-10, 5, 100);
-
-        CHECK(act.setting() == 5);
-        CHECK(act.value() == 5);
-        CHECK(act.settingValid() == true);
-        CHECK(act.valueValid() == true);
+        {
+            ActuatorAnalogMock act;
+            CHECK(act.setting() == 0);
+            CHECK(act.value() == 0);
+            CHECK(act.settingValid() == true);
+            CHECK(act.valueValid() == true);
+        }
+        {
+            ActuatorAnalogMock act(50);
+            CHECK(act.setting() == 50);
+            CHECK(act.value() == 50);
+            CHECK(act.settingValid() == true);
+            CHECK(act.valueValid() == true);
+        }
+        {
+            ActuatorAnalogMock act(110, 0, 100);
+            CHECK(act.setting() == 100);
+            CHECK(act.value() == 100);
+            CHECK(act.settingValid() == true);
+            CHECK(act.valueValid() == true);
+        }
+        {
+            ActuatorAnalogMock act(-10, 5, 100);
+            CHECK(act.setting() == 5);
+            CHECK(act.value() == 5);
+            CHECK(act.settingValid() == true);
+            CHECK(act.valueValid() == true);
+        }
     }
 }

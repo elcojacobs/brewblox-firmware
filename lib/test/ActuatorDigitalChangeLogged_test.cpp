@@ -28,8 +28,8 @@ SCENARIO("ActuatorDigitalChangeLogged test", "[ActuatorChangeLog]")
     using State = ActuatorDigitalBase::State;
 
     auto mockIo = std::make_shared<MockIoArray>();
-    auto mock = ActuatorDigital([mockIo]() { return mockIo; }, 1);
-    auto logged = ActuatorDigitalChangeLogged(mock);
+    ActuatorDigital mock([mockIo]() { return mockIo; }, 1);
+    ActuatorDigitalChangeLogged logged(mock);
     ticks_millis_t now = 1000;
 
     WHEN("ActuatorDigitalChangeLogged is newly constructed")

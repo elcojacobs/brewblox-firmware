@@ -31,7 +31,7 @@ SCENARIO("SetpointProfile test", "[SetpointProfile]")
     auto sspair = std::make_shared<SetpointSensorPair>([sensor]() { return sensor; });
     sspair->setting(99);
     sspair->settingValid(true);
-    auto profile = SetpointProfile([sspair]() { return sspair; });
+    SetpointProfile profile([&sspair]() { return sspair; });
 
     WHEN("the profile has no values, it does not change the setpoint")
     {
