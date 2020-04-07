@@ -53,3 +53,16 @@ To step debug on target, you will have to:
 - start st-util listening on port 9025: st-util -p 9025
 - set a breakpoint that you are sure you will hit (pause is not working yet)
 - attach to to the debugger in Netbeans with the gdbserver plugin with target ```remote localhost:9025```
+
+
+## Cloning eeprom data for debugging
+On problem Spark:
+```
+docker pull brewblox/firmware-flasher:edge
+docker run --privileged -it --rm -v /dev:/dev brewblox/firmware-flasher:edge trigger-dfu
+docker run --privileged -it --rm -v /dev:/dev -v /home/pi/brewblox/:/dump -v /dev:/dev brewblox/firmware-flasher:edge -c "dfu-util -d 2b04:d006 -a 0 -s 0x800C000:0x18000 -U /dump/eeprom.bin"
+curl https://bashupload.com/eeprom.bin --data-binary @/home/pi/brewblox/eeprom.bin
+```
+
+On a test spark with a hardware debugger:
+st-flash write eeprom.bin 0x800c000
