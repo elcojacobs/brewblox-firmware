@@ -142,24 +142,24 @@ PidWidget::update(const WidgetSettings& settings)
         if (input && input->valueValid()) {
             setAndEnable(&inputValue, temp_to_string(input->value(), 1, settings.tempUnit));
         } else {
-            setAndEnable(&inputValue, nullptr);
+            setAndEnable(&inputValue, "");
         }
         if (input && input->settingValid()) {
             setAndEnable(&inputTarget, temp_to_string(input->setting(), 1, settings.tempUnit));
         } else {
-            setAndEnable(&inputTarget, nullptr);
+            setAndEnable(&inputTarget, "");
         }
 
         auto output = outputLookup.const_lock();
         if (output && output->valueValid()) {
             setAndEnable(&outputValue, to_string_dec(output->value(), 1));
         } else {
-            setAndEnable(&outputValue, nullptr);
+            setAndEnable(&outputValue, "");
         }
         if (output && output->settingValid()) {
             setAndEnable(&outputTarget, to_string_dec(output->setting(), 1));
         } else {
-            setAndEnable(&outputTarget, nullptr);
+            setAndEnable(&outputTarget, "");
         }
 
         drawPidRects(pid);
