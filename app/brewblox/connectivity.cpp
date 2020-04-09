@@ -123,7 +123,7 @@ manageConnections(uint32_t now)
         if (http_started) {
             TCPClient client = httpserver.available();
             if (client) {
-                client.setTimeout(0);
+                client.setTimeout(100);
                 while (client.read() != -1) {
                 }
                 const uint8_t start[] = "HTTP/1.1 200 Ok\n\n<html><body>"

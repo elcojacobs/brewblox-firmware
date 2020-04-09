@@ -82,7 +82,7 @@ DS248x::busyWait(bool setReadPtr)
 bool
 DS248x::init()
 {
-    Wire.setTimeout(0); // non-blocking mode
+    Wire.setTimeout(1);
     Wire.begin();
 
     resetMaster();

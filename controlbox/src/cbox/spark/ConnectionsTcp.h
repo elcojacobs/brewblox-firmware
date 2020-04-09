@@ -62,7 +62,7 @@ public:
 
             TCPClient newClient = server.available();
             if (newClient) {
-                newClient.setTimeout(0);
+                newClient.setTimeout(100);
                 return std::make_unique<TcpConnection>(std::move(newClient));
             }
         } else {
