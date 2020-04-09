@@ -125,7 +125,7 @@ public:
     {
     }
 
-    bool write(uint8_t data) override
+    virtual bool write(uint8_t data) override final
     {
         return stream.write(data) != 0;
     }

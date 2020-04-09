@@ -21,7 +21,7 @@
 #include "Board.h"
 #include "BrewBlox.h"
 #include "MDNS.h"
-#include "spark_wiring_system.h"
+#include "deviceid_hal.h"
 #include "spark_wiring_tcpclient.h"
 #include "spark_wiring_tcpserver.h"
 #include "spark_wiring_usbserial.h"
@@ -96,6 +96,12 @@ listeningModeEnabled()
     return spark::WiFi.listening();
 }
 
+inline uint8_t
+d2h(uint8_t bin)
+{
+    return uint8_t(bin + (bin > 9 ? 'A' - 10 : '0'));
+}
+
 void
 manageConnections(uint32_t now)
 {
@@ -117,16 +123,38 @@ manageConnections(uint32_t now)
         if (http_started) {
             TCPClient client = httpserver.available();
             if (client) {
+                client.setTimeout(100);
                 while (client.read() != -1) {
                 }
+                const uint8_t start[] = "HTTP/1.1 200 Ok\n\n<html><body>"
+                                        "<p>Your BrewBlox Spark is online but it does not run its own web server. "
+                                        "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
+                                        "<p>Device ID = ";
 
-                client.write("HTTP/1.1 200 Ok\n\n<html><body>"
-                             "<p>Your BrewBlox Spark is online but it does not run its own web server. "
-                             "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
-                             "<p>Device ID = ");
-                client.write(System.deviceID());
-                client.write("</p></body></html>\n\n");
-                client.flush();
+                uint8_t id[12];
+                uint8_t hex[24];
+                HAL_device_ID(id, 12);
+
+                uint8_t end[] = "</p></body></html>\n\n";
+
+                uint8_t* pId = id;
+                uint8_t* hId = hex;
+                while (hId < hex + 24) {
+                    *hId++ = d2h(uint8_t(*pId & 0xF0) >> 4);
+                    *hId++ = d2h(uint8_t(*pId++ & 0xF));
+                }
+
+                client.write(start, sizeof(start), 0);
+                if (!client.getWriteError()) {
+                    client.write(hex, sizeof(hex), 0);
+                }
+                if (!client.getWriteError()) {
+                    client.write(end, sizeof(end), 0);
+                }
+
+                if (!client.getWriteError()) {
+                    client.flush();
+                }
                 HAL_Delay_Milliseconds(5);
                 client.stop();
             }

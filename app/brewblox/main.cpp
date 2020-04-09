@@ -88,12 +88,6 @@ displayTick()
 }
 
 void
-onOutOfMemory(system_event_t event, int param)
-{
-    logEvent("OUT_OF_MEMORY");
-}
-
-void
 onSetupModeBegin()
 {
     logEvent("SETUP_MODE");
@@ -124,7 +118,6 @@ setup()
 #endif
     Buzzer.beep(2, 50);
 
-    System.on(out_of_memory, onOutOfMemory);
     System.on(setup_update, watchdogCheckin);
     System.on(setup_begin, onSetupModeBegin);
     System.on(setup_end, onSetupModeEnd);

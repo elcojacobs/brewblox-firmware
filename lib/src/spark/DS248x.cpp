@@ -82,7 +82,9 @@ DS248x::busyWait(bool setReadPtr)
 bool
 DS248x::init()
 {
+    Wire.setTimeout(1);
     Wire.begin();
+
     resetMaster();
     return configure(DS248X_CONFIG_APU);
 }
