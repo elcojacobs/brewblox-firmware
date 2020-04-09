@@ -61,7 +61,8 @@ public:
             }
 
             TCPClient newClient = server.available();
-            if (newClient.connected()) {
+            if (newClient) {
+                newClient.setTimeout(0);
                 return std::make_unique<TcpConnection>(std::move(newClient));
             }
         } else {
