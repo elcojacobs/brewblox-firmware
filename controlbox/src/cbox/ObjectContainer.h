@@ -21,8 +21,8 @@
 
 #include "ContainedObject.h"
 #include "Object.h"
-#include <functional>
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 namespace cbox {
@@ -46,15 +46,10 @@ public:
     {
     }
 
-    ObjectContainer(std::vector<ContainedObject>&& systemObjects)
-        : objects(systemObjects)
-    {
-    }
-
     virtual ~ObjectContainer() = default;
 
 private:
-    auto findPosition(const obj_id_t& id)
+    auto findPosition(obj_id_t id)
     {
         // equal_range is used instead of find, because it is faster for a sorted container
         // the returned pair can be used as follows:
@@ -85,7 +80,7 @@ public:
      * @return pointer to the entry.
      *
      */
-    ContainedObject* fetchContained(const obj_id_t id)
+    ContainedObject* fetchContained(obj_id_t id)
     {
         auto p = findPosition(id);
         if (p.first == p.second) {
@@ -95,7 +90,7 @@ public:
         }
     }
 
-    const std::weak_ptr<Object> fetch(const obj_id_t id)
+    const std::weak_ptr<Object> fetch(obj_id_t id)
     {
         auto p = findPosition(id);
         if (p.first == p.second) {
@@ -108,19 +103,19 @@ public:
      * set start ID for user objects.
      * ID's smaller than the start ID are  assumed to be system objects and considered undeletable.
      **/
-    void setObjectsStartId(const obj_id_t& id)
+    void setObjectsStartId(obj_id_t id)
     {
         startId = id;
     }
 
     // create a new object and let box assign id
-    obj_id_t add(std::shared_ptr<Object> obj, const uint8_t active_in_groups)
+    obj_id_t add(std::shared_ptr<Object>&& obj, uint8_t active_in_groups)
     {
         return add(std::move(obj), active_in_groups, obj_id_t::invalid());
     }
 
     // create a new object with specific id, optionally replacing an existing object
-    obj_id_t add(std::shared_ptr<Object> obj, const uint8_t active_in_groups, const obj_id_t& id, bool replace = false)
+    obj_id_t add(std::shared_ptr<Object>&& obj, uint8_t active_in_groups, obj_id_t id, bool replace = false)
     {
         obj_id_t newId;
         Iterator position;
@@ -188,7 +183,7 @@ public:
     }
 
     // replace an object with an inactive object by id
-    void deactivate(const obj_id_t& id)
+    void deactivate(obj_id_t id)
     {
         auto p = findPosition(id);
         if (p.first != p.second) {
@@ -202,14 +197,14 @@ public:
         objects.erase(userbegin(), cend());
     }
 
-    void update(const update_t& now)
+    void update(update_t now)
     {
         for (auto& cobj : objects) {
             cobj.update(now);
         }
     }
 
-    void forcedUpdate(const update_t& now)
+    void forcedUpdate(update_t now)
     {
         for (auto& cobj : objects) {
             cobj.forcedUpdate(now);

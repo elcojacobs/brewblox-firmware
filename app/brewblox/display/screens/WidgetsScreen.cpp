@@ -108,6 +108,7 @@ WidgetsScreen::loadSettings()
 
     widgets.clear();
     pb_size_t numWidgets = std::min(settings.widgets_count, pb_size_t(sizeof(settings.widgets) / sizeof(settings.widgets[0])));
+    widgets.reserve(numWidgets);
     for (pb_size_t i = 0; i < numWidgets; ++i) {
         blox_DisplaySettings_Widget widgetDfn = settings.widgets[i];
         auto pos = widgetDfn.pos;

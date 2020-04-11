@@ -157,7 +157,7 @@ setup()
     HAL_Delay_Milliseconds(1);
     StartupScreen::setProgress(80);
     StartupScreen::setStep("Loading objects");
-    brewbloxBox().loadObjectsFromStorage(); // init box and load stored objects
+    brewbloxBox().loadObjectsFromStorage(); // load stored objects
     HAL_Delay_Milliseconds(1);
     StartupScreen::setProgress(100);
 

@@ -89,7 +89,10 @@ WidgetWrapper::resetClickHandler()
 void
 WidgetWrapper::addChildren(std::vector<D4D_OBJECT*> children)
 {
-    objects.insert(objects.end() - 1, children.cbegin(), children.cend());
+    objects.reserve(objects.size() + children.size());
+    objects.pop_back(); // remove nullptr
+    objects.insert(objects.end(), children.cbegin(), children.cend());
+    objects.push_back(nullptr);
     wrapperObject.pRelations = objects.data();
     // ensure new children and their children have the correct screen pointer
     D4D_SetObjectScreenPointer(&wrapperObject, wrapperObject.pData->pScreen);
