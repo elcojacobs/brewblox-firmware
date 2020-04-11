@@ -100,8 +100,9 @@ public:
             if (auto ptr = actuator.lock()) {
                 ptr->desiredState(ActuatorDigitalBase::State::Inactive);
                 brewbloxBox().storeUpdatedObject(actuator.getId());
-                previousSettingValid = settingValid;
             }
+            previousSettingValid = settingValid;
+
             return now;
         }
         return nextUpdate;
