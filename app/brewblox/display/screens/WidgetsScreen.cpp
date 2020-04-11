@@ -56,13 +56,18 @@ SmallColorScheme TOP_BAR_SCHEME = {
 char icon_str[2] = "\x21";
 char usb_str[4] = "USB";
 D4D_DECLARE_LABEL(scrWidgets_usb_icon, icon_str, 0, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
-D4D_DECLARE_LABEL(scrWidgets_usb_text, usb_str, 20, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
+D4D_DECLARE_LABEL(scrWidgets_usb_text, usb_str, 18, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
 
 D4D_DECLARE_LABEL(scrWidgets_wifi_icon, wifi_icon, 40, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
 
 #undef D4D_LBL_TXT_PRTY_DEFAULT
 #define D4D_LBL_TXT_PRTY_DEFAULT (D4D_TXT_PRTY_ALIGN_H_LEFT_MASK | D4D_TXT_PRTY_ALIGN_V_CENTER_MASK)
-D4D_DECLARE_LABEL(scrWidgets_wifi_ip, wifi_ip, 60, 0, 15 * 6, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
+D4D_DECLARE_LABEL(scrWidgets_wifi_ip, wifi_ip, 58, 0, 15 * 6, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
+
+char mem_icon_str[2] = "\x2c";
+char mem_val_str[10] = "";
+D4D_DECLARE_LABEL(scrWidgets_mem_icon, mem_icon_str, 256, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
+D4D_DECLARE_LABEL(scrWidgets_mem_text, mem_val_str, 270, 0, 50, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
 
 #undef D4D_LBL_TXT_PRTY_DEFAULT
 #define D4D_LBL_TXT_PRTY_DEFAULT (D4D_TXT_PRTY_ALIGN_H_CENTER_MASK | D4D_TXT_PRTY_ALIGN_V_CENTER_MASK)
@@ -83,6 +88,8 @@ D4D_DECLARE_STD_SCREEN_BEGIN(widgets_screen, scrWidgets_)
     &scrWidgets_usb_text,
     &scrWidgets_wifi_icon,
     &scrWidgets_wifi_ip,
+    &scrWidgets_mem_icon,
+    &scrWidgets_mem_text,
     &scrWidgets_title,
     widgetWrappers[0].pObj(),
     widgetWrappers[1].pObj(),
@@ -161,6 +168,24 @@ WidgetsScreen::updateUsb()
 }
 
 void
+WidgetsScreen::updateRam()
+{
+    // bodfy of System::freeMemory copied here to prevent extra includes
+
+    runtime_info_t info;
+    memset(&info, 0, sizeof(info));
+    info.size = sizeof(info);
+    HAL_Core_Runtime_Info(&info, NULL);
+    uint8_t freePct = info.total_heap ? (100 * info.freeheap) / info.total_heap : 0;
+    uint8_t usedPct = 100 - freePct;
+    uint8_t maxPct = info.total_heap ? (100 * info.max_used_heap) / info.total_heap : 0;
+
+    snprintf(mem_val_str, 10, "%2d%% %2d%%", usedPct, maxPct);
+
+    D4D_InvalidateObject(&scrWidgets_mem_text, D4D_TRUE);
+}
+
+void
 WidgetsScreen::updateWiFi()
 {
     auto signal = wifiSignal();
@@ -204,6 +229,7 @@ scrWidgets_OnMain()
     }
     WidgetsScreen::updateUsb();
     WidgetsScreen::updateWiFi();
+    WidgetsScreen::updateRam();
     WidgetsScreen::updateWidgets();
 }
 
