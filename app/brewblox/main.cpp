@@ -155,17 +155,24 @@ setup()
     brewbloxBox();
 
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(80);
+    StartupScreen::setProgress(50);
     StartupScreen::setStep("Loading objects");
     brewbloxBox().loadObjectsFromStorage(); // load stored objects
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(100);
+    StartupScreen::setProgress(70);
+
+    StartupScreen::setStep("Init WiFi and mDNS");
+    wifiInit();
+    StartupScreen::setProgress(80);
 
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
     // This avoids having to do it later when writing to EEPROM
     HAL_EEPROM_Perform_Pending_Erase();
 
-    StartupScreen::setStep("Ready!");
+    StartupScreen::setStep("Starting connections");
+    brewbloxBox().startConnections();
+
+    StartupScreen::setProgress(90);
 
     while (ticks.millis() < 5000) {
         displayTick();
@@ -177,8 +184,6 @@ setup()
     TimerInterrupts::init();
 #endif
 
-    wifiInit();
-    brewbloxBox().startConnections();
     HAL_Delay_Milliseconds(1);
 }
 
