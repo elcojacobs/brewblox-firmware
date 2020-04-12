@@ -40,10 +40,16 @@ Updates:
 void
 DS248x::setReadPtr(uint8_t readPtr)
 {
+    static uint8_t failCount = 0;
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_SRP);
     Wire.write(readPtr);
-    Wire.endTransmission(false);
+    if (Wire.endTransmission(false) != 0) {
+        ++failCount;
+        if (failCount > 10) {
+            init(); // re-init I2C and master
+        }
+    };
 }
 
 uint8_t
@@ -82,6 +88,7 @@ DS248x::busyWait(bool setReadPtr)
 bool
 DS248x::init()
 {
+    Wire.reset();
     Wire.setTimeout(1);
     Wire.begin();
 
