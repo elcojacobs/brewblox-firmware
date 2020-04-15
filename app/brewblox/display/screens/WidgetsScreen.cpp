@@ -26,6 +26,7 @@
 #include "TempSensorWidget.h"
 #include "blox/DisplaySettingsBlock.h"
 #include "connectivity.h"
+#include "memory_info.h"
 #include <algorithm>
 #include <array>
 #include <vector>
@@ -170,17 +171,8 @@ WidgetsScreen::updateUsb()
 void
 WidgetsScreen::updateRam()
 {
-    // bodfy of System::freeMemory copied here to prevent extra includes
-
-    runtime_info_t info;
-    memset(&info, 0, sizeof(info));
-    info.size = sizeof(info);
-    HAL_Core_Runtime_Info(&info, NULL);
-    uint8_t freePct = info.total_heap ? (100 * info.freeheap) / info.total_heap : 0;
-    uint8_t usedPct = 100 - freePct;
-    uint8_t maxPct = info.total_heap ? (100 * info.max_used_heap) / info.total_heap : 0;
-
-    snprintf(mem_val_str, 10, "%2d%% %2d%%", usedPct, maxPct);
+    HeapInfo heapInfo;
+    heapInfo.print(mem_val_str, 10);
 
     D4D_InvalidateObject(&scrWidgets_mem_text, D4D_TRUE);
 }

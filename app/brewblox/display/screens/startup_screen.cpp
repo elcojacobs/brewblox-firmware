@@ -22,8 +22,8 @@
 #include "../logo/brewblox_logo.h"
 #include "BrewBlox.h"
 #include "blox/stringify.h"
-#include "core_hal.h"
 #include "d4d.hpp"
+#include "memory_info.h"
 #include "spark_wiring_ticks.h"
 #include "spark_wiring_timer.h"
 #include "stdio.h"
@@ -64,6 +64,8 @@ D4D_DECLARE_SCREEN_END()
 void
 StartupScreen::activate()
 {
+    D4D_EnableObject(&scrStartup_mem_icon, D4D_FALSE); // disable for darker color
+    D4D_EnableObject(&scrStartup_mem_text, D4D_FALSE);
     D4D_EnableObject(&scrStartup_version, D4D_FALSE);
     D4D_ActivateScreen(&screen_startup, D4D_TRUE);
 }
@@ -110,18 +112,8 @@ StartupScreen::calibrateTouch()
 void
 StartupScreen::updateRam()
 {
-    // bodfy of System::freeMemory copied here to prevent extra includes
-
-    runtime_info_t info;
-    memset(&info, 0, sizeof(info));
-    info.size = sizeof(info);
-    HAL_Core_Runtime_Info(&info, NULL);
-    uint8_t freePct = info.total_heap ? (100 * info.freeheap) / info.total_heap : 0;
-    uint8_t usedPct = 100 - freePct;
-    uint8_t maxPct = info.total_heap ? (100 * info.max_used_heap) / info.total_heap : 0;
-
-    snprintf(startup_mem_val_str, 10, "%2d%% %2d%%", usedPct, maxPct);
-
+    HeapInfo heapInfo;
+    heapInfo.print(startup_mem_val_str, 10);
     D4D_InvalidateObject(&scrStartup_mem_text, D4D_TRUE);
 }
 
