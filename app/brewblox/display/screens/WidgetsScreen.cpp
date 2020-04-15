@@ -174,7 +174,7 @@ WidgetsScreen::updateRam()
     HeapInfo heapInfo;
     heapInfo.print(mem_val_str, 10);
 
-    D4D_InvalidateObject(&scrWidgets_mem_text, D4D_TRUE);
+    D4D_InvalidateObject(&scrWidgets_mem_text, D4D_FALSE);
 }
 
 void
@@ -194,8 +194,11 @@ WidgetsScreen::updateWiFi()
     } else {
         wifi_icon[0] = 0x23;
     }
-    D4D_EnableObject(&scrWidgets_wifi_icon, connected);
-    D4D_EnableObject(&scrWidgets_wifi_ip, connected);
+    if (connected != D4D_IsEnabled(const_cast<D4D_OBJECT*>(&scrWidgets_wifi_ip))) {
+        D4D_InvalidateObject(&scrWidgets_wifi_ip, D4D_FALSE); // force rewriting IP to display
+        D4D_EnableObject(&scrWidgets_wifi_icon, connected);
+        D4D_EnableObject(&scrWidgets_wifi_ip, connected);
+    }
 }
 
 void

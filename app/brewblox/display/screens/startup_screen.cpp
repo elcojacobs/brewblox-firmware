@@ -114,7 +114,7 @@ StartupScreen::updateRam()
 {
     HeapInfo heapInfo;
     heapInfo.print(startup_mem_val_str, 10);
-    D4D_InvalidateObject(&scrStartup_mem_text, D4D_TRUE);
+    D4D_InvalidateObject(&scrStartup_mem_text, D4D_FALSE);
 }
 
 void

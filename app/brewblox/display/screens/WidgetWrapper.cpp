@@ -109,7 +109,7 @@ WidgetWrapper::resetChildren()
 void
 WidgetWrapper::invalidate()
 {
-    D4D_InvalidateObject(&wrapperObject, D4D_TRUE);
+    D4D_InvalidateObject(&wrapperObject, D4D_FALSE);
 }
 
 void
