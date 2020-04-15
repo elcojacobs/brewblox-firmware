@@ -133,13 +133,13 @@ setup()
     StartupScreen::setStep("Power cycling peripherals");
 
     do {
+        StartupScreen::setProgress(ticks.millis() / 40); // up to 50
         displayTick();
     } while (ticks.millis() < ((PLATFORM_ID != PLATFORM_GCC) ? 2000 : 0));
 
     enablePheripheral5V(true);
     HAL_Delay_Milliseconds(1);
 
-    StartupScreen::setProgress(50);
     StartupScreen::setStep("Init OneWire");
     theOneWire();
 
