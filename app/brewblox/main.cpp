@@ -115,16 +115,10 @@ setup()
     std::signal(SIGTERM, signal_handler);
     // pin map is not initialized properly in gcc build before setup runs
     boardInit();
-#endif
-    Buzzer.beep(2, 50);
-
-    System.on(setup_update, watchdogCheckin);
-    System.on(setup_begin, onSetupModeBegin);
-    System.on(setup_end, onSetupModeEnd);
-    HAL_Delay_Milliseconds(1);
-
-#if PLATFORM_ID == PLATFORM_GCC
     manageConnections(0); // init network early to websocket display emulation works during setup()
+#else
+    Buzzer.beep(2, 50);
+    HAL_Delay_Milliseconds(1);
 #endif
 
     // init display
@@ -140,46 +134,44 @@ setup()
 
     do {
         displayTick();
-    } while (ticks.millis() < 2000);
+    } while (ticks.millis() < ((PLATFORM_ID != PLATFORM_GCC) ? 2000 : 0));
 
     enablePheripheral5V(true);
     HAL_Delay_Milliseconds(1);
 
-    StartupScreen::setProgress(30);
+    StartupScreen::setProgress(50);
     StartupScreen::setStep("Init OneWire");
     theOneWire();
 
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(40);
+    StartupScreen::setProgress(60);
     StartupScreen::setStep("Init BrewBlox framework");
     brewbloxBox();
 
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(80);
-    StartupScreen::setStep("Loading objects");
+    StartupScreen::setProgress(70);
+    StartupScreen::setStep("Loading blocks");
     brewbloxBox().loadObjectsFromStorage(); // init box and load stored objects
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(100);
 
+    StartupScreen::setProgress(100);
+    StartupScreen::setStep("Ready!");
+    displayTick();
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
     // This avoids having to do it later when writing to EEPROM
     HAL_EEPROM_Perform_Pending_Erase();
 
-    StartupScreen::setStep("Ready!");
-
-    while (ticks.millis() < 5000) {
-        displayTick();
-        HAL_Delay_Milliseconds(1);
-    };
-
     WidgetsScreen::activate();
+
 #if PLATFORM_ID != PLATFORM_GCC
     TimerInterrupts::init();
+    System.on(setup_begin, onSetupModeBegin);
+    System.on(setup_end, onSetupModeEnd);
+    System.on(setup_update, watchdogCheckin);
 #endif
 
     wifiInit();
     brewbloxBox().startConnections();
-    HAL_Delay_Milliseconds(1);
 }
 
 void
