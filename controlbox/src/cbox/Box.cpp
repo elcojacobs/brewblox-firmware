@@ -202,9 +202,10 @@ Box::createObjectFromStream(DataIn& in)
         return std::make_tuple(CboxError::INPUT_STREAM_READ_ERROR, std::shared_ptr<Object>(), uint8_t(0)); // LCOV_EXCL_LINE
     }
 
-    CboxError result;
-    std::shared_ptr<Object> obj;
-    std::tie(result, obj) = factory.make(typeId);
+    auto retv = factory.make(typeId);
+    auto result = std::get<0>(retv);
+    auto obj = std::get<1>(retv);
+
     if (obj) {
         obj->streamFrom(in);
     }
@@ -439,7 +440,7 @@ Box::loadObjectsFromStorage()
     // then they can take an ID that is in use by an object loader later
     std::vector<obj_id_t> deprecatedList;
 
-    const auto objectLoader = [this, &deprecatedList](const storage_id_t& id, RegionDataIn& objInStorage) -> CboxError {
+    const auto objectLoader = [this, &deprecatedList](storage_id_t id, RegionDataIn& objInStorage) -> CboxError {
         obj_id_t objId = obj_id_t(id);
         CboxError status = CboxError::OK;
 

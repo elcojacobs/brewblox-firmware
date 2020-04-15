@@ -2492,7 +2492,8 @@ constexpr auto myTable = IconTable<
     0x20f, // 0x28 plug disconnected
     0x0cf, // 0x29 thermometer
     0x13e, // 0x2A arrow left
-    0x0b3  // 0x2B exclamation mark
+    0x0b3, // 0x2B exclamation mark
+    0x0c5  // 0x2C memory
     >();
 
 const D4D_FONT_DESCRIPTOR d4dfnt_icons_desc = {

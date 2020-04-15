@@ -71,6 +71,8 @@ FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uin
     if (params.size() < 1) {
         return;
     }
+
+    stages.reserve(params.size());
     auto itP = params.begin();
     auto itS = stages.begin();
     auto itI = intervals.begin();
@@ -102,7 +104,9 @@ FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uin
         auto newStage = FilterChain::Stage{std::move(newFilter), interval};
         stages.push_back(std::move(newStage));
     }
-    stages.shrink_to_fit(); // remove filters if params is shorter than before
+    if (params.size() < stages.size()) {
+        stages.shrink_to_fit(); // remove filters if params is shorter than before
+    }
     reset(newFilterInitVal);
 }
 

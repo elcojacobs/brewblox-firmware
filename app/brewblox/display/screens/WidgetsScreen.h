@@ -33,6 +33,7 @@ public:
     static void activate();
     static void updateUsb();
     static void updateWiFi();
+    static void updateRam();
     static void updateWidgets();
 };
 

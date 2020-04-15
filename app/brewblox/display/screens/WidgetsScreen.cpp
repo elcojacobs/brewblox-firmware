@@ -26,6 +26,7 @@
 #include "TempSensorWidget.h"
 #include "blox/DisplaySettingsBlock.h"
 #include "connectivity.h"
+#include "memory_info.h"
 #include <algorithm>
 #include <array>
 #include <vector>
@@ -56,13 +57,18 @@ SmallColorScheme TOP_BAR_SCHEME = {
 char icon_str[2] = "\x21";
 char usb_str[4] = "USB";
 D4D_DECLARE_LABEL(scrWidgets_usb_icon, icon_str, 0, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
-D4D_DECLARE_LABEL(scrWidgets_usb_text, usb_str, 20, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
+D4D_DECLARE_LABEL(scrWidgets_usb_text, usb_str, 18, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
 
 D4D_DECLARE_LABEL(scrWidgets_wifi_icon, wifi_icon, 40, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
 
 #undef D4D_LBL_TXT_PRTY_DEFAULT
 #define D4D_LBL_TXT_PRTY_DEFAULT (D4D_TXT_PRTY_ALIGN_H_LEFT_MASK | D4D_TXT_PRTY_ALIGN_V_CENTER_MASK)
-D4D_DECLARE_LABEL(scrWidgets_wifi_ip, wifi_ip, 60, 0, 15 * 6, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
+D4D_DECLARE_LABEL(scrWidgets_wifi_ip, wifi_ip, 58, 0, 15 * 6, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
+
+char mem_icon_str[2] = "\x2c";
+char mem_val_str[10] = "";
+D4D_DECLARE_LABEL(scrWidgets_mem_icon, mem_icon_str, 256, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
+D4D_DECLARE_LABEL(scrWidgets_mem_text, mem_val_str, 270, 0, 50, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
 
 #undef D4D_LBL_TXT_PRTY_DEFAULT
 #define D4D_LBL_TXT_PRTY_DEFAULT (D4D_TXT_PRTY_ALIGN_H_CENTER_MASK | D4D_TXT_PRTY_ALIGN_V_CENTER_MASK)
@@ -83,6 +89,8 @@ D4D_DECLARE_STD_SCREEN_BEGIN(widgets_screen, scrWidgets_)
     &scrWidgets_usb_text,
     &scrWidgets_wifi_icon,
     &scrWidgets_wifi_ip,
+    &scrWidgets_mem_icon,
+    &scrWidgets_mem_text,
     &scrWidgets_title,
     widgetWrappers[0].pObj(),
     widgetWrappers[1].pObj(),
@@ -108,6 +116,7 @@ WidgetsScreen::loadSettings()
 
     widgets.clear();
     pb_size_t numWidgets = std::min(settings.widgets_count, pb_size_t(sizeof(settings.widgets) / sizeof(settings.widgets[0])));
+    widgets.reserve(numWidgets);
     for (pb_size_t i = 0; i < numWidgets; ++i) {
         blox_DisplaySettings_Widget widgetDfn = settings.widgets[i];
         auto pos = widgetDfn.pos;
@@ -160,6 +169,15 @@ WidgetsScreen::updateUsb()
 }
 
 void
+WidgetsScreen::updateRam()
+{
+    HeapInfo heapInfo;
+    heapInfo.print(mem_val_str, 10);
+
+    D4D_InvalidateObject(&scrWidgets_mem_text, D4D_TRUE);
+}
+
+void
 WidgetsScreen::updateWiFi()
 {
     auto signal = wifiSignal();
@@ -203,6 +221,7 @@ scrWidgets_OnMain()
     }
     WidgetsScreen::updateUsb();
     WidgetsScreen::updateWiFi();
+    WidgetsScreen::updateRam();
     WidgetsScreen::updateWidgets();
 }
 

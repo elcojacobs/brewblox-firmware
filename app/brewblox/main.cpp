@@ -133,13 +133,13 @@ setup()
     StartupScreen::setStep("Power cycling peripherals");
 
     do {
+        StartupScreen::setProgress(ticks.millis() / 40); // up to 50
         displayTick();
     } while (ticks.millis() < ((PLATFORM_ID != PLATFORM_GCC) ? 2000 : 0));
 
     enablePheripheral5V(true);
     HAL_Delay_Milliseconds(1);
 
-    StartupScreen::setProgress(50);
     StartupScreen::setStep("Init OneWire");
     theOneWire();
 
@@ -149,14 +149,20 @@ setup()
     brewbloxBox();
 
     HAL_Delay_Milliseconds(1);
+
     StartupScreen::setProgress(70);
     StartupScreen::setStep("Loading blocks");
     brewbloxBox().loadObjectsFromStorage(); // init box and load stored objects
     HAL_Delay_Milliseconds(1);
 
+    StartupScreen::setProgress(80);
+    StartupScreen::setStep("Enabling WiFi and mDNS");
+    wifiInit();
+    HAL_Delay_Milliseconds(1);
+
     StartupScreen::setProgress(100);
     StartupScreen::setStep("Ready!");
-    displayTick();
+
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
     // This avoids having to do it later when writing to EEPROM
     HAL_EEPROM_Perform_Pending_Erase();
@@ -170,7 +176,6 @@ setup()
     System.on(setup_update, watchdogCheckin);
 #endif
 
-    wifiInit();
     brewbloxBox().startConnections();
 }
 

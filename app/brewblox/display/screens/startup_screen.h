@@ -27,4 +27,5 @@ public:
     static void calibrateTouch();
     static void setProgress(uint8_t v);
     static void setStep(std::string&& txt);
+    static void updateRam();
 };
