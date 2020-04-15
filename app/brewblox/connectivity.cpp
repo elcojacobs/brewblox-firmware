@@ -288,7 +288,6 @@ updateFirmwareFromStream(cbox::StreamType streamType)
 {
     if (streamType == cbox::StreamType::Usb) {
         auto ser = Serial;
-        WITH_LOCK(ser);
         if (ser.baud() == 0) {
             ser.begin(115200);
         }

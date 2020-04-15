@@ -90,9 +90,8 @@ displayTick()
 void
 onSetupModeBegin()
 {
-    logEvent("SETUP_MODE");
     brewbloxBox().stopConnections();
-    HAL_Delay_Milliseconds(100);
+    HAL_Delay_Milliseconds(10);
 }
 
 void
