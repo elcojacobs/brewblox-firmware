@@ -68,8 +68,7 @@ WidgetWrapper::setColor(uint8_t r, uint8_t g, uint8_t b)
 void
 WidgetWrapper::resetName()
 {
-    static const char txt[] = "unassigned";
-    D4D_SetText(&btnObject, txt);
+    D4D_SetText(&btnObject, "unassigned");
 }
 
 void

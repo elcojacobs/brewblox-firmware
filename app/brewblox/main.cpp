@@ -100,6 +100,12 @@ onSetupModeEnd()
     brewbloxBox().startConnections();
 }
 
+void
+onOutOfMemory(system_event_t event, int param)
+{
+    HAL_Delay_Milliseconds(1000);
+}
+
 #if PLATFORM_ID != PLATFORM_GCC
 STARTUP(
     boardInit(););
@@ -173,14 +179,19 @@ setup()
     System.on(setup_begin, onSetupModeBegin);
     System.on(setup_end, onSetupModeEnd);
     System.on(setup_update, watchdogCheckin);
+    // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
 #endif
 
     brewbloxBox().startConnections();
+    displayTick();
 }
 
 void
 loop()
 {
+    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
+    displayTick();
+
     ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
         manageConnections(ticks.millis());
@@ -189,9 +200,6 @@ loop()
 
     ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
     updateBrewbloxBox();
-
-    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
-    displayTick();
 
     ticks.switchTaskTimer(TicksClass::TaskId::System);
     watchdogCheckin();

@@ -65,7 +65,7 @@ wifiSignal()
 bool
 serialConnected()
 {
-    return _fetch_usbserial().isConnected();
+    return HAL_USB_USART_Is_Connected(HAL_USB_USART_SERIAL);
 }
 
 bool
