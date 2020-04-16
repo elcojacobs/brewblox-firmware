@@ -23,14 +23,23 @@
 
 #include "memory_info.h"
 
-char listeningString[] = "Listening mode. Access point active.";
+char listeningString1[] = "Listening mode active";
+char listeningString2[] = "On the BrewBlox server, run:";
+char listeningString3[] = "brewblox-ctl wifi";
+char listeningString4[] = "to change WiFi settings over USB";
 
-D4D_DECLARE_STD_LABEL(scrListening_txt, listeningString, 0, 112, 320, 15, FONT_REGULAR)
+D4D_DECLARE_STD_LABEL(scrListening_txt1, listeningString1, 0, 85, 320, 15, FONT_REGULAR)
+D4D_DECLARE_STD_LABEL(scrListening_txt2, listeningString2, 0, 112, 320, 15, FONT_REGULAR)
+D4D_DECLARE_STD_LABEL(scrListening_txt3, listeningString3, 0, 131, 320, 15, FONT_REGULAR)
+D4D_DECLARE_STD_LABEL(scrListening_txt4, listeningString4, 0, 151, 320, 15, FONT_REGULAR)
 
 D4D_DECLARE_SCREEN_BEGIN(screen_listening, ScrListening_, 0, 0, (D4D_COOR)(D4D_SCREEN_SIZE_LONGER_SIDE), (D4D_COOR)(D4D_SCREEN_SIZE_SHORTER_SIDE), nullptr, 0, nullptr, (D4D_SCR_F_DEFAULT | D4D_SCR_F_TOUCHENABLE), nullptr)
 &scr_mem_icon,
     &scr_mem_text,
-    &scrListening_txt,
+    &scrListening_txt1,
+    &scrListening_txt2,
+    &scrListening_txt3,
+    &scrListening_txt4,
     D4D_DECLARE_SCREEN_END();
 
 void
