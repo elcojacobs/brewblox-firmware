@@ -3,7 +3,7 @@
 #include "d4d.hpp"
 #include <cstdint>
 
-void
+bool
 printHeapUse(char* dest, uint8_t maxLen);
 
 void
