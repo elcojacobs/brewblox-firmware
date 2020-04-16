@@ -63,3 +63,5 @@ makeSmallColorScheme(const uint8_t r, const uint8_t g, const uint8_t b)
     };
     return scheme;
 }
+
+extern SmallColorScheme TOP_BAR_SCHEME;

@@ -29,6 +29,7 @@
 #include "d4d.hpp"
 #include "delay_hal.h"
 #include "display/screens/WidgetsScreen.h"
+#include "display/screens/listening_screen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
 #include "reset.h"
@@ -90,6 +91,7 @@ displayTick()
 void
 onSetupModeBegin()
 {
+    ListeningScreen::activate();
     brewbloxBox().stopConnections();
     HAL_Delay_Milliseconds(10);
 }
@@ -97,6 +99,7 @@ onSetupModeBegin()
 void
 onSetupModeEnd()
 {
+    WidgetsScreen::activate();
     brewbloxBox().startConnections();
 }
 

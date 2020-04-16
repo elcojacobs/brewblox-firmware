@@ -43,17 +43,6 @@ char wifi_icon[] = "\x22";
 #define SCR_PV_CY_GAP 5
 #define SCR_PV_CY_OFFSET (SCR_PV_CY + SCR_PV_CY_GAP)
 
-SmallColorScheme TOP_BAR_SCHEME = {
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in standard state
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in disabled state
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in focused state
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in captured state
-    D4D_COLOR_RGB(80, 128, 150), ///< The object fore color in standard state
-    D4D_COLOR_RGB(64, 64, 64),   ///< The object fore color in disabled state
-    D4D_COLOR_RGB(64, 100, 200), ///< The object fore color in focused state
-    D4D_COLOR_RGB(64, 100, 255), ///< The object fore color in captured state
-};
-
 char icon_str[2] = "\x21";
 char usb_str[4] = "USB";
 D4D_DECLARE_LABEL(scrWidgets_usb_icon, icon_str, 0, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
@@ -64,11 +53,6 @@ D4D_DECLARE_LABEL(scrWidgets_wifi_icon, wifi_icon, 40, 0, 20, 20, D4D_LBL_F_DEFA
 #undef D4D_LBL_TXT_PRTY_DEFAULT
 #define D4D_LBL_TXT_PRTY_DEFAULT (D4D_TXT_PRTY_ALIGN_H_LEFT_MASK | D4D_TXT_PRTY_ALIGN_V_CENTER_MASK)
 D4D_DECLARE_LABEL(scrWidgets_wifi_ip, wifi_ip, 58, 0, 15 * 6, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
-
-char mem_icon_str[2] = "\x2c";
-char mem_val_str[10] = "";
-D4D_DECLARE_LABEL(scrWidgets_mem_icon, mem_icon_str, 256, 0, 20, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_ICON, nullptr, nullptr);
-D4D_DECLARE_LABEL(scrWidgets_mem_text, mem_val_str, 270, 0, 50, 20, D4D_LBL_F_DEFAULT, AS_D4D_COLOR_SCHEME(&TOP_BAR_SCHEME), FONT_REGULAR, nullptr, nullptr);
 
 #undef D4D_LBL_TXT_PRTY_DEFAULT
 #define D4D_LBL_TXT_PRTY_DEFAULT (D4D_TXT_PRTY_ALIGN_H_CENTER_MASK | D4D_TXT_PRTY_ALIGN_V_CENTER_MASK)
@@ -89,8 +73,8 @@ D4D_DECLARE_STD_SCREEN_BEGIN(widgets_screen, scrWidgets_)
     &scrWidgets_usb_text,
     &scrWidgets_wifi_icon,
     &scrWidgets_wifi_ip,
-    &scrWidgets_mem_icon,
-    &scrWidgets_mem_text,
+    &scr_mem_icon,
+    &scr_mem_text,
     &scrWidgets_title,
     widgetWrappers[0].pObj(),
     widgetWrappers[1].pObj(),
@@ -116,7 +100,7 @@ WidgetsScreen::loadSettings()
 
     widgets.clear();
     pb_size_t numWidgets = std::min(settings.widgets_count, pb_size_t(sizeof(settings.widgets) / sizeof(settings.widgets[0])));
-    widgets.reserve(numWidgets);
+    widgets.resize(numWidgets);
     for (pb_size_t i = 0; i < numWidgets; ++i) {
         blox_DisplaySettings_Widget widgetDfn = settings.widgets[i];
         auto pos = widgetDfn.pos;
@@ -169,13 +153,6 @@ WidgetsScreen::updateUsb()
 }
 
 void
-WidgetsScreen::updateRam()
-{
-    printHeapUse(mem_val_str, 10);
-    D4D_InvalidateObject(&scrWidgets_mem_text, D4D_FALSE);
-}
-
-void
 WidgetsScreen::updateWiFi()
 {
     auto signal = wifiSignal();
@@ -210,6 +187,12 @@ WidgetsScreen::updateWidgets()
 }
 
 void
+WidgetsScreen::unload()
+{
+    widgets.resize(0); // clear dynamically allocated memory.
+}
+
+void
 scrWidgets_OnInit()
 {
 }
@@ -222,7 +205,7 @@ scrWidgets_OnMain()
     }
     WidgetsScreen::updateUsb();
     WidgetsScreen::updateWiFi();
-    WidgetsScreen::updateRam();
+    updateRamDisplay();
     WidgetsScreen::updateWidgets();
 }
 
@@ -234,6 +217,7 @@ scrWidgets_OnActivate()
 void
 scrWidgets_OnDeactivate()
 {
+    WidgetsScreen::unload();
 }
 
 uint8_t
