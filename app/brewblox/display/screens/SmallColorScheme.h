@@ -37,10 +37,11 @@ struct SmallColorScheme {
     D4D_COLOR foreCapture; ///< The object fore color in captured state
 };
 
-static constexpr D4D_CLR_SCHEME*
+inline D4D_CLR_SCHEME*
 AS_D4D_COLOR_SCHEME(SmallColorScheme* small)
 {
-    return reinterpret_cast<D4D_CLR_SCHEME*>(reinterpret_cast<uint8_t*>(small) - offsetof(D4D_CLR_SCHEME, bckg));
+    uint8_t* address = reinterpret_cast<uint8_t*>(small) - offsetof(D4D_CLR_SCHEME, bckg);
+    return reinterpret_cast<D4D_CLR_SCHEME*>(address);
 }
 
 static constexpr SmallColorScheme
