@@ -63,7 +63,7 @@ watchdogReset()
 inline void
 watchdogCheckin()
 {
-    static ApplicationWatchdog appWatchdog = ApplicationWatchdog(60000, watchdogReset);
+    static ApplicationWatchdog appWatchdog(60000, watchdogReset);
     appWatchdog.checkin();
 }
 #else
@@ -92,6 +92,7 @@ void
 onSetupModeBegin()
 {
     ListeningScreen::activate();
+    manageConnections(ticks.millis()); // stop http server
     brewbloxBox().stopConnections();
     brewbloxBox().unloadAllObjects();
     HAL_Delay_Milliseconds(100);
