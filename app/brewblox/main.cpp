@@ -93,14 +93,14 @@ onSetupModeBegin()
 {
     ListeningScreen::activate();
     brewbloxBox().stopConnections();
-    HAL_Delay_Milliseconds(10);
+    brewbloxBox().unloadAllObjects();
+    HAL_Delay_Milliseconds(100);
 }
 
 void
 onSetupModeEnd()
 {
-    WidgetsScreen::activate();
-    brewbloxBox().startConnections();
+    handleReset(true, RESET_USER_REASON::LISTENING_MODE_EXIT);
 }
 
 void
@@ -181,7 +181,6 @@ setup()
     TimerInterrupts::init();
     System.on(setup_begin, onSetupModeBegin);
     System.on(setup_end, onSetupModeEnd);
-    System.on(setup_update, watchdogCheckin);
     // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
 #endif
 
@@ -192,20 +191,19 @@ setup()
 void
 loop()
 {
-    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
-    displayTick();
-
-    ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
+
+        ticks.switchTaskTimer(TicksClass::TaskId::Communication);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
+        ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
+        updateBrewbloxBox();
+
+        ticks.switchTaskTimer(TicksClass::TaskId::System);
+        watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
-
-    ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
-    updateBrewbloxBox();
-
-    ticks.switchTaskTimer(TicksClass::TaskId::System);
-    watchdogCheckin();
+    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
+    displayTick();
     HAL_Delay_Milliseconds(1);
 }
 

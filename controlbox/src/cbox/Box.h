@@ -153,6 +153,11 @@ public:
     {
         connections.stopAll();
     }
+
+    void unloadAllObjects()
+    {
+        objects.clearAll();
+    }
 };
 
 bool

@@ -220,7 +220,7 @@ void
 wifiInit()
 {
     System.disable(SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS);
-    spark::WiFi.setListenTimeout(30);
+    spark::WiFi.setListenTimeout(45);
     spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
     System.on(network_status, handleNetworkEvent);
     initMdns();
