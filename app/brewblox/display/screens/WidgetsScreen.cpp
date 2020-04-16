@@ -85,20 +85,20 @@ std::array<WidgetWrapper, 6> widgetWrappers = {
 };
 
 D4D_DECLARE_STD_SCREEN_BEGIN(widgets_screen, scrWidgets_)
-&scrWidgets_usb_icon,
-    &scrWidgets_usb_text,
-    &scrWidgets_wifi_icon,
-    &scrWidgets_wifi_ip,
-    &scrWidgets_mem_icon,
-    &scrWidgets_mem_text,
-    &scrWidgets_title,
-    widgetWrappers[0].pObj(),
-    widgetWrappers[1].pObj(),
-    widgetWrappers[2].pObj(),
-    widgetWrappers[3].pObj(),
-    widgetWrappers[4].pObj(),
-    widgetWrappers[5].pObj(),
-    D4D_DECLARE_SCREEN_END();
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_usb_icon)
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_usb_text)
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_wifi_icon)
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_wifi_ip)
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_mem_icon)
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_mem_text)
+D4D_DECLARE_SCREEN_OBJECT(scrWidgets_title)
+D4D_DECLARE_SCREEN_OBJECT(widgetWrappers[0].pObj())
+D4D_DECLARE_SCREEN_OBJECT(widgetWrappers[1].pObj())
+D4D_DECLARE_SCREEN_OBJECT(widgetWrappers[2].pObj())
+D4D_DECLARE_SCREEN_OBJECT(widgetWrappers[3].pObj())
+D4D_DECLARE_SCREEN_OBJECT(widgetWrappers[4].pObj())
+D4D_DECLARE_SCREEN_OBJECT(widgetWrappers[5].pObj())
+D4D_DECLARE_SCREEN_END();
 
 std::vector<std::unique_ptr<WidgetBase>> WidgetsScreen::widgets;
 WidgetSettings WidgetsScreen::widgetSettings = {
@@ -171,9 +171,7 @@ WidgetsScreen::updateUsb()
 void
 WidgetsScreen::updateRam()
 {
-    HeapInfo heapInfo;
-    heapInfo.print(mem_val_str, 10);
-
+    printHeapUse(mem_val_str, 10);
     D4D_InvalidateObject(&scrWidgets_mem_text, D4D_FALSE);
 }
 
