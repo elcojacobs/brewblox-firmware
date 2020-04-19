@@ -29,6 +29,7 @@
 #include "d4d.hpp"
 #include "delay_hal.h"
 #include "display/screens/WidgetsScreen.h"
+#include "display/screens/listening_screen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
 #include "reset.h"
@@ -62,7 +63,7 @@ watchdogReset()
 inline void
 watchdogCheckin()
 {
-    static ApplicationWatchdog appWatchdog = ApplicationWatchdog(60000, watchdogReset);
+    static ApplicationWatchdog appWatchdog(60000, watchdogReset);
     appWatchdog.checkin();
 }
 #else
@@ -90,15 +91,23 @@ displayTick()
 void
 onSetupModeBegin()
 {
-    logEvent("SETUP_MODE");
+    ListeningScreen::activate();
+    manageConnections(ticks.millis()); // stop http server
     brewbloxBox().stopConnections();
+    brewbloxBox().unloadAllObjects();
     HAL_Delay_Milliseconds(100);
 }
 
 void
 onSetupModeEnd()
 {
-    brewbloxBox().startConnections();
+    handleReset(true, RESET_USER_REASON::LISTENING_MODE_EXIT);
+}
+
+void
+onOutOfMemory(system_event_t event, int param)
+{
+    HAL_Delay_Milliseconds(1000);
 }
 
 #if PLATFORM_ID != PLATFORM_GCC
@@ -173,29 +182,29 @@ setup()
     TimerInterrupts::init();
     System.on(setup_begin, onSetupModeBegin);
     System.on(setup_end, onSetupModeEnd);
-    System.on(setup_update, watchdogCheckin);
+    // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
 #endif
 
     brewbloxBox().startConnections();
+    displayTick();
 }
 
 void
 loop()
 {
-    ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
+
+        ticks.switchTaskTimer(TicksClass::TaskId::Communication);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
+        ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
+        updateBrewbloxBox();
+
+        ticks.switchTaskTimer(TicksClass::TaskId::System);
+        watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
-
-    ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
-    updateBrewbloxBox();
-
     ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
     displayTick();
-
-    ticks.switchTaskTimer(TicksClass::TaskId::System);
-    watchdogCheckin();
     HAL_Delay_Milliseconds(1);
 }
 
