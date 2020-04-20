@@ -32,7 +32,7 @@ printHeapUse(char* dest, uint8_t maxLen)
 
     uint8_t usedPct = 100 - freePct;
     uint8_t maxPct = info.total_heap ? (100 * info.max_used_heap) / info.total_heap : 0;
-    snprintf(scr_mem_val_str, maxLen, "%2d%% %2d%%", usedPct, maxPct);
+    snprintf(dest, maxLen, "%2d%% %2d%%", usedPct, maxPct);
     return true;
 }
 
