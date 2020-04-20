@@ -623,6 +623,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
     {
         pwm.setting(10);
         mockIo->setChannelError(1, true);
+        constrained->update(now);
         pwm.update(now);
 
         CHECK(pwm.valueValid() == false);
@@ -702,13 +703,16 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         auto avgDuty2 = double(timeHigh2) * 100 / timeTotal;
         CHECK(avgDuty1 == Approx(double(expected1)).margin(0.5));
         CHECK(avgDuty2 == Approx(double(expected2)).margin(0.5));
+        bool duty2_correct = avgDuty1 == Approx(double(expected1)).margin(0.5);
+        bool duty1_correct = avgDuty2 == Approx(double(expected2)).margin(0.5);
+        return duty1_correct && duty2_correct; // also return result to find which call triggered the fail
     };
 
     WHEN("The sum of duty cycles is under 100, they can both reach their target by alternating")
     {
-        checkDuties(40, 50, 40, 50);
-        checkDuties(50, 50, 50, 50);
-        checkDuties(30, 60, 30, 60);
+        CHECK(checkDuties(40, 50, 40, 50));
+        CHECK(checkDuties(50, 50, 50, 50));
+        CHECK(checkDuties(30, 60, 30, 60));
     }
 
     WHEN("A balancing constraint is added")
@@ -718,19 +722,19 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 
         THEN("Achieved duty cycle matches the setting if the total is under 100")
         {
-            checkDuties(40, 50, 40, 50);
-            checkDuties(50, 50, 50, 50);
-            checkDuties(30, 60, 30, 60);
+            CHECK(checkDuties(40, 50, 40, 50));
+            CHECK(checkDuties(50, 50, 50, 50));
+            CHECK(checkDuties(30, 60, 30, 60));
         }
 
         THEN("Achieved duty cycle is scaled proportionally if total is over 100")
         {
-            checkDuties(100, 100, 50, 50);
-            checkDuties(75, 50, 60, 40);
-            checkDuties(80, 30, 80.0 / 1.1, 30.0 / 1.1);
-            checkDuties(90, 20, 90.0 / 1.1, 20.0 / 1.1);
-            checkDuties(95, 10, 95.0 / 1.05, 10.0 / 1.05);
-            checkDuties(85, 25, 85.0 / 1.1, 25.0 / 1.1);
+            CHECK(checkDuties(100, 100, 50, 50));
+            CHECK(checkDuties(75, 50, 60, 40));
+            CHECK(checkDuties(80, 30, 80.0 / 1.1, 30.0 / 1.1));
+            CHECK(checkDuties(90, 20, 90.0 / 1.1, 20.0 / 1.1));
+            CHECK(checkDuties(95, 10, 95.0 / 1.05, 10.0 / 1.05));
+            CHECK(checkDuties(85, 25, 85.0 / 1.1, 25.0 / 1.1));
         }
 
         AND_WHEN("A PWM is set to invalid, its requested value is zero in the balancer")
@@ -853,6 +857,69 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         CHECK(constrainedMock2->state() == State::Inactive);
     }
 }
+
+SCENARIO("A PWM actuator driving a target with delayed ON and OFF time", "[pwm]")
+{
+    auto now = ticks_millis_t(0);
+    auto period = duration_millis_t(4000);
+
+    auto mockIo = std::make_shared<MockIoArray>();
+    ActuatorDigital mock1([mockIo]() { return mockIo; }, 1);
+
+    auto constrainedMock1 = std::make_shared<ActuatorDigitalConstrained>(mock1);
+    ActuatorPwm pwm1([constrainedMock1]() { return constrainedMock1; }, 4000);
+    ActuatorAnalogConstrained constrainedPwm1(pwm1);
+
+    auto mut = std::make_shared<MutexTarget>();
+    auto balancer = std::make_shared<Balancer<2>>();
+
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        [mut]() {
+            return mut;
+        },
+        0,
+        true));
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        [mut]() {
+            return mut;
+        },
+        0,
+        true));
+
+    WHEN("A PWM actuator is held back by constraints that delay toggling ON and off, the period doesn't stretched more 3x this delay")
+    {
+        // explanation:
+        // Delayed OFF streteched the high period by 1000
+        // The low period is stretched by 1000 as well to compensate
+        // The delayed OFF accounts for another delay by 1000
+        // Next cycle:
+        // High period is still +1000
+        // Low period is not stretched, because previous period was too low duty
+        // Low period switch has delay of 1000
+
+        constrainedPwm1.setting(50);
+
+        constrainedPwm1.update();
+        pwm1.update(now);
+
+        constrainedMock1->removeAllConstraints();
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOn<4>>(
+            1000));
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOff<5>>(
+            1000));
+
+        auto start = now;
+        auto end = now + 100 * period;
+
+        for (; now - start <= end; now += 100) {
+            constrainedPwm1.update();
+            pwm1.update(now);
+            auto durations = constrainedMock1->activeDurations(now);
+            CHECK(durations.previousPeriod <= period + 3100); // +100 due to update frequency
+        }
+    }
+}
+
 #if 0
 WHEN("Actuator PWM value is alternated between zero and a low value, the average is correct")
 {
