@@ -143,25 +143,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         auto previousPeriod = durations.previousPeriod;
         auto currentPeriod = durations.currentPeriod;
         auto lastHistoricState = durations.lastState;
-
-        // If previous period was shortened, convert to normal period by assuming it was equal to a normal period at current duty setting
-        // This prevents shortened periods to cause shortened periods in the next cycle
-        // and prevents startup effects.
-        if (previousPeriod < m_period) {
-            previousPeriod = m_period;
-            if (lastHistoricState == State::Active) {
-                // If we are currently a active high, then the shortened period had the high time shortened
-                // Calculate as if it was a normal period based on current desired high time
-                // We don't want to stretch the current high time if the previous was shortened
-                previousHighTime = m_dutyTime;
-            }
-        }
+        auto invDutyTime = m_period - m_dutyTime;
         auto twoPeriodElapsed = previousPeriod + currentPeriod;
-
         auto twoPeriodHighTime = previousHighTime + currentHighTime;
 
         auto wait = duration_millis_t(0);
-        auto invDutyTime = m_period - m_dutyTime;
 
         if (lastHistoricState == State::Active) {
             if (m_dutySetting == maxDuty()) {
@@ -182,7 +168,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // maximum high time is the highest value among:
                 // - 1.5x the previous hight time
                 // - 1.5x the normal high time
-                auto maxHighTime = std::max(m_dutyTime, previousHighTime) * 3 / 2;
+
+                auto maxHighTime = std::max(m_dutyTime, previousHighTime);
+                if (previousPeriod >= m_period) {
+                    maxHighTime = maxHighTime * 3 / 2; // stretching allowed if previous period was not shortened
+                }
 
                 if (currentHighTime < maxHighTime) {
                     // for checking the currently achieved value, look back max 2 periods (toggles)
@@ -226,7 +216,10 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // - 1.5x the normal low time
 
                 auto previousLowTime = previousPeriod - previousHighTime;
-                auto maxLowTime = std::max(invDutyTime, previousLowTime) * 3 / 2;
+                auto maxLowTime = std::max(invDutyTime, previousLowTime);
+                if (previousPeriod >= m_period) {
+                    maxLowTime = maxLowTime * 3 / 2; // stretching allowed if previous period was not shortened
+                }
 
                 if (currentLowTime < maxLowTime) {
                     // for checking the currently achieved value, look back max 2 periods (toggles)
@@ -252,20 +245,12 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             }
         }
 
-        // Toggle actuator if necessary
-        if (m_enabled && m_settingValid && (wait == 0)) {
-            if (lastHistoricState == State::Inactive) {
-                actPtr->desiredState(State::Active, now);
-            } else {
-                actPtr->desiredState(State::Inactive, now);
-            }
-        }
-
         // take into account period until next update in calculating achieved
         auto twoPeriodTotal = twoPeriodElapsed + wait;
+
         if (twoPeriodTotal < m_period * 2) {
             // always calculate duty from at least 2 normal periods
-            // this prevents adaptive cycle lengths to cause a higher duty to be reported than the setting
+            // this prevents shortened cycle lengths to cause a higher duty to be reported than the setting
             twoPeriodTotal = m_period * 2;
         }
         auto dutyAchieved = value_t{cnl::quotient(100 * twoPeriodHighTime, twoPeriodTotal)};
@@ -273,19 +258,27 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         // calculate achieved duty cycle
         // only update achieved if current cycle is long enough
         // to let current state move achieved in the right direction
+        m_valueValid = true;
         if (lastHistoricState == State::Active) {
             if (dutyAchieved >= m_dutyAchieved) {
                 m_dutyAchieved = dutyAchieved;
-                m_valueValid = true;
             }
         } else if (lastHistoricState == State::Inactive) {
             if (dutyAchieved <= m_dutyAchieved) {
                 m_dutyAchieved = dutyAchieved;
-                m_valueValid = true;
             }
         } else {
             m_valueValid = false;
             m_dutyAchieved = m_dutySetting;
+        }
+
+        // Toggle actuator if necessary
+        if (m_enabled && m_settingValid && (wait == 0)) {
+            if (lastHistoricState == State::Inactive) {
+                actPtr->desiredState(State::Active, now);
+            } else {
+                actPtr->desiredState(State::Inactive, now);
+            }
         }
 
         return now + std::min(update_t(1000), (wait >> 1) + 1);

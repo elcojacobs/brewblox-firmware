@@ -345,8 +345,9 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         CHECK(lowTime == pwm.period() * 0.4);
     }
 
-    WHEN("the PWM actuator is set to 40% after being 99% for a long time, the low time is stretched to compensate for the history")
+    WHEN("the PWM actuator is set to 40% after being 99% for a long time, the low time is not stretched")
     {
+        // stretching is only allowed when the previous cycle had normal length
         pwm.setting(99);
         while (now < 100000 || mock.state() == State::Active) {
             now = pwm.update(now);
@@ -360,7 +361,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
             now = pwm.update(now);
         }
         auto lowTime = now - lowStartTime;
-        CHECK(lowTime == pwm.period() * 0.6 * 1.5);
+        CHECK(lowTime == pwm.period() * 0.6);
     }
 
     WHEN("the PWM actuator is set to 40% after being 1% for a long time, the high time has the normal duration")
@@ -497,14 +498,20 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         CHECK(mock.state() == State::Inactive);
     }
 
-    WHEN("the PWM actuator is set to 40%, it does not report a higher duty cycle in the period after startup")
+    WHEN("the PWM actuator is set to 40%, it does not report a higher duty cycle in the period after startup and stays at desired value after reaching it")
     {
         pwm.setting(40);
         auto nextUpdate = now;
+        bool reached = false;
         for (; now < 5 * pwm.period(); now++) {
             if (now >= nextUpdate) {
                 nextUpdate = pwm.update(now);
-                CHECK(pwm.value() <= 40.0);
+                if (pwm.value() >= 40.0) {
+                    reached = true;
+                }
+                if (reached) {
+                    CHECK(pwm.value() == Approx(40.0).margin(0.1));
+                }
             }
         }
     }
@@ -524,7 +531,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         for (; now < 7 * pwm.period(); now++) {
             if (now >= nextUpdate) {
                 nextUpdate = pwm.update(now);
-                if (now < changeSettingAt + pwm.period()) {
+                if (now <= changeSettingAt + pwm.period()) {
                     // approach is not completely linear, use 20% margin
                     // main point is that it gradually increases
                     auto interpolated = 10.0 + (40.0 - 10.0) / pwm.period() * (now - changeSettingAt);
