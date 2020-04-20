@@ -144,14 +144,17 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         auto currentPeriod = durations.currentPeriod;
         auto lastHistoricState = durations.lastState;
 
-        // If previous period was shortened, convert to normal period by adding time at current duty setting
+        // If previous period was shortened, convert to normal period by assuming it was equal to a normal period at current duty setting
         // This prevents shortened periods to cause shortened periods in the next cycle
-        // and prevents startup effects. By adding at current duty instead of OFF, the algorithm
-        // will not overcompensate when the actuator has been low for almost entire previous period
+        // and prevents startup effects.
         if (previousPeriod < m_period) {
-            auto shortenedBy = m_period - durations.previousPeriod;
             previousPeriod = m_period;
-            previousHighTime += ticks_millis_t(shortenedBy * dutyFraction()) + 1;
+            if (lastHistoricState == State::Active) {
+                // If we are currently a active high, then the shortened period had the high time shortened
+                // Calculate as if it was a normal period based on current desired high time
+                // We don't want to stretch the current high time if the previous was shortened
+                previousHighTime = m_dutyTime;
+            }
         }
         auto twoPeriodElapsed = previousPeriod + currentPeriod;
 
@@ -249,8 +252,6 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             }
         }
 
-        bool toggled = false;
-
         // Toggle actuator if necessary
         if (m_enabled && m_settingValid && (wait == 0)) {
             if (lastHistoricState == State::Inactive) {
@@ -258,28 +259,33 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             } else {
                 actPtr->desiredState(State::Inactive, now);
             }
-            if (lastHistoricState != actPtr->state()) {
-                toggled = true;
-            }
         }
 
-        twoPeriodElapsed += wait; // take into account period until next update in calculating achieved
-        if (twoPeriodElapsed == 0) {
-            m_dutyAchieved = value_t{0};
-        } else {
-            if (lastHistoricState == State::Unknown) {
-                m_valueValid = false;
-            } else {
-                // calculate achieved duty cycle
-                auto dutyAchieved = value_t{cnl::quotient(100 * twoPeriodHighTime, twoPeriodElapsed)};
-                if (toggled // end of high or low time or
-                            // current period is long enough to start using the current achieved value including this period
-                    || (lastHistoricState == State::Inactive && dutyAchieved < m_dutyAchieved)
-                    || (lastHistoricState == State::Active && dutyAchieved > m_dutyAchieved)) {
-                    m_dutyAchieved = dutyAchieved;
-                    m_valueValid = true;
-                }
+        // take into account period until next update in calculating achieved
+        auto twoPeriodTotal = twoPeriodElapsed + wait;
+        if (twoPeriodTotal < m_period * 2) {
+            // always calculate duty from at least 2 normal periods
+            // this prevents adaptive cycle lengths to cause a higher duty to be reported than the setting
+            twoPeriodTotal = m_period * 2;
+        }
+        auto dutyAchieved = value_t{cnl::quotient(100 * twoPeriodHighTime, twoPeriodTotal)};
+
+        // calculate achieved duty cycle
+        // only update achieved if current cycle is long enough
+        // to let current state move achieved in the right direction
+        if (lastHistoricState == State::Active) {
+            if (dutyAchieved >= m_dutyAchieved) {
+                m_dutyAchieved = dutyAchieved;
+                m_valueValid = true;
             }
+        } else if (lastHistoricState == State::Inactive) {
+            if (dutyAchieved <= m_dutyAchieved) {
+                m_dutyAchieved = dutyAchieved;
+                m_valueValid = true;
+            }
+        } else {
+            m_valueValid = false;
+            m_dutyAchieved = m_dutySetting;
         }
 
         return now + std::min(update_t(1000), (wait >> 1) + 1);
