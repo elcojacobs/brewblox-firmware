@@ -30,6 +30,7 @@ public:
     ~WidgetsScreen() = default;
 
     static void loadSettings();
+    static void unload();
     static void activate();
     static void updateUsb();
     static void updateWiFi();

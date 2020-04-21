@@ -68,8 +68,7 @@ WidgetWrapper::setColor(uint8_t r, uint8_t g, uint8_t b)
 void
 WidgetWrapper::resetName()
 {
-    static const char txt[] = "unassigned";
-    D4D_SetText(&btnObject, txt);
+    D4D_SetText(&btnObject, "unassigned");
 }
 
 void
@@ -87,9 +86,12 @@ WidgetWrapper::resetClickHandler()
 }
 
 void
-WidgetWrapper::addChildren(std::vector<D4D_OBJECT*> children)
+WidgetWrapper::addChildren(std::vector<D4D_OBJECT*>&& children)
 {
-    objects.insert(objects.end() - 1, children.cbegin(), children.cend());
+    objects.reserve(objects.size() + children.size());
+    objects.pop_back(); // remove nullptr
+    objects.insert(objects.end(), std::make_move_iterator(children.begin()), std::make_move_iterator(children.end()));
+    objects.push_back(nullptr);
     wrapperObject.pRelations = objects.data();
     // ensure new children and their children have the correct screen pointer
     D4D_SetObjectScreenPointer(&wrapperObject, wrapperObject.pData->pScreen);
@@ -106,7 +108,7 @@ WidgetWrapper::resetChildren()
 void
 WidgetWrapper::invalidate()
 {
-    D4D_InvalidateObject(&wrapperObject, D4D_TRUE);
+    D4D_InvalidateObject(&wrapperObject, D4D_FALSE);
 }
 
 void

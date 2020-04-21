@@ -23,8 +23,10 @@
 #include "BrewBlox.h"
 #include "blox/stringify.h"
 #include "d4d.hpp"
+#include "memory_info.h"
 #include "spark_wiring_ticks.h"
 #include "spark_wiring_timer.h"
+#include "stdio.h"
 
 #if PLATFORM_ID != 3
 #include "BrewPiTouch.h"
@@ -46,16 +48,18 @@ D4D_DECLARE_STD_PROGRESS_BAR(scrStartup_progress, 0, 212, 320, 12, 0)
 D4D_DECLARE_STD_LABEL(scrStartup_version, versionString, 0, 224, 320, 15, FONT_REGULAR)
 
 D4D_DECLARE_SCREEN_BEGIN(screen_startup, ScrStartup_, 0, 0, (D4D_COOR)(D4D_SCREEN_SIZE_LONGER_SIDE), (D4D_COOR)(D4D_SCREEN_SIZE_SHORTER_SIDE), nullptr, 0, nullptr, (D4D_SCR_F_DEFAULT | D4D_SCR_F_TOUCHENABLE), nullptr)
-D4D_DECLARE_SCREEN_OBJECT(scrStartup_logo)
-D4D_DECLARE_SCREEN_OBJECT(scrStartup_version)
-D4D_DECLARE_SCREEN_OBJECT(scrStartup_progress)
-D4D_DECLARE_SCREEN_OBJECT(scrStartup_step)
-D4D_DECLARE_SCREEN_END()
+&scrStartup_logo,
+    &scrStartup_version,
+    &scrStartup_progress,
+    &scr_mem_icon,
+    &scr_mem_text,
+    &scrStartup_step,
+    D4D_DECLARE_SCREEN_END();
 
 void
 StartupScreen::activate()
 {
-    D4D_EnableObject(&scrStartup_version, D4D_FALSE);
+    D4D_EnableObject(&scrStartup_version, D4D_FALSE); // disable for darker color
     D4D_ActivateScreen(&screen_startup, D4D_TRUE);
 }
 
@@ -106,6 +110,7 @@ ScrStartup_OnInit()
 void
 ScrStartup_OnMain()
 {
+    updateRamDisplay();
 }
 
 void

@@ -20,12 +20,7 @@
 #include <cstdint>
 #include <string>
 
-class StartupScreen {
+class ListeningScreen {
 public:
     static void activate();
-    static void calibrateTouchIfNeeded();
-    static void calibrateTouch();
-    static void setProgress(uint8_t v);
-    static void setStep(std::string&& txt);
-    static void updateRam();
 };

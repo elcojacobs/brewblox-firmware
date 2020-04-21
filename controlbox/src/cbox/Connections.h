@@ -125,7 +125,7 @@ public:
     {
     }
 
-    bool write(uint8_t data) override
+    virtual bool write(uint8_t data) override final
     {
         return stream.write(data) != 0;
     }
@@ -274,11 +274,7 @@ public:
 
     void stopAll()
     {
-        for (auto& c : connections) {
-            // don't delete connections here.
-            // stop them, and let updateConnections destroy them when they are disconnected.
-            c->stop();
-        }
+        connections.resize(0);
         for (auto& source : connectionSources) {
             source.get().stop();
         }

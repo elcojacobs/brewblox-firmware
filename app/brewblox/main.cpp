@@ -29,6 +29,7 @@
 #include "d4d.hpp"
 #include "delay_hal.h"
 #include "display/screens/WidgetsScreen.h"
+#include "display/screens/listening_screen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
 #include "reset.h"
@@ -62,7 +63,7 @@ watchdogReset()
 inline void
 watchdogCheckin()
 {
-    static ApplicationWatchdog appWatchdog = ApplicationWatchdog(60000, watchdogReset);
+    static ApplicationWatchdog appWatchdog(60000, watchdogReset);
     appWatchdog.checkin();
 }
 #else
@@ -88,23 +89,25 @@ displayTick()
 }
 
 void
-onOutOfMemory(system_event_t event, int param)
-{
-    logEvent("OUT_OF_MEMORY");
-}
-
-void
 onSetupModeBegin()
 {
-    logEvent("SETUP_MODE");
+    ListeningScreen::activate();
+    manageConnections(ticks.millis()); // stop http server
     brewbloxBox().stopConnections();
+    brewbloxBox().unloadAllObjects();
     HAL_Delay_Milliseconds(100);
 }
 
 void
 onSetupModeEnd()
 {
-    brewbloxBox().startConnections();
+    handleReset(true, RESET_USER_REASON::LISTENING_MODE_EXIT);
+}
+
+void
+onOutOfMemory(system_event_t event, int param)
+{
+    HAL_Delay_Milliseconds(1000);
 }
 
 #if PLATFORM_ID != PLATFORM_GCC
@@ -121,17 +124,10 @@ setup()
     std::signal(SIGTERM, signal_handler);
     // pin map is not initialized properly in gcc build before setup runs
     boardInit();
-#endif
-    Buzzer.beep(2, 50);
-
-    System.on(out_of_memory, onOutOfMemory);
-    System.on(setup_update, watchdogCheckin);
-    System.on(setup_begin, onSetupModeBegin);
-    System.on(setup_end, onSetupModeEnd);
-    HAL_Delay_Milliseconds(1);
-
-#if PLATFORM_ID == PLATFORM_GCC
     manageConnections(0); // init network early to websocket display emulation works during setup()
+#else
+    Buzzer.beep(2, 50);
+    HAL_Delay_Milliseconds(1);
 #endif
 
     // init display
@@ -146,66 +142,69 @@ setup()
     StartupScreen::setStep("Power cycling peripherals");
 
     do {
+        StartupScreen::setProgress(ticks.millis() / 40); // up to 50
         displayTick();
-    } while (ticks.millis() < 2000);
+    } while (ticks.millis() < ((PLATFORM_ID != PLATFORM_GCC) ? 2000 : 0));
 
     enablePheripheral5V(true);
     HAL_Delay_Milliseconds(1);
 
-    StartupScreen::setProgress(30);
     StartupScreen::setStep("Init OneWire");
     theOneWire();
 
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(40);
+    StartupScreen::setProgress(60);
     StartupScreen::setStep("Init BrewBlox framework");
     brewbloxBox();
 
     HAL_Delay_Milliseconds(1);
-    StartupScreen::setProgress(80);
-    StartupScreen::setStep("Loading objects");
+
+    StartupScreen::setProgress(70);
+    StartupScreen::setStep("Loading blocks");
     brewbloxBox().loadObjectsFromStorage(); // init box and load stored objects
     HAL_Delay_Milliseconds(1);
+
+    StartupScreen::setProgress(80);
+    StartupScreen::setStep("Enabling WiFi and mDNS");
+    wifiInit();
+    HAL_Delay_Milliseconds(1);
+
     StartupScreen::setProgress(100);
+    StartupScreen::setStep("Ready!");
 
     // perform pending EEPROM erase while we're waiting. Can take up to 500ms and stalls all code execution
     // This avoids having to do it later when writing to EEPROM
     HAL_EEPROM_Perform_Pending_Erase();
 
-    StartupScreen::setStep("Ready!");
-
-    while (ticks.millis() < 5000) {
-        displayTick();
-        HAL_Delay_Milliseconds(1);
-    };
-
     WidgetsScreen::activate();
+
 #if PLATFORM_ID != PLATFORM_GCC
     TimerInterrupts::init();
+    System.on(setup_begin, onSetupModeBegin);
+    System.on(setup_end, onSetupModeEnd);
+    // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
 #endif
 
-    wifiInit();
     brewbloxBox().startConnections();
-    HAL_Delay_Milliseconds(1);
+    displayTick();
 }
 
 void
 loop()
 {
-    ticks.switchTaskTimer(TicksClass::TaskId::Communication);
     if (!listeningModeEnabled()) {
+
+        ticks.switchTaskTimer(TicksClass::TaskId::Communication);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
+        ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
+        updateBrewbloxBox();
+
+        ticks.switchTaskTimer(TicksClass::TaskId::System);
+        watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
-
-    ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
-    updateBrewbloxBox();
-
     ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
     displayTick();
-
-    ticks.switchTaskTimer(TicksClass::TaskId::System);
-    watchdogCheckin();
     HAL_Delay_Milliseconds(1);
 }
 
