@@ -1,28 +1,39 @@
-#ifndef _INCL_MDNS
-#define _INCL_MDNS
-
-#include "Buffer.h"
-#include "Label.h"
+#pragma once
+// #include "Buffer.h"
+// #include "Label.h"
 #include "Record.h"
-#include "spark_wiring_string.h"
-#include "spark_wiring_udp.h"
+#include "UDPExtended.h"
 #include <map>
+#include <memory>
+#include <string>
 #include <vector>
 
 #define MDNS_ADDRESS IPAddress(224, 0, 0, 251)
 #define MDNS_PORT 5353
 
 #define BUFFER_SIZE 512
-#define HOSTNAME ""
-#define META_SERVICE "_services._dns-sd._udp"
 
 class MDNS {
 public:
-    bool setHostname(String hostname);
+    enum class Protocol {
+        UDP,
+        TCP,
+    };
 
-    bool addService(String protocol, String service, uint16_t port, String instance, std::vector<String> subServices = std::vector<String>());
+    MDNS(std::string hostname);
+    ~MDNS()
+    {
+        for (auto r : records) {
+            delete r;
+        }
+        for (auto r : metaRecords) {
+            delete r;
+        }
+    }
 
-    void addTXTEntry(String key, String value = "");
+    void addService(Protocol protocol, std::string serviceType, const std::string serviceName, uint16_t port,
+                    std::vector<std::string>&& txtEntries = std::vector<std::string>(),
+                    std::vector<std::string>&& subServices = std::vector<std::string>());
 
     bool begin(bool announce = false);
 
@@ -38,26 +49,43 @@ private:
         uint16_t arcount;
     };
 
-    UDP* udp = new UDP();
-    Buffer* buffer = new Buffer(BUFFER_SIZE);
+    struct Query {
+        Query()
+            : header{0}
+        {
+        }
+        ~Query() = default;
 
-    Label* ROOT = new Label("");
-    Label* LOCAL = new Label("local", ROOT);
-    MetaLabel* META = new MetaLabel("_services", new Label("_dns-sd", new Label("_udp", LOCAL)));
-    Label::Matcher* matcher = new Label::Matcher();
+        struct Question {
+            std::vector<std::string> qname;
+            std::vector<uint16_t> qnameOffset;
+            uint16_t qtype = 0;
+            uint16_t qclass = 0;
+        };
 
-    ARecord* aRecord;
-    TXTRecord* txtRecord;
+        QueryHeader header;
+        std::vector<Question> questions;
+    };
 
-    std::map<String, Label*> labels;
+    UDPExtended udp;
+
+    // meta records for re-using labels
+    MetaRecord* LOCAL;
+    MetaRecord* UDP;
+    MetaRecord* TCP;
+    MetaRecord* DNSSD;
+    MetaRecord* SERVICES;
+
+    // actual records that are checked
+    ARecord* hostRecord;
+
+    // vectors of records to iterate over them
     std::vector<Record*> records;
-    String status = "Ok";
+    std::vector<MetaRecord*> metaRecords;
 
-    QueryHeader readHeader(Buffer* buffer);
-    void getResponses();
+    Query getQuery();
+
+    void processQuery(const Query& q);
+    void processQuestion(const Query::Question& question);
     void writeResponses();
-    bool isAlphaDigitHyphen(String string);
-    bool isNetUnicode(String string);
 };
-
-#endif
