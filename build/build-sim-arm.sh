@@ -4,6 +4,9 @@ set -e
 BUILD_DIR=$(dirname "$(readlink -f "$0")")
 ROOT_DIR="${BUILD_DIR}"/..
 
+# clean target dir to not have amd64 leftovers. Sudo needed because docker has created some files as privileged
+sudo rm -rf "${BUILD_DIR}/target"
+
 docker run \
     --rm \
     --privileged \
@@ -17,7 +20,7 @@ docker run \
     -it --rm \
     -v "$ROOT_DIR"/:/firmware/ \
     brewblox/firmware-compiler:latest \
-    make APP=brewblox PLATFORM=gcc
+    make clean all APP=brewblox PLATFORM=gcc
 
 # reset modified file
 pushd "$ROOT_DIR"/platform/spark/device-os > /dev/null
