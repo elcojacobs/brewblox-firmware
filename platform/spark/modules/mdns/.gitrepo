@@ -4,9 +4,9 @@
 ; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
 ;
 [subrepo]
-	remote = https://github.com/mrhornsby/spark-core-mdns.git
-	branch = master
-	commit = 69590dcfc0667c0583ecf583a3bd388a5f45eb13
-	parent = 00e8ecc8ed8ef05b5f546c1888bfcf44ebce26b6
+	remote = git@github.com:BrewBlox/particle-mdns.git
+	branch = develop
+	commit = e67b263254cb05a1bf0a70dbce9da79af62f6751
+	parent = 2d31d8c2f2043c95a4fa2a42e490cc22227e7170
 	method = merge
 	cmdver = 0.4.0
