@@ -167,7 +167,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         if (lastHistoricState == State::Active) {
             if (m_dutySetting == maxDuty()) {
                 actPtr->desiredState(State::Active, now); // ensure desired state is correct
-                wait = std::max(duration_millis_t(1000), m_period - currentPeriod);
+                if (currentPeriod <= m_period + 1000) {
+                    wait = m_period - currentPeriod;
+                } else {
+                    wait = 1000;
+                }
             } else if (m_dutySetting <= (maxDuty() >> 1)) {
                 // high period is fixed, low period adapts
                 if (currentHighTime < m_dutyTime) {
@@ -207,7 +211,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             auto currentLowTime = currentPeriod - currentHighTime;
             if (m_dutySetting == value_t{0}) {
                 actPtr->desiredState(State::Inactive, now); // ensure desired state is correct
-                wait = std::max(duration_millis_t(1000), m_period - currentPeriod);
+                if (currentPeriod <= m_period + 1000) {
+                    wait = m_period - currentPeriod;
+                } else {
+                    wait = 1000;
+                }
             } else if (m_dutySetting > (maxDuty() >> 1)) {
                 // low period is fixed, high period adapts
                 if (currentLowTime < invDutyTime) {
