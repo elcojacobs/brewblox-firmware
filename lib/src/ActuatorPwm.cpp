@@ -180,19 +180,26 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // maximum high time is the highest value among:
                 // - 1.5x the previous high time
                 // - 1.5x the normal high time
+                // minimum high time is 75% of normal high time
 
                 // use unadjusted time to calculate max time
-                auto maxHighTime = std::max(m_dutyTime, durations.previousActive);
-                if (durations.previousPeriod >= m_period) {
-                    maxHighTime += maxHighTime / 2; // stretching allowed if previous period was not shortened
-                }
 
-                if (currentHighTime < maxHighTime) {
-                    // for checking the currently achieved value, look back max 2 periods (toggles)
-                    auto twoPeriodTargetHighTime = duration_millis_t(twoPeriodElapsed * dutyFraction());
+                auto minHighTime = invDutyTime - (invDutyTime >> 2);
+                if (currentHighTime < minHighTime) {
+                    wait = minHighTime - currentHighTime;
+                } else {
+                    auto maxHighTime = std::max(m_dutyTime, durations.previousActive);
+                    if (durations.previousPeriod >= m_period) {
+                        maxHighTime += maxHighTime / 2; // stretching allowed if previous period was not shortened
+                    }
 
-                    if (twoPeriodHighTime < twoPeriodTargetHighTime) {
-                        wait = std::min(twoPeriodTargetHighTime - twoPeriodHighTime, maxHighTime - currentHighTime);
+                    if (currentHighTime < maxHighTime) {
+                        // for checking the currently achieved value, look back max 2 periods (toggles)
+                        auto twoPeriodTargetHighTime = duration_millis_t(twoPeriodElapsed * dutyFraction());
+
+                        if (twoPeriodHighTime < twoPeriodTargetHighTime) {
+                            wait = std::min(twoPeriodTargetHighTime - twoPeriodHighTime, maxHighTime - currentHighTime);
+                        }
                     }
                 }
             }
@@ -211,18 +218,24 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // maximum low time is the highest value among:
                 // - 1.5x the previous low time
                 // - 1.5x the normal low time
+                // minimum low time is 75% of normal low time
 
-                auto maxLowTime = std::max(invDutyTime, durations.previousPeriod - durations.previousActive);
-                if (durations.previousPeriod >= m_period) {
-                    maxLowTime += maxLowTime / 2; // stretching only allowed if previous period was not shortened
-                }
+                auto minLowTime = invDutyTime - (invDutyTime >> 2);
+                if (currentLowTime < minLowTime) {
+                    wait = minLowTime - currentLowTime;
+                } else {
+                    auto maxLowTime = std::max(invDutyTime, durations.previousPeriod - durations.previousActive);
+                    if (durations.previousPeriod >= m_period) {
+                        maxLowTime += maxLowTime / 2; // stretching only allowed if previous period was not shortened
+                    }
 
-                if (currentLowTime < maxLowTime) {
-                    // for checking the currently achieved value, look back max 2 periods (toggles)
-                    auto twoPeriodTargetLowTime = twoPeriodElapsed - duration_millis_t(dutyFraction() * twoPeriodElapsed);
-                    auto twoPeriodLowTime = twoPeriodElapsed - twoPeriodHighTime;
-                    if (twoPeriodLowTime < twoPeriodTargetLowTime) {
-                        wait = std::min(twoPeriodTargetLowTime - twoPeriodLowTime, maxLowTime - currentLowTime);
+                    if (currentLowTime < maxLowTime) {
+                        // for checking the currently achieved value, look back max 2 periods (toggles)
+                        auto twoPeriodTargetLowTime = twoPeriodElapsed - duration_millis_t(dutyFraction() * twoPeriodElapsed);
+                        auto twoPeriodLowTime = twoPeriodElapsed - twoPeriodHighTime;
+                        if (twoPeriodLowTime < twoPeriodTargetLowTime) {
+                            wait = std::min(twoPeriodTargetLowTime - twoPeriodLowTime, maxLowTime - currentLowTime);
+                        }
                     }
                 }
             }
