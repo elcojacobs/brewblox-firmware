@@ -144,12 +144,47 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         auto currentPeriod = durations.currentPeriod;
         auto lastHistoricState = durations.lastState;
         auto invDutyTime = m_period - m_dutyTime;
-        auto twoPeriodHighTime = previousHighTime + currentHighTime;
 
         auto wait = duration_millis_t(0);
 
-        // if previous period was shortened, assume the time it was shorted with what would move duty in the right direction
-        // calculate as if it had normal length with shortened time at high/low that would bring it closer to target
+        // limit history length taken into account to 2 periods duration.
+        // Note that future of this period is also counted later, so this implements 'max 2 periods in the past', not 2 periods total.
+
+        // Scenario 1: current period is longer than 2*m_period
+        if (currentPeriod > 2 * m_period) {
+            if (lastHistoricState == State::Active) {
+                currentPeriod = 2 * m_period;
+                if (currentHighTime > currentPeriod) {
+                    // high for over 2*m_period
+                    currentHighTime = currentPeriod;
+                }
+            } else {
+                if (currentPeriod > 2 * m_period + currentHighTime) {
+                    // low for over 2*m_period
+                    currentHighTime = 0;
+                } else {
+                    currentHighTime = 2 * m_period - (currentPeriod - currentHighTime);
+                }
+                currentPeriod = 2 * m_period;
+            }
+            previousPeriod = 0;
+            previousHighTime = 0;
+        }
+        // Scenario 2: both periods together are longer than 2*m_period
+        else if (previousPeriod + currentPeriod > 2 * m_period) {
+            // compress the previous period.
+            // Combined with the adjustment below it will morph the previous period into a perfect desired period at current duty
+            if (currentPeriod < 2 * m_period) {
+                auto newPreviousPeriod = 2 * m_period - currentPeriod;
+                previousHighTime = previousHighTime * newPreviousPeriod / previousPeriod;
+                previousPeriod = newPreviousPeriod;
+            } else {
+                previousPeriod = 0;
+                previousHighTime = 0;
+            }
+        }
+
+        // if previous period was shortened, lengthen it again with the state that would result it bringing average duty closer to target
         if (previousPeriod < m_period) {
             auto shortenedBy = m_period - previousPeriod;
             previousPeriod += shortenedBy;
@@ -159,16 +194,16 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         }
 
         // To prevent alternating between longer/shorter period for the correct average, use 75% previous + 25% desired for previous period
-        // This makes the cycle converge to a normal cycle
+        // This makes the cycle times converge to a normal cycle
         previousHighTime = previousHighTime - (previousHighTime >> 4) + (m_dutyTime >> 4);
-
         auto twoPeriodElapsed = previousPeriod + currentPeriod;
+        auto twoPeriodHighTime = previousHighTime + currentHighTime;
 
         if (lastHistoricState == State::Active) {
             if (m_dutySetting == maxDuty()) {
                 actPtr->desiredState(State::Active, now); // ensure desired state is correct
-                if (currentPeriod <= m_period + 1000) {
-                    wait = m_period - currentPeriod;
+                if (currentPeriod + 1000 <= m_period) {
+                    wait = m_period - currentPeriod; // runs from high to 1000
                 } else {
                     wait = 1000;
                 }
@@ -211,8 +246,8 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
             auto currentLowTime = currentPeriod - currentHighTime;
             if (m_dutySetting == value_t{0}) {
                 actPtr->desiredState(State::Inactive, now); // ensure desired state is correct
-                if (currentPeriod <= m_period + 1000) {
-                    wait = m_period - currentPeriod;
+                if (currentPeriod + 1000 <= m_period) {
+                    wait = m_period - currentPeriod; // runs from high to 1000
                 } else {
                     wait = 1000;
                 }
