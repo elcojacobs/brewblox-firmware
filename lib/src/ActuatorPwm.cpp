@@ -144,19 +144,31 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         auto currentPeriod = durations.currentPeriod;
         auto lastHistoricState = durations.lastState;
         auto invDutyTime = m_period - m_dutyTime;
-        auto twoPeriodElapsed = previousPeriod + currentPeriod;
         auto twoPeriodHighTime = previousHighTime + currentHighTime;
 
         auto wait = duration_millis_t(0);
 
+        // if previous period was shortened, assume the time it was shorted with what would move duty in the right direction
+        // calculate as if it had normal length with shortened time at high/low that would bring it closer to target
+        if (previousPeriod < m_period) {
+            auto shortenedBy = m_period - previousPeriod;
+            previousPeriod += shortenedBy;
+            if (previousHighTime < m_dutyTime) {
+                previousHighTime = std::min(previousHighTime + shortenedBy, m_dutyTime);
+            }
+        }
+
+        // To prevent alternating between longer/shorter period for the correct average, use 75% previous + 25% desired for previous period
+        // This makes the cycle converge to a normal cycle
+        previousHighTime = previousHighTime - (previousHighTime >> 4) + (m_dutyTime >> 4);
+
+        auto twoPeriodElapsed = previousPeriod + currentPeriod;
+
         if (lastHistoricState == State::Active) {
             if (m_dutySetting == maxDuty()) {
-                m_dutyAchieved = maxDuty();
                 actPtr->desiredState(State::Active, now); // ensure desired state is correct
-                return now + 1000;
-            }
-
-            if (m_dutySetting <= (maxDuty() >> 1)) {
+                wait = std::max(duration_millis_t(1000), m_period - currentPeriod);
+            } else if (m_dutySetting <= (maxDuty() >> 1)) {
                 // high period is fixed, low period adapts
                 if (currentHighTime < m_dutyTime) {
                     wait = m_dutyTime - currentHighTime;
@@ -166,45 +178,30 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
 
                 // high period can adapt between boundaries
                 // maximum high time is the highest value among:
-                // - 1.5x the previous hight time
+                // - 1.5x the previous high time
                 // - 1.5x the normal high time
 
-                auto maxHighTime = std::max(m_dutyTime, previousHighTime);
-                if (previousPeriod >= m_period) {
-                    maxHighTime = maxHighTime * 3 / 2; // stretching allowed if previous period was not shortened
+                // use unadjusted time to calculate max time
+                auto maxHighTime = std::max(m_dutyTime, durations.previousActive);
+                if (durations.previousPeriod >= m_period) {
+                    maxHighTime += maxHighTime / 2; // stretching allowed if previous period was not shortened
                 }
 
                 if (currentHighTime < maxHighTime) {
                     // for checking the currently achieved value, look back max 2 periods (toggles)
                     auto twoPeriodTargetHighTime = duration_millis_t(twoPeriodElapsed * dutyFraction());
 
-                    // if previous high time is twice the unadjusted high time
-                    // use at least normal high time, because this is a due to a big duty setting decrease
-                    // not a slight adjustment for contraints or jitter
-                    if (previousHighTime > invDutyTime) {
-                        twoPeriodTargetHighTime = std::max(twoPeriodTargetHighTime, previousHighTime + invDutyTime);
-                    }
-
-                    // make sure that periods following each other do not continuously alternate in shortend/stretched cycle
-                    // by converging to the mean or unadjusted, whichever is higher
-                    auto mean = std::max(m_dutyTime, twoPeriodTargetHighTime / 2);
-                    if (currentHighTime > mean && previousHighTime < mean) {
-                        twoPeriodTargetHighTime -= (currentHighTime - previousHighTime) / 4;
-                    }
                     if (twoPeriodHighTime < twoPeriodTargetHighTime) {
                         wait = std::min(twoPeriodTargetHighTime - twoPeriodHighTime, maxHighTime - currentHighTime);
                     }
                 }
             }
         } else if (lastHistoricState == State::Inactive) {
-            if (m_dutySetting == value_t{0}) {
-                m_dutyAchieved = value_t{0};
-                actPtr->desiredState(State::Inactive, now); // ensure desired state is correct
-                return now + 1000;
-            }
             auto currentLowTime = currentPeriod - currentHighTime;
-
-            if (m_dutySetting > (maxDuty() >> 1)) {
+            if (m_dutySetting == value_t{0}) {
+                actPtr->desiredState(State::Inactive, now); // ensure desired state is correct
+                wait = std::max(duration_millis_t(1000), m_period - currentPeriod);
+            } else if (m_dutySetting > (maxDuty() >> 1)) {
                 // low period is fixed, high period adapts
                 if (currentLowTime < invDutyTime) {
                     wait = invDutyTime - currentLowTime;
@@ -215,28 +212,14 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                 // - 1.5x the previous low time
                 // - 1.5x the normal low time
 
-                auto previousLowTime = previousPeriod - previousHighTime;
-                auto maxLowTime = std::max(invDutyTime, previousLowTime);
-                if (previousPeriod >= m_period) {
-                    maxLowTime = maxLowTime * 3 / 2; // stretching allowed if previous period was not shortened
+                auto maxLowTime = std::max(invDutyTime, durations.previousPeriod - durations.previousActive);
+                if (durations.previousPeriod >= m_period) {
+                    maxLowTime += maxLowTime / 2; // stretching only allowed if previous period was not shortened
                 }
 
                 if (currentLowTime < maxLowTime) {
                     // for checking the currently achieved value, look back max 2 periods (toggles)
                     auto twoPeriodTargetLowTime = twoPeriodElapsed - duration_millis_t(dutyFraction() * twoPeriodElapsed);
-
-                    // if previous low time is twice the unadjusted low time
-                    // use at least normal low time, because this is a due to a big duty setting increase
-                    // not a slight adjustment for contraints or jitter
-                    if (previousLowTime > invDutyTime * 2) {
-                        twoPeriodTargetLowTime = std::max(twoPeriodTargetLowTime, previousLowTime + invDutyTime);
-                    }
-                    // make sure that periods following each other do not continuously alternate in shortend/stretched cycle
-                    // by converging to the mean or the unadjusted time, whichever is higher
-                    auto mean = std::max(invDutyTime, twoPeriodTargetLowTime / 2);
-                    if (currentLowTime > mean && previousLowTime < mean) {
-                        twoPeriodTargetLowTime -= (currentLowTime - previousLowTime) / 4;
-                    }
                     auto twoPeriodLowTime = twoPeriodElapsed - twoPeriodHighTime;
                     if (twoPeriodLowTime < twoPeriodTargetLowTime) {
                         wait = std::min(twoPeriodTargetLowTime - twoPeriodLowTime, maxLowTime - currentLowTime);
@@ -247,18 +230,16 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
 
         // take into account period until next update in calculating achieved
         auto twoPeriodTotal = twoPeriodElapsed + wait;
-
-        if (twoPeriodTotal < m_period * 2) {
-            // always calculate duty from at least 2 normal periods
-            // this prevents shortened cycle lengths to cause a higher duty to be reported than the setting
-            twoPeriodTotal = m_period * 2;
+        if (lastHistoricState == State::Active) {
+            twoPeriodHighTime += wait;
         }
-        auto dutyAchieved = value_t{cnl::quotient(100 * twoPeriodHighTime, twoPeriodTotal)};
 
+        auto dutyAchieved = value_t{cnl::quotient(100 * twoPeriodHighTime, twoPeriodTotal)};
         // calculate achieved duty cycle
         // only update achieved if current cycle is long enough
         // to let current state move achieved in the right direction
         m_valueValid = true;
+
         if (lastHistoricState == State::Active) {
             if (dutyAchieved >= m_dutyAchieved) {
                 m_dutyAchieved = dutyAchieved;
