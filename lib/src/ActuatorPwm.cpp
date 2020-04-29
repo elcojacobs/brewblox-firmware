@@ -94,27 +94,29 @@ ActuatorPwm::period() const
 void
 ActuatorPwm::timerTask()
 {
+
     // timer clock is 10 kHz, 100 steps at 100Hz
-    if (auto actPtr = m_target()) {
-        if (actPtr->state() != State::Active) {
-            if (m_fastPwmElapsed < m_dutyTime) {
+    if (m_fastPwmElapsed == 0) {
+        auto actPtr = m_target();
+        if (m_dutyTime != 0 && actPtr) {
+            if (actPtr->state() == State::Active) {
+                m_dutyAchieved = maxDuty(); // was never low
+            } else {
                 actPtr->setStateUnlogged(State::Active);
             }
-            if (m_fastPwmElapsed == 1) {
-                m_dutyAchieved = value_t{0}; // never active in previous cycle
-            }
         } else {
-            if (m_fastPwmElapsed >= m_dutyTime) {
+            m_dutyAchieved = value_t{0};
+        }
+        m_fastPwmElapsed = 0;
+    } else {
+        if (m_fastPwmElapsed == m_dutyTime) {
+            if (auto actPtr = m_target()) {
                 actPtr->setStateUnlogged(State::Inactive);
-                m_dutyAchieved = m_fastPwmElapsed;
-            } else {
-                if (m_fastPwmElapsed == 99) {
-                    m_dutyAchieved = maxDuty(); // never inactive in this cycle
-                }
+                m_dutyAchieved = m_dutySetting;
             }
         }
     }
-    m_fastPwmElapsed = (m_fastPwmElapsed + 1) % 100;
+    m_fastPwmElapsed = m_fastPwmElapsed == 99 ? 0 : m_fastPwmElapsed + 1;
 }
 
 ActuatorPwm::update_t

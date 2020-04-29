@@ -145,6 +145,12 @@ public:
         return ActuatorDigitalChangeLogged::state();
     }
 
+    void setStateUnlogged(const State& val)
+    {
+        m_desiredState = val;
+        ActuatorDigitalChangeLogged::state(val);
+    }
+
     duration_millis_t update(const ticks_millis_t& now)
     {
         // re-apply constraints for new update time
