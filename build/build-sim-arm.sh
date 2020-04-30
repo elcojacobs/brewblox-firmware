@@ -18,14 +18,14 @@ sed -i 's/-m64//g' platform/spark/device-os/build/gcc-tools.mk
 # Make sure compiler is up-to-date
 docker pull \
     --platform=linux/arm/v7 \
-    brewblox/firmware-compiler:latest
+    brewblox/firmware-compiler:arm-latest
 
 # build
 docker run \
     -it --rm \
     --platform=linux/arm/v7 \
     -v "$(pwd)/":/firmware/ \
-    brewblox/firmware-compiler:latest \
+    brewblox/firmware-compiler:arm-latest \
     make APP=brewblox PLATFORM=gcc
 
 # reset modified file
