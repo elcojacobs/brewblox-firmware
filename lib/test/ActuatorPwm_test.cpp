@@ -497,11 +497,12 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         pwm.update(now + 1);
         CHECK(mock.state() == State::Inactive);
     }
-    WHEN("the PWM actuator is set to 40%, the duty cycle it reports doesn't overshoot more than 10%")
+    WHEN("the PWM actuator is set to 40% at startup, the duty cycle it reports doesn't overshoot more than 10%")
     {
         // some overshoot is acceptable, because we only know of the high time after startup, so the history is a bit higher actually
         pwm.setting(40);
         bool reached = false;
+        auto previous = pwm.value();
         while (now < 5 * pwm.period()) {
             now = pwm.update(now);
             if (pwm.value() >= 40.0) {
@@ -509,6 +510,10 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
             }
             if (reached) {
                 CHECK(pwm.value() == Approx(40.0).epsilon(0.1));
+            } else {
+                auto current = pwm.value();
+                CHECK(current >= previous); // strictly rising
+                previous = current;
             }
         }
     }
