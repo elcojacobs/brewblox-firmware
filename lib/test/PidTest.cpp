@@ -620,7 +620,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(mockVal == 29);
         CHECK(pid.error() == Approx(1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(10).epsilon(0.1));
-        CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000) * 0.87).epsilon(0.02)); // some integral anti-windup will occur at the start
+        CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.02)); // some integral anti-windup will occur at the start
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
@@ -659,7 +659,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(mockVal == 21);
         CHECK(pid.error() == Approx(-1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(10).epsilon(0.1));
-        CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000) * 0.87).epsilon(0.02)); // some integral anti-windup will occur at the start
+        CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.02)); // some integral anti-windup will occur at the start
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.02));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
