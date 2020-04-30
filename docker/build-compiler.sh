@@ -28,10 +28,4 @@ docker buildx build \
     --push \
     firmware-compiler/arm
 
-docker manifest create "$IMAGE":"$TAG" \
-    --amend "$IMAGE":amd-"$TAG" \
-    --amend "$IMAGE":arm-"$TAG"
-
-docker manifest push "$IMAGE":"$TAG"
-
 popd > /dev/null

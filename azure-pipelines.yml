@@ -3,7 +3,7 @@ resources:
     - repository: self
   containers: 
     - container: compiler
-      image: brewblox/firmware-compiler:latest
+      image: brewblox/firmware-compiler:amd-latest
 
 pool:
   vmImage: "Ubuntu-18.04"
