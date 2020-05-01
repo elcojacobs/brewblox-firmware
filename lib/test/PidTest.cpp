@@ -153,6 +153,38 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
 
+    WHEN("A sensor quantized like a OneWire sensor is used")
+    {
+        pid.kp(10);
+        pid.ti(2000);
+
+        std::vector<duration_millis_t> tdValues{1, 3, 5, 10, 30, 60, 120, 240, 300, 600, 1200};
+
+        THEN("The effect of bit flips is limited for all possible values of Td")
+        {
+            for (auto td : tdValues) {
+                pid.td(td);
+
+                input->setting(30);
+                sensor->setting(20);
+                input->resetFilter();
+
+                double minD = 0.0; // will be negative
+                for (uint32_t i = 0; i <= std::max(td * 10, uint32_t{200}); ++i) {
+                    fp12_t mockVal = fp12_t((20.0 + 9.0 * i / 900));
+                    mockVal = mockVal - mockVal % fp12_t{0.0625};
+                    sensor->setting(mockVal);
+                    input->update();
+                    pid.update();
+                    if (pid.d() < minD) {
+                        minD = double(pid.d());
+                    }
+                }
+                CHECK(minD > 1.1 * -10 * 9.0 / 900 * td); // max 10% over the correct value
+            }
+        }
+    }
+
     WHEN("Proportional, Integral and Derivative are enabled, the output value is correct with negative Kp")
     {
         pid.kp(-10);
