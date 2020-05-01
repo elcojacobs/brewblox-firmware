@@ -423,3 +423,28 @@ SCENARIO("Filters chain output matches manually cascaded filters", "[filterchain
         }
     }
 }
+
+SCENARIO("A filter chain can be only initalized with short length, but expanded as specced later", "[filterchain][length]")
+{
+    WHEN("A filter chain is created with initially only 1 stage")
+    {
+        FilterChain chain({2, 2, 2, 2, 2, 2}, {1, 1, 1, 1, 1, 1}, 1);
+        THEN("It is created with length 1")
+        {
+            CHECK(chain.length() == 1);
+
+            AND_THEN("It can be expanded to length 3 on demand")
+            {
+
+                chain.expandStages(3);
+                CHECK(chain.length() == 3);
+            }
+
+            AND_THEN("It can will not become longer than the spec")
+            {
+                chain.expandStages(10);
+                CHECK(chain.length() == 6);
+            }
+        }
+    }
+}

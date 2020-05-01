@@ -28,32 +28,28 @@ private:
     FilterChain chain;
     uint8_t readIdx; // 0 for no filtering, 1 - 6 for each filter stage
 
-    struct FilterSpec {
-        const std::vector<uint8_t> paramIdxs;
-        const std::vector<uint8_t> intervals;
-    };
-
 public:
     using value_type = T;
 
-    FpFilterChain(uint8_t idx)
-        : chain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4})
-        , readIdx(idx)
+    FpFilterChain(uint8_t idx, uint8_t initStages = 0)
+        : chain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4}, initStages)
     {
+        setReadIdx(idx);
     }
     FpFilterChain(const FpFilterChain&) = delete;
     FpFilterChain& operator=(const FpFilterChain&) = delete;
     ~FpFilterChain() = default;
 
-    void add(const value_type& val)
+    void add(value_type val)
     {
         chain.add(cnl::unwrap(val));
     }
-    void add(const int32_t& val);
+    void add(int32_t val);
 
     void setReadIdx(uint8_t idx)
     {
         readIdx = idx;
+        expandStages(readIdx);
     }
 
     uint8_t getReadIdx() const
@@ -61,7 +57,7 @@ public:
         return readIdx;
     }
 
-    void setStepThreshold(const value_type& stepThreshold)
+    void setStepThreshold(value_type stepThreshold)
     {
         chain.setStepThreshold(cnl::unwrap(stepThreshold));
     }
@@ -114,15 +110,18 @@ public:
         return readDerivative<U>(readIdx > 0 ? readIdx - 1 : 0);
     }
 
-    template <typename U>
-    U readDerivativeForInterval(uint32_t maxInterval) const
+    auto intervalToFilterNr(uint16_t maxInterval)
     {
-        // select filter in chain with an update interval to have the optimal amount of filtering for the period requested
-        return readDerivative<U>(chain.intervalToFilterNr(maxInterval));
+        return chain.intervalToFilterNr(maxInterval);
     }
 
-    void reset(const value_type& value)
+    void reset(value_type value)
     {
         chain.reset(cnl::unwrap(value));
+    }
+
+    void expandStages(size_t numStages)
+    {
+        chain.expandStages(numStages);
     }
 };

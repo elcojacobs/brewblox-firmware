@@ -121,7 +121,13 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
+        CHECK(input->filterLength() == 1);
         pid.td(200);
+
+        THEN("The PID will ensure the filter of the input is long enough for td")
+        {
+            CHECK(input->filterLength() == 5);
+        }
 
         input->setting(30);
         sensor->setting(20);
@@ -915,7 +921,6 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         {
             for (uint16_t td = 20; td < 1200; td = td * 5 / 4) {
                 // INFO("td=" + std::to_string(td));
-
                 CHECK(testStep(td) >= -150);
                 CHECK(testStep(td) <= -30);
             }
