@@ -151,7 +151,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
                                             "drivenOutputId: 102 "
                                             "boilPointAdjust: -2048 "
                                             "boilMinOutput: 102400 "
-                                            "derivativeFilter: FILT_3m");
+                                            "derivativeFilter: FILT_90s");
     }
 
     THEN("The integral value can be written externally to reset it trough the integralReset field")
@@ -180,7 +180,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
                                             "drivenOutputId: 102 "
                                             "boilPointAdjust: -2048 "
                                             "boilMinOutput: 102400 "
-                                            "derivativeFilter: FILT_3m");
+                                            "derivativeFilter: FILT_90s");
     }
 
     AND_WHEN("The setpoint is disabled")
@@ -269,7 +269,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
                                                 "boilPointAdjust: -2048 "
                                                 "boilMinOutput: 102400 "
                                                 "boilModeActive: true "
-                                                "derivativeFilter: FILT_3m");
+                                                "derivativeFilter: FILT_90s");
         }
     }
 }

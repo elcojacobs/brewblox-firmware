@@ -126,7 +126,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         THEN("The PID will ensure the filter of the input is long enough for td")
         {
-            CHECK(input->filterLength() == 4);
+            CHECK(input->filterLength() == 3);
         }
 
         input->setting(30);
@@ -925,6 +925,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             pid.td(td);
             auto start = now;
             auto dMin = Pid::out_t(0);
+            auto dMinTime = now;
             sensor->setting(20);
             input->resetFilter();
 
@@ -940,22 +941,26 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     pid.update();
                     if (pid.d() < dMin) {
                         dMin = pid.d();
+                        dMinTime = now;
                     }
                     actuator->update();
                     nextPidUpdate = now + 1000;
                 }
                 ++now;
             }
-            return dMin;
+            auto lag = (dMinTime - start) / 1000; // return lag in seconds
+            return lag;
         };
 
-        THEN("A derivative filter is selected so that derivative output is at least 100% and max 250% of proportional gain for a step")
+        THEN("A derivative filter is selected so that the lag between value and max derivative between 1/4 td and 1/2 Td")
         {
-            std::vector<uint16_t> tds{10, 30, 60, 120, 300, 600, 1200};
+            std::vector<uint16_t> tds{60, 120, 300, 600, 1200};
             for (auto td : tds) {
                 CAPTURE(td);
-                CHECK(testStep(td) >= -250);
-                CHECK(testStep(td) <= -100);
+                auto selectedFilter = pid.derivativeFilterIdx();
+                CAPTURE(selectedFilter);
+                CHECK(testStep(td) > td / 4);
+                CHECK(testStep(td) < td / 2);
             }
         }
     }

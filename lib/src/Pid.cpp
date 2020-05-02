@@ -174,7 +174,9 @@ Pid::checkFilterLength()
 {
     if (!m_derivativeFilterIdx) {
         if (auto input = m_inputPtr()) {
-            m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 8);
+            // selected filter must an update interval a lot faster than Td to be meaningful
+            // The filter delay is roughly 6x the update rate.
+            m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 32);
             input->resizeFilterIfNeeded(m_derivativeFilterIdx);
         }
     }
