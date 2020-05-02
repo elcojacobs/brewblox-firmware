@@ -64,6 +64,11 @@ public:
         return {yv[0] - yv[1], fractionBits()};
     }
 
+    DerivativeResult readPreviousDerivative() const // returns unshifted derivative
+    {
+        return {yv[1] - yv[2], fractionBits()};
+    }
+
     int32_t unityStepDerivative() const
     {
         return params().maxDerivative;

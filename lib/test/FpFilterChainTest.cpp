@@ -28,7 +28,7 @@
 #include <sstream>
 #include <vector>
 
-SCENARIO("Fixed point filterchain using temp_t")
+SCENARIO("Fixed point filterchain using temp_t", "[fpfilterchain]")
 {
 
     std::vector<std::vector<uint8_t>> chainsSpecs = {{0},
@@ -69,14 +69,18 @@ SCENARIO("Fixed point filterchain using temp_t")
             temp_t max = 0;
             derivative_t maxDerivative = 0;
             c.reset(0);
-            for (uint32_t t = 0; t < period * 10; ++t) {
+            for (uint32_t t = 0; t < period * 6; t++) {
                 auto wave = sine(t, period, amplIn);
                 c.add(wave);
-                if (t > 4 * period) { // ignore start
+                if (t > 3 * period) { // ignore start
                     auto filterOutput = c.read();
                     auto derivative = c.readDerivative<derivative_t>();
-                    max = std::max(cnl::abs(filterOutput), max);
-                    maxDerivative = std::max(cnl::abs(derivative), maxDerivative);
+                    if (filterOutput > max) {
+                        max = filterOutput;
+                    }
+                    if (derivative > maxDerivative) {
+                        maxDerivative = derivative;
+                    }
                 }
             }
             auto gain = double(max) / amplIn;
@@ -85,8 +89,7 @@ SCENARIO("Fixed point filterchain using temp_t")
                 auto maxDerivativeIn = double(amplIn) * 2 * M_PI / period;
                 auto maxDerivativeDouble = double(maxDerivative);
                 auto derivativeGain = maxDerivativeDouble / maxDerivativeIn;
-                CHECK(derivativeGain <= gain * 1.1);
-                CHECK(derivativeGain >= gain * 0.9);
+                CHECK(derivativeGain == Approx(gain).epsilon(0.15));
             }
             return gain;
         };
@@ -118,37 +121,37 @@ SCENARIO("Fixed point filterchain using temp_t")
                 CHECK(findGainAtPeriod(chain, 20, false) > 0.9);
             }
             {
-                FpFilterChain<temp_t> chain(1); // unfiltered
+                FpFilterChain<temp_t> chain(1);
                 CHECK(findHalfAmplitudePeriod(chain) == 13);
                 CHECK(findGainAtPeriod(chain, 7) < 0.1);
                 CHECK(findGainAtPeriod(chain, 26) > 0.8);
             }
             {
-                FpFilterChain<temp_t> chain(2); // unfiltered
+                FpFilterChain<temp_t> chain(2);
                 CHECK(findHalfAmplitudePeriod(chain) == 43);
                 CHECK(findGainAtPeriod(chain, 22) < 0.1);
                 CHECK(findGainAtPeriod(chain, 86) > 0.8);
             }
             {
-                FpFilterChain<temp_t> chain(3); // unfiltered
+                FpFilterChain<temp_t> chain(3);
                 CHECK(findHalfAmplitudePeriod(chain) == 91);
                 CHECK(findGainAtPeriod(chain, 46) < 0.1);
                 CHECK(findGainAtPeriod(chain, 182) > 0.8);
             }
             {
-                FpFilterChain<temp_t> chain(4); // unfiltered
+                FpFilterChain<temp_t> chain(4);
                 CHECK(findHalfAmplitudePeriod(chain) == 184);
                 CHECK(findGainAtPeriod(chain, 92) < 0.1);
                 CHECK(findGainAtPeriod(chain, 368) > 0.8);
             }
             {
-                FpFilterChain<temp_t> chain(5); // unfiltered
+                FpFilterChain<temp_t> chain(5);
                 CHECK(findHalfAmplitudePeriod(chain) == 519);
                 CHECK(findGainAtPeriod(chain, 259) < 0.1);
                 CHECK(findGainAtPeriod(chain, 1038) > 0.8);
             }
             {
-                FpFilterChain<temp_t> chain(6); // unfiltered
+                FpFilterChain<temp_t> chain(6);
                 CHECK(findHalfAmplitudePeriod(chain) == 1546);
                 CHECK(findGainAtPeriod(chain, 773) < 0.1);
                 CHECK(findGainAtPeriod(chain, 3096) > 0.8);
@@ -175,13 +178,13 @@ SCENARIO("Fixed point filterchain using temp_t")
                 return t;
             };
             FpFilterChain<temp_t> chain(6);
-            CHECK(findStepResponseDelay(chain, temp_t(100)) == 1368);
-            CHECK(findStepResponseDelay(chain, temp_t(10)) == 1368);
-            CHECK(findStepResponseDelay(chain, temp_t(0.9)) == 1368);
+            CHECK(findStepResponseDelay(chain, temp_t(100)) == 1400);
+            CHECK(findStepResponseDelay(chain, temp_t(10)) == 1400);
+            CHECK(findStepResponseDelay(chain, temp_t(0.9)) == 1400);
             chain.setStepThreshold(1);
             CHECK(findStepResponseDelay(chain, 100) < 400);
-            CHECK(findStepResponseDelay(chain, 10) < 1368 / 2);
-            CHECK(findStepResponseDelay(chain, 0.9) == 1368);
+            CHECK(findStepResponseDelay(chain, 10) < 1400 / 2);
+            CHECK(findStepResponseDelay(chain, 0.9) == 1400);
         }
 
         AND_WHEN("The derivative can be get from a different filter, selected by the max interval")
