@@ -29,6 +29,7 @@ private:
     temp_t m_setting = 0;
     temp_t m_fluctuationsSum = 0;
     bool m_connected = false;
+    duration_millis_t m_updateInterval = 1000;
 
 public:
     struct Fluctuation {
@@ -96,5 +97,5 @@ public:
         m_setting += delta;
     }
 
-    void update(ticks_millis_t now);
+    duration_millis_t update(ticks_millis_t now);
 };
