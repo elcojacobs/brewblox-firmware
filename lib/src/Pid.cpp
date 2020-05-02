@@ -58,12 +58,22 @@ Pid::update()
     } else {
         m_i = 0;
     }
-    auto m_d_temp = fp12_t(m_derivative * m_td);
-    if ((m_d_temp >= m_error && m_error >= 0)
-        || (m_d_temp <= m_error && m_error <= 0)) {
-        m_d_temp = m_error;
+    m_d = -m_kp * fp12_t(m_derivative * m_td);
+    if (m_p >= 0) {
+        if (m_d > 0) {
+            m_d = 0; // only counteract p
+        }
+        if (m_d < -m_p) {
+            m_d = -m_p; // limit to inverse of p
+        }
+    } else {
+        if (m_d < 0) {
+            m_d = 0;
+        }
+        if (m_d > -m_p) {
+            m_d = -m_p;
+        }
     }
-    m_d = -m_kp * m_d_temp;
 
     auto pidResult = m_p + m_i + m_d;
 

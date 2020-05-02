@@ -932,8 +932,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         auto testStep = [&](uint16_t td) {
             pid.td(td);
             auto start = now;
-            auto dMin = Pid::out_t(0);
-            auto dMinTime = now;
+            auto dMax = Pid::derivative_t(0);
+            auto dMaxTime = now;
             sensor->setting(20);
             input->resetFilter();
 
@@ -942,21 +942,21 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     nextPwmUpdate = pwm.update(now);
                 }
                 if (now == start + 10'000) {
-                    sensor->setting(30);
+                    sensor->setting(25);
                 }
                 if (now >= nextPidUpdate) {
                     input->update();
                     pid.update();
-                    if (pid.d() < dMin) {
-                        dMin = pid.d();
-                        dMinTime = now;
+                    if (pid.derivative() > dMax) {
+                        dMax = pid.derivative();
+                        dMaxTime = now;
                     }
                     actuator->update();
                     nextPidUpdate = now + 1000;
                 }
                 ++now;
             }
-            auto lag = (dMinTime - start) / 1000; // return lag in seconds
+            auto lag = (dMaxTime - start) / 1000; // return lag in seconds
             return lag;
         };
 
