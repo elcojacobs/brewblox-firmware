@@ -58,8 +58,12 @@ Pid::update()
     } else {
         m_i = 0;
     }
-
-    m_d = -m_kp * fp12_t(m_derivative * m_td);
+    auto m_d_temp = fp12_t(m_derivative * m_td);
+    if ((m_d_temp >= m_error && m_error >= 0)
+        || (m_d_temp <= m_error && m_error <= 0)) {
+        m_d_temp = m_error;
+    }
+    m_d = -m_kp * m_d_temp;
 
     auto pidResult = m_p + m_i + m_d;
 
@@ -71,7 +75,6 @@ Pid::update()
 
     // try to set the output to the desired setting
     if (m_enabled) {
-
         if (auto output = m_outputPtr()) {
             output->settingValid(true);
             output->setting(outputValue);
