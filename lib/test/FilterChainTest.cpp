@@ -185,11 +185,82 @@ SCENARIO("Basic test of chain of filters")
                 return t;
             };
 
-            CHECK(findStepResponseDelay(chains[6], 100000) == 2496);
-            CHECK(findStepResponseDelay(chains[6], 900) == 2496);
+            CHECK(findStepResponseDelay(chains[6], 100000) == 2641);
+            CHECK(findStepResponseDelay(chains[6], 900) == 2641);
             chains[6].setStepThreshold(1000);
-            CHECK(findStepResponseDelay(chains[6], 100000) < 400);
-            CHECK(findStepResponseDelay(chains[6], 900) == 2496);
+            CHECK(findStepResponseDelay(chains[6], 100000) < 500);
+            CHECK(findStepResponseDelay(chains[6], 900) == 2641);
+        }
+
+        THEN("The smoothed output is continuous and lags the non-smoothed output by the interval of the last filter")
+        {
+            struct SmoothTestResult {
+                int32_t max;
+                int32_t maxS;
+
+                int64_t maxD;
+
+                int64_t maxDS;
+                int32_t lag;
+            };
+
+            auto testSmooth = [&sine](FilterChain& c, const uint32_t& period) {
+                int32_t amplIn = 100000;
+                int32_t max = 0;
+                auto maxD = c.readDerivative(c.length());
+                int32_t maxSmooth = 0;
+                auto maxDSmooth = c.readDerivative(c.length());
+                c.reset(0);
+
+                int32_t zero_cross1 = 0;
+                int32_t zero_cross2 = 0;
+                for (uint32_t t = 0; t < period * 6; ++t) {
+                    auto wave = sine(t, period, amplIn);
+                    c.add(wave);
+                    auto filterOutput = c.read(255, false);
+                    auto filterOutputSmooth = c.read(255, true);
+
+                    auto derivative = c.readDerivative(255, false);
+                    auto derivativeSmooth = c.readDerivative(255, true);
+                    if (t > 3 * period) { // ignore start
+                        if (filterOutput > max) {
+                            max = filterOutput;
+                            zero_cross1 = t; // get time of first maximum
+                        }
+
+                        if (filterOutputSmooth > maxSmooth) {
+                            maxSmooth = filterOutputSmooth;
+                            zero_cross2 = t; // get time of first maximum
+                        }
+
+                        if (derivative.result > maxD.result) {
+                            maxD = derivative;
+                        }
+
+                        if (derivativeSmooth.result > maxDSmooth.result) {
+                            maxDSmooth = derivativeSmooth;
+                        }
+                    }
+                }
+
+                return SmoothTestResult{
+                    max,
+                    maxSmooth,
+                    maxD.result,
+                    maxDSmooth.result,
+                    zero_cross2 - zero_cross1};
+            };
+
+            auto result = testSmooth(chains[2], 200);
+            CHECK(result.max == result.maxS);
+            CHECK(result.maxD == result.maxDS);
+            CHECK(result.lag < chains[2].sampleInterval());
+
+            result = testSmooth(chains[5], 1000);
+            CHECK(result.max == result.maxS);
+
+            CHECK(result.maxD == result.maxDS);
+            CHECK(result.lag == chains[5].sampleInterval());
         }
     }
 }
@@ -253,7 +324,7 @@ countSameValueAtOutPut(FilterChain& chain, uint32_t sameSampleCount, uint32_t co
     uint32_t counterMaxSeen = 0;
     for (uint32_t i = 0; i < 1000; i++) {
         chain.add(100000);
-        out.push_back(chain.read());
+        out.push_back(chain.read(255, false));
         counterMaxSeen = std::max(counterMaxSeen, chain.getCount());
     }
     uint32_t count = 1;
@@ -284,9 +355,9 @@ isUpdatedAtCounts(FilterChain& chain, uint8_t filterIndex, std::vector<uint32_t>
         chain.add(step); // ensure the filter output is a rising slope (skip the flat start)
     }
     while (ticks.size() < counts.size() && count < 10000) {
-        int32_t previousFilterVal = chain.read(filterIndex);
+        int32_t previousFilterVal = chain.read(filterIndex, false);
         chain.add(step);
-        int32_t filterVal = chain.read(filterIndex);
+        int32_t filterVal = chain.read(filterIndex, false);
         if (filterVal != previousFilterVal) {
             ticks.push_back(count);
         }
@@ -401,7 +472,7 @@ SCENARIO("Filters chain output matches manually cascaded filters", "[filterchain
                 f2.add(f1.readWithNFractionBits(f1.fractionBits()), f1.fractionBits());
                 f3.add(f2.readWithNFractionBits(f2.fractionBits()), f2.fractionBits());
                 CAPTURE(i);
-                REQUIRE(chain.read() == f3.read());
+                REQUIRE(chain.read(255, false) == f3.read());
             }
         }
         THEN("the output is almost same if separate filters are read with normal precision")
@@ -418,13 +489,13 @@ SCENARIO("Filters chain output matches manually cascaded filters", "[filterchain
                 f2.add(f1.read());
                 f3.add(f2.read());
                 CAPTURE(i);
-                REQUIRE_THAT(chain.read(), IsWithinOf(50, f3.read()));
+                REQUIRE_THAT(chain.read(255, false), IsWithinOf(50, f3.read()));
             }
         }
     }
 }
 
-SCENARIO("A filter chain can be only initalized with short length, but expanded as specced later", "[filterchain][length]")
+SCENARIO("A filter chain can be only initalized with short length but expanded as specced later", "[filterchain]")
 {
     WHEN("A filter chain is created with initially only 1 stage")
     {

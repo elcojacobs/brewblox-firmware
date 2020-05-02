@@ -124,7 +124,7 @@ FilterChain::expandStages(size_t numStages)
         return;
     }
     auto threshold = getStepThreshold();
-    auto currentOutput = read();
+    auto currentOutput = read(255, false);
     for (auto it = stages.begin(); it < stages.end() && it < stages.begin() + numStages; it++) {
         if (!it->filter) {
             it->filter = std::make_unique<IirFilter>(it->param, threshold);
@@ -152,27 +152,26 @@ FilterChain::getStepThreshold() const
 }
 
 int32_t
-FilterChain::read(uint8_t filterNr) const
+FilterChain::read(uint8_t filterNr, bool smooth) const
 {
-    return selectStage(filterNr)->filter->read();
-}
 
-int32_t
-FilterChain::read() const
-{
-    return read(stages.size() - 1);
+    auto stage = selectStage(filterNr);
+    int64_t latest = stage->filter->read();
+    if (!smooth) {
+        return latest;
+    }
+    auto updateInterval = sampleInterval(stage - 1);
+    auto elapsed = counter % updateInterval;
+    int64_t previous = stage->filter->readPrevious();
+
+    int32_t interpolated = (latest * elapsed + previous * (updateInterval - elapsed)) / updateInterval;
+    return interpolated;
 }
 
 int64_t
-FilterChain::readWithNFractionBits(uint8_t filterNr, uint8_t bits) const
+FilterChain::readWithNFractionBits(uint8_t bits, uint8_t filterNr) const
 {
     return selectStage(filterNr)->filter->readWithNFractionBits(bits);
-}
-
-int64_t
-FilterChain::readWithNFractionBits(uint8_t bits) const
-{
-    return selectStage(stages.size() - 1)->filter->readWithNFractionBits(bits);
 }
 
 uint32_t
@@ -210,23 +209,11 @@ FilterChain::intervalToFilterNr(uint32_t maxInterval) const
     return filterNr;
 }
 
-uint32_t
-FilterChain::sampleInterval() const
-{
-    return sampleInterval(stages.size() - 1);
-}
-
 uint8_t
 FilterChain::fractionBits(uint8_t filterNr) const
 {
 
     return selectStage(filterNr)->filter->fractionBits();
-}
-
-uint8_t
-FilterChain::fractionBits() const
-{
-    return fractionBits(stages.size() - 1);
 }
 
 int32_t
@@ -236,11 +223,20 @@ FilterChain::readLastInput() const
 }
 
 IirFilter::DerivativeResult
-FilterChain::readDerivative(uint8_t filterNr) const
+FilterChain::readDerivative(uint8_t filterNr, bool smooth) const
 {
     auto stage = selectStage(filterNr);
-    auto retv = stage->filter->readDerivative();
-    // Scale back derivative to account for sample interval in slower updating stages
-    retv.result = retv.result / sampleInterval(stage - 1);
-    return retv;
+    auto updateInterval = sampleInterval(stage - 1);
+    auto latest = stage->filter->readDerivative();
+    latest.result = latest.result / updateInterval;
+    if (smooth) {
+        auto elapsed = counter % updateInterval;
+        auto previous = stage->filter->readPreviousDerivative();
+        previous.result = previous.result / updateInterval;
+        int64_t interpolated = (latest.result * elapsed + previous.result * (updateInterval - elapsed)) / updateInterval;
+        latest.result = interpolated;
+        return latest;
+    } else {
+        return latest;
+    }
 }
