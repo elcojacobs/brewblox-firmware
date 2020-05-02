@@ -126,12 +126,7 @@ public:
         return m_td;
     }
 
-    void td(const uint16_t& arg)
-    {
-        m_td = arg;
-        m_derivativeFilterIdx = 0; // trigger automatic filter selection
-        checkFilterLength();
-    }
+    void td(const uint16_t& arg);
 
     void enabled(bool state)
     {
@@ -173,6 +168,11 @@ public:
     void boilMinOutput(const out_t& v)
     {
         m_boilMinOutput = v;
+    }
+
+    uint8_t derivativeFilterIdx() const
+    {
+        return m_derivativeFilterIdx;
     }
 
 private:

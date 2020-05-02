@@ -153,6 +153,14 @@ Pid::ti(const uint16_t& arg)
 }
 
 void
+Pid::td(const uint16_t& arg)
+{
+    m_td = arg;
+    m_derivativeFilterIdx = 0; // trigger automatic filter selection
+    checkFilterLength();
+}
+
+void
 Pid::setIntegral(const out_t& newIntegratorPart)
 {
     if (m_kp == 0) {
@@ -166,8 +174,7 @@ Pid::checkFilterLength()
 {
     if (!m_derivativeFilterIdx) {
         if (auto input = m_inputPtr()) {
-            // still need to get filter Idx. Done in update because it needs the input Ptr
-            m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 2);
+            m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 8);
             input->resizeFilterIfNeeded(m_derivativeFilterIdx);
         }
     }

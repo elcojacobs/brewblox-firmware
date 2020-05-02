@@ -126,7 +126,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         THEN("The PID will ensure the filter of the input is long enough for td")
         {
-            CHECK(input->filterLength() == 5);
+            CHECK(input->filterLength() == 4);
         }
 
         input->setting(30);
@@ -949,12 +949,13 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             return dMin;
         };
 
-        THEN("A derivative filter is selected so that derivative output is max 30%-150% of proportional gain")
+        THEN("A derivative filter is selected so that derivative output is at least 100% and max 250% of proportional gain for a step")
         {
-            for (uint16_t td = 20; td < 1200; td = td * 5 / 4) {
-                // INFO("td=" + std::to_string(td));
-                CHECK(testStep(td) >= -150);
-                CHECK(testStep(td) <= -30);
+            std::vector<uint16_t> tds{10, 30, 60, 120, 300, 600, 1200};
+            for (auto td : tds) {
+                CAPTURE(td);
+                CHECK(testStep(td) >= -250);
+                CHECK(testStep(td) <= -100);
             }
         }
     }
