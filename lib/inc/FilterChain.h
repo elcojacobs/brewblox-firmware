@@ -50,6 +50,8 @@ public:
     void setStepThreshold(int32_t threshold);        // set the step detection threshold
     int32_t getStepThreshold() const;                // get the step detection threshold of last filter
     int32_t read(uint8_t filterNr) const;            // read from specified filter
+    int32_t readSmooth(uint8_t filterNr) const;      // read from specified filter with interpolation to smooth output
+    int32_t readSmooth() const;                      // read filter with interpolation to smooth output
     int32_t read() const;                            // read from last filter
     uint32_t sampleInterval(uint8_t filterNr) const; // get minimum sample interval of filter at index i
     uint32_t sampleInterval() const;                 // get minimum sample interval of filter at last filter

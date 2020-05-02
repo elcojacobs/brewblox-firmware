@@ -191,6 +191,52 @@ SCENARIO("Basic test of chain of filters")
             CHECK(findStepResponseDelay(chains[6], 100000) < 400);
             CHECK(findStepResponseDelay(chains[6], 900) == 2496);
         }
+
+        THEN("The smoothed output is continuous and lags the non-smoothed output by the interval of the last filter")
+        {
+            struct SmoothTestResult {
+                int32_t max;
+                int32_t maxS;
+                int32_t lag;
+            };
+
+            auto testSmooth = [&sine](FilterChain& c, const uint32_t& period) {
+                int32_t amplIn = 100000;
+                int32_t max = 0;
+                int32_t maxSmooth = 0;
+                c.reset(0);
+
+                int32_t zero_cross1 = 0;
+                int32_t zero_cross2 = 0;
+                for (uint32_t t = 0; t < period * 10; ++t) {
+                    int32_t wave = sine(t, period, amplIn);
+                    c.add(wave);
+                    int32_t filterOutput = c.read();
+                    int32_t filterOutputSmooth = c.readSmooth();
+                    if (t > 4 * period) { // ignore start
+                        if (filterOutput > max) {
+                            max = filterOutput;
+                            zero_cross1 = t; // get time of first maximum
+                        }
+
+                        if (filterOutputSmooth > maxSmooth) {
+                            maxSmooth = filterOutputSmooth;
+                            zero_cross2 = t; // get time of first maximum
+                        }
+                    }
+                }
+
+                return SmoothTestResult{max, maxSmooth, zero_cross2 - zero_cross1};
+            };
+
+            auto result = testSmooth(chains[6], 30000);
+            CHECK(result.max == result.maxS);
+            CHECK(result.lag == chains[6].sampleInterval());
+
+            result = testSmooth(chains[3], 2000);
+            CHECK(result.max == result.maxS);
+            CHECK(result.lag == chains[3].sampleInterval());
+        }
     }
 }
 

@@ -158,9 +158,29 @@ FilterChain::read(uint8_t filterNr) const
 }
 
 int32_t
+FilterChain::readSmooth(uint8_t filterNr) const
+{
+
+    auto stage = selectStage(filterNr);
+    auto updateInterval = sampleInterval(stage - 1);
+    auto elapsed = counter % updateInterval;
+    int64_t latest = stage->filter->read();
+    int64_t previous = stage->filter->readPrevious();
+
+    int32_t interpolated = (latest * elapsed + previous * (updateInterval - elapsed)) / updateInterval;
+    return interpolated;
+}
+
+int32_t
 FilterChain::read() const
 {
     return read(stages.size() - 1);
+}
+
+int32_t
+FilterChain::readSmooth() const
+{
+    return readSmooth(stages.size() - 1);
 }
 
 int64_t
