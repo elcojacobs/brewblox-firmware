@@ -184,7 +184,7 @@ SCENARIO("Fixed point filterchain using temp_t")
             CHECK(findStepResponseDelay(chain, 0.9) == 1368);
         }
 
-        AND_WHEN("The derivative is requested with a certain period")
+        AND_WHEN("The derivative can be get from a different filter, selected by the max interval")
         {
             using derivative_t = safe_elastic_fixed_point<1, 23>;
             uint32_t period = 200;
@@ -199,16 +199,16 @@ SCENARIO("Fixed point filterchain using temp_t")
                 auto wave = sine(t, period, amplIn);
                 c.add(wave);
 
-                auto derivative = c.readDerivativeForInterval<derivative_t>(12);
+                auto derivative = c.readDerivative<derivative_t>(c.intervalToFilterNr(12));
                 if (derivative > maxDerivative12) {
                     maxDerivative12 = derivative;
                 }
-                derivative = c.readDerivativeForInterval<derivative_t>(25);
+                derivative = c.readDerivative<derivative_t>(c.intervalToFilterNr(25));
                 if (derivative > maxDerivative25) {
                     maxDerivative25 = derivative;
                 }
 
-                derivative = c.readDerivativeForInterval<derivative_t>(100);
+                derivative = c.readDerivative<derivative_t>(c.intervalToFilterNr(100));
                 if (derivative > maxDerivative100) {
                     maxDerivative100 = derivative;
                 }

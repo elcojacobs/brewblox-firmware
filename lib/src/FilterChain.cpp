@@ -22,34 +22,82 @@
 #include <memory>
 
 FilterChain::FilterChain(
-    const std::vector<uint8_t>& params,
-    const std::vector<uint8_t>& intervals,
-    const int32_t& stepThreshold)
+    std::vector<uint8_t> params,
+    std::vector<uint8_t> intervals,
+    uint8_t initStages,
+    int32_t stepThreshold)
 {
-    setParams(params, intervals, stepThreshold);
+    stages.reserve(params.size());
+    auto paramsBegin = params.cbegin();
+    auto paramsEnd = params.cend();
+    auto intervalsIt = intervals.cbegin();
+    auto intervalsEnd = intervals.cend();
+    if (!initStages) {
+        initStages = params.size(); // if initStages is zero, init all
+    }
+    for (auto paramsIt = paramsBegin; paramsIt < paramsEnd; paramsIt++, intervalsIt++) {
+        auto interval = (intervalsIt < intervalsEnd) && (*intervalsIt != 0) ? *intervalsIt : IirFilter::FilterDefinition(*paramsIt).downsample;
+        if (paramsIt - paramsBegin < initStages) {
+            stages.emplace_back(Stage{std::make_unique<IirFilter>(*paramsIt, stepThreshold), *paramsIt, interval});
+        } else {
+            stages.emplace_back(Stage{std::unique_ptr<IirFilter>(), *paramsIt, interval});
+        }
+    }
+}
+
+std::vector<FilterChain::Stage>::iterator
+FilterChain::selectStage(uint8_t filterNr)
+{
+    auto stage = stages.begin() + filterNr;
+    if (stage >= stages.end()) {
+        stage = stages.end() - 1;
+    }
+    while (!stage->filter) {
+        // if selected filter is not initialized, pick previous
+        // first is always initialized
+        stage--;
+    }
+    return stage;
+}
+
+std::vector<FilterChain::Stage>::const_iterator
+FilterChain::selectStage(uint8_t filterNr) const
+{
+    auto stage = stages.cbegin() + filterNr;
+    if (stage >= stages.cend()) {
+        stage = stages.cend() - 1;
+    }
+    while (!stage->filter) {
+        // if selected filter is not initialized, pick previous
+        // first is always initialized
+        stage--;
+    }
+    return stage;
 }
 
 FilterChain::FilterChain(
-    const std::vector<uint8_t>& params,
-    const int32_t& stepThreshold)
-    : FilterChain(params, std::vector<uint8_t>(), stepThreshold)
+    std::vector<uint8_t> _params)
+    : FilterChain(std::move(_params), std::vector<uint8_t>())
 {
 }
 
 void
-FilterChain::add(const int32_t& val)
+FilterChain::add(int32_t val)
 {
     uint32_t updatePeriod = 1;
     int64_t nextFilterIn = val;
     uint8_t nextFilterInFractionBits = 0;
     for (auto& s : stages) {
-        s.filter.add(nextFilterIn, nextFilterInFractionBits);
+        if (!s.filter) {
+            break;
+        }
+        s.filter->add(nextFilterIn, nextFilterInFractionBits);
         updatePeriod *= s.interval; // calculate how often the next filter should be updated
         if (counter % updatePeriod != updatePeriod - 1) {
             break; // only move onto next filter if it needs to be updated
         }
-        nextFilterInFractionBits = s.filter.fractionBits();
-        nextFilterIn = s.filter.readWithNFractionBits(nextFilterInFractionBits);
+        nextFilterInFractionBits = s.filter->fractionBits();
+        nextFilterIn = s.filter->readWithNFractionBits(nextFilterInFractionBits);
     }
     counter++;
     if (counter == sampleInterval()) {
@@ -58,83 +106,55 @@ FilterChain::add(const int32_t& val)
 }
 
 void
-FilterChain::reset(const int32_t& value)
+FilterChain::reset(int32_t value)
 {
     for (auto& s : stages) {
-        s.filter.reset(value);
+        if (!s.filter) {
+            break;
+        }
+        s.filter->reset(value);
     }
 }
 
 void
-FilterChain::setParams(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const int32_t& stepThreshold)
+FilterChain::expandStages(size_t numStages)
 {
-    if (params.size() < 1) {
+    auto currentSize = length();
+    if (numStages <= currentSize) {
         return;
     }
-
-    stages.reserve(params.size());
-    auto itP = params.begin();
-    auto itS = stages.begin();
-    auto itI = intervals.begin();
-    auto newFilterInitVal = read();
-    // reconfigure already existing filters
-    for (; itS != stages.end() && itP != params.end(); ++itP, ++itS) {
-        if (*itP != itS->filter.getParamsIdx()) {
-            itS->filter.setParamsIdx(*itP);
-        }
-        itS->filter.setStepThreshold(stepThreshold);
-
-        if (itI != intervals.end()) {
-            itS->interval = *itI;
-            ++itI;
-        } else {
-            itS->interval = IirFilter::FilterDefinition(*itP).downsample;
+    auto threshold = getStepThreshold();
+    auto currentOutput = read();
+    for (auto it = stages.begin(); it < stages.end() && it < stages.begin() + numStages; it++) {
+        if (!it->filter) {
+            it->filter = std::make_unique<IirFilter>(it->param, threshold);
+            it->filter->reset(currentOutput);
         }
     }
-    // append new filters
-    for (; itP != params.end(); ++itP) {
-        uint8_t interval;
-        if (itI != intervals.end() && *itI != 0) {
-            interval = *itI;
-            ++itI;
-        } else {
-            interval = IirFilter::FilterDefinition(*itP).downsample;
-        }
-        auto newFilter = IirFilter{*itP, stepThreshold};
-        auto newStage = FilterChain::Stage{std::move(newFilter), interval};
-        stages.push_back(std::move(newStage));
-    }
-    if (params.size() < stages.size()) {
-        stages.shrink_to_fit(); // remove filters if params is shorter than before
-    }
-    reset(newFilterInitVal);
 }
 
 void
-FilterChain::setStepThreshold(const int32_t& threshold)
+FilterChain::setStepThreshold(int32_t threshold)
 {
     int32_t adjustedThreshold = threshold;
     for (auto& s : stages) {
-        s.filter.setStepThreshold(adjustedThreshold);
+        if (!s.filter) {
+            break;
+        }
+        s.filter->setStepThreshold(adjustedThreshold);
     }
 }
 
 int32_t
 FilterChain::getStepThreshold() const
 {
-    if (stages.size() < 1) {
-        return std::numeric_limits<int32_t>::max();
-    }
-    return stages.front().filter.getStepThreshold();
+    return stages.front().filter->getStepThreshold();
 }
 
 int32_t
 FilterChain::read(uint8_t filterNr) const
 {
-    if (filterNr >= stages.size()) {
-        return 0;
-    }
-    return stages[filterNr].filter.read();
+    return selectStage(filterNr)->filter->read();
 }
 
 int32_t
@@ -146,28 +166,28 @@ FilterChain::read() const
 int64_t
 FilterChain::readWithNFractionBits(uint8_t filterNr, uint8_t bits) const
 {
-    if (filterNr >= stages.size()) {
-        return 0;
-    }
-    return stages[filterNr].filter.readWithNFractionBits(bits);
+    return selectStage(filterNr)->filter->readWithNFractionBits(bits);
 }
 
 int64_t
 FilterChain::readWithNFractionBits(uint8_t bits) const
 {
-    return readWithNFractionBits(stages.size() - 1, bits);
+    return selectStage(stages.size() - 1)->filter->readWithNFractionBits(bits);
 }
 
 uint32_t
 FilterChain::sampleInterval(uint8_t filterNr) const
 {
-    if (filterNr > stages.size() - 1) {
-        return 1;
-    }
+    return sampleInterval(selectStage(filterNr));
+}
+
+uint32_t
+FilterChain::sampleInterval(std::vector<Stage>::const_iterator stage) const
+{
     uint32_t interval = 1;
-    auto it = stages.begin();
-    for (; it != stages.end() && it != stages.begin() + filterNr + 1; it++) {
-        interval *= it->interval;
+    while (stage >= stages.cbegin()) {
+        interval *= stage->interval;
+        --stage;
     }
     return interval;
 }
@@ -177,13 +197,15 @@ FilterChain::intervalToFilterNr(uint32_t maxInterval) const
 {
     uint8_t filterNr = 0;
     uint32_t stageInterval = 1;
-    for (auto it = stages.begin() + 1; it != stages.end(); it++) {
+    auto it = stages.begin() + 1;
+    while (it < stages.end()) {
         stageInterval *= it->interval;
         if (stageInterval < maxInterval) {
             filterNr++;
         } else {
-            break;
+            return filterNr;
         }
+        ++it;
     }
     return filterNr;
 }
@@ -197,10 +219,8 @@ FilterChain::sampleInterval() const
 uint8_t
 FilterChain::fractionBits(uint8_t filterNr) const
 {
-    if (filterNr >= stages.size()) {
-        return stages.back().filter.fractionBits();
-    }
-    return stages[filterNr].filter.fractionBits();
+
+    return selectStage(filterNr)->filter->fractionBits();
 }
 
 uint8_t
@@ -212,18 +232,15 @@ FilterChain::fractionBits() const
 int32_t
 FilterChain::readLastInput() const
 {
-    return stages.front().filter.readLastInput();
+    return stages.front().filter->readLastInput();
 }
 
 IirFilter::DerivativeResult
 FilterChain::readDerivative(uint8_t filterNr) const
 {
-    if (filterNr >= stages.size()) {
-        filterNr = stages.size() - 1;
-    }
-    auto retv = stages[filterNr].filter.readDerivative();
+    auto stage = selectStage(filterNr);
+    auto retv = stage->filter->readDerivative();
     // Scale back derivative to account for sample interval in slower updating stages
-    auto inputSamplesPerOutputChange = filterNr > 0 ? sampleInterval(filterNr - 1) : 1;
-    retv.result = retv.result / inputSamplesPerOutputChange;
+    retv.result = retv.result / sampleInterval(stage - 1);
     return retv;
 }

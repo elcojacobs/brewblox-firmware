@@ -121,7 +121,13 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
+        CHECK(input->filterLength() == 1);
         pid.td(200);
+
+        THEN("The PID will ensure the filter of the input is long enough for td")
+        {
+            CHECK(input->filterLength() == 5);
+        }
 
         input->setting(30);
         sensor->setting(20);
@@ -145,6 +151,38 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
+    }
+
+    WHEN("A sensor quantized like a OneWire sensor is used")
+    {
+        pid.kp(10);
+        pid.ti(2000);
+
+        std::vector<duration_millis_t> tdValues{1, 3, 5, 10, 30, 60, 120, 240, 300, 600, 1200};
+
+        THEN("The effect of bit flips is limited for all possible values of Td")
+        {
+            for (auto td : tdValues) {
+                pid.td(td);
+
+                input->setting(30);
+                sensor->setting(20);
+                input->resetFilter();
+
+                double minD = 0.0; // will be negative
+                for (uint32_t i = 0; i <= std::max(td * 10, uint32_t{200}); ++i) {
+                    fp12_t mockVal = fp12_t((20.0 + 9.0 * i / 900));
+                    mockVal = mockVal - mockVal % fp12_t{0.0625};
+                    sensor->setting(mockVal);
+                    input->update();
+                    pid.update();
+                    if (pid.d() < minD) {
+                        minD = double(pid.d());
+                    }
+                }
+                CHECK(minD > 1.1 * -10 * 9.0 / 900 * td); // max 10% over the correct value
+            }
+        }
     }
 
     WHEN("Proportional, Integral and Derivative are enabled, the output value is correct with negative Kp")
@@ -915,7 +953,6 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         {
             for (uint16_t td = 20; td < 1200; td = td * 5 / 4) {
                 // INFO("td=" + std::to_string(td));
-
                 CHECK(testStep(td) >= -150);
                 CHECK(testStep(td) <= -30);
             }

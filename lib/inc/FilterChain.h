@@ -27,7 +27,8 @@
 class FilterChain {
 private:
     struct Stage {
-        IirFilter filter;
+        std::unique_ptr<IirFilter> filter;
+        uint8_t param;
         uint8_t interval;
     };
     std::vector<Stage> stages;
@@ -35,8 +36,8 @@ private:
     uint32_t counter = 0;
 
 public:
-    FilterChain(const std::vector<uint8_t>& params, const int32_t& stepThreshold = std::numeric_limits<int32_t>::max());
-    FilterChain(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const int32_t& stepThreshold = std::numeric_limits<int32_t>::max());
+    FilterChain(std::vector<uint8_t> params);
+    FilterChain(std::vector<uint8_t> params, std::vector<uint8_t> intervals, uint8_t initStages = 0, int32_t stepThreshold = std::numeric_limits<int32_t>::max());
 
     FilterChain(const FilterChain&) = delete;
     FilterChain(FilterChain&&) = default;
@@ -44,9 +45,9 @@ public:
 
     ~FilterChain() = default;
 
-    void add(const int32_t& val);
-    void setParams(const std::vector<uint8_t>& params, const std::vector<uint8_t>& intervals, const int32_t& stepThreshold);
-    void setStepThreshold(const int32_t& threshold); // set the step detection threshold
+    void add(int32_t val);
+    void expandStages(size_t numStages);
+    void setStepThreshold(int32_t threshold);        // set the step detection threshold
     int32_t getStepThreshold() const;                // get the step detection threshold of last filter
     int32_t read(uint8_t filterNr) const;            // read from specified filter
     int32_t read() const;                            // read from last filter
@@ -65,7 +66,7 @@ public:
     } // return count for a specific filter
     uint8_t length() const
     {
-        return stages.size();
+        return selectStage(stages.size() - 1) - stages.cbegin() + 1;
     }
     uint8_t fractionBits(uint8_t idx) const;
     uint8_t fractionBits() const;
@@ -73,5 +74,10 @@ public:
     int64_t readWithNFractionBits(uint8_t bits) const;
     int32_t readLastInput() const;
     IirFilter::DerivativeResult readDerivative(uint8_t filterNr) const;
-    void reset(const int32_t& value);
+    void reset(int32_t value);
+
+private:
+    uint32_t sampleInterval(std::vector<Stage>::const_iterator stage) const;
+    std::vector<FilterChain::Stage>::iterator selectStage(uint8_t filterNr);
+    std::vector<FilterChain::Stage>::const_iterator selectStage(uint8_t filterNr) const;
 };

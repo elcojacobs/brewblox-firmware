@@ -32,7 +32,12 @@ Pid::update()
         setpoint = input->setting();
         m_boilModeActive = setpoint >= in_t{100} + m_boilPointAdjust;
         m_error = input->error();
-        m_derivative = m_td ? input->derivative(m_td / 2) : 0;
+        if (m_td) {
+            checkFilterLength();
+            m_derivative = input->readDerivative(m_derivativeFilterIdx);
+        } else {
+            m_derivativeFilterIdx = 0;
+        }
         m_integral = (m_ti != 0 && !m_boilModeActive) ? integral_t(m_integral + m_error) : integral_t(0);
     } else {
         if (active()) {
@@ -154,4 +159,16 @@ Pid::setIntegral(const out_t& newIntegratorPart)
         return;
     }
     m_integral = m_ti * safe_elastic_fixed_point<14, 16>(cnl::quotient(newIntegratorPart, m_kp));
+}
+
+void
+Pid::checkFilterLength()
+{
+    if (!m_derivativeFilterIdx) {
+        if (auto input = m_inputPtr()) {
+            // still need to get filter Idx. Done in update because it needs the input Ptr
+            m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 2);
+            input->resizeFilterIfNeeded(m_derivativeFilterIdx);
+        }
+    }
 }
