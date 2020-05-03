@@ -62,6 +62,11 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->update();
         pid.update();
 
+        THEN("With Td zero, the derivative filter is 1")
+        {
+            CHECK(pid.derivativeFilterIdx() == 1);
+        }
+
         CHECK(actuator->setting() == Approx(10).margin(0.01));
     }
 
@@ -962,7 +967,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
 
         THEN("A derivative filter is selected so that the lag between value and max derivative between 1/4 td and 1/2 Td")
         {
-            std::vector<uint16_t> tds{60, 120, 300, 600, 1200};
+            // minimum filtering is filter idx 1, so values under 90 will have delay of 43.
+            std::vector<uint16_t> tds{90, 120, 300, 600, 1200};
             for (auto td : tds) {
                 CAPTURE(td);
                 auto selectedFilter = pid.derivativeFilterIdx();

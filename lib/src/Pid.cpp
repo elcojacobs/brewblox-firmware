@@ -32,12 +32,10 @@ Pid::update()
         setpoint = input->setting();
         m_boilModeActive = setpoint >= in_t{100} + m_boilPointAdjust;
         m_error = input->error();
-        if (m_td) {
-            checkFilterLength();
-            m_derivative = input->readDerivative(m_derivativeFilterIdx);
-        } else {
-            m_derivativeFilterIdx = 0;
-        }
+
+        checkFilterLength();
+        m_derivative = input->readDerivative(m_derivativeFilterIdx);
+
         m_integral = (m_ti != 0 && !m_boilModeActive) ? integral_t(m_integral + m_error) : integral_t(0);
     } else {
         if (active()) {
@@ -190,6 +188,10 @@ Pid::checkFilterLength()
             // selected filter must an update interval a lot faster than Td to be meaningful
             // The filter delay is roughly 6x the update rate.
             m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 32);
+            if (m_derivativeFilterIdx < 1) {
+                m_derivativeFilterIdx = 1;
+            };
+
             input->resizeFilterIfNeeded(m_derivativeFilterIdx);
         }
     }
