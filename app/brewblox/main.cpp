@@ -39,8 +39,10 @@
 
 SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
-STARTUP(System.enableFeature(FEATURE_RESET_INFO));
-STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
+STARTUP(
+    System.enableFeature(FEATURE_RESET_INFO);
+    System.enableFeature(FEATURE_RETAINED_MEMORY);
+    System.disableFeature(FEATURE_WIFI_POWERSAVE_CLOCK););
 
 #if PLATFORM_ID == PLATFORM_GCC
 #include <csignal>
