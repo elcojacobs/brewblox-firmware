@@ -101,8 +101,7 @@ public:
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
-        sensor.update(now);
-        return now + 100; // every 100ms
+        return sensor.update(now);
     }
 
     virtual void* implements(const cbox::obj_type_t& iface) override final

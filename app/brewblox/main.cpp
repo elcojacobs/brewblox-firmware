@@ -39,8 +39,10 @@
 
 SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
-STARTUP(System.enableFeature(FEATURE_RESET_INFO));
-STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
+STARTUP(
+    System.enableFeature(FEATURE_RESET_INFO);
+    System.enableFeature(FEATURE_RETAINED_MEMORY);
+    System.disableFeature(FEATURE_WIFI_POWERSAVE_CLOCK););
 
 #if PLATFORM_ID == PLATFORM_GCC
 #include <csignal>
@@ -60,10 +62,10 @@ watchdogReset()
 
 #if PLATFORM_THREADING
 #include "spark_wiring_watchdog.h"
+static ApplicationWatchdog appWatchdog(60000, watchdogReset, 256);
 inline void
 watchdogCheckin()
 {
-    static ApplicationWatchdog appWatchdog(60000, watchdogReset);
     appWatchdog.checkin();
 }
 #else
@@ -176,8 +178,6 @@ setup()
     // This avoids having to do it later when writing to EEPROM
     HAL_EEPROM_Perform_Pending_Erase();
 
-    WidgetsScreen::activate();
-
 #if PLATFORM_ID != PLATFORM_GCC
     TimerInterrupts::init();
     System.on(setup_begin, onSetupModeBegin);
@@ -186,25 +186,26 @@ setup()
 #endif
 
     brewbloxBox().startConnections();
-    displayTick();
+    WidgetsScreen::activate();
 }
 
 void
 loop()
 {
+    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
+    displayTick();
     if (!listeningModeEnabled()) {
 
         ticks.switchTaskTimer(TicksClass::TaskId::Communication);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
+
         ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
         updateBrewbloxBox();
 
-        ticks.switchTaskTimer(TicksClass::TaskId::System);
         watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
-    ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
-    displayTick();
+    ticks.switchTaskTimer(TicksClass::TaskId::System);
     HAL_Delay_Milliseconds(1);
 }
 

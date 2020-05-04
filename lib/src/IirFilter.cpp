@@ -90,6 +90,12 @@ IirFilter::read(void) const
     return unshift(yv[0]);
 }
 
+int32_t
+IirFilter::readPrevious(void) const
+{
+    return unshift(yv[1]);
+}
+
 int64_t
 IirFilter::readWithNFractionBits(uint8_t bits) const
 {

@@ -62,6 +62,11 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->update();
         pid.update();
 
+        THEN("With Td zero, the derivative filter is 1")
+        {
+            CHECK(pid.derivativeFilterIdx() == 1);
+        }
+
         CHECK(actuator->setting() == Approx(10).margin(0.01));
     }
 
@@ -121,7 +126,13 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
+        CHECK(input->filterLength() == 1);
         pid.td(200);
+
+        THEN("The PID will ensure the filter of the input is long enough for td")
+        {
+            CHECK(input->filterLength() == 3);
+        }
 
         input->setting(30);
         sensor->setting(20);
@@ -138,11 +149,15 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         }
 
         CHECK(mockVal == 29);
-        CHECK(pid.error() == Approx(1).epsilon(0.1)); // the filter introduces some delay, which is why this is not exactly 1.0
-        CHECK(pid.p() == Approx(10).epsilon(0.1));
+        CHECK(pid.error() == Approx(1.1).epsilon(0.05)); // the filter introduces some delay, which is why this is not exactly 1.0
+        CHECK(pid.p() == Approx(11).epsilon(0.05));
         CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.001));
         CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
-        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
+
+        THEN("The derivative part is limited to what cancels the proportional part")
+        {
+            CHECK(pid.d() == Approx(-11).epsilon(0.05));
+        }
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
@@ -168,20 +183,56 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         }
 
         CHECK(mockVal == 21);
-        CHECK(pid.error() == Approx(-1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
-        CHECK(pid.p() == Approx(10).epsilon(0.1));
+        CHECK(pid.error() == Approx(-1.1).epsilon(0.05)); // the filter introduces some delay, which is why this is not 1.0
+        CHECK(pid.p() == Approx(11).epsilon(0.05));
         CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.001));
         CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
-        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
+
+        THEN("The derivative part is limited to what cancels the proportional part")
+        {
+            CHECK(pid.d() == Approx(-11).epsilon(0.05));
+        }
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
+    }
+
+    WHEN("A sensor quantized like a OneWire sensor is used")
+    {
+        pid.kp(10);
+        pid.ti(2000);
+
+        std::vector<duration_millis_t> tdValues{1, 3, 5, 10, 30, 60, 120, 240, 300, 600, 1200};
+
+        THEN("The effect of bit flips is limited for all possible values of Td")
+        {
+            for (auto td : tdValues) {
+                pid.td(td);
+
+                input->setting(30);
+                sensor->setting(20);
+                input->resetFilter();
+
+                double minD = 0.0; // will be negative
+                for (uint32_t i = 0; i <= std::max(td * 10, uint32_t{200}); ++i) {
+                    fp12_t mockVal = fp12_t((20.0 + 9.0 * i / 900));
+                    mockVal = mockVal - mockVal % fp12_t{0.0625};
+                    sensor->setting(mockVal);
+                    input->update();
+                    pid.update();
+                    if (pid.d() < minD) {
+                        minD = double(pid.d());
+                    }
+                }
+                CHECK(minD > 1.1 * -10 * 9.0 / 900 * td); // max 10% over the correct value
+            }
+        }
     }
 
     WHEN("The actuator setting is clipped, the integrator is limited by anti-windup (positive kp)")
     {
         pid.kp(10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(21);
         sensor->setting(20);
@@ -227,7 +278,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(-10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(19);
         sensor->setting(20);
@@ -272,7 +323,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(21);
         sensor->setting(20);
@@ -316,7 +367,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(-10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(19);
         sensor->setting(20);
@@ -360,7 +411,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(21);
         sensor->setting(20);
@@ -591,7 +642,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     {
         pid.kp(10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(30);
         sensor->setting(20);
@@ -620,8 +671,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(mockVal == 29);
         CHECK(pid.error() == Approx(1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(10).epsilon(0.1));
-        CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000) * 0.87).epsilon(0.02)); // some integral anti-windup will occur at the start
-        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.01));
+        CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.03)); // some integral anti-windup will occur due to filtering at the start
+        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 60).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
@@ -630,7 +681,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     {
         pid.kp(-10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         input->setting(20);
         sensor->setting(30);
@@ -659,8 +710,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(mockVal == 21);
         CHECK(pid.error() == Approx(-1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(10).epsilon(0.1));
-        CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000) * 0.87).epsilon(0.02)); // some integral anti-windup will occur at the start
-        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 200).epsilon(0.02));
+        CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.03)); // some integral anti-windup will occur due to filtering at the start
+        CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 60).epsilon(0.02));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
@@ -669,7 +720,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     {
         pid.kp(-10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         // sensor is left at 20
         input->setting(19);
@@ -711,7 +762,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     {
         pid.kp(-10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         // sensor is left at 20
         input->setting(19);
@@ -753,7 +804,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     {
         pid.kp(-10);
         pid.ti(2000);
-        pid.td(200);
+        pid.td(60);
 
         // sensor is left at 20
         input->setting(15);
@@ -886,7 +937,8 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         auto testStep = [&](uint16_t td) {
             pid.td(td);
             auto start = now;
-            auto dMin = Pid::out_t(0);
+            auto dMax = Pid::derivative_t(0);
+            auto dMaxTime = now;
             sensor->setting(20);
             input->resetFilter();
 
@@ -895,29 +947,34 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     nextPwmUpdate = pwm.update(now);
                 }
                 if (now == start + 10'000) {
-                    sensor->setting(30);
+                    sensor->setting(25);
                 }
                 if (now >= nextPidUpdate) {
                     input->update();
                     pid.update();
-                    if (pid.d() < dMin) {
-                        dMin = pid.d();
+                    if (pid.derivative() > dMax) {
+                        dMax = pid.derivative();
+                        dMaxTime = now;
                     }
                     actuator->update();
                     nextPidUpdate = now + 1000;
                 }
                 ++now;
             }
-            return dMin;
+            auto lag = (dMaxTime - start) / 1000; // return lag in seconds
+            return lag;
         };
 
-        THEN("A derivative filter is selected so that derivative output is max 30%-150% of proportional gain")
+        THEN("A derivative filter is selected so that the lag between value and max derivative between 1/4 td and 1/2 Td")
         {
-            for (uint16_t td = 20; td < 1200; td = td * 5 / 4) {
-                // INFO("td=" + std::to_string(td));
-
-                CHECK(testStep(td) >= -150);
-                CHECK(testStep(td) <= -30);
+            // minimum filtering is filter idx 1, so values under 90 will have delay of 43.
+            std::vector<uint16_t> tds{90, 120, 300, 600, 1200};
+            for (auto td : tds) {
+                CAPTURE(td);
+                auto selectedFilter = pid.derivativeFilterIdx();
+                CAPTURE(selectedFilter);
+                CHECK(testStep(td) > td / 4);
+                CHECK(testStep(td) < td / 2);
             }
         }
     }

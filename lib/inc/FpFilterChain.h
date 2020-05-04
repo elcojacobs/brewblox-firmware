@@ -28,32 +28,28 @@ private:
     FilterChain chain;
     uint8_t readIdx; // 0 for no filtering, 1 - 6 for each filter stage
 
-    struct FilterSpec {
-        const std::vector<uint8_t> paramIdxs;
-        const std::vector<uint8_t> intervals;
-    };
-
 public:
     using value_type = T;
 
-    FpFilterChain(uint8_t idx)
-        : chain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4})
-        , readIdx(idx)
+    FpFilterChain(uint8_t idx, uint8_t initStages = 0)
+        : chain({0, 2, 2, 2, 2, 2}, {2, 2, 2, 3, 3, 4}, initStages)
     {
+        setReadIdx(idx);
     }
     FpFilterChain(const FpFilterChain&) = delete;
     FpFilterChain& operator=(const FpFilterChain&) = delete;
     ~FpFilterChain() = default;
 
-    void add(const value_type& val)
+    void add(value_type val)
     {
         chain.add(cnl::unwrap(val));
     }
-    void add(const int32_t& val);
+    void add(int32_t val);
 
     void setReadIdx(uint8_t idx)
     {
         readIdx = idx;
+        expandStages(readIdx);
     }
 
     uint8_t getReadIdx() const
@@ -61,7 +57,7 @@ public:
         return readIdx;
     }
 
-    void setStepThreshold(const value_type& stepThreshold)
+    void setStepThreshold(value_type stepThreshold)
     {
         chain.setStepThreshold(cnl::unwrap(stepThreshold));
     }
@@ -69,17 +65,17 @@ public:
     {
         return cnl::wrap<value_type>(chain.getStepThreshold());
     }
-    value_type read() const
+    value_type read(bool smooth = true) const
     {
         if (readIdx == 0) {
             return cnl::wrap<value_type>(chain.readLastInput());
         }
-        return cnl::wrap<value_type>(chain.read(readIdx - 1));
+        return cnl::wrap<value_type>(chain.read(readIdx - 1, smooth));
     }
 
-    value_type read(uint8_t filterNr) const
+    value_type read(uint8_t filterNr, bool smooth = true) const
     {
-        return cnl::wrap<value_type>(chain.read(filterNr));
+        return cnl::wrap<value_type>(chain.read(filterNr, smooth));
     }
 
     value_type readLastInput() const
@@ -94,9 +90,12 @@ public:
 
     // get the derivative from the chain with max precision and convert to the requested FP precision
     template <typename U>
-    U readDerivative(uint8_t idx) const
+    U readDerivative(uint8_t idx = 255, bool smooth = true) const
     {
-        auto derivative = chain.readDerivative(idx);
+        if (idx == 255) {
+            idx = readIdx - 1;
+        }
+        auto derivative = chain.readDerivative(idx, smooth);
         uint8_t destFractionBits = cnl::_impl::fractional_digits<U>::value;
         uint8_t filterFactionBits = cnl::_impl::fractional_digits<T>::value + derivative.fractionBits;
         int64_t result;
@@ -108,21 +107,21 @@ public:
         return cnl::wrap<U>(result);
     }
 
-    template <typename U>
-    U readDerivative() const
+    auto
+    intervalToFilterNr(uint16_t maxInterval)
     {
-        return readDerivative<U>(readIdx > 0 ? readIdx - 1 : 0);
+        return chain.intervalToFilterNr(maxInterval);
     }
 
-    template <typename U>
-    U readDerivativeForInterval(uint32_t maxInterval) const
-    {
-        // select filter in chain with an update interval to have the optimal amount of filtering for the period requested
-        return readDerivative<U>(chain.intervalToFilterNr(maxInterval));
-    }
-
-    void reset(const value_type& value)
+    void
+    reset(value_type value)
     {
         chain.reset(cnl::unwrap(value));
+    }
+
+    void
+    expandStages(size_t numStages)
+    {
+        chain.expandStages(numStages);
     }
 };

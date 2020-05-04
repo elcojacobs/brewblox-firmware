@@ -123,7 +123,7 @@ SCENARIO("A TempSensorMock block")
             testBox.processInputToProto(decoded);
 
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "value: 90856 connected: true setting: 81920 fluctuations { amplitude: 8192 period: 2000 } fluctuations { amplitude: 12288 period: 3000 }");
+            CHECK(decoded.ShortDebugString() == "value: 91627 connected: true setting: 81920 fluctuations { amplitude: 8192 period: 2000 } fluctuations { amplitude: 12288 period: 3000 }");
         }
     }
 }

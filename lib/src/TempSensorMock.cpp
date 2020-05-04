@@ -27,24 +27,43 @@ calcFluctuation(const TempSensorMock::Fluctuation& f, ticks_millis_t now)
 
     // use simple first order approximation of sinus for periodic signal, without using floats
     // sin(x) -> x - x^3 / 3!
-    // This crosses zero at crosses -1/sqrt(6) and 1/sqrt(6), scale so -500 and 500 will cross zero:
-    // t / 240 - t^3 / 50937984, for -500 < t < 500, max amplitude still 1.
-    int32_t t = 500 - ((now * 1000 / f.period)) % 1000; // value -500 to 499
-    temp_t result = temp_t{safe_elastic_fixed_point<2, 28>(cnl::quotient(t, int32_t{204})) * f.amplitude} - temp_t{safe_elastic_fixed_point<2, 28>(cnl::quotient(int32_t(t * t * t), int32_t{50937984})) * f.amplitude};
-    return result;
+    // This crosses zero at crosses -1/sqrt(6) and 1/sqrt(6), scale so -511 and 512 will cross zero:
+    // t / 209 - t^3 / (512*512*209), for -512 < t < 512, max amplitude still 1.
+    // = (t << 18 - t*t*t) / (209 <<18)
+
+    int32_t scaledPeriod = (f.period + 512) >> 10;
+    if (!scaledPeriod) {
+        scaledPeriod = 1;
+    }
+    int32_t t = 512 - ((now / scaledPeriod) & 0x3FF); // value -511 to 512 // prevents overflow below
+    auto scale = safe_elastic_fixed_point<2, 28>(cnl::quotient((t << 18) - t * t * t, int32_t{209} << 18));
+
+    return temp_t(f.amplitude * scale);
 }
 
-void
+duration_millis_t
 TempSensorMock::update(ticks_millis_t now)
 {
     m_fluctuationsSum = 0;
     for (const auto& f : m_fluctuations) {
         m_fluctuationsSum += calcFluctuation(f, now);
     }
+
+    return now + m_updateInterval;
 }
 
 void
 TempSensorMock::fluctuations(std::vector<Fluctuation>&& arg)
 {
     m_fluctuations = arg;
+    m_updateInterval = 1000;
+    for (auto& f : m_fluctuations) {
+        auto intervalForPeriod = f.period >> 8;
+        if (intervalForPeriod < m_updateInterval) {
+            m_updateInterval = intervalForPeriod;
+        }
+    }
+    if (m_updateInterval < 10) {
+        m_updateInterval = 10;
+    }
 }

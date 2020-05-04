@@ -19,22 +19,13 @@ TAG=${TAG:-$DEFAULT_TAG}
 docker buildx build \
     --tag "$IMAGE":amd-"$TAG" \
     --platform linux/amd64 \
-    --load \
+    --push \
     firmware-compiler/amd
 
 docker buildx build \
     --tag "$IMAGE":arm-"$TAG" \
     --platform linux/arm/v7 \
-    --load \
+    --push \
     firmware-compiler/arm
-
-docker push "$IMAGE":amd-"$TAG"
-docker push "$IMAGE":arm-"$TAG"
-
-docker manifest create "$IMAGE":"$TAG" \
-    --amend "$IMAGE":amd-"$TAG" \
-    --amend "$IMAGE":arm-"$TAG"
-
-docker manifest push "$IMAGE":"$TAG"
 
 popd > /dev/null

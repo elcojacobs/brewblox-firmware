@@ -1,7 +1,7 @@
 version: "3.7"
 services:
     compiler:
-        image: brewblox/firmware-compiler:latest
+        image: brewblox/firmware-compiler:amd-latest
         container_name: firmware-compiler
         init: true
         privileged: true
@@ -28,7 +28,7 @@ services:
             - "8380:80"
 
     coverage-simulator:
-        image: brewblox/firmware-compiler
+        image: brewblox/firmware-compiler:amd-latest
         container_name: firmware-coverage-simulator
         environment:
             - MOUNTDIR=/firmware

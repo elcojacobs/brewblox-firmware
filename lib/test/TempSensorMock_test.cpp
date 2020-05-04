@@ -61,27 +61,65 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
 
     WHEN("Mock sensor has 1 fluctuation configured")
     {
-        TempSensorMock mock(20.0);
-        mock.fluctuations({{temp_t{2}, 3000}});
+        auto test = [](uint32_t period) {
+            TempSensorMock mock(20.0);
+            mock.fluctuations({{temp_t{2}, period}});
 
-        auto min = temp_t{20};
-        auto max = temp_t{20};
+            auto min = temp_t{20};
+            auto max = temp_t{20};
+            mock.update(0);
+            auto previous = mock.value();
+            auto maxDiff = temp_t{0.0};
+            auto zero_cross_time1 = ticks_millis_t{0};
+            auto zero_cross_time2 = ticks_millis_t{0};
+            auto zero_cross_time3 = ticks_millis_t{0};
 
-        for (ticks_millis_t t = 0; t <= 3000; t += 100) {
-            mock.update(t);
-            auto val = mock.value();
-            min = std::min(min, val);
-            max = std::max(max, val);
-        }
-        THEN("Minimum and maximum are at configured amplitude")
-        {
-            CHECK(min == Approx(18).epsilon(0.01));
-            CHECK(max == Approx(22).epsilon(0.01));
-        }
-        THEN("Flucutation is zero at full period")
-        {
-            CHECK(mock.value() == Approx(20).epsilon(0.01));
-        }
+            ticks_millis_t now = 0;
+            while (now < period * 2) {
+                auto nextUpdate = mock.update(now);
+                auto val = mock.value();
+                min = std::min(min, val);
+                max = std::max(max, val);
+                maxDiff = std::max(maxDiff, temp_t(cnl::abs(val - previous)));
+                previous = val;
+                if (!zero_cross_time1) {
+                    if (val < temp_t{20.0}) {
+                        zero_cross_time1 = now;
+                    }
+                } else if (!zero_cross_time2) {
+                    if (val >= temp_t{20.0}) {
+                        zero_cross_time2 = now;
+                    }
+                } else if (!zero_cross_time3) {
+                    if (val < temp_t{20.0}) {
+                        zero_cross_time3 = now;
+                    }
+                }
+                now = nextUpdate;
+            }
+            INFO(period);
+            THEN("The period is correct within 512ms")
+            {
+                // rounding in calculation limits period precision to 512ms worst case
+                CHECK(zero_cross_time3 - zero_cross_time1 == Approx(period).margin(512));
+            }
+            THEN("Minimum and maximum are at configured amplitude")
+            {
+                CHECK(min == Approx(18).epsilon(0.01));
+                CHECK(max == Approx(22).epsilon(0.01));
+            }
+
+            THEN("The fluctuation is continuous")
+            {
+                CHECK(maxDiff < temp_t{0.1});
+            }
+        };
+
+        test(10000ul);              // 10s
+        test(30000ul);              // 30s
+        test(120 * 1000ul);         // 2m
+        test(2 * 60 * 60 * 1000ul); // 2h
+        test(6 * 60 * 60 * 1000ul); // 6h
     }
 
     WHEN("Mock the fluctuation period is zero")
@@ -89,8 +127,9 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
         TempSensorMock mock(20.0);
         mock.fluctuations({{temp_t{2}, 0}});
 
-        for (ticks_millis_t t = 0; t <= 1000; t += 100) {
-            mock.update(t);
+        duration_millis_t now = 0;
+        while (now < 10000) {
+            now = mock.update(now);
         }
         THEN("The amplitude is added as a constant value")
         {
@@ -103,16 +142,17 @@ SCENARIO("TempSensorMockTest", "[mocktest]")
         TempSensorMock mock1(20.0);
         TempSensorMock mock2(20.0);
         TempSensorMock mock3(20.0);
-        mock1.fluctuations({{temp_t{2}, 5000}});
-        mock2.fluctuations({{temp_t{0.5}, 1000}});
-        mock3.fluctuations({{temp_t{2}, 5000}, {temp_t{0.5}, 1000}});
+        mock1.fluctuations({{temp_t{2}, 50000}});
+        mock2.fluctuations({{temp_t{0.5}, 20000}});
+        mock3.fluctuations({{temp_t{2}, 50000}, {temp_t{0.5}, 20000}});
 
         THEN("The result is a superposition of the fluctuations")
         {
-            for (ticks_millis_t t = 0; t <= 5000; t += 100) {
-                mock1.update(t);
-                mock2.update(t);
-                mock3.update(t);
+            duration_millis_t now = 0;
+            while (now < 50000) {
+                mock1.update(now);
+                mock2.update(now);
+                now = mock3.update(now);
                 CHECK(mock3.value() == mock1.value() + mock2.value() - temp_t{20.0});
             }
         }

@@ -42,6 +42,7 @@ public:
     void setStepThreshold(const int32_t);
     int32_t getStepThreshold() const;
     int32_t read(void) const;
+    int32_t readPrevious(void) const;
     int64_t readWithNFractionBits(uint8_t bits) const;
     uint8_t downsamplePeriod() const;
     uint8_t fractionBits() const
@@ -61,6 +62,11 @@ public:
     DerivativeResult readDerivative() const // returns unshifted derivative
     {
         return {yv[0] - yv[1], fractionBits()};
+    }
+
+    DerivativeResult readPreviousDerivative() const // returns unshifted derivative
+    {
+        return {yv[1] - yv[2], fractionBits()};
     }
 
     int32_t unityStepDerivative() const
