@@ -200,6 +200,7 @@ private:
             }
             return true;
         }
+        result = State::Unknown;
         return false;
     }
 

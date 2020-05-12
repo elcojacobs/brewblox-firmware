@@ -97,5 +97,5 @@ public:
         m_setting += delta;
     }
 
-    duration_millis_t update(ticks_millis_t now);
+    ticks_millis_t update(ticks_millis_t now);
 };
