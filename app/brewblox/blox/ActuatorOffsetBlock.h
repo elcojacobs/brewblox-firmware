@@ -92,6 +92,7 @@ public:
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
         offset.update();
+        constrained.update();
         return now + 1000;
     }
 

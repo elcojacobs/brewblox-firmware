@@ -89,6 +89,7 @@ public:
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
+        constrained.update();
         auto nextUpdate = pwm.update(now);
         auto settingValid = pwm.settingValid();
         if (previousSettingValid != settingValid) {

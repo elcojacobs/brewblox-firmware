@@ -87,7 +87,8 @@ public:
     virtual cbox::update_t update(const cbox::update_t& now) override final
     {
         valve.update();
-        return constrained.update(now);
+        constrained.update(now);
+        return now + 1000;
     }
 
     virtual void* implements(const cbox::obj_type_t& iface) override final
