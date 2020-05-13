@@ -42,7 +42,7 @@ private:
     out_t m_d = out_t{0};
     integral_t m_integral = integral_t{0};
     derivative_t m_derivative = derivative_t{0};
-    uint8_t m_derivativeFilterIdx = 0;
+    uint8_t m_derivativeFilterNr = 0;
 
     // settings
     in_t m_kp = in_t{0};    // proportional gain
@@ -170,9 +170,9 @@ public:
         m_boilMinOutput = v;
     }
 
-    uint8_t derivativeFilterIdx() const
+    uint8_t derivativeFilterNr() const
     {
-        return m_derivativeFilterIdx;
+        return m_derivativeFilterNr;
     }
 
 private:

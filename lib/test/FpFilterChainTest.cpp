@@ -115,12 +115,6 @@ SCENARIO("Fixed point filterchain using temp_t", "[fpfilterchain]")
         THEN("They block higher frequencies and pass lower frequencies")
         {
             {
-                FpFilterChain<temp_t> chain(0); // unfiltered
-                CHECK(findHalfAmplitudePeriod(chain) == 10);
-                CHECK(findGainAtPeriod(chain, 5, false) > 0.9);
-                CHECK(findGainAtPeriod(chain, 20, false) > 0.9);
-            }
-            {
                 FpFilterChain<temp_t> chain(1);
                 CHECK(findHalfAmplitudePeriod(chain) == 13);
                 CHECK(findGainAtPeriod(chain, 7) < 0.1);
@@ -167,7 +161,7 @@ SCENARIO("Fixed point filterchain using temp_t", "[fpfilterchain]")
                 for (t = 0; t < 10000 && stagesFinished < c.length(); ++t) {
                     c.add(stepAmpl);
                     for (uint8_t i = 0; i < c.length(); ++i) {
-                        auto filterOutput = c.read(i);
+                        auto filterOutput = c.read(uint8_t(i + 1));
                         if (filterOutput >= stepAmpl / 2 && i >= stagesFinished) { // ignore start
                             // std::cout << "stage " << +i << " at 50\% at t=" << t << ", derivative:" << c.readDerivative<temp_t>(i) << "\n";
                             ++stagesFinished;
@@ -187,13 +181,13 @@ SCENARIO("Fixed point filterchain using temp_t", "[fpfilterchain]")
             CHECK(findStepResponseDelay(chain, 0.9) == 1400);
         }
 
-        AND_WHEN("The derivative can be get from a different filter, selected by the max interval")
+        AND_WHEN("The derivative can be read from a different filter stage, selected by the max interval")
         {
             using derivative_t = safe_elastic_fixed_point<1, 23>;
             uint32_t period = 200;
             const temp_t amplIn = period / (2.0 * M_PI); // derivative max 1
 
-            FpFilterChain<temp_t> c(1);
+            FpFilterChain<temp_t> c(6);
 
             derivative_t maxDerivative12 = 0;
             derivative_t maxDerivative25 = 0;
@@ -202,16 +196,16 @@ SCENARIO("Fixed point filterchain using temp_t", "[fpfilterchain]")
                 auto wave = sine(t, period, amplIn);
                 c.add(wave);
 
-                auto derivative = c.readDerivative<derivative_t>(c.intervalToFilterNr(12));
+                auto derivative = c.readDerivative<derivative_t>(c.intervalToFilterIdx(12));
                 if (derivative > maxDerivative12) {
                     maxDerivative12 = derivative;
                 }
-                derivative = c.readDerivative<derivative_t>(c.intervalToFilterNr(25));
+                derivative = c.readDerivative<derivative_t>(c.intervalToFilterIdx(25));
                 if (derivative > maxDerivative25) {
                     maxDerivative25 = derivative;
                 }
 
-                derivative = c.readDerivative<derivative_t>(c.intervalToFilterNr(100));
+                derivative = c.readDerivative<derivative_t>(c.intervalToFilterIdx(100));
                 if (derivative > maxDerivative100) {
                     maxDerivative100 = derivative;
                 }

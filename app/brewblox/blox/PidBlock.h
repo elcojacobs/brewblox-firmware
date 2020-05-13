@@ -111,7 +111,7 @@ public:
         message.boilPointAdjust = cnl::unwrap(pid.boilPointAdjust());
         message.boilMinOutput = cnl::unwrap(pid.boilMinOutput());
         message.boilModeActive = pid.boilModeActive();
-        message.derivativeFilter = blox_Pid_FilterChoice(pid.derivativeFilterIdx() + 1);
+        message.derivativeFilter = blox_Pid_FilterChoice(pid.derivativeFilterNr());
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 4);
 
