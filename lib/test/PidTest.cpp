@@ -62,9 +62,9 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->update();
         pid.update();
 
-        THEN("With Td zero, the derivative filter is 1")
+        THEN("With Td zero, the derivative filter nr is 1")
         {
-            CHECK(pid.derivativeFilterIdx() == 1);
+            CHECK(pid.derivativeFilterNr() == 1);
         }
 
         CHECK(actuator->setting() == Approx(10).margin(0.01));
@@ -131,7 +131,7 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
         THEN("The PID will ensure the filter of the input is long enough for td")
         {
-            CHECK(input->filterLength() == 3);
+            CHECK(input->filterLength() == 4);
         }
 
         input->setting(30);
@@ -198,23 +198,25 @@ SCENARIO("PID Test with mock actuator", "[pid]")
 
     WHEN("A sensor quantized like a OneWire sensor is used")
     {
-        pid.kp(10);
+        pid.kp(50);
         pid.ti(2000);
 
-        std::vector<duration_millis_t> tdValues{1, 3, 5, 10, 30, 60, 120, 240, 300, 600, 1200};
+        std::vector<uint16_t> tdValues{10, 30, 60, 90, 120, 180, 240, 300, 450, 600, 900, 1200, 1800, 3600};
 
-        THEN("The effect of bit flips is limited for all possible values of Td")
+        THEN("The effect of bit flips is max 10% of Kp for all possible values of Td")
         {
             for (auto td : tdValues) {
                 pid.td(td);
 
-                input->setting(30);
+                input->setting(21);
                 sensor->setting(20);
                 input->resetFilter();
 
-                double minD = 0.0; // will be negative
-                for (uint32_t i = 0; i <= std::max(td * 10, uint32_t{200}); ++i) {
-                    fp12_t mockVal = fp12_t((20.0 + 9.0 * i / 900));
+                double minD = 0.0;
+                // will be negative
+                // use a very slow rising temperature so only bit flips and not the actual derivative have an effect
+                for (uint32_t i = 0; i <= 60 * 60 * 1000ul; i += 1000) {
+                    fp12_t mockVal = fp12_t(20.0 + i / (12 * 60 * 60 * 1000.0));
                     mockVal = mockVal - mockVal % fp12_t{0.0625};
                     sensor->setting(mockVal);
                     input->update();
@@ -223,7 +225,10 @@ SCENARIO("PID Test with mock actuator", "[pid]")
                         minD = double(pid.d());
                     }
                 }
-                CHECK(minD > 1.1 * -10 * 9.0 / 900 * td); // max 10% over the correct value
+                CAPTURE(td);
+                auto selectedFilter = pid.derivativeFilterNr();
+                CAPTURE(selectedFilter);
+                CHECK(minD > -12.5); // max 25% of Kp
             }
         }
     }
@@ -931,23 +936,27 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
     WHEN("A step response is applied to the input for various Td")
     {
         pid.kp(10);
-        pid.ti(2000);
+        pid.ti(0);
         input->filterChoice(1);
         input->filterThreshold(99);
         auto testStep = [&](uint16_t td) {
             pid.td(td);
+            pid.update();
             auto start = now;
+            auto changeInputAt = now + 10'000;
             auto dMax = Pid::derivative_t(0);
             auto dMaxTime = now;
             sensor->setting(20);
             input->resetFilter();
+            nextPwmUpdate = now;
+            nextPidUpdate = now;
 
-            while (now <= start + 2000'000) {
+            while (now <= start + 7200'000) {
                 if (now >= nextPwmUpdate) {
                     nextPwmUpdate = pwm.update(now);
                 }
-                if (now == start + 10'000) {
-                    sensor->setting(25);
+                if (now == changeInputAt) {
+                    sensor->setting(21);
                 }
                 if (now >= nextPidUpdate) {
                     input->update();
@@ -956,25 +965,33 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                         dMax = pid.derivative();
                         dMaxTime = now;
                     }
-                    actuator->update();
+                    if (pid.derivative() < dMax && dMax != 0) {
+                        break; // passed the maximum
+                    }
                     nextPidUpdate = now + 1000;
                 }
                 ++now;
             }
-            auto lag = (dMaxTime - start) / 1000; // return lag in seconds
+            auto lag = (dMaxTime - changeInputAt) / 1000; // return lag in seconds
             return lag;
         };
 
-        THEN("A derivative filter is selected so that the lag between value and max derivative between 1/4 td and 1/2 Td")
+        THEN("A derivative filter is selected so that the lag between value max derivative is less than Td*1.5")
         {
-            // minimum filtering is filter idx 1, so values under 90 will have delay of 43.
-            std::vector<uint16_t> tds{90, 120, 300, 600, 1200};
-            for (auto td : tds) {
+            // for the derivative to compensate overshoot, the derivative should not lag the sensor too much
+            // Td is the estimated overshoot time, so the lag in process response after changing the input
+            // The derivative should not lag much more than Td, or it will be too late.
+            // With filter lag at Td, the max derivative of an input step will be reached after Td seconds have elapsed
+            // This seems a good middle ground between noise suppression and derivative response
+            std::vector<uint16_t> tdValues{10, 30, 60, 90, 120, 180, 240, 300, 450, 600, 900, 1200, 1800, 3600};
+            for (auto td : tdValues) {
                 CAPTURE(td);
-                auto selectedFilter = pid.derivativeFilterIdx();
+                pid.td(td);
+                pid.update();
+                auto selectedFilter = pid.derivativeFilterNr();
                 CAPTURE(selectedFilter);
-                CHECK(testStep(td) > td / 4);
-                CHECK(testStep(td) < td / 2);
+                auto lag = testStep(td);
+                CHECK(lag < td * 1.5);
             }
         }
     }

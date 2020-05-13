@@ -34,7 +34,7 @@ Pid::update()
         m_error = input->error();
 
         checkFilterLength();
-        m_derivative = input->readDerivative(m_derivativeFilterIdx);
+        m_derivative = input->readDerivative(m_derivativeFilterNr);
 
         m_integral = (m_ti != 0 && !m_boilModeActive) ? integral_t(m_integral + m_error) : integral_t(0);
     } else {
@@ -167,7 +167,7 @@ void
 Pid::td(const uint16_t& arg)
 {
     m_td = arg;
-    m_derivativeFilterIdx = 0; // trigger automatic filter selection
+    m_derivativeFilterNr = 0; // trigger automatic filter selection
     checkFilterLength();
 }
 
@@ -183,16 +183,21 @@ Pid::setIntegral(const out_t& newIntegratorPart)
 void
 Pid::checkFilterLength()
 {
-    if (!m_derivativeFilterIdx) {
-        if (auto input = m_inputPtr()) {
-            // selected filter must an update interval a lot faster than Td to be meaningful
-            // The filter delay is roughly 6x the update rate.
-            m_derivativeFilterIdx = input->intervalToFilterNr(m_td / 32);
-            if (m_derivativeFilterIdx < 1) {
-                m_derivativeFilterIdx = 1;
-            };
 
-            input->resizeFilterIfNeeded(m_derivativeFilterIdx);
+    // delay for each filter between input step and max derivative: 8, 34, 85, 188, 492, 1428
+    const uint16_t limits[6] = {20, 89, 179, 359, 959, 1799};
+    if (!m_derivativeFilterNr) {
+        if (auto input = m_inputPtr()) {
+            // selected filter must use an update interval a lot faster than Td to be meaningful
+            // The filter delay is roughly 6x the update rate.
+            m_derivativeFilterNr = 1;
+            while (m_derivativeFilterNr < 6) {
+                if (limits[m_derivativeFilterNr - 1] >= m_td) {
+                    break;
+                }
+                ++m_derivativeFilterNr;
+            };
+            input->resizeFilterIfNeeded(m_derivativeFilterNr);
         }
     }
 }
