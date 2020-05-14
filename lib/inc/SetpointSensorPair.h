@@ -40,12 +40,13 @@ private:
     const std::function<std::shared_ptr<TempSensor>()> m_sensor;
     FpFilterChain<temp_t> m_filter;
     uint8_t m_sensorFailureCount = 255; // force a reset on init
+    uint8_t m_filterNr = 1;
 
 public:
     explicit SetpointSensorPair(
         std::function<std::shared_ptr<TempSensor>()>&& _sensor)
         : m_sensor(_sensor)
-        , m_filter(1, 1)
+        , m_filter(1)
     {
         update();
     }
@@ -67,7 +68,10 @@ public:
 
     virtual temp_t value() const override final
     {
-        return m_filter.read();
+        if (m_filterNr == 0) {
+            return m_filter.readLastInput();
+        }
+        return m_filter.read(m_filterNr - 1);
     }
 
     temp_t valueUnfiltered() const
@@ -104,7 +108,7 @@ public:
 
     auto filterChoice() const
     {
-        return m_filter.getReadIdx();
+        return m_filterNr;
     }
 
     auto filterThreshold() const
@@ -114,7 +118,7 @@ public:
 
     void filterChoice(uint8_t choice)
     {
-        m_filter.setReadIdx(choice);
+        m_filterNr = choice;
     }
 
     auto filterThreshold(temp_t threshold)
@@ -148,12 +152,10 @@ public:
 
     auto readDerivative(uint8_t filterNr)
     {
-        return m_filter.readDerivative<derivative_t>(filterNr);
-    }
-
-    auto intervalToFilterNr(uint16_t interval)
-    {
-        return m_filter.intervalToFilterNr(interval);
+        if (filterNr < 1) {
+            filterNr = 1;
+        }
+        return m_filter.readDerivative<derivative_t>(filterNr - 1);
     }
 
     auto filterLength()
@@ -161,9 +163,9 @@ public:
         return m_filter.length();
     }
 
-    auto resizeFilterIfNeeded(uint8_t filterIdx)
+    auto resizeFilterIfNeeded(uint8_t filterNr)
     {
-        m_filter.expandStages(filterIdx + 1);
+        m_filter.expandStages(filterNr);
     }
 
     void resetFilter()

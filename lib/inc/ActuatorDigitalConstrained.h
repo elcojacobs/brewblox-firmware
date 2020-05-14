@@ -151,12 +151,12 @@ public:
         ActuatorDigitalChangeLogged::state(val);
     }
 
-    duration_millis_t update(const ticks_millis_t& now)
+    ticks_millis_t update(ticks_millis_t now)
     {
         // re-apply constraints for new update time
         auto remaining = desiredState(m_desiredState, now);
         // update at least once per second
-        return (remaining < 1000) ? remaining : 1000;
+        return (remaining < 1000) ? now + remaining : now + 1000;
     }
 
     State

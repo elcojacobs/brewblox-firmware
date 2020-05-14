@@ -41,7 +41,7 @@ calcFluctuation(const TempSensorMock::Fluctuation& f, ticks_millis_t now)
     return temp_t(f.amplitude * scale);
 }
 
-duration_millis_t
+ticks_millis_t
 TempSensorMock::update(ticks_millis_t now)
 {
     m_fluctuationsSum = 0;

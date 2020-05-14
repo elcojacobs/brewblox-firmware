@@ -601,6 +601,65 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         }
     }
 
+    WHEN("the PWM actuator is set to 50% after being 100%, with a period of 4s")
+    {
+        pwm.setting(100.0);
+        pwm.period(4000);
+        auto changeSettingAt = 10 * pwm.period() + 1000;
+        while (now < changeSettingAt) {
+            now = pwm.update(now);
+        }
+        auto changedSettingAt = now;
+        pwm.setting(50.0);
+        THEN("The pin goes low immediately")
+        {
+            while (mock.state() != State::Inactive) {
+                now = pwm.update(now);
+            }
+            CHECK(now - changedSettingAt <= 1);
+
+            AND_THEN("The pin goes high again after 2000ms")
+            {
+                auto lowAt = now;
+                while (mock.state() == State::Inactive) {
+                    now = pwm.update(now);
+                }
+                CHECK(now - lowAt == 2000);
+            }
+        }
+    }
+
+    WHEN("the PWM actuator is set to 100% after being 0%, with a period of 4s")
+    {
+        pwm.setting(0.0);
+        pwm.period(4000);
+        auto changeSettingAt = 10 * pwm.period() + 1000;
+        while (now < changeSettingAt) {
+            now = pwm.update(now);
+        }
+        auto changedSettingAt = now;
+        pwm.setting(100.0);
+        THEN("The pin goes high immediately")
+        {
+            while (mock.state() != State::Inactive) {
+                now = pwm.update(now);
+            }
+            CHECK(now - changedSettingAt <= 1);
+
+            AND_THEN("It reports a value of 100 in under 2.5 periods")
+            {
+                while (pwm.value() < 100) {
+                    now = pwm.update(now);
+                    CAPTURE(pwm.value());
+                    REQUIRE(now - changeSettingAt < 100000); // timeout
+                }
+                {
+                    CHECK(now - changedSettingAt < 10000);
+                }
+            }
+        }
+    }
+
     WHEN("PWM actuator target is constrained with a minimal ON time and minimum OFF time, average is still correct")
     {
         // values typical for a fridge compressor

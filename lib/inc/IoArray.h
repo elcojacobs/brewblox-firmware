@@ -62,6 +62,7 @@ public:
                 return true;
             }
         }
+        result = ActuatorDigitalBase::State::Unknown;
         return false;
     }
 

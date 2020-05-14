@@ -69,7 +69,7 @@ public:
     {
         if (channelReady()) {
             if (auto devPtr = m_target()) {
-                State result;
+                State result = State::Unknown;
                 if (devPtr->senseChannel(m_channel, result)) {
                     if (m_invert) {
                         result = invertState(result);
