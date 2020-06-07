@@ -1061,4 +1061,50 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
             }
         }
     }
+
+    WHEN("The PID heats a kettle until setpoint is reached")
+    {
+        input->filterChoice(0); // no filtering
+        pid.kp(100);
+        pid.td(120);
+        pid.ti(1200);
+        pid.update();
+
+        input->setting(60);
+        sensor->setting(20);
+        duration_millis_t closeDuration = 0;
+        duration_millis_t reachedDuration = 0;
+
+        auto start = now;
+        while (++now < start + 100000'000) {
+            if (now >= nextPwmUpdate) {
+                nextPwmUpdate = pwm.update(now);
+            }
+            if (now >= nextPidUpdate) {
+                input->update();
+                pid.update();
+                actuator->update();
+                nextPidUpdate = now + 1000;
+                auto newTemp = sensor->value() + actuator->value() / 2400; // very simple model for heating
+                sensor->setting(newTemp);
+            }
+            if (!closeDuration && sensor->value() + 1 > input->setting()) {
+                closeDuration = now - start;
+            }
+            if (!reachedDuration && sensor->value() > input->setting()) {
+                reachedDuration = now - start;
+                THEN("Integral is close to zero when setpoint is crossed")
+                {
+                    CHECK(pid.i() <= 5.0);
+                }
+            }
+        }
+        CHECK(closeDuration == Approx(1030'000).margin(10000));   // takes 17.1 minutes to get close to setpoint
+        CHECK(reachedDuration == Approx(1085'000).margin(10000)); // takes 18.1 minutes to reach setpoint
+        THEN("The overshoot is minimal")
+        {
+
+            CHECK(input->value() - input->setting() < 0.1); // overshoot is small
+        }
+    }
 }
