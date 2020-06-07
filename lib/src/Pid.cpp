@@ -35,8 +35,6 @@ Pid::update()
 
         checkFilterLength();
         m_derivative = input->readDerivative(m_derivativeFilterNr);
-
-        m_integral = (m_ti != 0 && !m_boilModeActive) ? integral_t(m_integral + m_error) : integral_t(0);
     } else {
         if (active()) {
             active(false);
@@ -51,11 +49,6 @@ Pid::update()
 
     m_p = m_kp * m_error;
 
-    if (m_ti != 0) {
-        m_i = m_integral * safe_elastic_fixed_point<4, 27>(cnl::quotient(m_kp, m_ti));
-    } else {
-        m_i = 0;
-    }
     m_d = -m_kp * fp12_t(m_derivative * m_td);
     if (m_p >= 0) {
         if (m_d > 0) {
@@ -71,6 +64,14 @@ Pid::update()
         if (m_d > -m_p) {
             m_d = -m_p;
         }
+    }
+    if (m_ti != 0 && m_kp != 0 && !m_boilModeActive) {
+        decltype(m_integral) integral_increase = cnl::quotient(m_p + m_d, m_kp);
+        m_integral += integral_increase;
+        m_i = m_integral * safe_elastic_fixed_point<4, 27>(cnl::quotient(m_kp, m_ti));
+    } else {
+        m_integral = integral_t{0};
+        m_i = 0;
     }
 
     auto pidResult = m_p + m_i + m_d;
@@ -100,36 +101,23 @@ Pid::update()
                                  // pidResult - output is zero when actuator is not saturated
 
                     auto antiWindup = integral_t{0};
+                    auto antiWindupValue = outputSetting; // P + I + D, clipped
+
                     if (m_kp != 0) { // prevent divide by zero
-                        if (pidResult != outputSetting) {
-                            // clipped to actuator min or max set in target actuator
+                        if (pidResult == outputSetting && output->valueValid()) {
+                            // Actuator could be set to desired value, but might not reach set value due to physics or limits in its target actuator
+                            // Get the actual achieved value in actuator. This could differ due to slowness time/mutex limits
+                            antiWindupValue = output->value();
+                        } else {
+                            // else: clipped to actuator min or max set in target actuator
                             // calculate anti-windup from setting instead of actual value, so it doesn't dip under the maximum
                             // make sure anti-windup is at least m_error when clipping to prevent further windup, with extra anti-windup to scale back integral
-                            out_t excess = cnl::quotient(pidResult - outputSetting, m_kp);
-                            out_t correction = int8_t{3} * excess; // anti windup gain is 3
-                            antiWindup = m_error + correction;
-                        } else {
-                            // Actuator could be not reaching set value due to physics or limits in its target actuator
-                            // Get the actual achieved value in actuator. This could differ due to slowness time/mutex limits
-                            if (output->valueValid()) {
-                                auto achievedValue = output->value();
-
-                                // Anti windup gain is 3
-                                out_t excess = cnl::quotient(pidResult - achievedValue, m_kp);
-                                antiWindup = int8_t(3) * excess; // anti windup gain is 3
-
-                                // Disable anti-windup if integral part dominates. But only if it counteracts p.
-                                decltype(m_i) mi_limit = int8_t{3} * m_p;
-                                if (m_p < 0 && m_i < 0 && m_i < mi_limit) {
-                                    antiWindup = integral_t{0};
-                                }
-                                if (m_p > 0 && m_i > 0 && m_i > mi_limit) {
-                                    antiWindup = integral_t{0};
-                                }
-                            }
+                            antiWindup += m_error;
                         }
-                    }
 
+                        out_t excess = cnl::quotient(pidResult - antiWindupValue, m_kp);
+                        antiWindup += int8_t(3) * excess; // anti windup gain is 3
+                    }
                     // make sure integral does not cross zero and does not increase by anti-windup
                     integral_t newIntegral = m_integral - antiWindup;
                     if (m_integral >= integral_t{0}) {
