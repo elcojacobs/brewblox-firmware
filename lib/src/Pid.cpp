@@ -49,11 +49,14 @@ Pid::update()
 
     m_p = m_kp * m_error;
 
-    m_d = -m_kp * fp12_t(m_derivative * m_td);
-    if ((m_kp >= 0 && m_d < -m_kp)
-        || (m_kp <= 0 && m_d > -m_kp)) {
-        m_d = -m_kp; // clip to -kp max, prevents large spikes
+    // limit D +/- kp max to prevent large spikes
+    auto derivative_val = fp12_t(m_derivative * m_td);
+    if (derivative_val < fp12_t{-1}) {
+        derivative_val = fp12_t{-1};
+    } else if (derivative_val > fp12_t{1}) {
+        derivative_val = fp12_t{1};
     }
+    m_d = -m_kp * derivative_val;
 
     decltype(m_integral) integral_increase = 0;
     if (m_ti != 0 && m_kp != 0 && !m_boilModeActive) {
