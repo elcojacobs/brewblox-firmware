@@ -50,23 +50,14 @@ Pid::update()
     m_p = m_kp * m_error;
 
     m_d = -m_kp * fp12_t(m_derivative * m_td);
-    if (m_p >= 0) {
-        if (m_d > 0) {
-            m_d = 0; // only counteract p
-        }
-        if (m_d < -m_p) {
-            m_d = -m_p; // limit to inverse of p
-        }
-    } else {
-        if (m_d < 0) {
-            m_d = 0;
-        }
-        if (m_d > -m_p) {
-            m_d = -m_p;
-        }
+    if ((m_kp >= 0 && m_d < -m_kp)
+        || (m_kp <= 0 && m_d > -m_kp)) {
+        m_d = -m_kp; // clip to -kp max, prevents large spikes
     }
+
+    decltype(m_integral) integral_increase = 0;
     if (m_ti != 0 && m_kp != 0 && !m_boilModeActive) {
-        decltype(m_integral) integral_increase = cnl::quotient(m_p + m_d, m_kp);
+        integral_increase = cnl::quotient(m_p + m_d, m_kp);
         m_integral += integral_increase;
         m_i = m_integral * safe_elastic_fixed_point<4, 27>(cnl::quotient(m_kp, m_ti));
     } else {
@@ -111,8 +102,9 @@ Pid::update()
                         } else {
                             // else: clipped to actuator min or max set in target actuator
                             // calculate anti-windup from setting instead of actual value, so it doesn't dip under the maximum
-                            // make sure anti-windup is at least m_error when clipping to prevent further windup, with extra anti-windup to scale back integral
-                            antiWindup += m_error;
+                            // make sure anti-windup is at least the integral increase when clipping to prevent further windup
+                            // Extra anti-windup can still be added below to reduce integral quicker
+                            antiWindup += integral_increase;
                         }
 
                         out_t excess = cnl::quotient(pidResult - antiWindupValue, m_kp);
