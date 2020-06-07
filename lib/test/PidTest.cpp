@@ -139,26 +139,20 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->resetFilter();
 
         fp12_t mockVal;
-        double accumulatedError = 0;
+        double integralValue = 0;
         for (int32_t i = 0; i <= 900; ++i) {
             mockVal = fp12_t(20.0 + 9.0 * i / 900);
             sensor->setting(mockVal);
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
         CHECK(mockVal == 29);
         CHECK(pid.error() == Approx(1.1).epsilon(0.05)); // the filter introduces some delay, which is why this is not exactly 1.0
         CHECK(pid.p() == Approx(11).epsilon(0.05));
-        CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.001));
-        CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
-
-        THEN("The derivative part is limited to what cancels the proportional part")
-        {
-            CHECK(pid.d() == Approx(-11).epsilon(0.05));
-        }
-
+        CHECK(pid.i() == Approx(integralValue * pid.kp() / pid.ti()).epsilon(0.001));
+        CHECK(pid.integral() == Approx(integralValue).epsilon(0.001));
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
 
@@ -173,25 +167,20 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         input->resetFilter();
 
         fp12_t mockVal;
-        double accumulatedError = 0;
+        double integralValue = 0;
         for (int32_t i = 0; i <= 900; ++i) {
             mockVal = fp12_t(30.0 - (9.0 * i) / 900);
             sensor->setting(mockVal);
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
         CHECK(mockVal == 21);
         CHECK(pid.error() == Approx(-1.1).epsilon(0.05)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(11).epsilon(0.05));
-        CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.001));
-        CHECK(pid.integral() == Approx(accumulatedError).epsilon(0.001));
-
-        THEN("The derivative part is limited to what cancels the proportional part")
-        {
-            CHECK(pid.d() == Approx(-11).epsilon(0.05));
-        }
+        CHECK(pid.i() == Approx(integralValue * pid.kp() / pid.ti()).epsilon(0.001));
+        CHECK(pid.integral() == Approx(integralValue).epsilon(0.001));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
     }
@@ -245,14 +234,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         actuator->minSetting(0);
         actuator->maxSetting(20);
 
-        double accumulatedError = 0;
+        double integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        double integratorValueWithoutAntiWindup = accumulatedError * (10.0 / 2000);
+        double integratorValueWithoutAntiWindup = integralValue * (10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(10).epsilon(0.01));
         CHECK(pid.i() == Approx(10).epsilon(0.01)); // anti windup limits this to 10
@@ -262,14 +251,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(20).epsilon(0.01));
 
         input->setting(19);
-        accumulatedError = 0;
+        integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        integratorValueWithoutAntiWindup = accumulatedError * (10.0 / 2000);
+        integratorValueWithoutAntiWindup = integralValue * (10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(-50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(-10).epsilon(0.01));
         CHECK(pid.i() == Approx(0).margin(0.01)); // anti windup limits this to 0
@@ -291,14 +280,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         actuator->minSetting(0);
         actuator->maxSetting(20);
 
-        double accumulatedError = 0;
+        double integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        double integratorValueWithoutAntiWindup = accumulatedError * (-10.0 / 2000);
+        double integratorValueWithoutAntiWindup = integralValue * (-10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(10).epsilon(0.01));
         CHECK(pid.i() == Approx(10).epsilon(0.01)); // anti windup limits this to 10
@@ -307,14 +296,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(20).epsilon(0.01));
 
         input->setting(21);
-        accumulatedError = 0;
+        integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        integratorValueWithoutAntiWindup = accumulatedError * (-10.0 / 2000);
+        integratorValueWithoutAntiWindup = integralValue * (-10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(-50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(-10).epsilon(0.01));
         CHECK(pid.i() == Approx(0).margin(0.01)); // anti windup limits this to 0
@@ -336,14 +325,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         actuator->minValue(5);
         actuator->maxValue(20);
 
-        double accumulatedError = 0;
+        double integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        double integratorValueWithoutAntiWindup = accumulatedError * (10.0 / 2000);
+        double integratorValueWithoutAntiWindup = integralValue * (10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(10).epsilon(0.01));
         CHECK(pid.i() == Approx(13.33).epsilon(0.01)); // anti windup limits this to 13.33 (clipped output + error / 3)
@@ -352,14 +341,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(23.33).epsilon(0.01));
 
         input->setting(19);
-        accumulatedError = 0;
+        integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        integratorValueWithoutAntiWindup = accumulatedError * (10.0 / 2000);
+        integratorValueWithoutAntiWindup = integralValue * (10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(-50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(-10).epsilon(0.01));
         CHECK(pid.i() == Approx(0).margin(0.01)); // anti windup limits this to 0
@@ -380,14 +369,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         actuator->minValue(5);
         actuator->maxValue(20);
 
-        double accumulatedError = 0;
+        double integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        double integratorValueWithoutAntiWindup = accumulatedError * (-10.0 / 2000);
+        double integratorValueWithoutAntiWindup = integralValue * (-10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(10).epsilon(0.01));
         CHECK(pid.i() == Approx(13.33).epsilon(0.01)); // anti windup limits this to 13.33 (clipped output + proportional part / 3)
@@ -396,14 +385,14 @@ SCENARIO("PID Test with mock actuator", "[pid]")
         CHECK(actuator->setting() == Approx(23.33).epsilon(0.01));
 
         input->setting(21);
-        accumulatedError = 0;
+        integralValue = 0;
         for (int32_t i = 0; i <= 10000; ++i) {
             input->update();
             pid.update();
-            accumulatedError += pid.error();
+            integralValue += double(pid.p() + pid.d()) / double(pid.kp());
         }
 
-        integratorValueWithoutAntiWindup = accumulatedError * (-10.0 / 2000);
+        integratorValueWithoutAntiWindup = integralValue * (-10.0 / 2000);
         CHECK(integratorValueWithoutAntiWindup == Approx(-50.0).epsilon(0.01));
         CHECK(pid.p() == Approx(-10).epsilon(0.01));
         CHECK(pid.i() == Approx(0).margin(0.01)); // anti windup limits this to 0
@@ -654,7 +643,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         input->resetFilter();
 
         fp12_t mockVal;
-        double accumulatedError = 0;
+        double integralValue = 0;
 
         auto start = now;
         while (now <= start + 900'000) {
@@ -667,7 +656,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 input->update();
                 pid.update();
                 actuator->update();
-                accumulatedError += pid.error();
+                integralValue += double(pid.p() + pid.d()) / double(pid.kp());
                 nextPidUpdate = now + 1000;
             }
             ++now;
@@ -676,7 +665,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(mockVal == 29);
         CHECK(pid.error() == Approx(1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(10).epsilon(0.1));
-        CHECK(pid.i() == Approx(accumulatedError * (10.0 / 2000)).epsilon(0.03)); // some integral anti-windup will occur due to filtering at the start
+        CHECK(pid.i() == Approx(integralValue * pid.kp() / pid.ti()).epsilon(0.03)); // some integral anti-windup will occur due to filtering at the start
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 60).epsilon(0.01));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
@@ -693,7 +682,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         input->resetFilter();
 
         fp12_t mockVal;
-        double accumulatedError = 0;
+        double integralValue = 0;
 
         auto start = now;
         while (now <= start + 900'000) {
@@ -706,7 +695,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                 input->update();
                 pid.update();
                 actuator->update();
-                accumulatedError += pid.error();
+                integralValue += double(pid.p() + pid.d()) / double(pid.kp());
                 nextPidUpdate = now + 1000;
             }
             ++now;
@@ -715,7 +704,7 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
         CHECK(mockVal == 21);
         CHECK(pid.error() == Approx(-1).epsilon(0.1)); // the filter introduces some delay, which is why this is not 1.0
         CHECK(pid.p() == Approx(10).epsilon(0.1));
-        CHECK(pid.i() == Approx(accumulatedError * (-10.0 / 2000)).epsilon(0.03)); // some integral anti-windup will occur due to filtering at the start
+        CHECK(pid.i() == Approx(integralValue * pid.kp() / pid.ti()).epsilon(0.03)); // some integral anti-windup will occur due to filtering at the start
         CHECK(pid.d() == Approx(-10 * 9.0 / 900 * 60).epsilon(0.02));
 
         CHECK(actuator->setting() == pid.p() + pid.i() + pid.d());
@@ -1059,6 +1048,51 @@ SCENARIO("PID Test with PWM actuator", "[pid]")
                     CHECK(actuator->setting() == 0.0);
                 }
             }
+        }
+    }
+
+    WHEN("The PID heats a kettle until setpoint is reached")
+    {
+        input->filterChoice(0); // no filtering
+        pid.kp(100);
+        pid.td(120);
+        pid.ti(1200);
+        pid.update();
+
+        input->setting(60);
+        sensor->setting(20);
+        duration_millis_t closeDuration = 0;
+        duration_millis_t reachedDuration = 0;
+
+        auto start = now;
+        while (now < start + 100000'000) {
+            if (now >= nextPwmUpdate) {
+                nextPwmUpdate = pwm.update(now);
+            }
+            if (now >= nextPidUpdate) {
+                auto newTemp = sensor->value() + actuator->value() / 2400; // very simple model for heating
+                sensor->setting(newTemp);
+                input->update();
+                pid.update();
+                actuator->update();
+                nextPidUpdate = now + 1000;
+            }
+            if (!closeDuration && sensor->value() + 1 >= input->setting()) {
+                closeDuration = now - start;
+            }
+            if (!reachedDuration && sensor->value() + 0.1 >= input->setting()) {
+                reachedDuration = now - start;
+                break;
+            }
+            now = std::min(nextPwmUpdate, nextPidUpdate);
+        }
+        CHECK(closeDuration == Approx(1020'000).margin(10000));   // takes 17.0 minutes to get to setpoint - 1.0
+        CHECK(reachedDuration == Approx(1242'000).margin(10000)); // takes 20.7 minutes to get to setpoint - 0.1
+        AND_THEN("The overshoot is minimal and the integral is close to zero")
+        {
+
+            CHECK(input->value() - input->setting() < 0.1); // overshoot is small
+            CHECK(pid.i() < 1.0);
         }
     }
 }
