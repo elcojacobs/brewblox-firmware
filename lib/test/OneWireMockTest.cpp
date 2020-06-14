@@ -83,5 +83,32 @@ SCENARIO("A mocked OneWire bus", "[onewiremock]")
             sensor.update();
             CHECK(sensor.value() == -10.0);
         }
+
+        THEN("Multiple OneWire sensors can be used on the fake bus")
+        {
+            auto mockSensor2 = std::make_shared<DS18B20Mock>(0x9911223344556628);
+            owMock.attach(mockSensor2);
+
+            TempSensorOneWire sensor1(ow, 0x0011223344556628);
+            TempSensorOneWire sensor2(ow, 0x9911223344556628);
+
+            sensor1.update();
+            sensor2.update();
+            sensor1.update();
+            sensor2.update();
+            CHECK(sensor1.valid() == true);
+            CHECK(sensor2.valid() == true);
+            CHECK(sensor1.value() == 10.0);
+            CHECK(sensor2.value() == 10.0);
+
+            mockSensor->setTemperature(temp_t{21.0});
+            mockSensor2->setTemperature(temp_t{22.0});
+            CHECK(mockSensor->getTemperature() == 21.0);
+            CHECK(mockSensor2->getTemperature() == 22.0);
+            sensor1.update();
+            sensor2.update();
+            CHECK(sensor1.value() == 21.0);
+            CHECK(sensor2.value() == 22.0);
+        }
     }
 }

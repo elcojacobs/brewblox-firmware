@@ -19,21 +19,6 @@
 
 #include "OneWireMockDriver.h"
 
-void
-OneWireMockDriver::communicate()
-{
-    // device reading most bytes determines how many are dropped from the buffer
-    while (!masterToSlave.empty()) {
-        uint8_t bytes_read = 0;
-        for (auto& device : devices) {
-            bytes_read = std::max(bytes_read, device->respond(*this));
-        }
-        while (bytes_read-- > 0) {
-            masterToSlave.pop_front();
-        }
-    }
-}
-
 uint8_t
 OneWireMockDriver::countActiveDevices()
 {
@@ -68,4 +53,4 @@ OneWireMockDriver::search_triplet(uint8_t* search_direction, uint8_t* id_bit, ui
     }
 
     return 0;
-};
+}

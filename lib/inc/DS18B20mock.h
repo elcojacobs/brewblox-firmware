@@ -50,47 +50,40 @@ public:
         eeprom[2] = scratchpad[4];
     }
 
-    virtual uint8_t respondImpl(OneWireMockDriver& mock) override final
+    virtual void processImpl(uint8_t cmd) override final
     {
-        uint8_t cmd = 0;
-        mock.peek_recv(&cmd, 1);
-
         switch (cmd) {
         case 0x4E: // WRITE SCRATCHPAD
             // write 3 byte of data to scratchpad[2:4], ds18s20 only first 2 bytes (TH, TL)
-            mock.peek_recv(&scratchpad[2], 3, 1);
+            recv(&scratchpad[2], 3);
             scratchpad[8] = OneWire::crc8(scratchpad, 8);
-            return 4;
-
+            break;
         case 0xBE: // READ SCRATCHPAD
-            mock.send(scratchpad, 9);
-            return 1;
+            send(scratchpad, 9);
+            break;
 
         case 0x48: // COPY SCRATCHPAD to EEPROM
             eeprom[0] = scratchpad[2];
             eeprom[1] = scratchpad[3];
             eeprom[2] = scratchpad[4];
-            return 1;
+            break;
 
         case 0xB8: // RECALL EEPROM
             scratchpad[2] = eeprom[0];
             scratchpad[3] = eeprom[1];
             scratchpad[4] = eeprom[2];
-            return 1;
+            break;
 
         case 0xB4: // READ POWER SUPPLY
         {
             // 1: externally powered, 0: parasite power
-            uint8_t reply = parasite ? 0x00 : 0x80;
-            mock.send(&reply, 1);
-        }
-            return 1;
-            break;
+            send(parasite ? 0x00 : 0x80);
+        } break;
 
         case 0x44: // CONVERT
-            return 1;
+            break;
         default:
-            return 0;
+            break;
         }
     }
 

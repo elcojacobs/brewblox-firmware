@@ -22,14 +22,10 @@
 #include "OneWireAddress.h"
 #include "OneWireLowLevelInterface.h"
 #include "OneWireMockDevice.h"
-#include <deque>
 #include <memory>
 #include <vector>
 
 class OneWireMockDriver : public OneWireLowLevelInterface {
-private:
-    std::deque<uint8_t> masterToSlave;
-    std::deque<uint8_t> slaveToMaster;
 
 public:
     OneWireMockDriver()
@@ -45,21 +41,20 @@ public:
 
     virtual uint8_t read() override final
     {
-        if (!masterToSlave.empty()) {
-            // first process all outgoing bytes
-            communicate();
+        // if multiple devices are answering, the result is a binary AND
+        // This will only give valid responses with single bit replies, just like the real hardware
+        uint8_t b = 0xFF;
+        for (auto& device : devices) {
+            b &= device->read();
         }
-        uint8_t retv = 0;
-        if (!slaveToMaster.empty()) {
-            retv = slaveToMaster.front();
-            slaveToMaster.pop_front();
-        }
-        return retv;
+        return b;
     }
 
     virtual void write(uint8_t b, uint8_t power = 0) override final
     {
-        masterToSlave.push_back(b);
+        for (auto& device : devices) {
+            device->write(b);
+        }
     }
 
     void write_bytes(const uint8_t* buf, uint16_t count)
@@ -73,20 +68,6 @@ public:
     {
         for (uint16_t i = 0; i < count; i++) {
             buf[i] = read();
-        }
-    }
-
-    void peek_recv(uint8_t* buf, uint16_t count, uint16_t start = 0)
-    {
-        for (uint16_t i = 0; i < count; i++) {
-            buf[i] = masterToSlave.at(start + i);
-        }
-    }
-
-    void send(uint8_t* buf, uint16_t count)
-    {
-        for (uint16_t i = 0; i < count; i++) {
-            slaveToMaster.push_back(buf[i]);
         }
     }
 
@@ -104,10 +85,11 @@ public:
     virtual bool reset() override final
     {
 
+        bool devicePresent = false;
         for (auto& device : devices) {
-            device->reset();
+            devicePresent |= device->reset();
         }
-        return devices.size() > 0;
+        return devicePresent;
     }
 
     void attach(std::shared_ptr<OneWireMockDevice> device)
@@ -116,7 +98,6 @@ public:
     }
 
 private:
-    void communicate();
     uint8_t countActiveDevices();
 
     std::vector<std::shared_ptr<OneWireMockDevice>> devices;

@@ -17,46 +17,109 @@
  * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #include "OneWireMockDevice.h"
 #include "OneWireMockDriver.h"
 
 uint8_t
-OneWireMockDevice::respond(OneWireMockDriver& mock)
+OneWireMockDevice::read()
+{
+    // process all incoming bytes and generate replies first
+    while (!masterToSlave.empty()) {
+        process();
+    }
+    uint8_t b = 0xFF;
+    if (!slaveToMaster.empty()) {
+        b = slaveToMaster.front();
+        slaveToMaster.pop_front();
+    }
+    return b;
+}
+
+void
+OneWireMockDevice::write(uint8_t b)
+{
+    if (!dropped) {
+        masterToSlave.push_back(b);
+    }
+}
+
+void
+OneWireMockDevice::recv(uint8_t* buf, uint16_t count)
+{
+    for (uint16_t i = 0; i < count; i++) {
+        buf[i] = recv();
+    }
+}
+
+uint8_t
+OneWireMockDevice::recv()
+{
+    uint8_t retv = 0xFF;
+    if (!masterToSlave.empty()) {
+        retv = masterToSlave.front();
+        masterToSlave.pop_front();
+    }
+    return retv;
+}
+
+void
+OneWireMockDevice::send(uint8_t b)
+{
+    slaveToMaster.push_back(b);
+}
+
+void
+OneWireMockDevice::send(uint8_t* buf, uint16_t count)
+{
+    for (uint16_t i = 0; i < count; i++) {
+        send(buf[i]);
+    }
+}
+
+bool
+OneWireMockDevice::reset()
+{
+    while (!masterToSlave.empty()) {
+        process(); // process any outstanding writes that don't expect a reply
+    }
+    dropped = false;
+    masterToSlave.clear();
+    slaveToMaster.clear();
+    return connected;
+}
+
+void
+OneWireMockDevice::process()
 {
     if (dropped) {
-        return 0;
+        masterToSlave.clear();
+        return;
     }
-    uint8_t cmd = 0;
-    mock.peek_recv(&cmd, 1);
+    uint8_t cmd = recv();
     switch (cmd) {
+    case 0xFF: // nothing received
+        return;
     case 0x33: // Read ROM
-    {
-        mock.write_bytes(address.asUint8ptr(), 8);
-    }
-        return 9;
-
+        send(address.asUint8ptr(), 8);
+        break;
     case 0x55: // Match ROM
     case 0x69: // Overdrive Match
     {
         OneWireAddress selectedAddress;
-        mock.peek_recv(selectedAddress.asUint8ptr(), 8, 1);
+        recv(selectedAddress.asUint8ptr(), 8);
         dropped = !match(selectedAddress);
-    }
-        return 9;
+    } break;
     case 0xF0: // Search ROM
         search_bitnr = 0;
-        return 1;
+        break;
     case 0xCC: // Skip ROM
     case 0x3C: // Overdrive skip
     case 0xA5: // Resume
-        return 1;
+        break;
     default:
         // not a generic OneWire command, forward to device implementation
-        return respondImpl(mock);
+        processImpl(cmd);
     }
-    return 1;
 }
 
 bool

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "OneWireAddress.h"
+#include <deque>
 class OneWireMockDriver;
 
 class OneWireMockDevice {
@@ -33,9 +34,16 @@ protected:
     ~OneWireMockDevice() = default;
 
 public:
-    uint8_t respond(OneWireMockDriver& mock);
+    uint8_t read();
+    void write(uint8_t b);
 
-    virtual uint8_t respondImpl(OneWireMockDriver& mock) = 0;
+    uint8_t recv();
+    void recv(uint8_t* buf, uint16_t count);
+    void send(uint8_t b);
+    void send(uint8_t* buf, uint16_t count);
+
+    void process();
+    virtual void processImpl(uint8_t cmd) = 0;
 
     bool match(const OneWireAddress& a)
     {
@@ -48,10 +56,7 @@ public:
 
     void search_triplet_write(bool bit);
 
-    void reset()
-    {
-        dropped = false;
-    }
+    bool reset();
 
     bool present()
     {
@@ -60,8 +65,12 @@ public:
 
 protected:
     OneWireAddress address;
-    mutable bool m_connected = true;
+    bool connected = true;
     bool dropped = true;
     bool parasite = false;
     uint8_t search_bitnr = 0;
+
+private:
+    std::deque<uint8_t> masterToSlave;
+    std::deque<uint8_t> slaveToMaster;
 };
