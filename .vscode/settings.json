@@ -72,11 +72,6 @@
     "font04b03.h": "c",
     "tewi.h": "c"
   },
-  "catch2TestExplorer.executables": [
-    "app/brewblox/test/build/brewblox_test_runner",
-    "lib/test/build/lib_test_runner",
-    "controlbox/build/cbox_test_runner"
-  ],
   "ccls.highlighting.enabled.types": true,
   "ccls.highlighting.enabled.freeStandingFunctions": false,
   "ccls.highlighting.enabled.memberFunctions": false,
@@ -132,5 +127,16 @@
   "ccls.clang.pathMappings": [
     "%h -x c++-header"
   ],
-  "cortex-debug.armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin"
+  "cortex-debug.armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
+  "testMate.cpp.test.advancedExecutables": [
+    {
+      "pattern": "app/brewblox/test/build/brewblox_test_runner"
+    },
+    {
+      "pattern": "lib/test/build/lib_test_runner"
+    },
+    {
+      "pattern": "controlbox/build/cbox_test_runner"
+    }
+  ]
 }
