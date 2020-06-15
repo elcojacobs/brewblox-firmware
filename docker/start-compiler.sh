@@ -15,7 +15,7 @@ while getopts ":r" opt; do
 done
 
 touch .env
-ENV_MOUNTDIR="$(grep MOUNTDIR .env)"
+ENV_MOUNTDIR="$(grep MOUNTDIR .env || true)"
 
 if [ -z "$ENV_MOUNTDIR" ]; then
   MOUNTDIR=$(dirname "$(pwd)")
