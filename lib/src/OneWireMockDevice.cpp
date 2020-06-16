@@ -132,6 +132,11 @@ OneWireMockDevice::getAddressBit()
 void
 OneWireMockDevice::search_triplet_read(bool* id_bit, bool* cmp_id_bit)
 {
+    while (!masterToSlave.empty()) {
+        // process any outstanding writes first.
+        // The reset search command is still pending without this
+        process();
+    }
     bool my_bit = getAddressBit();
     if (!dropped && my_bit) {
         *id_bit = false; // pulls down bit if match

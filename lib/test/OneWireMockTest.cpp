@@ -26,7 +26,7 @@
 
 #include <math.h>
 
-SCENARIO("A mocked OneWire bus", "[onewiremock]")
+SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 {
     OneWireMockDriver owMock;
     OneWire ow(owMock);
@@ -84,13 +84,30 @@ SCENARIO("A mocked OneWire bus", "[onewiremock]")
             CHECK(sensor.value() == -10.0);
         }
 
-        THEN("Multiple OneWire sensors can be used on the fake bus")
+        AND_WHEN("Another sensor is connected")
         {
             auto mockSensor2 = std::make_shared<DS18B20Mock>(0x9911223344556628);
             owMock.attach(mockSensor2);
 
             TempSensorOneWire sensor1(ow, 0x0011223344556628);
             TempSensorOneWire sensor2(ow, 0x9911223344556628);
+
+            THEN("A bus search finds two sensors")
+            {
+                OneWireAddress addr(0);
+                ow.reset();
+                ow.reset_search();
+                bool found = ow.search(addr.asUint8ptr());
+                CHECK(found == true);
+                CHECK(addr == OneWireAddress(0x0011223344556628));
+
+                found = ow.search(addr.asUint8ptr());
+                CHECK(found == true);
+                CHECK(addr == OneWireAddress(0x9911223344556628));
+
+                found = ow.search(addr.asUint8ptr());
+                CHECK(found == false);
+            }
 
             sensor1.update();
             sensor2.update();
