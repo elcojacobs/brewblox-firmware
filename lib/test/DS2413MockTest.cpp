@@ -22,13 +22,11 @@
 #include "../inc/OneWireMockDevice.h"
 #include "../inc/OneWireMockDriver.h"
 #include "DS18B20mock.h"
-#include "DS2413.h"
-#include "DS2413mock.h"
 #include "TempSensorOneWire.h"
 
 #include <math.h>
 
-SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
+SCENARIO("A mocked OneWire bus and DS2413 mock", "[onewire]")
 {
     OneWireMockDriver owMock;
     OneWire ow(owMock);
@@ -60,14 +58,10 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
         {
             OneWireAddress addr(0);
             ow.reset();
-            ow.target_search(DS18B20Mock::family_code);
+            ow.target_search(0x28);
             bool found = ow.search(addr.asUint8ptr());
             CHECK(found == true);
             CHECK(uint64_t(addr) == 0x0011223344556628);
-
-            ow.target_search(DS2413Mock::family_code);
-            found = ow.search(addr.asUint8ptr());
-            CHECK(found == false);
         }
 
         THEN("A OneWire sensor can use it on the fake bus")
@@ -132,64 +126,6 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
             sensor2.update();
             CHECK(sensor1.value() == 21.0);
             CHECK(sensor2.value() == 22.0);
-        }
-    }
-
-    WHEN("A mock DS2413 is attached")
-    {
-        auto ds1mock = std::make_shared<DS2413Mock>(0x001122334455663A);
-        owMock.attach(ds1mock);
-        THEN("Reset returns a presence")
-        {
-            CHECK(ow.reset() == true);
-        }
-
-        THEN("It can be found with a bus search")
-        {
-            OneWireAddress addr(0);
-            ow.reset();
-            bool found = ow.search(addr.asUint8ptr());
-            CHECK(found == true);
-            CHECK(uint64_t(addr) == 0x001122334455663A);
-        }
-
-        THEN("It can be found by family code")
-        {
-            OneWireAddress addr(0);
-            ow.reset();
-            ow.target_search(DS18B20Mock::family_code);
-            bool found = ow.search(addr.asUint8ptr());
-            CHECK(found == false);
-
-            ow.reset();
-            ow.target_search(DS2413Mock::family_code);
-            found = ow.search(addr.asUint8ptr());
-            CHECK(found == true);
-
-            CHECK(uint64_t(addr) == 0x001122334455663A);
-        }
-
-        THEN("A DS2413 class can use it on the fake bus")
-        {
-            DS2413 ds1(ow, 0x001122334455663A);
-
-            ActuatorDigitalBase::State result;
-            ds1.update();
-            CHECK(ds1.connected() == true);
-            CHECK(ds1.senseChannel(1, result));
-            CHECK(result == ActuatorDigitalBase::State::Inactive);
-            CHECK(ds1.senseChannel(2, result));
-            CHECK(result == ActuatorDigitalBase::State::Inactive);
-
-            // note that for IoArray ACTIVE_HIGH means OUTPUT and ACTIVE
-            // It is actually an open drain pull down on in the DS2413
-            // Should we rename this?
-            CHECK(ds1.writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_HIGH));
-            CHECK(ds1.senseChannel(1, result));
-            CHECK(result == ActuatorDigitalBase::State::Active);
-
-            CHECK(ds1.senseChannel(2, result));
-            CHECK(result == ActuatorDigitalBase::State::Inactive);
         }
     }
 }

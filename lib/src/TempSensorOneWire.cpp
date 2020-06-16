@@ -80,7 +80,7 @@ temp_t
 TempSensorOneWire::readAndConstrainTemp()
 {
     // difference in precision between DS18B20 format and temperature format
-    static constexpr const uint8_t shift = cnl::_impl::fractional_digits<temp_t>::value - ONEWIRE_TEMP_SENSOR_PRECISION;
+    static constexpr const int32_t scale = 1 << (cnl::_impl::fractional_digits<temp_t>::value - ONEWIRE_TEMP_SENSOR_PRECISION);
     int32_t tempRaw;
     bool success;
 
@@ -98,7 +98,7 @@ TempSensorOneWire::readAndConstrainTemp()
         return 0;
     }
 
-    temp_t temp = cnl::wrap<temp_t>(tempRaw << shift) + m_calibrationOffset;
+    temp_t temp = cnl::wrap<temp_t>(tempRaw * scale) + m_calibrationOffset;
 
     return temp;
 }

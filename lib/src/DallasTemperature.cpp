@@ -412,8 +412,8 @@ DallasTemperature::getResolution(const uint8_t* deviceAddress)
 
 #if 0 // moved to header for inlining
 // sets the value of the waitForConversion flag
-// TRUE : function requestTemperature() etc returns when conversion is ready
-// FALSE: function requestTemperature() etc returns immediately (USE WITH CARE!!)
+// true : function requestTemperature() etc returns when conversion is ready
+// false: function requestTemperature() etc returns immediately (USE WITH CARE!!)
 //        (1) programmer has to check if the needed delay has passed
 //        (2) but the application can do meaningful things in that time
 
@@ -431,8 +431,8 @@ DallasTemperature::getWaitForConversion()
 }
 
 // sets the value of the checkForConversion flag
-// TRUE : function requestTemperature() etc will 'listen' to an IC to determine whether a conversion is complete
-// FALSE: function requestTemperature() etc will wait a set time (worst case scenario) for a conversion to complete
+// true : function requestTemperature() etc will 'listen' to an IC to determine whether a conversion is complete
+// false: function requestTemperature() etc will wait a set time (worst case scenario) for a conversion to complete
 
 void
 DallasTemperature::setCheckForConversion(bool flag)

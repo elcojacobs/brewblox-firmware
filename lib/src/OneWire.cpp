@@ -167,7 +167,7 @@ OneWire::reset_search()
 {
     // reset the search state
     LastDiscrepancy = 0;
-    LastDeviceFlag = FALSE;
+    LastDeviceFlag = false;
     LastFamilyDiscrepancy = 0;
     for (int i = 7;; i--) {
         ROM_NO[i] = 0;
@@ -189,7 +189,7 @@ OneWire::target_search(uint8_t family_code)
         ROM_NO[i] = 0;
     LastDiscrepancy = 64;
     LastFamilyDiscrepancy = 0;
-    LastDeviceFlag = FALSE;
+    LastDeviceFlag = false;
 }
 
 //
@@ -205,8 +205,8 @@ OneWire::target_search(uint8_t family_code)
 //--------------------------------------------------------------------------
 // Perform the 1-Wire Search Algorithm on the 1-Wire bus using the existing
 // search state.
-// Return TRUE  : device found, ROM number in ROM_NO buffer
-//        FALSE : device not found, end of search
+// Return true  : device found, ROM number in ROM_NO buffer
+//        false : device not found, end of search
 //
 
 uint8_t
@@ -231,9 +231,9 @@ OneWire::search(uint8_t* newAddr)
         if (!driver.reset()) {
             // reset the search
             LastDiscrepancy = 0;
-            LastDeviceFlag = FALSE;
+            LastDeviceFlag = false;
             LastFamilyDiscrepancy = 0;
-            return FALSE;
+            return false;
         }
 
         // issue the search command
@@ -302,9 +302,9 @@ OneWire::search(uint8_t* newAddr)
 
             // check for last device
             if (LastDiscrepancy == 0)
-                LastDeviceFlag = TRUE;
+                LastDeviceFlag = true;
 
-            search_result = TRUE;
+            search_result = true;
         }
     }
 
@@ -313,12 +313,14 @@ OneWire::search(uint8_t* newAddr)
 
     if (!search_result || (ROM_NO[0] == 0)) {
         LastDiscrepancy = 0;
-        LastDeviceFlag = FALSE;
+        LastDeviceFlag = false;
         LastFamilyDiscrepancy = 0;
-        search_result = FALSE;
+        search_result = false;
+    } else {
+        for (int i = 0; i < 8; i++) {
+            newAddr[i] = ROM_NO[i];
+        }
     }
-    for (int i = 0; i < 8; i++)
-        newAddr[i] = ROM_NO[i];
 
     return search_result;
 }

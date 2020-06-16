@@ -21,7 +21,6 @@
 
 #include "OneWire.h"
 #include "OneWireMockDevice.h"
-#include "OneWireMockDriver.h"
 #include "Temperature.h"
 
 class DS18B20Mock : public OneWireMockDevice {
@@ -87,10 +86,10 @@ public:
         }
     }
 
-    static constexpr const uint8_t shift = cnl::_impl::fractional_digits<temp_t>::value - 4;
+    static constexpr const int16_t scale = 1 << (cnl::_impl::fractional_digits<temp_t>::value - 4);
     void setTemperature(temp_t temperature)
     {
-        int16_t raw = cnl::unwrap(temperature) >> shift;
+        int16_t raw = cnl::unwrap(temperature) / scale;
         scratchpad[0] = raw & 0xFF;
         scratchpad[1] = (int8_t)(raw >> 8);
         scratchpad[8] = OneWire::crc8(scratchpad, 8);
@@ -98,7 +97,7 @@ public:
     temp_t getTemperature() const
     {
         int16_t rawTemperature = (((int16_t)scratchpad[1]) << 8) | scratchpad[0];
-        int32_t shifted = int32_t(rawTemperature) << shift;
+        int32_t shifted = int32_t(rawTemperature) * scale;
         return cnl::wrap<temp_t>(shifted);
     }
 };

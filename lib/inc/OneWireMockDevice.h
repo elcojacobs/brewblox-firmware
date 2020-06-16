@@ -36,6 +36,11 @@ protected:
 public:
     uint8_t read();
     void write(uint8_t b);
+    bool reset();
+    virtual void resetImpl()
+    {
+        // devices can override this for extra behavior at onewire reset
+    }
 
     uint8_t recv();
     void recv(uint8_t* buf, uint16_t count);
@@ -55,8 +60,6 @@ public:
     void search_triplet_read(bool* id_bit, bool* cmp_id_bit);
 
     void search_triplet_write(bool bit);
-
-    bool reset();
 
     bool present()
     {

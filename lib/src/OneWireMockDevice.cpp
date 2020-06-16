@@ -82,6 +82,7 @@ OneWireMockDevice::reset()
     while (!masterToSlave.empty()) {
         process(); // process any outstanding writes that don't expect a reply
     }
+    resetImpl();
     dropped = false;
     masterToSlave.clear();
     slaveToMaster.clear();

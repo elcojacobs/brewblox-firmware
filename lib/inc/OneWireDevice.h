@@ -39,6 +39,12 @@ public:
         return m_connected;
     }
 
+    void selectROM() const
+    {
+        oneWire.reset();
+        oneWire.select(address.asUint8ptr());
+    }
+
 protected:
     OneWire& oneWire;
     OneWireAddress address;
