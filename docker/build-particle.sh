@@ -12,9 +12,8 @@ bash ./prepare-buildx.sh
 
 # Don't forget to call with --push
 docker buildx build \
-    --platform linux/amd64,linux/arm/v7 \
+    --platform linux/amd64,linux/arm/v7,linux/arm64 \
     --tag brewblox/firmware-particle:latest \
-    --tag brewblox/firmware-particle:rpi-latest \
     "$@" \
     firmware-particle
 
