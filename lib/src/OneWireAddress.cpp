@@ -21,6 +21,7 @@
 /* Old implementation, for backwards compatibility */
 
 #include "OneWireAddress.h"
+#include "OneWireCrc.h"
 #include <cstdint>
 
 char
@@ -40,4 +41,10 @@ OneWireAddress::toString() const
         *strIt++ = toHex((*bytePtr) & 0x0f);
     }
     return retv;
+}
+
+bool
+OneWireAddress::valid() const
+{
+    return OneWireCrc8(&asUint8ptr()[0], 7) == (*this)[7];
 }

@@ -28,6 +28,23 @@
 
 #include <math.h>
 
+namespace Catch {
+template <>
+struct StringMaker<OneWireAddress> {
+    static std::string convert(OneWireAddress const& value)
+    {
+        return value.toString();
+    }
+};
+}
+
+OneWireAddress
+makeValidAddress(OneWireAddress addr)
+{
+    addr[7] = OneWire::crc8(&addr[0], 7);
+    return addr;
+}
+
 SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 {
     OneWireMockDriver owMock;
@@ -40,7 +57,8 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 
     WHEN("A mock DS18B20 is attached")
     {
-        auto mockSensor = std::make_shared<DS18B20Mock>(0x0011223344556628);
+        auto addr1 = makeValidAddress(0x0011223344556628);
+        auto mockSensor = std::make_shared<DS18B20Mock>(addr1);
         owMock.attach(mockSensor);
         THEN("Reset returns a presence")
         {
@@ -51,28 +69,14 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
         {
             OneWireAddress addr(0);
             ow.reset();
-            bool found = ow.search(addr.asUint8ptr());
+            bool found = ow.search(addr);
             CHECK(found == true);
-            CHECK(uint64_t(addr) == 0x0011223344556628);
-        }
-
-        THEN("It can be found by family code")
-        {
-            OneWireAddress addr(0);
-            ow.reset();
-            ow.target_search(DS18B20Mock::family_code);
-            bool found = ow.search(addr.asUint8ptr());
-            CHECK(found == true);
-            CHECK(uint64_t(addr) == 0x0011223344556628);
-
-            ow.target_search(DS2413Mock::family_code);
-            found = ow.search(addr.asUint8ptr());
-            CHECK(found == false);
+            CHECK(addr == addr1);
         }
 
         THEN("A OneWire sensor can use it on the fake bus")
         {
-            TempSensorOneWire sensor(ow, 0x0011223344556628);
+            TempSensorOneWire sensor(ow, addr1);
             sensor.update();
             CHECK(sensor.valid() == false); // a reset will be detected, triggering a re-init
             sensor.update();
@@ -92,26 +96,28 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 
         AND_WHEN("Another sensor is connected")
         {
-            auto mockSensor2 = std::make_shared<DS18B20Mock>(0x9911223344556628);
+
+            auto addr2 = makeValidAddress(0x0099223344556628);
+            auto mockSensor2 = std::make_shared<DS18B20Mock>(addr2);
             owMock.attach(mockSensor2);
 
-            TempSensorOneWire sensor1(ow, 0x0011223344556628);
-            TempSensorOneWire sensor2(ow, 0x9911223344556628);
+            TempSensorOneWire sensor1(ow, addr1);
+            TempSensorOneWire sensor2(ow, addr2);
 
             THEN("A bus search finds two sensors")
             {
                 OneWireAddress addr(0);
                 ow.reset();
                 ow.reset_search();
-                bool found = ow.search(addr.asUint8ptr());
+                bool found = ow.search(addr);
                 CHECK(found == true);
-                CHECK(addr == OneWireAddress(0x0011223344556628));
+                CHECK(addr == OneWireAddress(addr1));
 
-                found = ow.search(addr.asUint8ptr());
+                found = ow.search(addr);
                 CHECK(found == true);
-                CHECK(addr == OneWireAddress(0x9911223344556628));
+                CHECK(addr == OneWireAddress(addr2));
 
-                found = ow.search(addr.asUint8ptr());
+                found = ow.search(addr);
                 CHECK(found == false);
             }
 
@@ -137,7 +143,8 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 
     WHEN("A mock DS2413 is attached")
     {
-        auto ds1mock = std::make_shared<DS2413Mock>(0x001122334455663A);
+        auto addr3 = makeValidAddress(0x002222334455663A);
+        auto ds1mock = std::make_shared<DS2413Mock>(addr3);
         owMock.attach(ds1mock);
         THEN("Reset returns a presence")
         {
@@ -148,30 +155,14 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
         {
             OneWireAddress addr(0);
             ow.reset();
-            bool found = ow.search(addr.asUint8ptr());
+            bool found = ow.search(addr);
             CHECK(found == true);
-            CHECK(uint64_t(addr) == 0x001122334455663A);
-        }
-
-        THEN("It can be found by family code")
-        {
-            OneWireAddress addr(0);
-            ow.reset();
-            ow.target_search(DS18B20Mock::family_code);
-            bool found = ow.search(addr.asUint8ptr());
-            CHECK(found == false);
-
-            ow.reset();
-            ow.target_search(DS2413Mock::family_code);
-            found = ow.search(addr.asUint8ptr());
-            CHECK(found == true);
-
-            CHECK(uint64_t(addr) == 0x001122334455663A);
+            CHECK(addr == addr3);
         }
 
         THEN("A DS2413 class can use it on the fake bus")
         {
-            DS2413 ds1(ow, 0x001122334455663A);
+            DS2413 ds1(ow, addr3);
 
             ActuatorDigitalBase::State result;
             ds1.update();
@@ -190,6 +181,43 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 
             CHECK(ds1.senseChannel(2, result));
             CHECK(result == ActuatorDigitalBase::State::Inactive);
+        }
+    }
+
+    WHEN("Both a DS18B20 and DS2413 are connected")
+    {
+        auto addr1 = makeValidAddress(0x001122334455663A);
+        auto ds1mock = std::make_shared<DS2413Mock>(addr1);
+        owMock.attach(ds1mock);
+        auto addr2 = makeValidAddress(0x0011223344556628);
+        auto mockSensor = std::make_shared<DS18B20Mock>(addr2);
+        owMock.attach(mockSensor);
+
+        THEN("Then target search can determine which is found first")
+        {
+            OneWireAddress addr(0);
+            ow.reset();
+            ow.reset_search();
+            ow.target_search(DS18B20Mock::family_code);
+            bool found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addr2);
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == false);
+            CHECK(addr == 0);
+
+            ow.reset();
+            ow.reset_search();
+            addr = 0;
+            ow.target_search(DS2413Mock::family_code);
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addr1);
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == false);
+            CHECK(addr == 0);
         }
     }
 }

@@ -117,7 +117,7 @@ public:
     /*
    * Initializes the connection with the device. This is done at power up and after detectedReset() returns true.
    */
-    bool initConnection(const uint8_t* address);
+    bool initConnection(const OneWireAddress& address);
 
     /*
    * Determines if the device has been powered off since the last call to init connection. 
@@ -141,7 +141,7 @@ public:
 #endif
 
     // returns true if address is valid
-    bool validAddress(const uint8_t*);
+    bool validAddress(const OneWireAddress& deviceAddress);
 
 #if REQUIRESDEVICEENUM
     // finds an address at a given index on the bus
@@ -150,19 +150,19 @@ public:
 
     // attempt to determine if the device at the given address is connected to the bus
     // also allows for updating the read scratchpad
-    bool readScratchPadCRC(const uint8_t*, uint8_t*);
+    bool readScratchPadCRC(const OneWireAddress& deviceAddress, uint8_t* scratchPad);
 
     // read device's scratchpad
-    void readScratchPad(const uint8_t*, uint8_t*);
+    void readScratchPad(const OneWireAddress& deviceAddress, uint8_t* scratchPad);
 
     // write device's scratchpad
-    void writeScratchPad(const uint8_t*, const uint8_t*, bool copyToEeprom);
+    void writeScratchPad(const OneWireAddress& deviceAddress, const uint8_t*, bool copyToEeprom);
 
     // restore alarms and configuration from EEPROM
-    void recallScratchpad(const uint8_t* deviceAddress);
+    void recallScratchpad(const OneWireAddress& deviceAddress);
 
     // read device's power requirements
-    bool isParasitePowered(const uint8_t*);
+    bool isParasitePowered(const OneWireAddress& deviceAddress);
 
     // get global resolution
     uint8_t getResolution();
@@ -171,10 +171,10 @@ public:
     void setResolution(uint8_t);
 
     // returns the device resolution: 9, 10, 11, or 12 bits
-    uint8_t getResolution(const uint8_t*);
+    uint8_t getResolution(const OneWireAddress& deviceAddress);
 
     // set resolution of a device to 9, 10, 11, or 12 bits
-    bool setResolution(const uint8_t*, uint8_t);
+    bool setResolution(const OneWireAddress& deviceAddress, uint8_t);
 
     // sets/gets the waitForConversion flag
     // sets the value of the waitForConversion flag
@@ -203,7 +203,7 @@ public:
 #endif
 
     // sends command for one device to perform a temperature conversion by address
-    void requestTemperaturesByAddress(const uint8_t*);
+    void requestTemperaturesByAddress(const OneWireAddress& deviceAddress);
 
 #if REQUIRESINDEXEDADDRESSING
     // sends command for one device to perform a temperature conversion by index
@@ -211,9 +211,9 @@ public:
 #endif
 
     // returns temperature raw value (12 bit integer of 1/16 degrees C)
-    int16_t getTemp(const uint8_t* address) { return getTempRaw(address); }
+    int16_t getTemp(const OneWireAddress& address) { return getTempRaw(address); }
 
-    int16_t getTempRaw(const uint8_t* deviceAddress); // changed return type from uint32 to int16 (Elco, BrewPi)
+    int16_t getTempRaw(const OneWireAddress& deviceAddress); // changed return type from uint32 to int16 (Elco, BrewPi)
 
 #if REQUIRESTEMPCONVERSION
     // returns temperature in degrees C
@@ -316,7 +316,7 @@ public:
 #endif
 
 private:
-    void sendCommand(const uint8_t* deviceAddress, uint8_t command);
+    void sendCommand(const OneWireAddress& deviceAddress, uint8_t command);
 
     typedef uint8_t ScratchPad[9];
 
@@ -348,7 +348,7 @@ private:
     OneWire* _wire;
 
     // reads scratchpad and returns the raw temperature
-    int16_t calculateTemperature(const uint8_t*, uint8_t*);
+    int16_t calculateTemperature(const OneWireAddress&, uint8_t* scratchPad);
 
 #if REQUIRESWAITFORCONVERSION
     int16_t millisToWaitForConversion(uint8_t);

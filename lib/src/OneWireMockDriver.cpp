@@ -51,6 +51,37 @@ OneWireMockDriver::search_triplet(uint8_t* search_direction, uint8_t* id_bit, ui
     for (auto& device : devices) {
         (*device).search_triplet_write(*search_direction != 0);
     }
-
     return 0;
+}
+
+uint8_t
+OneWireMockDriver::search_triplet(bool search_direction)
+{
+    bool id_bit = true;
+    bool cmp_id_bit = true;
+    for (auto& device : devices) {
+        device->search_triplet_read(&id_bit, &cmp_id_bit);
+    }
+
+    if (id_bit != cmp_id_bit) {
+        search_direction = !id_bit;
+    }
+    if (id_bit && cmp_id_bit) {
+        search_direction = true; // error condition
+    }
+
+    for (auto& device : devices) {
+        device->search_triplet_write(search_direction);
+    }
+    uint8_t status = 0x00;
+    if (id_bit) {
+        status |= 0b00100000;
+    }
+    if (cmp_id_bit) {
+        status |= 0b01000000;
+    }
+    if (search_direction) {
+        status |= 0b10000000;
+    }
+    return status;
 }

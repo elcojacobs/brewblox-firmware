@@ -65,4 +65,5 @@ public:
 
     // Perform a triple operation which will perform 2 read bits and 1 write bit
     virtual uint8_t search_triplet(uint8_t*, uint8_t*, uint8_t*) = 0;
+    virtual uint8_t search_triplet(bool search_direction) = 0;
 };

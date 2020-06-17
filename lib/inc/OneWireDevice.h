@@ -42,7 +42,7 @@ public:
     void selectROM() const
     {
         oneWire.reset();
-        oneWire.select(address.asUint8ptr());
+        oneWire.select(address);
     }
 
 protected:

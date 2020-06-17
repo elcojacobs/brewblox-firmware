@@ -34,7 +34,7 @@
 void
 TempSensorOneWire::init()
 {
-    if (m_sensor.initConnection(getDeviceAddress().asUint8ptr())) {
+    if (m_sensor.initConnection(getDeviceAddress())) {
         requestConversion();
     }
 }
@@ -42,7 +42,7 @@ TempSensorOneWire::init()
 void
 TempSensorOneWire::requestConversion()
 {
-    m_sensor.requestTemperaturesByAddress(getDeviceAddress().asUint8ptr());
+    m_sensor.requestTemperaturesByAddress(getDeviceAddress());
 }
 
 void
@@ -84,7 +84,7 @@ TempSensorOneWire::readAndConstrainTemp()
     int32_t tempRaw;
     bool success;
 
-    tempRaw = m_sensor.getTempRaw(getDeviceAddress().asUint8ptr());
+    tempRaw = m_sensor.getTempRaw(getDeviceAddress());
     success = tempRaw > RESET_DETECTED_RAW;
 
     if (tempRaw == RESET_DETECTED_RAW) {

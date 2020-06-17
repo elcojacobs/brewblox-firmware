@@ -25,7 +25,7 @@ uint8_t
 DS2408::accessRead() /* const */
 {
     oneWire.reset();
-    oneWire.select(address.asUint8ptr());
+    oneWire.select(address);
     oneWire.write(ACCESS_READ);
 
     uint8_t data;
@@ -43,7 +43,7 @@ DS2408::accessWrite(uint8_t b,
 
     do {
         oneWire.reset();
-        oneWire.select(address.asUint8ptr());
+        oneWire.select(address);
         oneWire.write(ACCESS_WRITE);
         oneWire.write(b);
 
@@ -67,7 +67,7 @@ void
 DS2408::update() const
 {
     oneWire.reset();
-    oneWire.select(address.asUint8ptr());
+    oneWire.select(address);
 
     // Compute the 1-Wire CRC16 and compare it against the received CRC.
     // Put everything in one buffer so we can compute the CRC easily.
@@ -79,7 +79,7 @@ DS2408::update() const
     oneWire.write_bytes(buf, 3);      // Write 3 cmd bytes
     oneWire.read_bytes(&buf[3], 10);  // Read 6 data bytes, 2 0xFF, CRC16
 
-    bool success = oneWire.check_crc16(buf, 11, &buf[11]);
+    bool success = oneWire.crc16(buf, 10) == buf[11];
 
     if (success) {
         std::memcpy(&m_regCache, &buf[3], sizeof(m_regCache));

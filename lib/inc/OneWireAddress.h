@@ -44,10 +44,38 @@ public:
         return reinterpret_cast<uint8_t*>(&address);
     }
 
-    operator uint64_t() const
+    bool operator==(const OneWireAddress& other) const
     {
-        return address;
+        return address == other.address;
     }
+
+    const uint8_t& operator[](uint8_t i) const
+    {
+        return asUint8ptr()[i];
+    }
+
+    uint8_t& operator[](uint8_t i)
+    {
+        return asUint8ptr()[i];
+    }
+
+    bool getBit(uint8_t i)
+    {
+        uint64_t mask = uint64_t{0x01} << i;
+        return (mask & uint64_t(address)) > 0;
+    }
+
+    void setBit(uint8_t i, bool val)
+    {
+        uint64_t mask = uint64_t{0x01} << i;
+        if (val) {
+            address |= mask;
+        } else {
+            address &= ~mask;
+        }
+    }
+
+    bool valid() const;
 
     std::string toString() const;
 

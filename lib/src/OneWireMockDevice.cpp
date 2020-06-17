@@ -101,13 +101,13 @@ OneWireMockDevice::process()
     case 0xFF: // nothing received
         return;
     case 0x33: // Read ROM
-        send(address.asUint8ptr(), 8);
+        send(&address[0], 8);
         break;
     case 0x55: // Match ROM
     case 0x69: // Overdrive Match
     {
         OneWireAddress selectedAddress;
-        recv(selectedAddress.asUint8ptr(), 8);
+        recv(&selectedAddress[0], 8);
         dropped = !match(selectedAddress);
     } break;
     case 0xF0: // Search ROM
@@ -123,13 +123,6 @@ OneWireMockDevice::process()
     }
 }
 
-bool
-OneWireMockDevice::getAddressBit()
-{
-    uint64_t mask = uint64_t{0x01} << search_bitnr;
-    return (mask & uint64_t(address)) > 0;
-}
-
 void
 OneWireMockDevice::search_triplet_read(bool* id_bit, bool* cmp_id_bit)
 {
@@ -138,7 +131,7 @@ OneWireMockDevice::search_triplet_read(bool* id_bit, bool* cmp_id_bit)
         // The reset search command is still pending without this
         process();
     }
-    bool my_bit = getAddressBit();
+    bool my_bit = address.getBit(search_bitnr);
     if (!dropped && my_bit) {
         *id_bit = false; // pulls down bit if match
     }
@@ -147,14 +140,15 @@ OneWireMockDevice::search_triplet_read(bool* id_bit, bool* cmp_id_bit)
     }
 }
 
-void
+bool
 OneWireMockDevice::search_triplet_write(bool bit)
 {
-    bool my_bit = getAddressBit();
+    bool my_bit = address.getBit(search_bitnr);
     if (my_bit != bit) {
         dropped = true;
     }
     if (search_bitnr < 63) {
         search_bitnr++;
     }
+    return !dropped;
 }

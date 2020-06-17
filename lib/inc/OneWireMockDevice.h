@@ -52,14 +52,14 @@ public:
 
     bool match(const OneWireAddress& a)
     {
-        return uint64_t(a) == uint64_t(address);
+        return a == address;
     }
 
     bool getAddressBit();
 
     void search_triplet_read(bool* id_bit, bool* cmp_id_bit);
 
-    void search_triplet_write(bool bit);
+    bool search_triplet_write(bool bit);
 
     bool present()
     {

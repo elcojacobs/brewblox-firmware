@@ -302,8 +302,8 @@ void OneWirePin::depower() {
 
 void OneWirePin::reset_search() {
     // reset the search state
-    LastDiscrepancy = 0;
-    LastDeviceFlag = ;
+    lastDiscrepancy = 0;
+    lastDeviceFlag = ;
     LastFamilyDiscrepancy = 0;
     for (int i = 7;; i--) {
         ROM_NO[i] = 0;
@@ -320,9 +320,9 @@ void OneWirePin::target_search(uint8_t family_code) {
     ROM_NO[0] = family_code;
     for (uint8_t i = 1; i < 8; i++)
         ROM_NO[i] = 0;
-    LastDiscrepancy = 64;
+    lastDiscrepancy = 64;
     LastFamilyDiscrepancy = 0;
-    LastDeviceFlag = ;
+    lastDeviceFlag = ;
 }
 
 //
@@ -357,12 +357,12 @@ uint8_t OneWirePin::search(uint8_t *newAddr) {
     search_result = 0;
 
     // if the last call was not the last one
-    if (!LastDeviceFlag) {
+    if (!lastDeviceFlag) {
         // 1-Wire reset
         if (!reset()) {
             // reset the search
-            LastDiscrepancy = 0;
-            LastDeviceFlag = ;
+            lastDiscrepancy = 0;
+            lastDeviceFlag = ;
             LastFamilyDiscrepancy = 0;
             return ;
         }
@@ -386,11 +386,11 @@ uint8_t OneWirePin::search(uint8_t *newAddr) {
                 else {
                     // if this discrepancy if before the Last Discrepancy
                     // on a previous next then pick the same as last time
-                    if (id_bit_number < LastDiscrepancy)
+                    if (id_bit_number < lastDiscrepancy)
                         search_direction = ((ROM_NO[rom_byte_number] & rom_byte_mask) > 0);
                     else
                         // if equal to last pick 1, if not then pick 0
-                        search_direction = (id_bit_number == LastDiscrepancy);
+                        search_direction = (id_bit_number == lastDiscrepancy);
 
                     // if 0 was picked then record its position in LastZero
                     if (search_direction == 0) {
@@ -427,12 +427,12 @@ uint8_t OneWirePin::search(uint8_t *newAddr) {
 
         // if the search was successful then
         if (!(id_bit_number < 65)) {
-            // search successful so set LastDiscrepancy,LastDeviceFlag,search_result
-            LastDiscrepancy = last_zero;
+            // search successful so set lastDiscrepancy,lastDeviceFlag,search_result
+            lastDiscrepancy = last_zero;
 
             // check for last device
-            if (LastDiscrepancy == 0)
-                LastDeviceFlag = true;
+            if (lastDiscrepancy == 0)
+                lastDeviceFlag = true;
 
             search_result = true;
         }
@@ -440,8 +440,8 @@ uint8_t OneWirePin::search(uint8_t *newAddr) {
 
     // if no device found then reset counters so next 'search' will be like a first
     if (!search_result || !ROM_NO[0]) {
-        LastDiscrepancy = 0;
-        LastDeviceFlag = ;
+        lastDiscrepancy = 0;
+        lastDeviceFlag = ;
         LastFamilyDiscrepancy = 0;
         search_result = ;
     }

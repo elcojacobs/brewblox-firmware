@@ -72,6 +72,7 @@ public:
     }
 
     virtual uint8_t search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_id_bit) override final;
+    uint8_t search_triplet(bool search_direction);
 
     virtual void write_bit(uint8_t bit) override final
     {
