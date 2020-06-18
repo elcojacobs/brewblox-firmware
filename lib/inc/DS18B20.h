@@ -33,13 +33,9 @@ class DS18B20 final : public TempSensor, public OneWireDevice {
     public:
         ScratchPad()
         {
-            for (uint8_t i = 0; i < 9; i++) {
-                data[i] = 0;
-            }
+            data[8] = 1; // force CRC error when data is not changed
         }
         ~ScratchPad() = default;
-
-        uint8_t data[9];
 
         uint8_t& operator[](uint8_t i)
         {
@@ -54,6 +50,9 @@ class DS18B20 final : public TempSensor, public OneWireDevice {
         {
             return OneWire::crc8(data, 8) == data[8];
         }
+
+    private:
+        uint8_t data[9] = {};
     };
 
 public:

@@ -29,7 +29,7 @@ private:
     bool pinB = true;
     bool externalPullDownA = false;
     bool externalPullDownB = false;
-    uint8_t lastCommand = 0x00;
+    uint8_t cmd = 0x00;
 
 public:
     static constexpr uint8_t family_code{0x3A};
@@ -39,47 +39,47 @@ public:
     {
     }
 
-    virtual void processImpl(uint8_t cmd) override final
+    virtual void processImpl(uint8_t newCmd) override final
     {
+        if (newCmd) {
+            cmd = newCmd;
+        }
         switch (cmd) {
         case 0xF5: // PIO ACCESS READ
         {
-            lastCommand = 0xF5;
             sendStatus();
-            // will repeat status on each read without a write first until reset, not implemented
         } break;
         case 0x5A: // PIO ACCESS WRITE
         {
-            lastCommand = 0x5A;
             receiveConfig();
-            // If no new command is sent by the master, it will act as if a PIO WRITE command was sent until reset
-            // This is not implemented in the mock
         } break;
-        case 0x00: // PIO ACCESS WRITE
-            if (lastCommand == 0x5F) {
-                sendStatus();
-            } else if (lastCommand == 0x5A) {
-                receiveConfig();
-            } else {
-                send(0xFF);
-            }
-            break;
+
         default:
             break;
         }
     }
 
+    void setExternalPullDownA(bool isPulledDown)
+    {
+        externalPullDownA = isPulledDown;
+    }
+
+    void setExternalPullDownB(bool isPulledDown)
+    {
+        externalPullDownB = isPulledDown;
+    }
+
     virtual void resetImpl() override final
     {
-        lastCommand = 0x00;
+        cmd = 0x00;
     }
 
     void
     sendStatus()
     {
         uint8_t status = 0x00;
-        pinA = latchA;
-        pinB = latchB;
+        pinA = latchA && !externalPullDownA;
+        pinB = latchB && !externalPullDownB;
         if (pinA) {
             status |= 0b0001;
         }
@@ -106,8 +106,7 @@ public:
             send(0xAA); // confirmation byte
             sendStatus();
         } else {
-            send(0xFF);
-            lastCommand = 0x00;
+            cmd = 0x00;
         }
     }
 };
