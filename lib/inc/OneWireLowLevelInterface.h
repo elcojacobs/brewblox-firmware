@@ -37,33 +37,18 @@ public:
     // bus is shorted or otherwise held low for more than 250uS
     virtual bool reset(void) = 0;
 
-    // Issue a 1-Wire rom select command, you do the reset first.
-    //    virtual void select(const uint8_t rom[8]) = 0;
-
-    // Issue a 1-Wire rom skip command, to address all on bus.
-    //    virtual void skip(void) = 0;
-
-    // Write a byte. If 'power' is one then the wire is held high at
-    // the end for parasitically powered devices. You are responsible
-    // for eventually depowering it by calling depower() or doing
-    // another read or write.
-    virtual void write(uint8_t v, uint8_t power = 0) = 0;
-
-    // virtual void write_bytes(const uint8_t *buf, uint16_t count, bool power = 0) = 0;
+    // write a byte
+    virtual void write(uint8_t v) = 0;
 
     // Read a byte.
     virtual uint8_t read(void) = 0;
 
-    // virtual void read_bytes(uint8_t *buf, uint16_t count) = 0;
-
-    // Write a bit. The bus is always left powered at the end, see
-    // note in write() about that.
+    // Write a bit
     virtual void write_bit(uint8_t v) = 0;
 
     // Read a bit.
     virtual uint8_t read_bit(void) = 0;
 
-    // Perform a triple operation which will perform 2 read bits and 1 write bit
-    virtual uint8_t search_triplet(uint8_t*, uint8_t*, uint8_t*) = 0;
+    // Perform a triple operation which will perform 2 read bits and 1 write bit, returns device status
     virtual uint8_t search_triplet(bool search_direction) = 0;
 };

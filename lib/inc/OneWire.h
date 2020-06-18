@@ -30,18 +30,17 @@ public:
     {
         return driver.init();
     }
+
     uint8_t read()
     {
         return driver.read();
     }
+
     void write(uint8_t b)
     {
-        driver.write(b, 0);
+        driver.write(b);
     }
-    void write(uint8_t b, uint8_t power)
-    {
-        driver.write(b, power);
-    }
+
     void write_bit(uint8_t bit)
     {
         driver.write_bit(bit);

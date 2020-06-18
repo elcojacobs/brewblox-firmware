@@ -28,13 +28,13 @@ DS2413::update()
 
     bool success = false;
     if (!writeNeeded()) { // skip read if we need to write anyway, which also returns status
-        selectROM();
+        selectRom();
         oneWire.write(ACCESS_READ);
         uint8_t data = oneWire.read();
         success = processStatus(data);
     }
-    if (writeNeeded()) {
-        selectROM();
+    if (writeNeeded()) { // check again
+        selectRom();
         oneWire.write(ACCESS_WRITE);
         uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
         oneWire.write(data);
@@ -46,6 +46,7 @@ DS2413::update()
             success = processStatus(data);
         }
     }
+    oneWire.reset();
 
     if (connected() && !success) {
         CL_LOG_WARN("DS2413 disconnected: ") << getDeviceAddress().toString();

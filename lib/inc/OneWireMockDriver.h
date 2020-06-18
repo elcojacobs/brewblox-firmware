@@ -50,7 +50,7 @@ public:
         return b;
     }
 
-    virtual void write(uint8_t b, uint8_t power = 0) override final
+    virtual void write(uint8_t b) override final
     {
         for (auto& device : devices) {
             device->write(b);
@@ -71,8 +71,7 @@ public:
         }
     }
 
-    virtual uint8_t search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_id_bit) override final;
-    uint8_t search_triplet(bool search_direction);
+    virtual uint8_t search_triplet(bool search_direction) override final;
 
     virtual void write_bit(uint8_t bit) override final
     {

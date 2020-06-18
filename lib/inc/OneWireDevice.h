@@ -39,7 +39,7 @@ public:
         return m_connected;
     }
 
-    void selectROM() const
+    void selectRom() const
     {
         oneWire.reset();
         oneWire.select(address);

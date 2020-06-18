@@ -24,13 +24,12 @@
 uint8_t
 DS2408::accessRead() /* const */
 {
-    oneWire.reset();
-    oneWire.select(address);
+    selectRom();
     oneWire.write(ACCESS_READ);
 
     uint8_t data;
     data = oneWire.read();
-
+    oneWire.reset();
     return data;
 }
 
@@ -42,8 +41,7 @@ DS2408::accessWrite(uint8_t b,
     uint8_t ack = 0;
 
     do {
-        oneWire.reset();
-        oneWire.select(address);
+        selectRom();
         oneWire.write(ACCESS_WRITE);
         oneWire.write(b);
 
@@ -66,8 +64,7 @@ DS2408::accessWrite(uint8_t b,
 void
 DS2408::update() const
 {
-    oneWire.reset();
-    oneWire.select(address);
+    selectRom();
 
     // Compute the 1-Wire CRC16 and compare it against the received CRC.
     // Put everything in one buffer so we can compute the CRC easily.
@@ -92,5 +89,6 @@ DS2408::update() const
             CL_LOG_WARN("DS2408 disconnected ") << address.toString();
         }
     }
+    oneWire.reset();
     m_connected = success;
 }

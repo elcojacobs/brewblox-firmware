@@ -21,10 +21,10 @@
 
 #include "../inc/OneWireMockDevice.h"
 #include "../inc/OneWireMockDriver.h"
+#include "DS18B20.h"
 #include "DS18B20mock.h"
 #include "DS2413.h"
 #include "DS2413mock.h"
-#include "TempSensorOneWire.h"
 
 #include <math.h>
 
@@ -76,7 +76,7 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
 
         THEN("A OneWire sensor can use it on the fake bus")
         {
-            TempSensorOneWire sensor(ow, addr1);
+            DS18B20 sensor(ow, addr1);
             sensor.update();
             CHECK(sensor.valid() == false); // a reset will be detected, triggering a re-init
             sensor.update();
@@ -101,8 +101,8 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
             auto mockSensor2 = std::make_shared<DS18B20Mock>(addr2);
             owMock.attach(mockSensor2);
 
-            TempSensorOneWire sensor1(ow, addr1);
-            TempSensorOneWire sensor2(ow, addr2);
+            DS18B20 sensor1(ow, addr1);
+            DS18B20 sensor2(ow, addr2);
 
             THEN("A bus search finds two sensors")
             {

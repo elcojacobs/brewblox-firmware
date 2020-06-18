@@ -20,10 +20,9 @@
 
 #include "../inc/Logger.h"
 
-#include "../inc/DallasTemperature.h"
+#include "../inc/DS18B20.h"
 #include "../inc/OneWire.h"
 #include "../inc/OneWireAddress.h"
-#include "../inc/TempSensorOneWire.h"
 #include "../inc/Temperature.h"
 
 /**
@@ -32,21 +31,58 @@
  * This re-intializes the reset detection.
  */
 void
-TempSensorOneWire::init()
+DS18B20::init()
 {
-    if (m_sensor.initConnection(getDeviceAddress())) {
-        requestConversion();
+    ScratchPad scratchPad;
+    bool writeSettings = false;
+
+    // parasitic power is not supported, it is unreliable at higher temperatures or with many devices on the bus
+    if (isParasitePowered()) {
+        return;
     }
+    // Reload settings from EEPROM so we can skip writing EEPROM if the values are already set
+    recallScratchpad();
+
+    if (!readScratchPad(scratchPad)) {
+        return;
+    }
+
+    // always use 12 bits
+    if (scratchPad[CONFIGURATION] != 0x7F) {
+        scratchPad[CONFIGURATION] = 0x7F;
+        writeSettings = true;
+    }
+
+    // Make sure that HIGH_ALARM_TEMP is set to zero in EEPROM
+    // This value will be loaded when the device powers on
+    if (scratchPad[HIGH_ALARM_TEMP]) { // conditional to avoid wear on eeprom.
+        scratchPad[HIGH_ALARM_TEMP] = 0;
+        writeSettings = true;
+    }
+
+    if (writeSettings) {
+        writeScratchPad(scratchPad, true); // save settings to eeprom
+    }
+    // Write HIGH_ALARM_TEMP again, but don't save to EEPROM, so that it reverts to 0 on reset
+    // from this point on, if we read a scratchpad with a  different value than 1 HIGH_ALARM (detectedReset() returns true)
+    // it means the device has reset and reloaed the 0 value from EEPROM or the previous write of the scratchpad above was unsuccessful.
+    // Either way, initConnection() should be called again
+    scratchPad[HIGH_ALARM_TEMP] = 1;
+    writeScratchPad(scratchPad, false);
+
+    startConversion();
 }
 
 void
-TempSensorOneWire::requestConversion()
+DS18B20::startConversion()
 {
-    m_sensor.requestTemperaturesByAddress(getDeviceAddress());
+    selectRom();
+    oneWire.write(STARTCONVO);
+    oneWire.reset();
 }
 
 void
-TempSensorOneWire::connected(bool _connected)
+DS18B20::connected(bool _connected)
 {
     if (m_connected == _connected) {
         return; // state stays the same
@@ -60,7 +96,7 @@ TempSensorOneWire::connected(bool _connected)
 }
 
 temp_t
-TempSensorOneWire::value() const
+DS18B20::value() const
 {
     if (!m_connected) {
         return 0;
@@ -70,21 +106,21 @@ TempSensorOneWire::value() const
 }
 
 void
-TempSensorOneWire::update()
+DS18B20::update()
 {
     m_cachedValue = readAndConstrainTemp();
-    requestConversion();
+    startConversion();
 }
 
 temp_t
-TempSensorOneWire::readAndConstrainTemp()
+DS18B20::readAndConstrainTemp()
 {
     // difference in precision between DS18B20 format and temperature format
-    static constexpr const int32_t scale = 1 << (cnl::_impl::fractional_digits<temp_t>::value - ONEWIRE_TEMP_SENSOR_PRECISION);
+    static constexpr const int32_t scale = 1 << (cnl::_impl::fractional_digits<temp_t>::value - 4);
     int32_t tempRaw;
     bool success;
 
-    tempRaw = m_sensor.getTempRaw(getDeviceAddress());
+    tempRaw = getRawTemp();
     success = tempRaw > RESET_DETECTED_RAW;
 
     if (tempRaw == RESET_DETECTED_RAW) {

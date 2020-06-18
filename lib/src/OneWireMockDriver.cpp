@@ -32,29 +32,6 @@ OneWireMockDriver::countActiveDevices()
 }
 
 uint8_t
-OneWireMockDriver::search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_id_bit)
-{
-    bool new_id_bit = true;
-    bool new_cmp_id_bit = true;
-    for (auto& device : devices) {
-        (*device).search_triplet_read(&new_id_bit, &new_cmp_id_bit);
-    }
-    if (!new_id_bit && !new_cmp_id_bit) {
-        // both 1's and 0's on the bus, search direction is not changed
-    } else if (!new_id_bit && new_cmp_id_bit) {
-        *search_direction = 1;
-    } else {
-        *search_direction = 0;
-    }
-    *id_bit = new_id_bit;
-    *cmp_id_bit = new_cmp_id_bit;
-    for (auto& device : devices) {
-        (*device).search_triplet_write(*search_direction != 0);
-    }
-    return 0;
-}
-
-uint8_t
 OneWireMockDriver::search_triplet(bool search_direction)
 {
     bool id_bit = true;
