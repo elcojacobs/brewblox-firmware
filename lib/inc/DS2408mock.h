@@ -136,4 +136,14 @@ public:
     {
         cmd = 0x00;
     }
+
+    void setExternalPullDown(uint8_t bit, bool enabled)
+    {
+        uint8_t mask = uint8_t{0x1} << bit;
+        if (enabled) {
+            externalPullDowns &= ~mask;
+        } else {
+            externalPullDowns |= mask;
+        }
+    }
 };
