@@ -84,6 +84,7 @@ OneWireMockDevice::reset()
     }
     resetImpl();
     dropped = false;
+    selected = false;
     masterToSlave.clear();
     slaveToMaster.clear();
     return connected;
@@ -97,6 +98,12 @@ OneWireMockDevice::process()
         return;
     }
     uint8_t cmd = recv();
+
+    if (selected) {
+        processImpl(cmd);
+        return;
+    }
+
     switch (cmd) {
     case 0xFF: // nothing received
         return;
@@ -109,6 +116,7 @@ OneWireMockDevice::process()
         OneWireAddress selectedAddress;
         recv(&selectedAddress[0], 8);
         dropped = !match(selectedAddress);
+        selected = !dropped;
     } break;
     case 0xF0: // Search ROM
         search_bitnr = 0;
@@ -116,10 +124,12 @@ OneWireMockDevice::process()
     case 0xCC: // Skip ROM
     case 0x3C: // Overdrive skip
     case 0xA5: // Resume
+        if (!dropped) {
+            selected = true;
+        }
         break;
     default:
-        // not a generic OneWire command, forward to device implementation
-        processImpl(cmd);
+        break;
     }
 }
 

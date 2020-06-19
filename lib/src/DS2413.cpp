@@ -48,12 +48,16 @@ DS2413::update()
     }
     oneWire.reset();
 
-    if (connected() && !success) {
-        CL_LOG_WARN("DS2413 disconnected: ") << getDeviceAddress().toString();
-    } else if (!connected() && success) {
-        CL_LOG_INFO("DS2413 connected: ") << getDeviceAddress().toString();
+    dirty = !success;
+
+    if (success != m_connected) {
+        if (success) {
+            CL_LOG_INFO("DS2413 connected: ") << address.toString();
+        } else {
+            CL_LOG_WARN("DS2413 disconnected: ") << address.toString();
+        }
+        m_connected = success;
     }
-    m_connected = success;
     return success;
 }
 
@@ -64,7 +68,7 @@ DS2413::writeNeeded()
 }
 
 bool
-DS2413::writeChannelImpl(uint8_t channel, const ChannelConfig& config)
+DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
 {
     bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
     uint8_t bitmask;
@@ -79,7 +83,7 @@ DS2413::writeChannelImpl(uint8_t channel, const ChannelConfig& config)
     if (latchEnabled) {
         desiredState &= ~bitmask;
     } else {
-        desiredState |= ~bitmask;
+        desiredState |= bitmask;
     }
     if (writeNeeded()) {
         return update();

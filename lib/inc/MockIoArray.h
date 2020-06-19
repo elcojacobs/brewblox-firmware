@@ -48,7 +48,7 @@ public:
         return false;
     }
 
-    virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
+    virtual bool writeChannelImpl(uint8_t channel, ChannelConfig config) override final
     {
         if (isConnected && validChannel(channel)) {
             uint8_t mask = getMask(channel);

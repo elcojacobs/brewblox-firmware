@@ -19,50 +19,28 @@
 
 #include "DS2408.h"
 #include "Logger.h"
+#include "OneWireCrc.h"
 #include <cstring>
 
-uint8_t
-DS2408::accessRead() /* const */
-{
-    selectRom();
-    oneWire.write(ACCESS_READ);
+static constexpr uint8_t READ_PIO_REG = 0xF0;
+static constexpr uint8_t ACCESS_READ = 0xF5;
+static constexpr uint8_t ACCESS_WRITE = 0x5A;
+static constexpr uint8_t ACK_SUCCESS = 0xAA;
+static constexpr uint8_t ACK_ERROR = 0xFF;
 
-    uint8_t data;
-    data = oneWire.read();
-    oneWire.reset();
-    return data;
+// all addresses have upper bits 0x00
+static constexpr uint8_t ADDRESS_UPPER = 0x00;
+static constexpr uint8_t ADDRESS_PIO_STATE_LOWER = 0x88;
+static constexpr uint8_t ADDRESS_LATCH_STATE_LOWER = 0x89;
+
+bool
+DS2408::writeNeeded() const
+{
+    return !connected() || desiredLatches != latches;
 }
 
 bool
-DS2408::accessWrite(uint8_t b,
-                    uint8_t maxTries)
-{
-    // b |= 0xFC;        /* Upper 6 bits should be set to 1's */
-    uint8_t ack = 0;
-
-    do {
-        selectRom();
-        oneWire.write(ACCESS_WRITE);
-        oneWire.write(b);
-
-        /* data is sent again, inverted to guard against transmission errors */
-        oneWire.write(~b);
-
-        /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
-        ack = oneWire.read();
-
-        if (ack == ACK_SUCCESS) {
-            oneWire.read(); // status byte sent after ack
-        }
-    } while ((ack != ACK_SUCCESS) && (maxTries-- > 0));
-
-    oneWire.reset();
-
-    return ack == ACK_SUCCESS;
-}
-
-void
-DS2408::update() const
+DS2408::update()
 {
     selectRom();
 
@@ -76,11 +54,37 @@ DS2408::update() const
     oneWire.write_bytes(buf, 3);      // Write 3 cmd bytes
     oneWire.read_bytes(&buf[3], 10);  // Read 6 data bytes, 2 0xFF, CRC16
 
-    bool success = oneWire.crc16(buf, 10) == buf[11];
+    uint16_t crcCalculated = OneWireCrc16(buf, 11);
+    // device sends CRC inverted
+    uint16_t crcReceived = ~((uint16_t(buf[12]) << 8) | uint16_t(buf[11]));
+    bool success = crcCalculated == crcReceived;
 
     if (success) {
-        std::memcpy(&m_regCache, &buf[3], sizeof(m_regCache));
+        pins = buf[3];
+        latches = buf[4];
+        activity = buf[5];
+        cond_search_mask = buf[6];
+        cond_search_pol = buf[7];
+        status = buf[8];
+        dirty = false;
     }
+    if (writeNeeded()) {
+        selectRom();
+        {
+            oneWire.write(ACCESS_WRITE);
+            oneWire.write(desiredLatches);
+
+            /* data is sent again, inverted to guard against transmission errors */
+            oneWire.write(~desiredLatches);
+
+            /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
+            if (oneWire.read() == ACK_SUCCESS) {
+                pins = oneWire.read();
+            }
+        }
+    }
+
+    oneWire.reset();
 
     if (success != m_connected) {
         if (success) {
@@ -88,7 +92,41 @@ DS2408::update() const
         } else {
             CL_LOG_WARN("DS2408 disconnected ") << address.toString();
         }
+        m_connected = success;
     }
-    oneWire.reset();
-    m_connected = success;
+    return success;
+}
+
+bool
+DS2408::senseChannelImpl(uint8_t channel, State& result) const
+{
+    {
+        // to reduce onewire communication, we assume the last read value in update() is correct
+        // only in update(), actual onewire communication will take place to get the latest state
+        if (connected() && validChannel(channel)) {
+            uint8_t mask = uint8_t{0x01} << (channel - 1);
+            bool pinState = (pins & mask) > 0;
+            result = pinState ? State::Inactive : State::Active;
+            return true;
+        }
+        result = State::Unknown;
+        return false;
+    }
+}
+
+bool
+DS2408::writeChannelImpl(uint8_t channel, ChannelConfig config)
+{
+    bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
+    uint8_t mask = uint8_t{0x01} << (channel - 1);
+
+    if (latchEnabled) {
+        desiredLatches &= ~mask;
+    } else {
+        desiredLatches |= mask;
+    }
+    if (writeNeeded()) {
+        return update();
+    }
+    return true;
 }

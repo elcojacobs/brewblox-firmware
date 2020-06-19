@@ -48,7 +48,7 @@ public:
     }
 
     virtual bool
-    writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final
+    writeChannelImpl(uint8_t channel, ChannelConfig config) override final
     {
         auto pin = channelToPin(channel);
         if (pin != static_cast<decltype(pin)>(-1)) {

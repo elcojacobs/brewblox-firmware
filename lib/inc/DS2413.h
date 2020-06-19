@@ -1,8 +1,8 @@
 /*
  * Copyright 2013 Matthew McGowan
- * Copyright 2013 BrewPi/Elco Jacobs.
+ * Copyright 2013-2020 BrewPi B.V./Elco Jacobs.
  *
- * This file is part of BrewPi.
+ * This file is part of BrewBlox.
  *
  * BrewPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
+ * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -23,7 +23,7 @@
 #include "IoArray.h"
 #include "Logger.h"
 #include "OneWireDevice.h"
-#include <inttypes.h>
+#include <stdint.h>
 
 #define DS2413_FAMILY_ID 0x3A
 
@@ -37,13 +37,15 @@
  */
 class DS2413 : public OneWireDevice, public IoArray {
 private:
-    uint8_t actualState = 0b1111;
+    uint8_t actualState = 0b0000;
     uint8_t desiredState = 0b1111;
 
-    static const uint8_t ACCESS_READ = 0xF5;
-    static const uint8_t ACCESS_WRITE = 0x5A;
-    static const uint8_t ACK_SUCCESS = 0xAA;
-    static const uint8_t ACK_ERROR = 0xFF;
+    bool dirty = true;
+
+    static constexpr uint8_t ACCESS_READ = 0xF5;
+    static constexpr uint8_t ACCESS_WRITE = 0x5A;
+    static constexpr uint8_t ACK_SUCCESS = 0xAA;
+    static constexpr uint8_t ACK_ERROR = 0xFF;
 
 public:
     DS2413(OneWire& oneWire, OneWireAddress address = 0)
@@ -76,15 +78,15 @@ public:
     senseChannelImpl(uint8_t channel, State& result) const override final;
 
     virtual bool
-    writeChannelImpl(uint8_t channel, const ChannelConfig& config) override final;
+    writeChannelImpl(uint8_t channel, ChannelConfig config) override final;
 
     virtual bool
     supportsFastIo() const override final
     {
         return false;
     }
+    bool writeNeeded();
 
 private:
-    bool writeNeeded();
     bool processStatus(uint8_t data);
 };

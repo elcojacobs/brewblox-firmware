@@ -70,6 +70,8 @@ protected:
     OneWireAddress address;
     bool connected = true;
     bool dropped = true;
+
+    bool selected = false;
     bool parasite = false;
     uint8_t search_bitnr = 0;
 

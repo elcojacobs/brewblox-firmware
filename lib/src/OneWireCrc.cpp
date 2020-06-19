@@ -29,24 +29,35 @@ OneWireCrc8(const uint8_t* addr, uint8_t len)
 }
 
 uint16_t
-OneWireCrc16(const uint8_t* input, uint16_t len)
+OneWireCrc16Update(uint8_t input, uint16_t crc)
 {
     static const uint8_t oddparity[16] = {0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
+
+    // Even though we're just copying a byte from the input,
+    // we'll be doing 16-bit computation with it.
+    uint16_t cdata = input;
+    cdata = (cdata ^ crc) & 0xff;
+    crc >>= 8;
+
+    if (oddparity[cdata & 0x0F] ^ oddparity[cdata >> 4]) {
+        crc ^= 0xC001;
+    }
+    cdata <<= 6;
+    crc ^= cdata;
+    cdata <<= 1;
+    crc ^= cdata;
+
+    return crc;
+}
+
+uint16_t
+OneWireCrc16(const uint8_t* input, uint16_t len)
+{
     uint16_t crc = 0;
     for (uint16_t i = 0; i < len; i++) {
         // Even though we're just copying a byte from the input,
         // we'll be doing 16-bit computation with it.
-        uint16_t cdata = input[i];
-        cdata = (cdata ^ crc) & 0xff;
-        crc >>= 8;
-
-        if (oddparity[cdata & 0x0F] ^ oddparity[cdata >> 4]) {
-            crc ^= 0xC001;
-        }
-        cdata <<= 6;
-        crc ^= cdata;
-        cdata <<= 1;
-        crc ^= cdata;
+        crc = OneWireCrc16Update(input[i], crc);
     }
 
     return crc;

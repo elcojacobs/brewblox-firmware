@@ -49,5 +49,5 @@ protected:
     OneWire& oneWire;
     OneWireAddress address;
 
-    mutable bool m_connected = false;
+    bool m_connected = false;
 };

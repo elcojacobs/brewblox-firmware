@@ -23,10 +23,11 @@
 #include "../inc/OneWireMockDriver.h"
 #include "DS18B20.h"
 #include "DS18B20mock.h"
+#include "DS2408.h"
+#include "DS2408mock.h"
 #include "DS2413.h"
 #include "DS2413mock.h"
-
-#include <math.h>
+#include "MotorValve.h"
 
 namespace Catch {
 template <>
@@ -45,7 +46,7 @@ makeValidAddress(OneWireAddress addr)
     return addr;
 }
 
-SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
+SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
 {
     OneWireMockDriver owMock;
     OneWire ow(owMock);
@@ -163,6 +164,49 @@ SCENARIO("A mocked OneWire bus and DS18B20 sensor", "[onewire]")
         THEN("A DS2413 class can use it on the fake bus")
         {
             DS2413 ds1(ow, addr3);
+
+            ActuatorDigitalBase::State result;
+            ds1.update();
+            CHECK(ds1.connected() == true);
+            CHECK(ds1.senseChannel(1, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+            CHECK(ds1.senseChannel(2, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            // note that for IoArray ACTIVE_HIGH means OUTPUT and ACTIVE
+            // It is actually an open drain pull down on in the DS2413
+            // Should we rename this?
+            CHECK(ds1.writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_HIGH));
+            CHECK(ds1.senseChannel(1, result));
+            CHECK(result == ActuatorDigitalBase::State::Active);
+
+            CHECK(ds1.senseChannel(2, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+        }
+    }
+
+    WHEN("A mock DS2408 is attached")
+    {
+        auto addr4 = makeValidAddress(0x0022223344556629);
+        auto ds2408mock = std::make_shared<DS2408Mock>(addr4);
+        owMock.attach(ds2408mock);
+        THEN("Reset returns a presence")
+        {
+            CHECK(ow.reset() == true);
+        }
+
+        THEN("It can be found with a bus search")
+        {
+            OneWireAddress addr(0);
+            ow.reset();
+            bool found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addr4);
+        }
+
+        THEN("A DS2408 class can use it on the fake bus")
+        {
+            DS2408 ds1(ow, addr4);
 
             ActuatorDigitalBase::State result;
             ds1.update();

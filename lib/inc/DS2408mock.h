@@ -24,7 +24,7 @@
 
 class DS2408Mock : public OneWireMockDevice {
 private:
-    uint8_t registers[13] = {0};
+    uint8_t registers[9] = {0};
     uint8_t& cmd = registers[0];
     uint8_t& addrl = registers[1];
     uint8_t& addrh = registers[2];
@@ -34,11 +34,10 @@ private:
     uint8_t& conditialSearchMask = registers[6];
     uint8_t& conditialSearchPolarity = registers[7];
     uint8_t& status = registers[8];
-    uint8_t& crcl = registers[11];
-    uint8_t& crch = registers[12];
-    uint8_t externalPullDowns = 0x00;
+
+    uint8_t externalPullDowns = 0xFF;
     uint8_t sampleCounter = 0;
-    uint8_t samples[32] = {0};
+    uint16_t crc = 0;
 
 public:
     static constexpr uint8_t family_code{0x29};
@@ -47,9 +46,18 @@ public:
         : OneWireMockDevice(address)
     {
         status = 0x08; // Only power on reset bit is high
-        registers[9] = 0xFF;
-        registers[10] = 0xFF;
-        update();
+        latches = 0xFF;
+        pins = 0xFF;
+        updateStatus();
+    }
+
+    void updateStatus()
+    {
+        if (!parasite) {
+            status |= uint8_t(0x80);
+        } else {
+            status &= ~uint8_t(0x80);
+        }
     }
 
     void update()
@@ -57,49 +65,55 @@ public:
         // conditional search is not implemented in this mock
         // neither is RSTZ output
         // neither are activity latches
-        if (!parasite) {
-            status |= uint8_t(0x80);
-        } else {
-            status &= ~uint8_t(0x80);
-        }
+        updateStatus();
 
         pins = latches & externalPullDowns;
-        uint16_t crc = OneWireCrc16(registers, 11);
-        crch = crc >> 8;
-        crcl = crc & 0xFF;
     }
 
     virtual void processImpl(uint8_t newCmd) override final
     {
-        if (newCmd) { // repeat last command if no new command received (0x00)
+        if (newCmd) {
             cmd = newCmd;
+            crc = OneWireCrc16Update(cmd, 0);
         }
         switch (cmd) {
         case 0xF0: // Read PIO registers, start address is 0x0088
         {
-            addrl = recv();
-            addrh = recv();
-            update();
-            uint16_t idx = (uint16_t(addrh) << 8) | addrl - uint16_t(0x0088) + 3;
-            while (idx < 13) {
-                send(registers[idx]);
+            if (newCmd == 0xF0) {
+                // this command cannot be repeated, so command code must be received each time
+                addrl = recv();
+                crc = OneWireCrc16Update(addrl, crc);
+                addrh = recv();
+                crc = OneWireCrc16Update(addrh, crc);
+                update();
+                uint16_t idx = ((uint16_t(addrh) << 8) | addrl) - uint16_t(0x0088) + 3;
+                while (idx < 9) {
+                    uint8_t data = registers[idx++];
+                    crc = OneWireCrc16Update(data, crc);
+                    send(data);
+                }
+                crc = OneWireCrc16Update(0xFF, crc);
+                send(0xFF);
+                crc = OneWireCrc16Update(0xFF, crc);
+                send(0xFF);
+                uint16_t invertedCrc = ~crc;
+                send(invertedCrc & 0xFF);
+                send(invertedCrc >> 8);
             }
         } break;
         case 0xF5: // Channel access read, can be repeatedly read. 32x pins followed by inverted 16-bit CRC
         {
             if (sampleCounter < 32) {
                 pins = latches & externalPullDowns;
+                crc = OneWireCrc16Update(pins, crc);
                 send(pins);
-                samples[sampleCounter] = pins;
             }
             if (sampleCounter == 32) {
-                uint16_t crc = OneWireCrc16(registers, 11);
-                crch = crc >> 8;
-                crcl = crc & 0xFF;
-                send(crch);
+                send(crc & 0xFF);
             } else {
+                send(crc >> 8);
                 sampleCounter = 0;
-                send(crcl);
+                crc = 0;
             }
         } break;
         case 0x5A: // Channel access write
@@ -109,6 +123,7 @@ public:
             if (newLatches == inverted) {
                 send(0xAA); // confirm
                 latches = newLatches;
+                update();
                 send(pins);
             }
         } break;
