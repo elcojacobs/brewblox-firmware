@@ -161,7 +161,7 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             CHECK(addr == addr3);
         }
 
-        THEN("A DS2413 class can use it on the fake bus")
+        THEN("A DS2413 class can use it as output")
         {
             DS2413 ds1(ow, addr3);
 
@@ -182,6 +182,47 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
 
             CHECK(ds1.senseChannel(2, result));
             CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            CHECK(ds1.writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_LOW));
+            CHECK(ds1.writeChannelConfig(2, IoArray::ChannelConfig::ACTIVE_HIGH));
+            CHECK(ds1.senseChannel(1, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            CHECK(ds1.senseChannel(2, result));
+            CHECK(result == ActuatorDigitalBase::State::Active);
+        }
+
+        THEN("A DS2413 class can use it as input")
+        {
+            DS2413 ds1(ow, addr3);
+
+            ActuatorDigitalBase::State result;
+            CHECK(ds1.writeChannelConfig(1, IoArray::ChannelConfig::INPUT));
+            CHECK(ds1.writeChannelConfig(2, IoArray::ChannelConfig::INPUT));
+            CHECK(ds1.senseChannel(1, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            CHECK(ds1.senseChannel(2, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            ds1mock->setExternalPullDownA(true);
+
+            ds1.update();
+            CHECK(ds1.senseChannel(1, result));
+            CHECK(result == ActuatorDigitalBase::State::Active);
+
+            CHECK(ds1.senseChannel(2, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            ds1mock->setExternalPullDownA(false);
+            ds1mock->setExternalPullDownB(true);
+
+            ds1.update();
+            CHECK(ds1.senseChannel(1, result));
+            CHECK(result == ActuatorDigitalBase::State::Inactive);
+
+            CHECK(ds1.senseChannel(2, result));
+            CHECK(result == ActuatorDigitalBase::State::Active);
         }
     }
 
@@ -204,7 +245,7 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             CHECK(addr == addr4);
         }
 
-        THEN("A DS2408 class can use it as output")
+        THEN("A DS2408 class can use it as output driver")
         {
             DS2408 ds1(ow, addr4);
 
