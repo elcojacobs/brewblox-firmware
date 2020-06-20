@@ -11,4 +11,5 @@ if python -m compiledb make $MAKE_ARGS $@; then
     chmod 777 compile_commands.json
     popd > /dev/null
     rm -f "compile_commands.json"
+    find . -name "*.gcda" -type f -delete # remove old profile results
 fi

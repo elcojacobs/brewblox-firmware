@@ -19,6 +19,7 @@
 
 #include "OneWireMockDevice.h"
 #include "OneWireMockDriver.h"
+#include <algorithm>
 
 uint8_t
 OneWireMockDevice::read()
@@ -30,6 +31,11 @@ OneWireMockDevice::read()
     uint8_t b = 0xFF;
     if (!slaveToMaster.empty()) {
         b = slaveToMaster.front();
+        if (!flippedReadBits.empty()) {
+            auto flipMask = flippedReadBits.front();
+            b ^= flipMask;
+            flippedReadBits.pop_front();
+        }
         slaveToMaster.pop_front();
     }
     return b;
@@ -38,8 +44,29 @@ OneWireMockDevice::read()
 void
 OneWireMockDevice::write(uint8_t b)
 {
+    if (!flippedWriteBits.empty()) {
+        auto flipMask = flippedWriteBits.front();
+        b ^= flipMask;
+        flippedWriteBits.pop_front();
+    }
+
     if (!dropped) {
         masterToSlave.push_back(b);
+    }
+}
+
+void
+OneWireMockDevice::positionsToMasks(const std::vector<uint8_t>& positions, std::deque<uint8_t>& queue)
+{
+    auto maxPos = std::max_element(positions.cbegin(), positions.cend());
+    if (maxPos == positions.cend()) {
+        return;
+    }
+    auto numBytes = (*maxPos + 4) / 8;
+    queue.assign(numBytes, 0x00);
+    for (const auto& pos : positions) {
+        uint8_t mask = 0x1 << (pos % 8);
+        queue[pos / 8] |= mask;
     }
 }
 
@@ -93,7 +120,7 @@ OneWireMockDevice::reset()
 void
 OneWireMockDevice::process()
 {
-    if (dropped) {
+    if (dropped || !connected) {
         masterToSlave.clear();
         return;
     }

@@ -95,6 +95,53 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             CHECK(sensor.value() == -10.0);
         }
 
+        WHEN("The sensor is disconnected")
+        {
+            DS18B20 sensor(ow, addr1);
+            mockSensor->setConnected(false);
+            sensor.update();
+            sensor.update();
+
+            THEN("It reads as invalid")
+            {
+                CHECK(sensor.valid() == false);
+            }
+
+            THEN("When it comes back, the first value is invalid and the second is valid (reset detection)")
+            {
+                mockSensor->setConnected(true);
+                sensor.update();
+                CHECK(sensor.valid() == false);
+                sensor.update();
+                CHECK(sensor.valid() == true);
+            }
+        }
+
+        WHEN("Communication bitflips when reading the sensor occur")
+        {
+            DS18B20 sensor(ow, addr1);
+            mockSensor->setTemperature(temp_t{21.0});
+            sensor.update();
+            sensor.update();
+
+            THEN("A single bitflip will not give an error due to a retry")
+            {
+                // 9 scratchpad bytes are read, 81 bits
+                mockSensor->flipReadBits({13});
+                sensor.update();
+                CHECK(sensor.valid() == true);
+                CHECK(sensor.value() == 21.0);
+            }
+
+            THEN("A bitflip in 2 scratchpads will give an error")
+            {
+                mockSensor->flipReadBits({13, 81 + 13});
+                sensor.update();
+                CHECK(sensor.valid() == false);
+                CHECK(sensor.value() == 0.0);
+            }
+        }
+
         AND_WHEN("Another sensor is connected")
         {
 

@@ -21,6 +21,7 @@
 
 #include "OneWireAddress.h"
 #include <deque>
+#include <vector>
 class OneWireMockDriver;
 
 class OneWireMockDevice {
@@ -66,6 +67,25 @@ public:
         return !dropped;
     }
 
+    // flip an upcoming bit in to test communication errors
+    void flipWrittenBits(const std::vector<uint8_t>& positions)
+    {
+        positionsToMasks(positions, flippedWriteBits);
+    }
+
+    void flipReadBits(const std::vector<uint8_t>& positions)
+    {
+        positionsToMasks(positions, flippedReadBits);
+    }
+
+    void setConnected(bool v)
+    {
+        connected = v;
+    }
+
+private:
+    void positionsToMasks(const std::vector<uint8_t>& positions, std::deque<uint8_t>& queue);
+
 protected:
     OneWireAddress address;
     bool connected = true;
@@ -74,6 +94,8 @@ protected:
     bool selected = false;
     bool parasite = false;
     uint8_t search_bitnr = 0;
+    std::deque<uint8_t> flippedWriteBits;
+    std::deque<uint8_t> flippedReadBits;
 
 private:
     std::deque<uint8_t> masterToSlave;
