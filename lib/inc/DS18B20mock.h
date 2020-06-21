@@ -35,8 +35,8 @@ public:
     DS18B20Mock(const OneWireAddress& address)
         : OneWireMockDevice(address)
     {
-        scratchpad[0] = 0xA0; // TLSB
-        scratchpad[1] = 0x00; // TMSB
+        scratchpad[0] = 0x40; // TLSB
+        scratchpad[1] = 0x01; // TMSB // default to 20 deg
         scratchpad[2] = 0x4B; // THRE
         scratchpad[3] = 0x46; // TLRE
         scratchpad[4] = 0x7F; // Conf

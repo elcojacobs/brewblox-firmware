@@ -82,7 +82,7 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             CHECK(sensor.valid() == false); // a reset will be detected, triggering a re-init
             sensor.update();
             CHECK(sensor.valid() == true);
-            CHECK(sensor.value() == 10.0);
+            CHECK(sensor.value() == 20.0);
 
             mockSensor->setTemperature(temp_t{21.0});
             CHECK(mockSensor->getTemperature() == 21.0);
@@ -175,8 +175,8 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             sensor2.update();
             CHECK(sensor1.valid() == true);
             CHECK(sensor2.valid() == true);
-            CHECK(sensor1.value() == 10.0);
-            CHECK(sensor2.value() == 10.0);
+            CHECK(sensor1.value() == 20.0);
+            CHECK(sensor2.value() == 20.0);
 
             mockSensor->setTemperature(temp_t{21.0});
             mockSensor2->setTemperature(temp_t{22.0});
