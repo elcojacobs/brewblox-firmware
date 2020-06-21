@@ -52,7 +52,7 @@ public:
      * Constructor initializes both caches to 0xFF.
      * This means the output latches are disabled and all pins are sensed high
      */
-    DS2408(OneWire& oneWire, OneWireAddress address = 0)
+    DS2408(OneWire& oneWire, OneWireAddress address = familyCode)
         : OneWireDevice(oneWire, address)
         , IoArray(8)
     {
@@ -62,6 +62,8 @@ public:
      * Destructor is default.
      */
     virtual ~DS2408() = default;
+
+    static constexpr uint8_t familyCode{0x29};
 
     bool update();
     bool writeNeeded() const;

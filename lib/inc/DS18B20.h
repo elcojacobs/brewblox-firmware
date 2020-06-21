@@ -77,6 +77,8 @@ public:
 
     virtual ~DS18B20() = default;
 
+    static constexpr uint8_t familyCode{0x28};
+
     virtual bool valid() const override final
     {
         return m_connected;

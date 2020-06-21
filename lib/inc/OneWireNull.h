@@ -31,5 +31,5 @@ public:
     virtual uint8_t read(void) override final { return 0; }
     virtual void write_bit(uint8_t) override final {}
     virtual uint8_t read_bit(void) override final { return 0; }
-    virtual uint8_t search_triplet(bool search_direction) override final { return 0; }
+    virtual uint8_t search_triplet(bool) override final { return 0; }
 };

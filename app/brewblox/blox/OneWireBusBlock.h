@@ -28,7 +28,7 @@ protected:
         if (busPtr == nullptr) {
             return false;
         }
-        while (busPtr->search(address.asUint8ptr())) {
+        while (busPtr->search(address)) {
             if (!pb_encode_tag_for_field(stream, field)) {
                 return false;
             }

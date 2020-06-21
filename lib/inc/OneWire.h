@@ -22,7 +22,8 @@ private:
     // global search state
     OneWireAddress ROM_NO;
     uint8_t lastDiscrepancy;
-    uint8_t lastDeviceFlag;
+    bool lastDeviceFlag;
+    uint8_t lockedSearchBits;
 
 public:
     // wrappers for low level functions

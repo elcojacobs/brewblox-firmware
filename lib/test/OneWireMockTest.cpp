@@ -372,40 +372,99 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
         }
     }
 
-    WHEN("Both a DS18B20 and DS2413 are connected")
+    WHEN("3x DS18B20, DS2413, and DS2408 are connected")
     {
-        auto addr1 = makeValidAddress(0x001122334455663A);
-        auto ds1mock = std::make_shared<DS2413Mock>(addr1);
-        owMock.attach(ds1mock);
-        auto addr2 = makeValidAddress(0x0011223344556628);
-        auto mockSensor = std::make_shared<DS18B20Mock>(addr2);
-        owMock.attach(mockSensor);
+        auto addrSensor1 = OneWireAddress(0x7E11'1111'1111'1128);
+        auto addrSensor2 = OneWireAddress(0xDE22'2222'2222'2228);
+        auto addrSensor3 = OneWireAddress(0xBE33'3333'3333'3328);
+        auto addrDS2413 = OneWireAddress(0x0644'4444'4444'443A);
+        auto addrDS2408 = OneWireAddress(0xDA55'5555'5555'5529);
+        owMock.attach(std::make_shared<DS18B20Mock>(addrSensor1)); // DS18B20
+        owMock.attach(std::make_shared<DS18B20Mock>(addrSensor2)); // DS18B20
+        owMock.attach(std::make_shared<DS18B20Mock>(addrSensor3)); // DS18B20
+        owMock.attach(std::make_shared<DS2413Mock>(addrDS2413));   // DS2413
+        owMock.attach(std::make_shared<DS2408Mock>(addrDS2408));   // DS2408
 
-        THEN("Then target search can determine which is found first")
+        THEN("A bus search finds 5 devices")
         {
-            OneWireAddress addr(0);
-            ow.reset();
             ow.reset_search();
-            ow.target_search(DS18B20Mock::family_code);
+
+            OneWireAddress addr(0);
             bool found = ow.search(addr);
             CHECK(found == true);
-            CHECK(addr == addr2);
-            addr = 0;
-            found = ow.search(addr);
-            CHECK(found == false);
-            CHECK(addr == 0);
+            CHECK(addr == addrSensor2);
 
-            ow.reset();
-            ow.reset_search();
             addr = 0;
-            ow.target_search(DS2413Mock::family_code);
             found = ow.search(addr);
             CHECK(found == true);
-            CHECK(addr == addr1);
+            CHECK(addr == addrSensor1);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrSensor3);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrDS2413);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrDS2408);
+
             addr = 0;
             found = ow.search(addr);
             CHECK(found == false);
-            CHECK(addr == 0);
+            CHECK(addr == OneWireAddress(0));
+        }
+
+        THEN("Then target search can select only one family code to be found")
+        {
+            ow.target_search(DS18B20Mock::family_code);
+
+            OneWireAddress addr(0);
+            bool found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrSensor2);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrSensor1);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrSensor3);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == false);
+            CHECK(addr == OneWireAddress(0));
+
+            ow.target_search(DS2413Mock::family_code);
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrDS2413);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == false);
+            CHECK(addr == OneWireAddress(0));
+
+            ow.target_search(DS2408Mock::family_code);
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == true);
+            CHECK(addr == addrDS2408);
+
+            addr = 0;
+            found = ow.search(addr);
+            CHECK(found == false);
+            CHECK(addr == OneWireAddress(0));
         }
     }
 }

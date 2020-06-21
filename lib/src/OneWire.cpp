@@ -169,8 +169,9 @@ OneWire::reset_search()
 {
     // reset the search state
     ROM_NO = 0;
-    lastDiscrepancy = 0;
+    lastDiscrepancy = 64;
     lastDeviceFlag = false;
+    lockedSearchBits = 0;
 }
 
 void
@@ -178,7 +179,8 @@ OneWire::target_search(uint8_t family_code)
 {
     // set the search state to find SearchFamily type devices
     ROM_NO = family_code;
-    lastDiscrepancy = 8;
+    lastDiscrepancy = 64;
+    lockedSearchBits = 8;
     lastDeviceFlag = false;
 }
 
@@ -189,7 +191,7 @@ OneWire::search(OneWireAddress& newAddr)
     bool search_result = false;
     bool search_direction = true;
     bool id_bit, cmp_id_bit;
-    uint8_t startDiscrepancy = lastDiscrepancy;
+    uint8_t last_zero = 64;
 
     // if the last call was not the last one
     if (!lastDeviceFlag) {
@@ -204,8 +206,8 @@ OneWire::search(OneWireAddress& newAddr)
         // loop to do the search
         do {
             // repeat search until last search had a discrepancy
-            if (id_bit_nr < lastDiscrepancy) {
-                search_direction = ROM_NO.getBit(id_bit_nr) > 0;
+            if (id_bit_nr < lastDiscrepancy || id_bit_nr < lockedSearchBits) {
+                search_direction = ROM_NO.getBit(id_bit_nr);
             } else {
                 // pick opposite of previous search
                 search_direction = (id_bit_nr == lastDiscrepancy);
@@ -222,10 +224,8 @@ OneWire::search(OneWireAddress& newAddr)
                 // no devices on bus
                 break;
             } else {
-                if (!id_bit && !cmp_id_bit) {
-                    if (id_bit_nr > lastDiscrepancy) {
-                        lastDiscrepancy = id_bit_nr;
-                    }
+                if ((!id_bit) && (!cmp_id_bit) && (!search_direction)) {
+                    last_zero = id_bit_nr;
                 }
 
                 ROM_NO.setBit(id_bit_nr, search_direction);
@@ -234,7 +234,11 @@ OneWire::search(OneWireAddress& newAddr)
         } while (id_bit_nr < 64);
 
         if (id_bit_nr >= 64 && ROM_NO.valid()) {
-            lastDeviceFlag = lastDiscrepancy == startDiscrepancy;
+            lastDiscrepancy = last_zero;
+            if (last_zero == 64 || last_zero < lockedSearchBits) {
+                // no discrepancies or discrepancy is for device outside of target_search
+                lastDeviceFlag = true;
+            };
             search_result = true;
         }
     }

@@ -59,7 +59,5 @@ OneWireDevice::setDeviceAddress(const OneWireAddress& addr)
 bool
 OneWireDevice::validAddress() const
 {
-    const uint8_t* addr = address.asUint8ptr();
-
-    return addr[0] && (OneWire::crc8(addr, 7) == addr[7]);
+    return address.valid();
 }

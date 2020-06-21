@@ -73,7 +73,7 @@ SCENARIO("A TempSensorOneWireBlock")
             auto lookup = brewbloxBox().makeCboxPtr<TempSensorOneWireBlock>(100);
             auto sensorPtr = lookup.lock();
             REQUIRE(sensorPtr);
-            CHECK(sensorPtr->get().getDeviceAddress() == 12345678);
+            CHECK(sensorPtr->get().getDeviceAddress() == OneWireAddress(12345678));
             CHECK(sensorPtr->get().getCalibration() == cnl::wrap<temp_t>(100));
 
             AND_THEN("The values that are not writable are unchanged")

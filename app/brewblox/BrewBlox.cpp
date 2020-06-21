@@ -77,16 +77,14 @@ void updateFirmwareFromStream(cbox::StreamType)
 
 // Include OneWire implementation depending on platform
 #if !defined(PLATFORM_ID) || PLATFORM_ID == 3
-#include "OneWireNull.h"
-#include "test/MockOneWireScanningFactory.h"
-using OneWireDriver = OneWireNull;
-#define ONEWIRE_ARG
+#include "DS18B20mock.h"
+#include "DS2408mock.h"
+#include "DS2413mock.h"
+#include "OneWireMockDriver.h"
 #else
 #include "DS248x.h"
-#include "OneWireScanningFactory.h"
-using OneWireDriver = DS248x;
-#define ONEWIRE_ARG 0x00
 #endif
+#include "OneWireScanningFactory.h"
 
 // Include serial connection for platform
 #if defined(SPARK)
@@ -173,11 +171,7 @@ makeBrewBloxBox()
 
     std::vector<std::unique_ptr<cbox::ScanningFactory>> scanningFactories;
     scanningFactories.reserve(1);
-#if PLATFORM_ID == 3
-    scanningFactories.push_back(std::make_unique<MockOneWireScanningFactory>(objects, theOneWire()));
-#else
     scanningFactories.push_back(std::make_unique<OneWireScanningFactory>(objects, theOneWire()));
-#endif
 
     static cbox::Box box(objectFactory, objects, objectStore, connections, std::move(scanningFactories));
 
@@ -191,13 +185,28 @@ brewbloxBox()
     return box;
 }
 
+#if !defined(PLATFORM_ID) || PLATFORM_ID == 3
 OneWire&
 theOneWire()
 {
-    static auto owDriver = OneWireDriver(ONEWIRE_ARG);
+    static auto owDriver = OneWireMockDriver();
+    static auto ow = OneWire(owDriver);
+    owDriver.attach(std::make_shared<DS18B20Mock>(OneWireAddress(0x7E11'1111'1111'1128))); // DS18B20
+    owDriver.attach(std::make_shared<DS18B20Mock>(OneWireAddress(0xDE22'2222'2222'2228))); // DS18B20
+    owDriver.attach(std::make_shared<DS18B20Mock>(OneWireAddress(0xBE33'3333'3333'3328))); // DS18B20
+    owDriver.attach(std::make_shared<DS2413Mock>(OneWireAddress(0x0644'4444'4444'443A)));  // DS2413
+    owDriver.attach(std::make_shared<DS2408Mock>(OneWireAddress(0xDA55'5555'5555'5529)));  // DS2408
+    return ow;
+}
+#else
+OneWire&
+theOneWire()
+{
+    static auto owDriver = DS248x(0x00);
     static auto ow = OneWire(owDriver);
     return ow;
 }
+#endif
 
 Logger&
 logger()

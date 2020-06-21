@@ -25,8 +25,6 @@
 #include "OneWireDevice.h"
 #include <stdint.h>
 
-#define DS2413_FAMILY_ID 0x3A
-
 /*
  * Provides access to a OneWire-addressable dual-channel I/O device.
  * The channel latch can be set to on (false) or off (true).
@@ -48,21 +46,21 @@ private:
     static constexpr uint8_t ACK_ERROR = 0xFF;
 
 public:
-    DS2413(OneWire& oneWire, OneWireAddress address = 0)
+    DS2413(OneWire& oneWire, OneWireAddress address = familyCode)
         : OneWireDevice(oneWire, address)
         , IoArray(2)
     {
     }
 
     DS2413(const DS2413&) = delete;
+
     DS2413&
     operator=(const DS2413&)
         = delete;
 
-    /**
-     * Destructor is default
-     */
     virtual ~DS2413() = default;
+
+    static constexpr uint8_t familyCode{0x3A};
 
     /**
      * Periodic update to make sure the cache is valid.

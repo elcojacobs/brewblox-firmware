@@ -34,16 +34,6 @@ public:
     }
     ~OneWireAddress() = default;
 
-    const uint8_t* asUint8ptr() const
-    { // for compatibility with OneWire classes that take a uint8_t *
-        return reinterpret_cast<const uint8_t*>(&address);
-    }
-
-    uint8_t* asUint8ptr()
-    { // for compatibility with OneWire classes that take a uint8_t *
-        return reinterpret_cast<uint8_t*>(&address);
-    }
-
     bool operator==(const OneWireAddress& other) const
     {
         return address == other.address;
@@ -75,10 +65,25 @@ public:
         }
     }
 
+    operator uint64_t()
+    {
+        return address;
+    }
+
     bool valid() const;
 
     std::string toString() const;
 
 private:
+    const uint8_t* asUint8ptr() const
+    { // for compatibility with OneWire classes that take a uint8_t *
+        return reinterpret_cast<const uint8_t*>(&address);
+    }
+
+    uint8_t* asUint8ptr()
+    { // for compatibility with OneWire classes that take a uint8_t *
+        return reinterpret_cast<uint8_t*>(&address);
+    }
+
     uint64_t address;
 };
