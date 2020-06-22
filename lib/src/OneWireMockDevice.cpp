@@ -56,7 +56,7 @@ OneWireMockDevice::write(uint8_t b)
 }
 
 void
-OneWireMockDevice::positionsToMasks(const std::vector<uint8_t>& positions, std::deque<uint8_t>& queue)
+OneWireMockDevice::positionsToMasks(const std::vector<uint32_t>& positions, std::deque<uint8_t>& queue)
 {
     auto maxPos = std::max_element(positions.cbegin(), positions.cend());
     if (maxPos == positions.cend()) {

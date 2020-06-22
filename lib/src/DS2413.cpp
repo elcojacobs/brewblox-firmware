@@ -48,8 +48,6 @@ DS2413::update()
     }
     oneWire.reset();
 
-    dirty = !success;
-
     if (success != m_connected) {
         if (success) {
             CL_LOG_INFO("DS2413 connected: ") << address.toString();
@@ -64,7 +62,7 @@ DS2413::update()
 bool
 DS2413::writeNeeded()
 {
-    return (desiredState & 0b1010) != (actualState & 0b1010);
+    return !m_connected || (desiredState & 0b1010) != (actualState & 0b1010);
 }
 
 bool

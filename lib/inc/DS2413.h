@@ -37,9 +37,6 @@ class DS2413 : public OneWireDevice, public IoArray {
 private:
     uint8_t actualState = 0b0000;
     uint8_t desiredState = 0b1111;
-
-    bool dirty = true;
-
     static constexpr uint8_t ACCESS_READ = 0xF5;
     static constexpr uint8_t ACCESS_WRITE = 0x5A;
     static constexpr uint8_t ACK_SUCCESS = 0xAA;

@@ -36,7 +36,7 @@ static constexpr uint8_t ADDRESS_LATCH_STATE_LOWER = 0x89;
 bool
 DS2408::writeNeeded() const
 {
-    return !connected() || desiredLatches != latches;
+    return !m_connected || desiredLatches != latches;
 }
 
 bool

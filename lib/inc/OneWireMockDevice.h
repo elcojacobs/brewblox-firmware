@@ -68,12 +68,12 @@ public:
     }
 
     // flip an upcoming bit in to test communication errors
-    void flipWrittenBits(const std::vector<uint8_t>& positions)
+    void flipWrittenBits(const std::vector<uint32_t>& positions)
     {
         positionsToMasks(positions, flippedWriteBits);
     }
 
-    void flipReadBits(const std::vector<uint8_t>& positions)
+    void flipReadBits(const std::vector<uint32_t>& positions)
     {
         positionsToMasks(positions, flippedReadBits);
     }
@@ -84,7 +84,7 @@ public:
     }
 
 private:
-    void positionsToMasks(const std::vector<uint8_t>& positions, std::deque<uint8_t>& queue);
+    void positionsToMasks(const std::vector<uint32_t>& positions, std::deque<uint8_t>& queue);
 
 protected:
     OneWireAddress address;
