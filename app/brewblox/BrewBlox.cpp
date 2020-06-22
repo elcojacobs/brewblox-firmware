@@ -77,9 +77,9 @@ void updateFirmwareFromStream(cbox::StreamType)
 
 // Include OneWire implementation depending on platform
 #if !defined(PLATFORM_ID) || PLATFORM_ID == 3
-#include "DS18B20mock.h"
-#include "DS2408mock.h"
-#include "DS2413mock.h"
+#include "DS18B20Mock.h"
+#include "DS2408Mock.h"
+#include "DS2413Mock.h"
 #include "OneWireMockDriver.h"
 #else
 #include "DS248x.h"
