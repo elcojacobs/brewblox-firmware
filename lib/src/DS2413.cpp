@@ -23,148 +23,98 @@
 #include "../inc/OneWire.h"
 
 bool
-DS2413::cacheIsValid() const
+DS2413::update()
 {
-    uint8_t upperInverted = (~m_cachedState & 0xf0) >> 4;
-    uint8_t lower = m_cachedState & 0x0f;
 
-    return upperInverted == lower;
-}
-
-bool
-DS2413::writeLatchBit(Pio pio, bool latchEnabled)
-{
-    bool ok = false;
-
-    while (!cacheIsValid()) {
-        // read a fresh value form the device
-        update();
+    bool success = false;
+    if (!writeNeeded()) { // skip read if we need to write anyway, which also returns status
+        selectRom();
+        oneWire.write(ACCESS_READ);
+        uint8_t data = oneWire.read();
+        success = processStatus(data);
     }
-
-    if (!connected()) {
-        return false; // cannot read from device successfully
+    if (writeNeeded()) { // check again
+        selectRom();
+        oneWire.write(ACCESS_WRITE);
+        uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
+        oneWire.write(data);
+        oneWire.write(~data); // write inverted for error checking
+        data = oneWire.read();
+        success = false;
+        if (data == ACK_SUCCESS) {
+            data = oneWire.read();
+            success = processStatus(data);
+        }
     }
+    oneWire.reset();
 
-    uint8_t mask = latchWriteMask(pio);
-    uint8_t oldVal = writeByteFromCache();
-    uint8_t newVal = oldVal;
-
-    if (latchEnabled) {
-        newVal &= ~mask; // 0 means latch transistor is active
-    } else {
-        newVal |= mask; // 1 means latch transistor is inactive
+    if (success != m_connected) {
+        if (success) {
+            CL_LOG_INFO("DS2413 connected: ") << address.toString();
+        } else {
+            CL_LOG_WARN("DS2413 disconnected: ") << address.toString();
+        }
+        m_connected = success;
     }
-
-    if (oldVal == newVal) {
-        ok = true; // skip write if already correct value to reduce OneWire communication
-    } else {
-        ok = channelWriteAll(newVal);
-        ok = update();
-    }
-
-    return ok;
-}
-
-bool
-DS2413::readLatchBit(Pio pio, bool& isEnabled) const
-{
-    if (cacheIsValid() && connected()) {
-        isEnabled = ((m_cachedState & latchReadMask(pio)) == 0);
-        return true;
-    } else {
-        isEnabled = false;
-        return false;
-    }
-}
-
-bool
-DS2413::update() const
-{
-    m_cachedState = accessRead();
-    bool success = cacheIsValid();
-    if (connected() && !success) {
-        CL_LOG_WARN("DS2413 disconnected: ") << getDeviceAddress().toString();
-    } else if (!connected() && success) {
-        CL_LOG_INFO("DS2413 connected: ") << getDeviceAddress().toString();
-    }
-    m_connected = success;
     return success;
 }
 
-uint8_t
-DS2413::writeByteFromCache()
+bool
+DS2413::writeNeeded()
 {
-    uint8_t returnval = 0;
-
-    if (m_cachedState & latchReadMask(Pio::A)) {
-        returnval |= latchWriteMask(Pio::A);
-    }
-    if (m_cachedState & latchReadMask(Pio::B)) {
-        returnval |= latchWriteMask(Pio::B);
-    }
-
-    return returnval;
+    return !m_connected || (desiredState & 0b1010) != (actualState & 0b1010);
 }
 
 bool
-DS2413::sense(Pio pio, bool& isPulledDown) const
+DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
 {
-    if (cacheIsValid() && connected()) {
-        isPulledDown = ((m_cachedState & senseMask(pio)) == 0);
-        return true;
+    bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
+    uint8_t bitmask;
+    if (channel == 1) {
+        bitmask = 0b0010;
+    } else if (channel == 2) {
+        bitmask = 0b1000;
     } else {
         return false;
     }
+
+    if (latchEnabled) {
+        desiredState &= ~bitmask;
+    } else {
+        desiredState |= bitmask;
+    }
+    if (writeNeeded()) {
+        return update();
+    }
+    return true;
 }
 
-/**
- *
- * @return
- */
-uint8_t
-DS2413::accessRead() const
-{
-    oneWire.reset();
-    oneWire.select(address.asUint8ptr());
-    oneWire.write(ACCESS_READ);
-
-    uint8_t data;
-    data = oneWire.read();
-
-    return data;
-}
-
-/**
- *    Writes the state of all PIOs in one operation.
- *    /param b pio data - PIOA is bit 0 (lsb), PIOB is bit 1
- *    /param maxTries the maximum number of attempts before giving up.
- *    /return true on success
- */
 bool
-DS2413::accessWrite(uint8_t b,
-                    uint8_t maxTries)
+DS2413::senseChannelImpl(uint8_t channel, State& result) const
 {
-    // b |= 0xFC;        /* Upper 6 bits should be set to 1's */
-    uint8_t ack = 0;
-
-    do {
-        oneWire.reset();
-        oneWire.select(address.asUint8ptr());
-        oneWire.write(ACCESS_WRITE);
-        oneWire.write(b);
-
-        /* data is sent again, inverted to guard against transmission errors */
-        oneWire.write(~b);
-
-        /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
-        ack = oneWire.read();
-
-        if (ack == ACK_SUCCESS) {
-            oneWire.read(); // status byte sent after ack
+    if (connected()) {
+        // to reduce onewire communication, we assume the last read value in update() is correct
+        // only in update(), actual onewire communication will take place to get the latest state
+        if (channel == 1) {
+            result = (actualState & 0b0001) == 0 ? State::Active : State::Inactive;
+            return true;
+        } else if (channel == 2) {
+            result = (actualState & 0b0100) == 0 ? State::Active : State::Inactive;
+            return true;
         }
-    } while ((ack != ACK_SUCCESS) && (maxTries-- > 0));
+    }
+    result = State::Unknown;
+    return false;
+}
 
-    oneWire.reset();
-
-    return ack == ACK_SUCCESS;
+bool
+DS2413::processStatus(uint8_t data)
+{
+    uint8_t newState = data & 0x0F;
+    uint8_t verification = ((~data) >> 4) & 0xF;
+    if (newState == verification) {
+        actualState = newState;
+        return true;
+    }
+    return false;
 }

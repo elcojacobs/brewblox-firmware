@@ -124,7 +124,7 @@ public:
         result.currentPeriod = 0;
         result.previousActive = 0;
         result.previousPeriod = 0;
-        result.lastState = history[0].newState;
+        result.lastState = history.front().newState;
         auto end = now;
         auto start = ticks_millis_t(0);
         //auto minStartTime = now - maxHistory;
@@ -164,7 +164,6 @@ public:
                 }
             }
         }
-
         return result;
     }
 

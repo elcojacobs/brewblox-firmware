@@ -34,6 +34,47 @@ public:
     }
     ~OneWireAddress() = default;
 
+    bool operator==(const OneWireAddress& other) const
+    {
+        return address == other.address;
+    }
+
+    const uint8_t& operator[](uint8_t i) const
+    {
+        return asUint8ptr()[i];
+    }
+
+    uint8_t& operator[](uint8_t i)
+    {
+        return asUint8ptr()[i];
+    }
+
+    bool getBit(uint8_t i)
+    {
+        uint64_t mask = uint64_t{0x01} << i;
+        return (mask & uint64_t(address)) > 0;
+    }
+
+    void setBit(uint8_t i, bool val)
+    {
+        uint64_t mask = uint64_t{0x01} << i;
+        if (val) {
+            address |= mask;
+        } else {
+            address &= ~mask;
+        }
+    }
+
+    operator uint64_t()
+    {
+        return address;
+    }
+
+    bool valid() const;
+
+    std::string toString() const;
+
+private:
     const uint8_t* asUint8ptr() const
     { // for compatibility with OneWire classes that take a uint8_t *
         return reinterpret_cast<const uint8_t*>(&address);
@@ -44,13 +85,5 @@ public:
         return reinterpret_cast<uint8_t*>(&address);
     }
 
-    operator uint64_t() const
-    {
-        return address;
-    }
-
-    std::string toString() const;
-
-private:
     uint64_t address;
 };

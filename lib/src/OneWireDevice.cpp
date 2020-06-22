@@ -1,8 +1,20 @@
 /*
- * File:   OneWireSwitch.cpp
- * Author: Elco
+ * Copyright 2020 BrewPi B.V.
  *
- * Created on 15 december 2014, 21:38
+ * This file is part of the BrewBlox Control Library.
+ *
+ * BrewBlox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BrewBlox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "../inc/OneWireDevice.h"
@@ -47,7 +59,5 @@ OneWireDevice::setDeviceAddress(const OneWireAddress& addr)
 bool
 OneWireDevice::validAddress() const
 {
-    const uint8_t* addr = address.asUint8ptr();
-
-    return addr[0] && (OneWire::crc8(addr, 7) == addr[7]);
+    return address.valid();
 }

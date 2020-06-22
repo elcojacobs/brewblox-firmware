@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 BrewPi B.V.
+ * Copyright 2018-2020 BrewPi B.V.
  *
  * This file is part of the BrewBlox Control Library.
  *
@@ -19,20 +19,43 @@
 
 #pragma once
 
-#include "DallasTemperature.h"
 #include "OneWireAddress.h"
+#include "OneWireCrc.h"
 #include "OneWireDevice.h"
 #include "TempSensor.h"
 #include "Temperature.h"
 
 class OneWire;
 
-#define ONEWIRE_TEMP_SENSOR_PRECISION (4)
+class DS18B20 final : public TempSensor, public OneWireDevice {
+    class ScratchPad {
+    public:
+        ScratchPad()
+        {
+            data[8] = 1; // force CRC error when data is not changed
+        }
+        ~ScratchPad() = default;
 
-class TempSensorOneWire final : public TempSensor, public OneWireDevice {
+        uint8_t& operator[](uint8_t i)
+        {
+            return data[i];
+        }
+        const uint8_t& operator[](uint8_t i) const
+        {
+            return data[i];
+        }
+
+        bool valid()
+        {
+            return OneWireCrc8(data, 8) == data[8];
+        }
+
+    private:
+        uint8_t data[9] = {};
+    };
+
 public:
 private:
-    DallasTemperature m_sensor;
     temp_t m_calibrationOffset;
     temp_t m_cachedValue = 0;
 
@@ -44,16 +67,17 @@ public:
 	 *    on the bus is used.
 	 * /param calibration	A temperature value that is added to all readings. This can be used to calibrate the sensor.	 
 	 */
-    TempSensorOneWire(OneWire& bus, OneWireAddress _address = 0, const temp_t& _calibrationOffset = 0)
+    DS18B20(OneWire& bus, OneWireAddress _address = 0, const temp_t& _calibrationOffset = 0)
         : OneWireDevice(bus, _address)
-        , m_sensor(&bus)
         , m_calibrationOffset(_calibrationOffset)
     {
     }
-    TempSensorOneWire(const TempSensorOneWire&) = delete;
-    TempSensorOneWire& operator=(const TempSensorOneWire&) = delete;
+    DS18B20(const DS18B20&) = delete;
+    DS18B20& operator=(const DS18B20&) = delete;
 
-    virtual ~TempSensorOneWire() = default;
+    virtual ~DS18B20() = default;
+
+    static constexpr uint8_t familyCode{0x28};
 
     virtual bool valid() const override final
     {
@@ -85,4 +109,16 @@ private:
 	 * updates lastRequestTime. On successful, leaves lastRequestTime alone and returns DEVICE_DISCONNECTED.
 	 */
     temp_t readAndConstrainTemp();
+
+    bool readScratchPad(ScratchPad& scratchPad);
+
+    void writeScratchPad(const ScratchPad& scratchPad, bool copyToEeprom);
+
+    void recallScratchpad();
+
+    bool isParasitePowered();
+
+    void startConversion();
+
+    int16_t getRawTemp();
 };
