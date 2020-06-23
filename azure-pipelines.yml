@@ -4,9 +4,7 @@ resources:
   containers:
     - container: compiler
       image: brewblox/firmware-compiler:amd-latest
-      workingDirectory: /firmware/build
-      volumes:
-        - $(System.DefaultWorkingDirectory):/firmware
+      options: --workdir /firmware/build --volume $(System.DefaultWorkingDirectory):/firmware
 
 pool:
   vmImage: "Ubuntu-18.04"
