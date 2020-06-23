@@ -30,15 +30,15 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash compile-proto.sh
         target: compiler
         displayName: Compile proto
 
-      - bash: build/build-tests.sh
+      - script: bash build-tests.sh
         target: compiler
         displayName: Build tests
 
-      - bash: build/run-tests-with-coverage.sh
+      - script: bash run-tests-with-coverage.sh
         target: compiler
         displayName: Run tests
 
@@ -56,11 +56,11 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash compile-proto.sh
         target: compiler
         displayName: Compile proto
 
-      - script: build/build-sim-amd.sh
+      - script: bash build-sim-amd.sh
         target: compiler
         displayName: Build executable
 
@@ -76,12 +76,12 @@ jobs:
   #     - checkout: self
   #       submodules: recursive
 
-  #     - bash: build/compile-proto.sh
+  #     - script: bash compile-proto.sh
   #       target: compiler
   #       displayName: Compile proto
 
   #       # should not be run in compiler
-  #     - script: build/build-sim-arm.sh
+  #     - script: bash build-sim-arm.sh
   #       displayName: Build executable
 
   #     - publish: build/target/brewblox-gcc
@@ -96,7 +96,7 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash compile-proto.sh
         target: compiler
         displayName: Compile proto
 
@@ -117,7 +117,7 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash compile-proto.sh
         target: compiler
         displayName: Compile proto
 
