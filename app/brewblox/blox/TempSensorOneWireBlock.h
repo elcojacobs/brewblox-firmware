@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TempSensorOneWire.h"
+#include "DS18B20.h"
 #include "Temperature.h"
 #include "blox/Block.h"
 #include "blox/FieldTags.h"
@@ -11,7 +11,7 @@ theOneWire();
 
 class TempSensorOneWireBlock : public Block<BrewBloxTypes_BlockType_TempSensorOneWire> {
 private:
-    TempSensorOneWire sensor;
+    DS18B20 sensor;
 
 public:
     TempSensorOneWireBlock()
@@ -70,20 +70,20 @@ public:
         }
         if (iface == cbox::interfaceId<TempSensor>()) {
             // return the member that implements the interface in this case
-            TempSensorOneWire* owptr = &sensor;
+            DS18B20* owptr = &sensor;
             TempSensor* ptr = owptr;
             return ptr;
         }
         if (iface == cbox::interfaceId<OneWireDevice>()) {
             // return the member that implements the interface in this case
-            TempSensorOneWire* sensorPtr = &sensor;
+            DS18B20* sensorPtr = &sensor;
             OneWireDevice* devicePtr = sensorPtr;
             return devicePtr;
         }
         return nullptr;
     }
 
-    TempSensorOneWire& get()
+    DS18B20& get()
     {
         return sensor;
     }

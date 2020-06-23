@@ -20,6 +20,7 @@
 #include <catch.hpp>
 
 #include "BrewBloxTestBox.h"
+#include "OneWireAddress.h"
 #include "blox/DS2413Block.h"
 #include "blox/DigitalActuatorBlock.h"
 #include "blox/MockPinsBlock.h"
@@ -29,6 +30,16 @@
 #include "proto/test/cpp/DigitalActuator_test.pb.h"
 #include "proto/test/cpp/MockPins_test.pb.h"
 #include <sstream>
+
+namespace Catch {
+template <>
+struct StringMaker<OneWireAddress> {
+    static std::string convert(OneWireAddress const& value)
+    {
+        return value.toString();
+    }
+};
+}
 
 SCENARIO("A DigitalActuator Block with a DS2413 target")
 {
@@ -48,7 +59,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
         testBox.put(DS2413Block::staticTypeId());
 
         auto message = blox::DS2413();
-        message.set_address(12345678);
+        message.set_address(0x0644'4444'4444'443A);
 
         testBox.put(message);
 
@@ -64,9 +75,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
         THEN("The returned protobuf data is as expected")
         {
             CHECK(testBox.lastReplyHasStatusOk());
-
-            // the channels are not in use yet, so config is default and state is Unknown (device is not found in sim)
-            CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { state: Unknown } } pins { B { state: Unknown } }");
+            CHECK(decoded.ShortDebugString() == "address: 451560922637681722 connected: true pins { A { } } pins { B { } }");
         }
 
         THEN("The writable settings match what was sent")
@@ -74,7 +83,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
             auto lookup = brewbloxBox().makeCboxPtr<DS2413Block>(ds2413Id);
             auto devicePtr = lookup.lock();
             REQUIRE(devicePtr);
-            CHECK(devicePtr->get().getDeviceAddress() == 12345678);
+            CHECK(devicePtr->get().getDeviceAddress() == OneWireAddress(0x0644'4444'4444'443A));
         }
 
         AND_WHEN("A DigitalActuator block is created that uses one of the channels")
@@ -104,8 +113,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 auto decoded = blox::DigitalActuator();
                 testBox.processInputToProto(decoded);
 
-                // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 desiredState: Active strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 state: Active desiredState: Active");
             }
             THEN("A read of the DS2413 is as expected")
             {
@@ -116,7 +124,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 auto decoded = blox::DS2413();
                 testBox.processInputToProto(decoded);
 
-                CHECK(decoded.ShortDebugString() == "address: 12345678 pins { A { config: ACTIVE_HIGH state: Unknown } } pins { B { state: Unknown } }");
+                CHECK(decoded.ShortDebugString() == "address: 451560922637681722 connected: true pins { A { config: ACTIVE_HIGH state: Active } } pins { B { } }");
             }
         }
 

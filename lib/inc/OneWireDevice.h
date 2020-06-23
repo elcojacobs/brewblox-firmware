@@ -39,9 +39,15 @@ public:
         return m_connected;
     }
 
+    void selectRom() const
+    {
+        oneWire.reset();
+        oneWire.select(address);
+    }
+
 protected:
     OneWire& oneWire;
     OneWireAddress address;
 
-    mutable bool m_connected = false;
+    bool m_connected = false;
 };

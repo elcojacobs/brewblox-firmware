@@ -76,7 +76,7 @@ public:
         }
         return false;
     }
-    bool writeChannelConfig(uint8_t channel, const ChannelConfig& config)
+    bool writeChannelConfig(uint8_t channel, ChannelConfig config)
     {
         // first channel on external interface is 1, because 0 is unconfigured
         if (validChannel(channel)) {
@@ -87,7 +87,7 @@ public:
         return false;
     }
 
-    bool claimChannel(uint8_t channel, const ChannelConfig& config)
+    bool claimChannel(uint8_t channel, ChannelConfig config)
     {
         ChannelConfig existingConfig;
         if (readChannelConfig(channel, existingConfig)) {
@@ -125,7 +125,7 @@ public:
 
 protected:
     virtual bool senseChannelImpl(uint8_t channel, State& result) const = 0;
-    virtual bool writeChannelImpl(uint8_t channel, const ChannelConfig& config) = 0;
+    virtual bool writeChannelImpl(uint8_t channel, ChannelConfig config) = 0;
 
     struct Channel {
         ChannelConfig config;

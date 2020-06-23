@@ -57,7 +57,7 @@ public:
     virtual OneWireAddress next()
     {
         auto newAddr = OneWireAddress();
-        if (bus.search(newAddr.asUint8ptr())) {
+        if (bus.search(newAddr)) {
             return newAddr;
         }
         return 0;
@@ -80,19 +80,19 @@ public:
                 }
                 if (!found) {
                     // create new object
-                    uint8_t familyCode = newAddr.asUint8ptr()[0];
+                    uint8_t familyCode = newAddr[0];
                     switch (familyCode) {
-                    case DS18B20MODEL: {
+                    case DS18B20::familyCode: {
                         auto newSensor = std::make_shared<TempSensorOneWireBlock>();
                         newSensor->get().setDeviceAddress(newAddr);
                         return newSensor;
                     }
-                    case DS2413_FAMILY_ID: {
+                    case DS2413::familyCode: {
                         auto newDevice = std::make_shared<DS2413Block>();
                         newDevice->get().setDeviceAddress(newAddr);
                         return newDevice;
                     }
-                    case DS2408_FAMILY_ID: {
+                    case DS2408::familyCode: {
                         auto newDevice = std::make_shared<DS2408Block>();
                         newDevice->get().setDeviceAddress(newAddr);
                         return newDevice;

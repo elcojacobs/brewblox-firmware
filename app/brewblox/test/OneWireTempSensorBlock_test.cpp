@@ -42,9 +42,9 @@ SCENARIO("A TempSensorOneWireBlock")
         testBox.put(TempSensorOneWireBlock::staticTypeId());
 
         auto message = blox::TempSensorOneWire();
-        message.set_address(12345678);
-        message.set_offset(100);
-        message.set_value(123);
+        message.set_address(0x7E11'1111'1111'1128);
+        message.set_offset(2048);
+        message.set_value(123); // value is not writable, so this should not have effect
 
         testBox.put(message);
 
@@ -62,24 +62,39 @@ SCENARIO("A TempSensorOneWireBlock")
         {
             CHECK(testBox.lastReplyHasStatusOk());
 
-            // the value is invalid and therefore added to stripped fields to distinguish from value zero
-            CHECK(decoded.ShortDebugString() == "offset: 100 "
-                                                "address: 12345678 "
+            // When the sensor is not yet updated the value is invalid and therefore
+            // added to stripped fields to distinguish from value zero
+            CHECK(decoded.ShortDebugString() == "offset: 2048 "
+                                                "address: 9084060688381448488 "
                                                 "strippedFields: 1");
-        }
 
-        THEN("The writable settings match what was sent")
-        {
-            auto lookup = brewbloxBox().makeCboxPtr<TempSensorOneWireBlock>(100);
-            auto sensorPtr = lookup.lock();
-            REQUIRE(sensorPtr);
-            CHECK(sensorPtr->get().getDeviceAddress() == 12345678);
-            CHECK(sensorPtr->get().getCalibration() == cnl::wrap<temp_t>(100));
+            testBox.put(uint16_t(1)); // msg id
+            testBox.put(commands::READ_OBJECT);
+            testBox.put(cbox::obj_id_t(100));
 
-            AND_THEN("The values that are not writable are unchanged")
+            testBox.update(1000);
+
+            auto decoded = blox::TempSensorOneWire();
+            testBox.processInputToProto(decoded);
+
+            // After an update, the sensor returns a valid temperature
+            CHECK(decoded.ShortDebugString() == "value: 83968 " // 20*4096 + 2048
+                                                "offset: 2048 "
+                                                "address: 9084060688381448488");
+
+            AND_THEN("The writable settings match what was sent")
             {
-                CHECK(sensorPtr->get().value() == temp_t(0));
-                CHECK(sensorPtr->get().valid() == false);
+                auto lookup = brewbloxBox().makeCboxPtr<TempSensorOneWireBlock>(100);
+                auto sensorPtr = lookup.lock();
+                REQUIRE(sensorPtr);
+                CHECK(sensorPtr->get().getDeviceAddress() == OneWireAddress(0x7E11'1111'1111'1128));
+                CHECK(sensorPtr->get().getCalibration() == temp_t(0.5));
+
+                AND_THEN("The values that are not writable are unchanged")
+                {
+                    CHECK(sensorPtr->get().value() == temp_t(20.5));
+                    CHECK(sensorPtr->get().valid() == true);
+                }
             }
         }
     }

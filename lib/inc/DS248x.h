@@ -77,7 +77,7 @@ public:
     // Returns 1 if a device asserted a presence pulse, 0 otherwise.
     virtual bool reset() override final;
 
-    virtual void write(uint8_t b, uint8_t power = 0) override final;
+    virtual void write(uint8_t b) override final;
     virtual uint8_t read() override final;
 
     virtual void write_bit(uint8_t bit) override final;
@@ -105,8 +105,7 @@ public:
     // a discrepancy, the 'search_direction' parameter is used.
     //
     // Returns – The DS248X status byte result from the triplet command
-    // Updates search direction, id_bit and cmp_id_bit
-    virtual uint8_t search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_id_bit) override final;
+    virtual uint8_t search_triplet(bool search_direction) override final;
 
 private:
     uint8_t mAddress;

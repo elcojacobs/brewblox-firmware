@@ -24,7 +24,7 @@ docker buildx build \
 
 docker buildx build \
     --tag "$IMAGE":arm-"$TAG" \
-    --platform linux/arm/v7 \
+    --platform linux/arm/v7,linux/arm64 \
     --push \
     firmware-compiler/arm
 

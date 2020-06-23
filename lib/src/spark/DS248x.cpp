@@ -184,7 +184,7 @@ DS248x::reset()
 }
 
 void
-DS248x::write(uint8_t b, uint8_t power)
+DS248x::write(uint8_t b)
 {
     busyWait(true);
     Wire.beginTransmission(mAddress);
@@ -224,7 +224,7 @@ DS248x::read_bit()
 }
 
 uint8_t
-DS248x::search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_id_bit)
+DS248x::search_triplet(bool search_direction)
 {
     // 1-Wire Triplet (Case B)
     //   S AD,0 [A] 1WT [A] SS [A] Sr AD,1 [A] [Status] A [Status] A\ P
@@ -235,15 +235,9 @@ DS248x::search_triplet(uint8_t* search_direction, uint8_t* id_bit, uint8_t* cmp_
     busyWait(true);
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_1WT);
-    Wire.write(*search_direction ? 0x80 : 0x00);
+    Wire.write(search_direction ? 0x80 : 0x00);
     Wire.endTransmission(false);
 
     uint8_t status = busyWait();
-
-    // check bit results in status byte
-    *id_bit = ((status & DS248X_STATUS_SBR) == DS248X_STATUS_SBR);
-    *cmp_id_bit = ((status & DS248X_STATUS_TSB) == DS248X_STATUS_TSB);
-    *search_direction = ((status & DS248X_STATUS_DIR) == DS248X_STATUS_DIR) ? (byte)1 : (byte)0;
-
     return status;
 }
