@@ -25,7 +25,7 @@ else
   echo "Using mount path '$ENV_MOUNTDIR'"
 fi
 
-ENV_MAKE_ARGS="$(grep MAKE_ARGS .env)"
+ENV_MAKE_ARGS="$(grep MAKE_ARGS .env || true)"
 if [ -z "$ENV_MAKE_ARGS" ]; then
   TOTALRAM=$(grep MemTotal /proc/meminfo | awk '{print $2}')
   if [ ${TOTALRAM} -gt 10000000 ] ; then \
@@ -40,8 +40,8 @@ else
   echo "Using make args '$ENV_MAKE_ARGS'"
 fi
 
-ENV_UID="$(grep DOCKER_UID .env)"
-ENV_GID="$(grep DOCKER_GID .env)"
+ENV_UID="$(grep DOCKER_UID .env || true)"
+ENV_GID="$(grep DOCKER_GID .env || true)"
 if [ -z "$ENV_UID" ]; then
   DOCKER_UID=$(id -u)
   echo "Configuring DOCKER_UID=$DOCKER_UID"
