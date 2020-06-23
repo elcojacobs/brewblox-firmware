@@ -15,7 +15,7 @@ then
     OUTPUT="$ROOT_DIR/build/coverage/index.html"
 else
     FORMAT="xml"
-    FORMAT_ARGS=""
+    FORMAT_ARGS=
     OUTPUT="$ROOT_DIR/build/coverage/coverage.xml"
 fi
 
@@ -29,7 +29,8 @@ gcovr --root "$ROOT_DIR" \
   -e "$ROOT_DIR/platform/spark/device-os/.*" \
   -e "$ROOT_DIR/app/brewblox/proto/.*" \
   -e "$ROOT_DIR/lib/cnl/.*" \
-  --$FORMAT "$OUTPUT" \
+  --$FORMAT \
+  --output "$OUTPUT" \
   $FORMAT_ARGS \
   --delete \
   --print-summary
