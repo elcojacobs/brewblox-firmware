@@ -1,7 +1,7 @@
 resources:
   repositories:
     - repository: self
-  containers: 
+  containers:
     - container: compiler
       image: brewblox/firmware-compiler:amd-latest
 
@@ -11,17 +11,16 @@ pool:
 trigger:
   tags:
     include:
-      - '*'
+      - "*"
   branches:
     include:
-      - '*'
+      - "*"
 pr:
   branches:
     include:
-      - '*'
+      - "*"
 
 jobs:
-
   #########################################################
   # Tests
   #########################################################
@@ -30,7 +29,7 @@ jobs:
     steps:
       - checkout: self
         submodules: recursive
-      
+
       - bash: build/compile-proto.sh
         target: compiler
         displayName: Compile proto
@@ -39,10 +38,11 @@ jobs:
         target: compiler
         displayName: Build tests
 
-      - bash: build/run-tests.sh
+      - bash: build/run-tests-with-coverage.sh
         target: compiler
         displayName: Run tests
 
+      - publish: build/coverage/html
 
   #########################################################
   # Build Simulator AMD
@@ -64,7 +64,6 @@ jobs:
       - publish: build/target/brewblox-gcc
         artifact: SimulatorBinAMD
 
-
   #########################################################
   # Build Simulator ARM
   #########################################################
@@ -84,7 +83,6 @@ jobs:
 
   #     - publish: build/target/brewblox-gcc
   #       artifact: SimulatorBinARM
-
 
   #########################################################
   # Build Firmware P1
@@ -107,7 +105,6 @@ jobs:
       - publish: build/target/brewblox-p1
         artifact: FirmwareBinP1
 
-
   #########################################################
   # Build Firmware Photon
   #########################################################
@@ -128,7 +125,6 @@ jobs:
 
       - publish: build/target/brewblox-photon
         artifact: FirmwareBinPhoton
-
 
   #########################################################
   # Deployment
@@ -224,7 +220,6 @@ jobs:
         displayName: (firmware-simulator) Deploy Docker images with branch tags
         condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
         workingDirectory: docker
-
       # - bash: |
       #     bash push-local.sh $(SIM_REPO) newest-tag
       #     bash push-local.sh $(SIM_REPO) $(RELEASE)
