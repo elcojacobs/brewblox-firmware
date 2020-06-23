@@ -42,7 +42,10 @@ jobs:
         target: compiler
         displayName: Run tests
 
-      - publish: build/coverage/html
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          summaryFileLocation: $(System.DefaultWorkingDirectory)/build/coverage/coverage.xml
+          codeCoverageTool: 'cobertura'
 
   #########################################################
   # Build Simulator AMD
