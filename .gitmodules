@@ -9,6 +9,3 @@
 [submodule "app/brewblox/proto"]
 	path = app/brewblox/proto
 	url = https://github.com/BrewBlox/brewblox-proto.git
-[submodule "wiced-history"]
-	path = wiced-history
-	url = https://github.com/amlweems/wiced-history.git
