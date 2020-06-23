@@ -1,8 +1,6 @@
 #!/bin/bash
 MY_DIR=$(dirname $(readlink -f $0))
 ROOT_DIR=$(dirname "$(readlink -f "$MY_DIR")")
-
-CBOX_DIR="$ROOT_DIR/controlbox"
 OUTPUT_DIR="$ROOT_DIR/build/coverage"
 
 mkdir -p "$OUTPUT_DIR"
