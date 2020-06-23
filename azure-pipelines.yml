@@ -4,7 +4,6 @@ resources:
   containers:
     - container: compiler
       image: brewblox/firmware-compiler:amd-latest
-      options: --workdir /firmware/build --volume $(System.DefaultWorkingDirectory):/firmware
 
 pool:
   vmImage: "Ubuntu-18.04"
@@ -31,21 +30,21 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - script: bash compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
-      - script: bash build-tests.sh
+      - script: bash build/build-tests.sh
         target: compiler
         displayName: Build tests
 
-      - script: bash run-tests-with-coverage.sh
+      - script: bash build/run-tests-with-coverage.sh
         target: compiler
         displayName: Run tests
 
       - task: PublishCodeCoverageResults@1
         inputs:
-          summaryFileLocation: $(System.DefaultWorkingDirectory)/build/coverage/coverage.xml
+          summaryFileLocation: build/coverage/coverage.xml
           codeCoverageTool: 'cobertura'
 
   #########################################################
@@ -57,11 +56,11 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - script: bash compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
-      - script: bash build-sim-amd.sh
+      - script: bash build/build-sim-amd.sh
         target: compiler
         displayName: Build executable
 
@@ -77,12 +76,12 @@ jobs:
   #     - checkout: self
   #       submodules: recursive
 
-  #     - script: bash compile-proto.sh
+  #     script: bash build/ compile-proto.sh
   #       target: compiler
   #       displayName: Compile proto
 
   #       # should not be run in compiler
-  #     - script: bash build-sim-arm.sh
+  #     script: bash build/build-sim-arm.sh
   #       displayName: Build executable
 
   #     - publish: build/target/brewblox-gcc
@@ -97,7 +96,7 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - script: bash compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
@@ -118,7 +117,7 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - script: bash compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
