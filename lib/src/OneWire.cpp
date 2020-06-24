@@ -249,15 +249,3 @@ OneWire::search(OneWireAddress& newAddr)
 
     return search_result;
 }
-
-uint8_t
-OneWire::crc8(const uint8_t* addr, uint8_t len)
-{
-    return OneWireCrc8(addr, len);
-}
-
-uint16_t
-OneWire::crc16(const uint8_t* input, uint16_t len)
-{
-    return OneWireCrc16(input, len);
-}

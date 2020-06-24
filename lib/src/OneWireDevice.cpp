@@ -51,13 +51,3 @@ OneWireDevice::setDeviceAddress(const OneWireAddress& addr)
 {
     address = addr;
 }
-
-/**
- * Checks if the address is valid by performing a crc8 check on it
- * @return bool, true if valid
- */
-bool
-OneWireDevice::validAddress() const
-{
-    return address.valid();
-}
