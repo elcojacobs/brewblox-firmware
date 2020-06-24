@@ -20,18 +20,6 @@
 #include "OneWireMockDriver.h"
 
 uint8_t
-OneWireMockDriver::countActiveDevices()
-{
-    uint8_t count = 0;
-    for (auto& device : devices) {
-        if (device->present()) {
-            count++;
-        }
-    }
-    return count;
-}
-
-uint8_t
 OneWireMockDriver::search_triplet(bool search_direction)
 {
     bool id_bit = true;

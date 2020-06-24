@@ -98,7 +98,5 @@ public:
     }
 
 private:
-    uint8_t countActiveDevices();
-
     std::vector<std::shared_ptr<OneWireMockDevice>> devices;
 };
