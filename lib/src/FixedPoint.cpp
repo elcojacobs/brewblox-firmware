@@ -29,8 +29,11 @@ to_string_dec(const fp12_t& t, uint8_t decimals)
     static constexpr const int32_t rounder_up = cnl::unwrap(fp12_t{0.5});
     static constexpr const int32_t rounder_down = cnl::unwrap(fp12_t{-0.5});
 
-    int32_t scale = 10;
-    for (uint8_t i = decimals; i > 1; --i) {
+    if (decimals > 3) {
+        decimals = 3; // more than 3 decimals not supported, results in overflow
+    }
+    int32_t scale = 1;
+    for (uint8_t i = decimals; i > 0; --i) {
         scale *= 10;
     }
 
@@ -41,12 +44,14 @@ to_string_dec(const fp12_t& t, uint8_t decimals)
     std::string s;
     s << asInt;
 
-    int missingZeros = int(decimals) + 1 - s.length() + (asInt < 0);
-    auto insertAt = s.begin() + (asInt < 0);
-    if (missingZeros > 0) {
-        insertAt = s.insert(insertAt, missingZeros, '0'); // leading zeros
+    if (decimals > 0) {
+        int missingZeros = int(decimals) + 1 - s.length() + (asInt < 0);
+        auto insertAt = s.begin() + (asInt < 0);
+        if (missingZeros > 0) {
+            insertAt = s.insert(insertAt, missingZeros, '0'); // leading zeros
+        }
+        auto periodPos = s.end() - decimals;
+        s.insert(periodPos, '.');
     }
-    auto periodPos = s.end() - decimals;
-    s.insert(periodPos, '.');
     return s;
 }
