@@ -151,7 +151,7 @@ IirFilter::unshift(const int64_t val, uint8_t shift) const
 
 // Try out these filters in pyFDA to view Magnitude response and stability
 IirFilter::FilterParams const&
-IirFilter::FilterDefinition(const uint8_t idx)
+IirFilter::FilterDefinition(uint8_t idx)
 {
     static const FilterParams availableFilters[] = {
         // 0 - Bessel 6th order, -60 dB > 1/4 FS, To downsample 2x. -3dB at 0.0575 FS
@@ -228,11 +228,10 @@ IirFilter::FilterDefinition(const uint8_t idx)
         },
     };
 
-    if (idx < sizeof(availableFilters) / sizeof(availableFilters[0])) {
-        return availableFilters[idx];
-    } else {
-        return availableFilters[0];
+    if (idx >= sizeof(availableFilters) / sizeof(availableFilters[0])) {
+        idx = 0;
     }
+    return availableFilters[idx];
 }
 
 IirFilter::FilterParams const&
@@ -254,12 +253,6 @@ uint8_t
 IirFilter::getParamsIdx() const
 {
     return paramsIdx;
-}
-
-uint8_t
-IirFilter::downsamplePeriod() const
-{
-    return params().downsample;
 }
 
 double

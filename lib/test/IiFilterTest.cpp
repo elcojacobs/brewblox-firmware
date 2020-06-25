@@ -255,4 +255,14 @@ SCENARIO("Filtering 24-bit values with IIR Filters", "[filter]")
             }
         }
     }
+
+    WHEN("A non-existing parameter idx is picked, it uses the params of idx 0")
+    {
+        CHECK(IirFilter::FilterDefinition(4).maxDerivative == IirFilter::FilterDefinition(0).maxDerivative);
+
+        IirFilter filter(1, INT32_MAX);
+        filter.setParamsIdx(4);
+        CHECK(filter.getParamsIdx() == 4);
+        CHECK(filter.unityStepDerivative() == IirFilter::FilterDefinition(0).maxDerivative);
+    }
 }

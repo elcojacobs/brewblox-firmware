@@ -33,7 +33,7 @@ public:
     IirFilter(IirFilter&&) = default;
     IirFilter& operator=(const IirFilter&) = delete;
     ~IirFilter();
-    static FilterParams const& FilterDefinition(const uint8_t idx);
+    static FilterParams const& FilterDefinition(uint8_t idx);
     static double dcGain(uint8_t idx); // mainly for testing
     bool add(const int32_t val);
     bool add(const int64_t val, uint8_t fractionBits);
@@ -44,7 +44,6 @@ public:
     int32_t read(void) const;
     int32_t readPrevious(void) const;
     int64_t readWithNFractionBits(uint8_t bits) const;
-    uint8_t downsamplePeriod() const;
     uint8_t fractionBits() const
     {
         return params().shift;
