@@ -47,7 +47,7 @@ public:
     {
     }
 
-    StringBuffer operator()(LogLevel e, const char* initStr)
+    StringBuffer operator()(LogLevel e, std::string&& initStr)
     {
         return StringBuffer(new std::string(initStr), [e, this](std::string* st) {
             m_logWriteFunction(e, *st);

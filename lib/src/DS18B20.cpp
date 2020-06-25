@@ -18,8 +18,6 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../inc/Logger.h"
-
 #include "../inc/DS18B20.h"
 #include "../inc/OneWire.h"
 #include "../inc/OneWireAddress.h"
@@ -105,24 +103,10 @@ DS18B20::startConversion()
     oneWire.reset();
 }
 
-void
-DS18B20::connected(bool _connected)
-{
-    if (m_connected == _connected) {
-        return; // state stays the same
-    }
-    m_connected = _connected;
-    if (m_connected) {
-        // CL_LOG_WARN("OneWire temp sensor connected: ") << getDeviceAddress().toString();
-    } else {
-        // CL_LOG_WARN("OneWire temp sensor disconnected: ") << getDeviceAddress().toString();
-    }
-}
-
 temp_t
 DS18B20::value() const
 {
-    if (!m_connected) {
+    if (!connected()) {
         return 0;
     }
 
