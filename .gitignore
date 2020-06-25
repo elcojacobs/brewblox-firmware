@@ -9,3 +9,4 @@ core
 build/coverage
 *.pyc
 callgraph.dot*
+build/coverage.xml

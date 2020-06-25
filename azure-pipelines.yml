@@ -1,7 +1,7 @@
 resources:
   repositories:
     - repository: self
-  containers: 
+  containers:
     - container: compiler
       image: brewblox/firmware-compiler:amd-latest
 
@@ -11,17 +11,16 @@ pool:
 trigger:
   tags:
     include:
-      - '*'
+      - "*"
   branches:
     include:
-      - '*'
+      - "*"
 pr:
   branches:
     include:
-      - '*'
+      - "*"
 
 jobs:
-
   #########################################################
   # Tests
   #########################################################
@@ -30,19 +29,23 @@ jobs:
     steps:
       - checkout: self
         submodules: recursive
-      
-      - bash: build/compile-proto.sh
+
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
-      - bash: build/build-tests.sh
+      - script: bash build/build-tests.sh
         target: compiler
         displayName: Build tests
 
-      - bash: build/run-tests.sh
+      - script: bash build/run-tests-with-coverage.sh
         target: compiler
         displayName: Run tests
 
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          summaryFileLocation: build/coverage/coverage.xml
+          codeCoverageTool: 'cobertura'
 
   #########################################################
   # Build Simulator AMD
@@ -53,17 +56,16 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
-      - script: build/build-sim-amd.sh
+      - script: bash build/build-sim-amd.sh
         target: compiler
         displayName: Build executable
 
       - publish: build/target/brewblox-gcc
         artifact: SimulatorBinAMD
-
 
   #########################################################
   # Build Simulator ARM
@@ -74,17 +76,16 @@ jobs:
   #     - checkout: self
   #       submodules: recursive
 
-  #     - bash: build/compile-proto.sh
+  #     script: bash build/ compile-proto.sh
   #       target: compiler
   #       displayName: Compile proto
 
   #       # should not be run in compiler
-  #     - script: build/build-sim-arm.sh
+  #     script: bash build/build-sim-arm.sh
   #       displayName: Build executable
 
   #     - publish: build/target/brewblox-gcc
   #       artifact: SimulatorBinARM
-
 
   #########################################################
   # Build Firmware P1
@@ -95,7 +96,7 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
@@ -107,7 +108,6 @@ jobs:
       - publish: build/target/brewblox-p1
         artifact: FirmwareBinP1
 
-
   #########################################################
   # Build Firmware Photon
   #########################################################
@@ -117,7 +117,7 @@ jobs:
       - checkout: self
         submodules: recursive
 
-      - bash: build/compile-proto.sh
+      - script: bash build/compile-proto.sh
         target: compiler
         displayName: Compile proto
 
@@ -128,7 +128,6 @@ jobs:
 
       - publish: build/target/brewblox-photon
         artifact: FirmwareBinPhoton
-
 
   #########################################################
   # Deployment
@@ -224,7 +223,6 @@ jobs:
         displayName: (firmware-simulator) Deploy Docker images with branch tags
         condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
         workingDirectory: docker
-
       # - bash: |
       #     bash push-local.sh $(SIM_REPO) newest-tag
       #     bash push-local.sh $(SIM_REPO) $(RELEASE)

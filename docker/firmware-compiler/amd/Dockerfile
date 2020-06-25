@@ -7,7 +7,7 @@ ENV TZ=Europe/Amsterdam \
 # install various build deps
 RUN apt-get update -q \
   && apt-get install -qy curl \
-  && apt-get install -qy --no-install-recommends build-essential autoconf automake libtool unzip pkg-config libprotobuf-dev protobuf-compiler tzdata git bash dfu-util python python-pip gdb lcov rsync \
+  && apt-get install -qy --no-install-recommends build-essential autoconf automake libtool unzip pkg-config libprotobuf-dev protobuf-compiler tzdata git bash dfu-util python python-pip gcovr rsync \
   && pip install --upgrade pip setuptools \
   # and install protobuf python package (used by nanopb), and pyserial (used by program-dfu)
   && pip install protobuf pyserial compiledb \
