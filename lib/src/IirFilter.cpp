@@ -247,7 +247,7 @@ IirFilter::setParamsIdx(const uint8_t idx)
     // reset filter (all history same value) to prevent instability
     int64_t oldValue = readWithNFractionBits(FilterDefinition(idx).shift);
     paramsIdx = idx;
-    reset(oldValue);
+    resetInternal(oldValue);
 }
 
 uint8_t

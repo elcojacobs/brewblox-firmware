@@ -235,6 +235,24 @@ SCENARIO("Filtering 24-bit values with IIR Filters", "[filter]")
                     }
                 }
             }
+
+            WHEN("The filter index is changed for a filter that is in use")
+            {
+
+                IirFilter filter(i, INT32_MAX);
+
+                for (int i = 0; i < 10; i++) {
+                    filter.add(1000);
+                }
+                auto outputValue = filter.read();
+                CHECK(outputValue != 1000); // not reached end value yet
+                filter.setParamsIdx(i + 1);
+
+                THEN("The filter is reset to the last output to prevent instability")
+                {
+                    CHECK(filter.readLastInput() == outputValue);
+                }
+            }
         }
     }
 }
