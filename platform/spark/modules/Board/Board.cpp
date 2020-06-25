@@ -42,6 +42,13 @@ getSparkVersion()
     return version;
 }
 
+#else
+SparkVersion
+getSparkVersion()
+{
+    return SparkVersion::V3;
+}
+
 #endif
 
 void
