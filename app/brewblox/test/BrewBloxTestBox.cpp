@@ -18,6 +18,7 @@
  */
 
 #include "BrewBloxTestBox.h"
+#include "Board.h"
 #include "blox/Spark3PinsBlock.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/ConnectionsStringStream.h"
@@ -31,6 +32,7 @@ BrewBloxTestBox::BrewBloxTestBox()
     , inProto(inEncoder)
     , ticks(brewbloxBox().makeCboxPtr<TicksBlock<TicksClass>>(3).lock()->get())
 {
+    boardInit(); // simulate board init
     testConnectionSource().add(in, out);
 }
 
