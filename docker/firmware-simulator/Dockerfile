@@ -2,7 +2,7 @@ FROM debian:buster
 WORKDIR /app
 
 # set by buildx
-ARG TARGETPLATFORM
+ARG TARGETPLATFORM="linux/amd64"
 
 # status page
 EXPOSE 80
