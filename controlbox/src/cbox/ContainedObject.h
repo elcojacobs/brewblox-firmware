@@ -39,6 +39,7 @@ public:
         , _obj(std::move(obj))
         , _nextUpdateTime(0)
     {
+        Tracing::add(Tracing::Action::CREATE_OBJECT, _id, _obj->typeId());
     }
 
 private:

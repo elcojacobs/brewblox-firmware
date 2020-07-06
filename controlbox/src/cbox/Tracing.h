@@ -19,6 +19,7 @@
 
 #pragma once
 #include "ObjectIds.h"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 
@@ -32,6 +33,7 @@ public:
         RECEIVE_OBJECT = 2,
         PERSIST_OBJECT = 3,
         UPDATE_OBJECT = 4,
+        CREATE_OBJECT = 5,
     };
 
     struct TraceEvent {
@@ -39,31 +41,31 @@ public:
         obj_id_t id = 0;
         obj_type_t type = 0;
     };
-    static void unpause()
-    {
-        trace.writeEnabled = true;
-    }
 
     class trace_t {
     public:
         trace_t()
-            : idx(0)
-            , writeEnabled(false)
+            : writeEnabled(false)
         {
+            last = history.begin();
         }
 
+    private:
         std::array<TraceEvent, 10> history;
-        uint8_t idx;
+        decltype(history)::iterator last;
         bool writeEnabled;
 
         void add(Action a, obj_id_t i, obj_type_t t)
         {
             if (writeEnabled) {
-                history[idx] = TraceEvent{a, i, t};
-                idx = idx + 1;
-                if (idx >= history.size()) {
-                    idx = 0;
+                if (last->action == Action::PERSIST_OBJECT && last->id == i) {
+                    return; // persisting a block can take a retry if a new block needs to be allocated, don't log twice.
                 }
+                last++;
+                if (last == history.end()) {
+                    last = history.begin();
+                }
+                *last = TraceEvent{a, i, t};
             }
         }
         friend class Tracing;
@@ -74,6 +76,23 @@ public:
     static void add(Action a, obj_id_t i, obj_type_t t)
     {
         trace.add(a, i, t);
+    }
+
+    static const std::array<TraceEvent, 10>& history()
+    {
+        // history is kept as a circular buffer,
+        // rotate array so oldest element is the first element before returning
+        if (trace.last != trace.history.end() - 1) {
+            auto oldest = trace.last + 1;
+            std::rotate(trace.history.begin(), oldest, trace.history.end());
+            trace.last = trace.history.end() - 1;
+        }
+        return trace.history;
+    }
+
+    static void unpause()
+    {
+        trace.writeEnabled = true;
     }
 };
 }
