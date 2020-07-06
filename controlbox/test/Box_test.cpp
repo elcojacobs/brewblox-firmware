@@ -15,6 +15,7 @@
 #include "ObjectContainer.h"
 #include "ObjectFactory.h"
 #include "TestObjects.h"
+#include "Tracing.h"
 
 using namespace cbox;
 
@@ -858,6 +859,21 @@ SCENARIO("A controlbox Box")
 
             CHECK(counter1->count() == count + 20000 / counter1->interval());
         }
+
+        WHEN("Tracing is enabled")
+        {
+            cbox::Tracing::unpause();
+            box.update(100000);
+            box.update(110000);
+            box.update(120000);
+
+            THEN("The last 10 actions are logged")
+            {
+                for (auto& t : cbox::Tracing::trace.history) {
+                    CHECK(t.action == cbox::Tracing::Action::UPDATE_OBJECT);
+                }
+            }
+        }
     }
 
     WHEN("An object with links to other objects is created, it can use data from those other objects")
@@ -1059,7 +1075,7 @@ SCENARIO("A controlbox Box")
             CHECK(out->str() == expected.str());
         }
 
-        THEN("The newly discoverd objects are persisted")
+        THEN("The newly discovered objects are persisted")
         {
             clearStreams();
             *in << "000007"; // list stored objects
