@@ -46,13 +46,13 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
         break;
     case Command::READ_TRACE: {
         // circular buffer, idx - 1 has most recent action
-        static_assert(cbox::Tracing::trace.history.size() == 10);
-        uint8_t pos = cbox::Tracing::trace.idx;
-        for (uint8_t i = 0; i < 10; i++) {
-            pos = (pos - 1) % 10;
-            message.trace[i].action = blox_SysInfo_Trace_Action(cbox::Tracing::trace.history[pos].action);
-            message.trace[i].id = cbox::Tracing::trace.history[pos].id;
-            message.trace[i].type = cbox::Tracing::trace.history[pos].type;
+        auto history = cbox::Tracing::history();
+        auto it = history.cbegin();
+        auto end = history.cend();
+        for (uint8_t i = 0; i < 10 && it < end; i++, it++) {
+            message.trace[i].action = blox_SysInfo_Trace_Action(it->action);
+            message.trace[i].id = it->id;
+            message.trace[i].type = it->type;
         }
         message.trace_count = 10;
         cbox::Tracing::unpause();
@@ -67,10 +67,11 @@ cbox::CboxError
 SysInfoBlock::streamFrom(cbox::DataIn& in)
 {
     blox_SysInfo message = blox_SysInfo_init_zero;
-    return streamProtoFrom(in, &message, blox_SysInfo_fields, blox_SysInfo_size);
-
-    command = Command(message.command);
-    return cbox::CboxError::OK;
+    auto res = streamProtoFrom(in, &message, blox_SysInfo_fields, blox_SysInfo_size);
+    if (res == cbox::CboxError::OK) {
+        command = Command(message.command);
+    }
+    return res;
 }
 
 cbox::CboxError

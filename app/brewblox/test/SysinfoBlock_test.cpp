@@ -28,10 +28,15 @@ using namespace cbox;
 
 SCENARIO("SysInfo Block")
 {
+    std::string version = stringify(GIT_VERSION);
+    std::string protocolVersion = stringify(PROTO_VERSION);
+    std::string releaseDate = stringify(GIT_DATE);
+    std::string protocolDate = stringify(PROTO_DATE);
+    using commands = cbox::Box::CommandID;
+
     WHEN("The SysInfo block is read")
     {
         BrewBloxTestBox testBox;
-        using commands = cbox::Box::CommandID;
 
         testBox.reset();
 
@@ -42,15 +47,64 @@ SCENARIO("SysInfo Block")
         auto decoded = blox::SysInfo();
         testBox.processInputToProto(decoded);
 
-        std::string version = stringify(GIT_VERSION);
-        std::string protocolVersion = stringify(PROTO_VERSION);
-        std::string releaseDate = stringify(GIT_DATE);
-        std::string protocolDate = stringify(PROTO_DATE);
-
         THEN("The system info is serialized correctly")
         {
             CHECK(testBox.lastReplyHasStatusOk());
             CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\""));
+        }
+    }
+
+    WHEN("A read trace command is sent to the SysInfo block")
+    {
+        BrewBloxTestBox testBox;
+        testBox.reset();
+
+        testBox.put(uint16_t(0)); // msg id
+        testBox.put(commands::WRITE_OBJECT);
+        testBox.put(cbox::obj_id_t(2));
+        testBox.put(uint8_t(0xFF));
+        testBox.put(SysInfoBlock::staticTypeId());
+
+        auto message = blox::SysInfo();
+        message.set_command(blox::SysInfo_Command::SysInfo_Command_READ_TRACE);
+        testBox.put(message);
+
+        auto decoded = blox::SysInfo();
+        testBox.processInputToProto(decoded);
+
+        THEN("The sysinfo includes a trace of end of the previous run (empty for this test)")
+        {
+            CHECK(testBox.lastReplyHasStatusOk());
+            CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\"") + " trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { }");
+        }
+
+        AND_THEN("Tracing is unpaused and the next trace read includes a non-empty trace")
+        {
+            testBox.put(uint16_t(0)); // msg id
+            testBox.put(commands::WRITE_OBJECT);
+            testBox.put(cbox::obj_id_t(2));
+            testBox.put(uint8_t(0xFF));
+            testBox.put(SysInfoBlock::staticTypeId());
+
+            auto message = blox::SysInfo();
+            message.set_command(blox::SysInfo_Command::SysInfo_Command_READ_TRACE);
+            testBox.put(message);
+
+            auto decoded = blox::SysInfo();
+            testBox.processInputToProto(decoded);
+
+            CHECK(testBox.lastReplyHasStatusOk());
+            CHECK(decoded.ShortDebugString() == std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\"") +
+                                                    " trace { }"
+                                                    " trace { }"
+                                                    " trace { action: UPDATE_BLOCK id: 1 type: 65534 }"
+                                                    " trace { action: UPDATE_BLOCK id: 2 type: 256 }"
+                                                    " trace { action: UPDATE_BLOCK id: 3 type: 257 }"
+                                                    " trace { action: UPDATE_BLOCK id: 4 type: 258 }"
+                                                    " trace { action: UPDATE_BLOCK id: 7 type: 314 }"
+                                                    " trace { action: UPDATE_BLOCK id: 19 type: 319 }"
+                                                    " trace { action: WRITE_BLOCK id: 2 type: 256 }"
+                                                    " trace { action: PERSIST_BLOCK id: 2 type: 256 }");
         }
     }
 }
