@@ -34,10 +34,11 @@ public:
         PERSIST_OBJECT = 3,
         UPDATE_OBJECT = 4,
         CREATE_OBJECT = 5,
-        UPDATE_DISPLAY = 6,
-        UPDATE_CONNECTIONS = 7,
-        UPDATE_BLOCKS = 8,
-        SYSTEM_TASKS = 9,
+        DELETE_OBJECT = 6,
+        UPDATE_DISPLAY = 10,
+        UPDATE_CONNECTIONS = 11,
+        UPDATE_BLOCKS = 12,
+        SYSTEM_TASKS = 13,
     };
 
     struct TraceEvent {

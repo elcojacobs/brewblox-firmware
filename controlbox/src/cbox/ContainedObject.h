@@ -42,6 +42,11 @@ public:
         Tracing::add(Tracing::Action::CREATE_OBJECT, _id, _obj->typeId());
     }
 
+    virtual ~ContainedObject()
+    {
+        Tracing::add(Tracing::Action::DELETE_OBJECT, _id, _obj->typeId());
+    }
+
 private:
     obj_id_t _id;                 // unique id of object
     uint8_t _groups;              // active in these groups
