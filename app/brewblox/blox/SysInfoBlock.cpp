@@ -41,10 +41,7 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
 
     message.platform = blox_SysInfo_Platform(PLATFORM_ID);
 
-    switch (command) {
-    case Command::NONE:
-        break;
-    case Command::READ_TRACE: {
+    if (command == Command::READ_TRACE || command == Command::READ_AND_RESUME_TRACE) {
         // circular buffer, idx - 1 has most recent action
         auto history = cbox::Tracing::history();
         auto it = history.cbegin();
@@ -55,9 +52,11 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
             message.trace[i].type = it->type;
         }
         message.trace_count = 10;
-        cbox::Tracing::unpause();
-    } break;
     }
+    if (command == Command::RESUME_TRACE || command == Command::READ_AND_RESUME_TRACE) {
+        cbox::Tracing::unpause();
+    }
+
     command = Command::NONE;
 
     return streamProtoTo(out, &message, blox_SysInfo_fields, blox_SysInfo_size);

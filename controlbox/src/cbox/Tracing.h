@@ -99,5 +99,10 @@ public:
     {
         trace.writeEnabled = true;
     }
+
+    static void pause()
+    {
+        trace.writeEnabled = false;
+    }
 };
 }

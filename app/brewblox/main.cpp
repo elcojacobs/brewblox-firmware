@@ -132,6 +132,8 @@ setup()
     HAL_Delay_Milliseconds(1);
 #endif
 
+    cbox::Tracing::pause(); // ensure tracing is paused until service resumes it
+
     // init display
     D4D_Init(nullptr);
     D4D_TOUCHSCREEN_CALIB defaultCalib = {1, 0, 0, 64, 64};
