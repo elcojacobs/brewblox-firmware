@@ -6,7 +6,7 @@ resources:
       image: brewblox/firmware-compiler:amd-latest
 
 pool:
-  vmImage: "Ubuntu-18.04"
+  vmImage: "Ubuntu-20.04"
 
 trigger:
   tags:
@@ -153,31 +153,15 @@ jobs:
 
     steps:
       - bash: |
-          RELEASE=$(git describe --tags | grep "^[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]$")
           BRANCH=$(echo $(Build.SourceBranch) | grep -oP "^refs/heads/\K.*")
           TAG=$(echo $BRANCH | tr '/' '-' | tr '[:upper:]' '[:lower:]')
-          echo "##vso[task.setvariable variable=RELEASE]$RELEASE"
           echo "##vso[task.setvariable variable=BRANCH]$BRANCH"
           echo "##vso[task.setvariable variable=TAG]$TAG"
         displayName: Export build variables
 
       - bash: echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin docker.io
         displayName: Docker login
-        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-
-      - bash: docker/enable-experimental.sh
-        displayName: Enable experimental Docker features
-
-      - bash: |
-          curl -L -o ~/.docker/cli-plugins/docker-buildx --create-dirs ${BUILDX_URL}
-          chmod a+x ~/.docker/cli-plugins/docker-buildx
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-          docker buildx create --use
-          docker buildx inspect --bootstrap
-        displayName: Prepare buildx
-        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-        env:
-          BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+        condition: and(succeeded(), variables.BRANCH)
 
       # Download all published artifacts
       - download: current
@@ -204,30 +188,16 @@ jobs:
         env:
           SRC: docker/firmware-bin/source
 
-      - bash: >
-          docker buildx build
-          --push
-          --tag $(BIN_REPO):$(TAG)
-          firmware-bin
-        displayName: (firmware-bin) Deploy Docker images with branch tags
-        condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
+      - bash: |
+          docker build --tag $(BIN_REPO):$(TAG) firmware-bin
+          docker push $(BIN_REPO):$(TAG)
+        displayName: (firmware-bin) Build Docker image
+        condition: and(succeeded(), variables['BRANCH'])
         workingDirectory: docker
 
-      - bash: >
-          docker buildx build 
-          --push
-          --tag $(SIM_REPO):$TAG
-          --tag $(SIM_REPO):rpi-$TAG
-          --platform linux/amd64
-          firmware-simulator
-        displayName: (firmware-simulator) Deploy Docker images with branch tags
-        condition: and(succeeded(), variables['BRANCH'], not(variables['RELEASE']))
+      - bash: |
+          docker build --tag $(SIM_REPO):$TAG firmware-simulator
+          docker push $(SIM_REPO):$TAG
+        displayName: (firmware-simulator) Build Docker image
+        condition: and(succeeded(), variables['BRANCH'])
         workingDirectory: docker
-      # - bash: |
-      #     bash push-local.sh $(SIM_REPO) newest-tag
-      #     bash push-local.sh $(SIM_REPO) $(RELEASE)
-      #     bash push-local.sh $(BIN_REPO) newest-tag
-      #     bash push-local.sh $(BIN_REPO) $(RELEASE)
-      #   displayName: Deploy Docker images with release tags
-      #   condition: and(succeeded(), variables['RELEASE'])
-      #   workingDirectory: docker
