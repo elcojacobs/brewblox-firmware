@@ -208,8 +208,8 @@ loop()
 
         watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
-    cbox::Tracing::add(cbox::Tracing::Action::SYSTEM_TASKS, 0, 0);
     ticks.switchTaskTimer(TicksClass::TaskId::System);
+    cbox::Tracing::add(cbox::Tracing::Action::SYSTEM_TASKS, 0, 0);
     HAL_Delay_Milliseconds(1);
 }
 
