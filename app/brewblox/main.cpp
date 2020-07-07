@@ -193,18 +193,22 @@ void
 loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
+    cbox::Tracing::add(cbox::Tracing::Action::UPDATE_DISPLAY, 0, 0);
     displayTick();
     if (!listeningModeEnabled()) {
 
         ticks.switchTaskTimer(TicksClass::TaskId::Communication);
+        cbox::Tracing::add(cbox::Tracing::Action::UPDATE_CONNECTIONS, 0, 0);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
 
+        cbox::Tracing::add(cbox::Tracing::Action::UPDATE_BLOCKS, 0, 0);
         ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
         updateBrewbloxBox();
 
         watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
+    cbox::Tracing::add(cbox::Tracing::Action::SYSTEM_TASKS, 0, 0);
     ticks.switchTaskTimer(TicksClass::TaskId::System);
     HAL_Delay_Milliseconds(1);
 }
