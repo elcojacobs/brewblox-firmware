@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "OneWire.h"
+#include "OneWireCrc.h"
 #include "OneWireMockDevice.h"
 #include "Temperature.h"
 
@@ -43,7 +43,7 @@ public:
         scratchpad[5] = 0xFF; // 0xFF
         scratchpad[6] = 0x00; // Reset
         scratchpad[7] = 0x10; // 0x10
-        scratchpad[8] = OneWire::crc8(scratchpad, 8);
+        scratchpad[8] = OneWireCrc8(scratchpad, 8);
         eeprom[0] = scratchpad[2];
         eeprom[1] = scratchpad[3];
         eeprom[2] = scratchpad[4];
@@ -55,7 +55,7 @@ public:
         case 0x4E: // WRITE SCRATCHPAD
             // write 3 byte of data to scratchpad[2:4], ds18s20 only first 2 bytes (TH, TL)
             recv(&scratchpad[2], 3);
-            scratchpad[8] = OneWire::crc8(scratchpad, 8);
+            scratchpad[8] = OneWireCrc8(scratchpad, 8);
             break;
         case 0xBE: // READ SCRATCHPAD
             send(scratchpad, 9);
@@ -92,7 +92,7 @@ public:
         int16_t raw = cnl::unwrap(temperature) / scale;
         scratchpad[0] = raw & 0xFF;
         scratchpad[1] = (int8_t)(raw >> 8);
-        scratchpad[8] = OneWire::crc8(scratchpad, 8);
+        scratchpad[8] = OneWireCrc8(scratchpad, 8);
     }
     temp_t getTemperature() const
     {

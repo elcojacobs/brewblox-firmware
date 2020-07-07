@@ -21,13 +21,13 @@
 #include "delay_hal.h"
 #include "pwm_hal.h"
 
+#if PLATFORM_ID == 6 // photon, can be V1 or V2 board
+// V1/V2 can be distinguished by having a pull up or pull down on the alarm pin
 bool
 readAlarmPin()
 {
     HAL_Pin_Mode(PIN_ALARM, INPUT);
-#if PLATFORM_ID != 3
-    HAL_Delay_Milliseconds(1); // give time to change
-#endif
+
     bool result = HAL_GPIO_Read(PIN_ALARM);
     HAL_Pin_Mode(PIN_ALARM, OUTPUT);
     return result;
@@ -36,16 +36,20 @@ readAlarmPin()
 SparkVersion
 getSparkVersion()
 {
-
-#if PLATFORM_ID == 8 || PLATFORM_ID == 3 // P1 or simulation
-    return SparkVersion::V3;
-#else
     // V2 has a pull down resistor, V1 has a pull up resistor on the alarm pin
     // If the pin is low, it is V2
     static SparkVersion version = readAlarmPin() ? SparkVersion::V1 : SparkVersion::V2;
     return version;
-#endif
 }
+
+#else
+SparkVersion
+getSparkVersion()
+{
+    return SparkVersion::V3;
+}
+
+#endif
 
 void
 boardInit()

@@ -35,6 +35,7 @@
 #include "MotorValve.h"
 #include "OneWire.h"
 #include "OneWireMockDriver.h"
+#include "TestLogger.h"
 #include <cmath> // for sin
 #include <cstring>
 #include <fstream>
@@ -1100,9 +1101,10 @@ SCENARIO("ActuatorPWM driving mock DS2413 actuator", "[pwm]")
     auto now = ticks_millis_t(0);
     OneWireMockDriver mockOw;
     OneWire ow(mockOw);
-    auto ds2413mock = std::make_shared<DS2413Mock>(OneWireAddress(0x0644'4444'4444'443A));
+    auto addr = OneWireAddress(0x0644'4444'4444'443A);
+    auto ds2413mock = std::make_shared<DS2413Mock>(addr);
     mockOw.attach(ds2413mock); // DS2413
-    auto ds = std::make_shared<DS2413>(ow, OneWireAddress(0x0644'4444'4444'443A));
+    auto ds = std::make_shared<DS2413>(ow, addr);
     ActuatorDigital act([ds]() { return ds; }, 1);
 
     auto constrained = std::make_shared<ActuatorDigitalConstrained>(act);
@@ -1135,6 +1137,7 @@ SCENARIO("ActuatorPWM driving mock DS2413 actuator", "[pwm]")
         std::vector<uint32_t> readBitFlips(100);
         std::generate(readBitFlips.begin(), readBitFlips.end(), nextReadFlip);
 
+        TestLogger::clear();
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
         CHECK(randomIntervalTest(100, pwm, act, 49.0, 1, now) == Approx(49.0).margin(0.2));
@@ -1150,6 +1153,13 @@ SCENARIO("ActuatorPWM driving mock DS2413 actuator", "[pwm]")
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
         CHECK(randomIntervalTest(100, pwm, act, 98.0, 1, now) == Approx(98.0).margin(0.2));
+
+        AND_THEN("The log contains disconnect and reconnect logs")
+        {
+            CHECK(TestLogger::count("LOG(INFO): DS2413 connected: " + addr.toString()) > 10);
+            CHECK(TestLogger::count("LOG(WARN): DS2413 disconnected: " + addr.toString()) > 10);
+        }
+        TestLogger::clear();
     }
 }
 
@@ -1158,9 +1168,10 @@ SCENARIO("ActuatorPWM driving mock DS2408 motor valve", "[pwm]")
     auto now = ticks_millis_t(0);
     OneWireMockDriver mockOw;
     OneWire ow(mockOw);
-    auto ds2408mock = std::make_shared<DS2408Mock>(OneWireAddress(0xDA55'5555'5555'5529));
-    mockOw.attach(ds2408mock); // DS2413
-    auto ds = std::make_shared<DS2408>(ow, OneWireAddress(0xDA55'5555'5555'5529));
+    auto addr = OneWireAddress(0xDA55'5555'5555'5529);
+    auto ds2408mock = std::make_shared<DS2408Mock>(addr);
+    mockOw.attach(ds2408mock);
+    auto ds = std::make_shared<DS2408>(ow, addr);
     MotorValve act([ds]() { return ds; }, 1);
 
     auto constrained = std::make_shared<ActuatorDigitalConstrained>(act);
@@ -1193,6 +1204,7 @@ SCENARIO("ActuatorPWM driving mock DS2408 motor valve", "[pwm]")
         std::vector<uint32_t> readBitFlips(100);
         std::generate(readBitFlips.begin(), readBitFlips.end(), nextReadFlip);
 
+        TestLogger::clear();
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
         CHECK(randomIntervalTest(100, pwm, act, 49.0, 1, now) == Approx(49.0).margin(0.2));
@@ -1208,5 +1220,12 @@ SCENARIO("ActuatorPWM driving mock DS2408 motor valve", "[pwm]")
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
         CHECK(randomIntervalTest(100, pwm, act, 98.0, 1, now) == Approx(98.0).margin(0.2));
+
+        AND_THEN("The log contains disconnect and reconnect logs")
+        {
+            CHECK(TestLogger::count("LOG(INFO): DS2408 connected: " + addr.toString()) > 10);
+            CHECK(TestLogger::count("LOG(WARN): DS2408 disconnected: " + addr.toString()) > 10);
+        }
+        TestLogger::clear();
     }
 }

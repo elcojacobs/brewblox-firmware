@@ -58,15 +58,14 @@ OneWireMockDevice::write(uint8_t b)
 void
 OneWireMockDevice::positionsToMasks(const std::vector<uint32_t>& positions, std::deque<uint8_t>& queue)
 {
-    auto maxPos = std::max_element(positions.cbegin(), positions.cend());
-    if (maxPos == positions.cend()) {
-        return;
-    }
-    auto numBytes = (*maxPos + 4) / 8;
-    queue.assign(numBytes, 0x00);
-    for (const auto& pos : positions) {
-        uint8_t mask = 0x1 << (pos % 8);
-        queue[pos / 8] |= mask;
+    if (!positions.empty()) {
+        auto maxPos = std::max_element(positions.cbegin(), positions.cend());
+        auto numBytes = (*maxPos + 4) / 8;
+        queue.assign(numBytes, 0x00);
+        for (const auto& pos : positions) {
+            uint8_t mask = 0x1 << (pos % 8);
+            queue[pos / 8] |= mask;
+        }
     }
 }
 
@@ -132,11 +131,9 @@ OneWireMockDevice::process()
     }
 
     switch (cmd) {
-    case 0xFF: // nothing received
-        return;
     case 0x33: // Read ROM
         send(&address[0], 8);
-        break;
+        return;
     case 0x55: // Match ROM
     case 0x69: // Overdrive Match
     {
@@ -144,19 +141,17 @@ OneWireMockDevice::process()
         recv(&selectedAddress[0], 8);
         dropped = !match(selectedAddress);
         selected = !dropped;
-    } break;
+    }
+        return;
     case 0xF0: // Search ROM
         search_bitnr = 0;
-        break;
+        return;
     case 0xCC: // Skip ROM
     case 0x3C: // Overdrive skip
     case 0xA5: // Resume
         if (!dropped) {
             selected = true;
         }
-        break;
-    default:
-        break;
     }
 }
 

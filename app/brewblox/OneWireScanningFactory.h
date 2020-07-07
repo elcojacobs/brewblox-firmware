@@ -73,7 +73,7 @@ public:
                     if (ptrIfCorrectType == nullptr) {
                         continue; // not the right type, no match
                     }
-                    if (ptrIfCorrectType->getDeviceAddress() == newAddr) {
+                    if (ptrIfCorrectType->address() == newAddr) {
                         found = true; // object with value already exists
                         break;
                     }
@@ -84,17 +84,17 @@ public:
                     switch (familyCode) {
                     case DS18B20::familyCode: {
                         auto newSensor = std::make_shared<TempSensorOneWireBlock>();
-                        newSensor->get().setDeviceAddress(newAddr);
+                        newSensor->get().address(newAddr);
                         return newSensor;
                     }
                     case DS2413::familyCode: {
                         auto newDevice = std::make_shared<DS2413Block>();
-                        newDevice->get().setDeviceAddress(newAddr);
+                        newDevice->get().address(newAddr);
                         return newDevice;
                     }
                     case DS2408::familyCode: {
                         auto newDevice = std::make_shared<DS2408Block>();
-                        newDevice->get().setDeviceAddress(newAddr);
+                        newDevice->get().address(newAddr);
                         return newDevice;
                     }
                     default:

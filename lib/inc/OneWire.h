@@ -83,10 +83,4 @@ public:
     // When the last device has been return, reset_search or target_search has to be called
     // to reset the search.
     bool search(OneWireAddress& newAddr);
-
-    // Compute a Dallas Semiconductor 8 bit CRC, these are used in the
-    // ROM and scratchpad registers.
-    static uint8_t crc8(const uint8_t* addr, uint8_t len);
-
-    static uint16_t crc16(const uint8_t* input, uint16_t len);
 };

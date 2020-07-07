@@ -25,7 +25,7 @@ public:
         cbox::CboxError res = streamProtoFrom(in, &newData, blox_TempSensorOneWire_fields, blox_TempSensorOneWire_size);
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
-            sensor.setDeviceAddress(OneWireAddress(newData.address));
+            sensor.address(OneWireAddress(newData.address));
             sensor.setCalibration(cnl::wrap<temp_t>(newData.offset));
         }
         return res;
@@ -42,7 +42,7 @@ public:
             stripped.add(blox_TempSensorOneWire_value_tag);
         }
 
-        message.address = sensor.getDeviceAddress();
+        message.address = sensor.address();
         message.offset = cnl::unwrap(sensor.getCalibration());
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
@@ -52,7 +52,7 @@ public:
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
         blox_TempSensorOneWire message = blox_TempSensorOneWire_init_zero;
-        message.address = sensor.getDeviceAddress();
+        message.address = sensor.address();
         message.offset = cnl::unwrap(sensor.getCalibration());
         return streamProtoTo(out, &message, blox_TempSensorOneWire_fields, blox_TempSensorOneWire_size);
     }

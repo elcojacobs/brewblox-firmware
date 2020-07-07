@@ -48,21 +48,14 @@ DS2413::update()
     }
     oneWire.reset();
 
-    if (success != m_connected) {
-        if (success) {
-            CL_LOG_INFO("DS2413 connected: ") << address.toString();
-        } else {
-            CL_LOG_WARN("DS2413 disconnected: ") << address.toString();
-        }
-        m_connected = success;
-    }
+    connected(success);
     return success;
 }
 
 bool
 DS2413::writeNeeded()
 {
-    return !m_connected || (desiredState & 0b1010) != (actualState & 0b1010);
+    return !connected() || (desiredState & 0b1010) != (actualState & 0b1010);
 }
 
 bool

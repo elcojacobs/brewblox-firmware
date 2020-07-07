@@ -36,7 +36,7 @@ static constexpr uint8_t ADDRESS_LATCH_STATE_LOWER = 0x89;
 bool
 DS2408::writeNeeded() const
 {
-    return !m_connected || desiredLatches != latches;
+    return !connected() || desiredLatches != latches;
 }
 
 bool
@@ -86,14 +86,7 @@ DS2408::update()
 
     oneWire.reset();
 
-    if (success != m_connected) {
-        if (success) {
-            CL_LOG_INFO("DS2408 connected ") << address.toString();
-        } else {
-            CL_LOG_WARN("DS2408 disconnected ") << address.toString();
-        }
-        m_connected = success;
-    }
+    connected(success);
     return success;
 }
 

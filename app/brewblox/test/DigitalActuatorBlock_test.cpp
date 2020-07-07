@@ -83,7 +83,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
             auto lookup = brewbloxBox().makeCboxPtr<DS2413Block>(ds2413Id);
             auto devicePtr = lookup.lock();
             REQUIRE(devicePtr);
-            CHECK(devicePtr->get().getDeviceAddress() == OneWireAddress(0x0644'4444'4444'443A));
+            CHECK(devicePtr->get().address() == OneWireAddress(0x0644'4444'4444'443A));
         }
 
         AND_WHEN("A DigitalActuator block is created that uses one of the channels")

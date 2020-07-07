@@ -35,18 +35,15 @@ public:
         Unknown = 2,
     };
 
-    static State invertState(State s)
+    static inline State invertState(State s)
     {
-        switch (s) {
-        case State::Active:
+        if (s == State::Active) {
             return State::Inactive;
-        case State::Inactive:
-            return State::Active;
-        case State::Unknown:
-            return State::Unknown;
-        default:
-            return State::Unknown;
         }
+        if (s == State::Inactive) {
+            return State::Active;
+        }
+        return State::Unknown;
     }
 
 public:

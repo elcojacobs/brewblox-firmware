@@ -42,7 +42,7 @@ struct StringMaker<OneWireAddress> {
 OneWireAddress
 makeValidAddress(OneWireAddress addr)
 {
-    addr[7] = OneWire::crc8(&addr[0], 7);
+    addr[7] = OneWireCrc8(&addr[0], 7);
     return addr;
 }
 
@@ -54,6 +54,13 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
     WHEN("No devices are on the bus, reset returns false")
     {
         CHECK(ow.reset() == false);
+    }
+
+    WHEN("No devices are on the bus, search returns false")
+    {
+        OneWireAddress addr(0);
+        ow.reset_search();
+        CHECK(ow.search(addr) == false);
     }
 
     WHEN("A mock DS18B20 is attached")
@@ -73,6 +80,39 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             bool found = ow.search(addr);
             CHECK(found == true);
             CHECK(addr == addr1);
+        }
+
+        THEN("A read without issueing a command returns 0xFF")
+        {
+            ow.reset();
+            CHECK(ow.read() == 0xFF);
+        }
+
+        THEN("An invalid command is ignored")
+        {
+            ow.reset();
+            ow.write(0xFE);
+            CHECK(ow.read() == 0xFF);
+        }
+
+        THEN("With a single device on the bus, a read ROM command can return its address")
+        {
+            OneWireAddress addr(0);
+            ow.reset();
+            ow.write(0x33);
+            for (uint8_t i = 0; i < 8; i++) {
+                addr[i] = ow.read();
+            }
+            CHECK(addr == addr1);
+        }
+
+        THEN("With a single device on the bus, a skip ROM command can select it without knowing the address")
+        {
+            OneWireAddress addr(0);
+            ow.reset();
+            ow.skip();      // skip selecting by address
+            ow.write(0xB4); // read power supply
+            CHECK(ow.read() == 0x80);
         }
 
         THEN("A OneWire sensor can use it on the fake bus")

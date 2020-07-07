@@ -62,11 +62,6 @@ public:
 
     bool search_triplet_write(bool bit);
 
-    bool present()
-    {
-        return !dropped;
-    }
-
     // flip an upcoming bit in to test communication errors
     void flipWrittenBits(const std::vector<uint32_t>& positions)
     {
