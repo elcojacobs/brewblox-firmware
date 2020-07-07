@@ -2,10 +2,8 @@
 MY_DIR=$(dirname "$(readlink -f "$0")")
 ROOT_DIR=$(dirname "$(readlink -f "$MY_DIR")")
 
-"$ROOT_DIR/controlbox/build/cbox_test_runner"
-"$ROOT_DIR/lib/test/build/lib_test_runner"
-"$ROOT_DIR/app/brewblox/test/build/brewblox_test_runner"
-
+bash "$MY_DIR/run-tests.sh"
+TEST_RESULT=$?
 
 mkdir -p "$ROOT_DIR/build/coverage/html"
 if [ "$1" = "html" ]
@@ -37,3 +35,5 @@ gcovr --root "$ROOT_DIR" \
   $FORMAT_ARGS \
   --delete \
   --print-summary
+
+exit $TEST_RESULT
