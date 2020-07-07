@@ -35,4 +35,13 @@ class SysInfoBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_SysInfo> {
     {
         return update_never(now);
     }
+
+    enum class Command : uint8_t {
+        NONE = 0,
+        READ_TRACE = 1,
+        RESUME_TRACE = 2,
+        READ_AND_RESUME_TRACE = 3,
+    };
+
+    mutable Command command = Command::NONE;
 };

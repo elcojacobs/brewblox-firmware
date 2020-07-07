@@ -10,11 +10,13 @@
 #include "ConnectionsStringStream.h"
 #include "DataStreamConverters.h"
 #include "EepromObjectStorage.h"
+#include "GroupsObject.h"
 #include "LongIntScanningFactory.h"
 #include "Object.h"
 #include "ObjectContainer.h"
 #include "ObjectFactory.h"
 #include "TestObjects.h"
+#include "Tracing.h"
 
 using namespace cbox;
 
@@ -734,6 +736,7 @@ SCENARIO("A controlbox Box")
 
     THEN("Objects update at their requested interval")
     {
+        cbox::Tracing::unpause();
         box.update(0);
         // create 2 counter objects with different update intervals
         // object creation and write also triggers an object update
@@ -775,6 +778,53 @@ SCENARIO("A controlbox Box")
                            "D007"                         // interval 2000
                            "0100")                        // count 1
                  << "\n";
+
+        THEN("Last actions performed on objects are traced")
+        {
+
+            auto it = cbox::Tracing::history().begin();
+
+            CHECK(it->action == cbox::Tracing::Action::NONE);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::NONE);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::NONE);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::UPDATE_OBJECT);
+            CHECK(it->id == 1);
+            CHECK(it->type == GroupsObject::staticTypeId());
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::UPDATE_OBJECT);
+            CHECK(it->id == 2);
+            CHECK(it->type == LongIntObject::staticTypeId());
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::UPDATE_OBJECT);
+            CHECK(it->id == 3);
+            CHECK(it->type == LongIntObject::staticTypeId());
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::CREATE_OBJECT);
+            CHECK(it->id == 100);
+            CHECK(it->type == 1002);
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::PERSIST_OBJECT);
+            CHECK(it->id == 100);
+            CHECK(it->type == 1002);
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::CREATE_OBJECT);
+            CHECK(it->id == 101);
+            CHECK(it->type == 1002);
+            ++it;
+            CHECK(it->action == cbox::Tracing::Action::PERSIST_OBJECT);
+            CHECK(it->id == 101);
+            CHECK(it->type == 1002);
+            ++it;
+        }
 
         auto counterObjPtr1 = box.getObject(100).lock();
         auto counterObjPtr2 = box.getObject(101).lock();
@@ -1059,7 +1109,7 @@ SCENARIO("A controlbox Box")
             CHECK(out->str() == expected.str());
         }
 
-        THEN("The newly discoverd objects are persisted")
+        THEN("The newly discovered objects are persisted")
         {
             clearStreams();
             *in << "000007"; // list stored objects

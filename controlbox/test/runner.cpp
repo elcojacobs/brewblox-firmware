@@ -4,6 +4,7 @@
 #include "CboxError.h"
 #include "Connections.h"
 #include "DataStream.h"
+#include "Tracing.h"
 #include "testinfo.h"
 #include <catch.hpp>
 
@@ -44,4 +45,6 @@ applicationCommand(uint8_t cmdId, DataIn& in, EncodedDataOut& out)
         return false;
     }
 }
+
+Tracing::trace_t cbox::Tracing::trace;
 } // end namespace cbox

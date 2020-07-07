@@ -33,9 +33,6 @@ public:
         : id(rhs)
     {
     }
-    obj_type_t(const obj_type_t& rhs) = default;
-    obj_type_t(obj_type_t& rhs) = default;
-    obj_type_t(obj_type_t&& rhs) = default;
 
     obj_type_t& operator=(const uint16_t& rhs)
     {
