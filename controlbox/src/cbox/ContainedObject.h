@@ -39,13 +39,21 @@ public:
         , _obj(std::move(obj))
         , _nextUpdateTime(0)
     {
-        Tracing::add(Tracing::Action::CREATE_OBJECT, _id, _obj->typeId());
+        tracing::add(tracing::Action::CREATE_OBJECT, _id, _obj ? _obj->typeId() : obj_type_t(0));
     }
 
     virtual ~ContainedObject()
     {
-        Tracing::add(Tracing::Action::DELETE_OBJECT, _id, _obj->typeId());
+        if (_obj) {
+            // this check is needed because otherwise a trace would be created if a vector is relocated and reserved space is destructed
+            tracing::add(tracing::Action::DELETE_OBJECT, _id, _obj->typeId());
+        }
     }
+
+    ContainedObject(const ContainedObject&) = default;           // no copy
+    ContainedObject& operator=(const ContainedObject&) = delete; // no copy
+    ContainedObject(ContainedObject&&) = default;                // move allowed
+    ContainedObject& operator=(ContainedObject&&) = default;     // move allowed
 
 private:
     obj_id_t _id;                 // unique id of object
@@ -77,7 +85,7 @@ public:
 
     void update(const update_t& now)
     {
-        Tracing::add(Tracing::Action::UPDATE_OBJECT, _id, _obj->typeId());
+        tracing::add(tracing::Action::UPDATE_OBJECT, _id, _obj->typeId());
         const update_t overflowGuard = std::numeric_limits<update_t>::max() / 2;
         if (overflowGuard - now + _nextUpdateTime <= overflowGuard) {
             _nextUpdateTime = _obj->update(now);
@@ -91,7 +99,7 @@ public:
 
     CboxError streamTo(DataOut& out) const
     {
-        Tracing::add(Tracing::Action::SEND_OBJECT, _id, _obj->typeId());
+        tracing::add(tracing::Action::SEND_OBJECT, _id, _obj->typeId());
         if (!out.put(_id)) {
             return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
         }
@@ -107,7 +115,7 @@ public:
     CboxError streamFrom(DataIn& in)
     {
         // id is not streamed in. It is immutable and assumed to be already read to find this entry
-        Tracing::add(Tracing::Action::RECEIVE_OBJECT, _id, _obj->typeId());
+        tracing::add(tracing::Action::RECEIVE_OBJECT, _id, _obj->typeId());
         uint8_t newGroups;
         obj_type_t expectedType;
         if (!in.get(newGroups)) {
@@ -133,7 +141,7 @@ public:
 
     CboxError streamPersistedTo(DataOut& out) const
     {
-        Tracing::add(Tracing::Action::PERSIST_OBJECT, _id, _obj->typeId());
+        tracing::add(tracing::Action::PERSIST_OBJECT, _id, _obj->typeId());
         // id is not streamed out. It is passed to storage separately
         if (_obj->typeId() == InactiveObject::staticTypeId()) {
             // inactive objects are not persisted, but no error is returned

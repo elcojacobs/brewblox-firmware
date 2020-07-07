@@ -112,8 +112,6 @@ using PinsBlock = Spark2PinsBlock;
 using PinsBlock = Spark3PinsBlock;
 #endif
 
-__attribute__((section(".retained_user"))) cbox::Tracing::trace_t cbox::Tracing::trace;
-
 cbox::ConnectionPool&
 
 theConnectionPool()

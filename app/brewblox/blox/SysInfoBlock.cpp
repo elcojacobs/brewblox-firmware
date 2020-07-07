@@ -43,7 +43,7 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
 
     if (command == Command::READ_TRACE || command == Command::READ_AND_RESUME_TRACE) {
         // circular buffer, idx - 1 has most recent action
-        auto history = cbox::Tracing::history();
+        auto history = cbox::tracing::history();
         auto it = history.cbegin();
         auto end = history.cend();
         for (uint8_t i = 0; i < 10 && it < end; i++, it++) {
@@ -54,7 +54,7 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
         message.trace_count = 10;
     }
     if (command == Command::RESUME_TRACE || command == Command::READ_AND_RESUME_TRACE) {
-        cbox::Tracing::unpause();
+        cbox::tracing::unpause();
     }
 
     command = Command::NONE;

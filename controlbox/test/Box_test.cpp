@@ -22,7 +22,7 @@ using namespace cbox;
 
 SCENARIO("A controlbox Box")
 {
-    ObjectContainer container = {
+    ObjectContainer container{
         // groups object will have id 1
         // add 2 system objects
         ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
@@ -71,11 +71,12 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("0000010200")
-                 << "|" << addCrc("00"        // no error
-                                  "0200"      // object id 2
-                                  "80"        // groups 0x80
-                                  "E803"      // object type 1000
-                                  "11111111") // object data
+                 << "|" << addCrc(
+                        "00"        // no error
+                        "0200"      // object id 2
+                        "80"        // groups 0x80
+                        "E803"      // object type 1000
+                        "11111111") // object data
                  << "\n";
         CHECK(out->str() == expected.str());
     }
@@ -92,8 +93,9 @@ SCENARIO("A controlbox Box")
         CHECK(out->str() == expected.str());
     }
 
-    WHEN("A connection sends a read stored object command for a non-existing object, "
-         "INVALID_OBJECT_ID is returned, and an error event is sent with PERSISTED_OBJECT_NOT_FOUND")
+    WHEN(
+        "A connection sends a read stored object command for a non-existing object, "
+        "INVALID_OBJECT_ID is returned, and an error event is sent with PERSISTED_OBJECT_NOT_FOUND")
     {
         *in << "0000060800"; // read stored object 8
         *in << crc(in->str()) << "\n";
@@ -112,11 +114,12 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("000002020080E80333333333")
-                 << "|" << addCrc("00"        // no error
-                                  "0200"      // object id 2
-                                  "80"        // groups 0x80
-                                  "E803"      // object type 1000
-                                  "33333333") // object data
+                 << "|" << addCrc(
+                        "00"        // no error
+                        "0200"      // object id 2
+                        "80"        // groups 0x80
+                        "E803"      // object type 1000
+                        "33333333") // object data
                  << "\n";
         CHECK(out->str() == expected.str());
 
@@ -145,11 +148,12 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("00000300007FE80344444444") << "|"
-                 << addCrc("00"        // status
-                           "6400"      // id
-                           "7F"        // groups
-                           "E803"      // type
-                           "44444444") // data
+                 << addCrc(
+                        "00"        // status
+                        "6400"      // id
+                        "7F"        // groups
+                        "E803"      // type
+                        "44444444") // data
                  << "\n";
         CHECK(out->str() == expected.str());
         CHECK(box.getObject(100).lock());
@@ -238,13 +242,14 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("00000364007FE90302003333333344444444") << "|"
-                 << addCrc("00"        // status
-                           "6400"      // id 100
-                           "7F"        // groups
-                           "E903"      // type 1001, LongIntVector
-                           "0200"      // size 2
-                           "33333333"  // value 33333333
-                           "44444444") // value 44444444
+                 << addCrc(
+                        "00"        // status
+                        "6400"      // id 100
+                        "7F"        // groups
+                        "E903"      // type 1001, LongIntVector
+                        "0200"      // size 2
+                        "33333333"  // value 33333333
+                        "44444444") // value 44444444
                  << "\n";
         CHECK(out->str() == expected.str());
         CHECK(box.getObject(100).lock());
@@ -260,11 +265,12 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("00000365007FEB0344444444") << "|"
-                 << addCrc("00"        // status
-                           "6500"      // id
-                           "7F"        // groups
-                           "EB03"      // type
-                           "44444444") // data
+                 << addCrc(
+                        "00"        // status
+                        "6500"      // id
+                        "7F"        // groups
+                        "EB03"      // type
+                        "44444444") // data
                  << "\n";
         CHECK(out->str() == expected.str());
         CHECK(box.getObject(101).lock());
@@ -322,11 +328,12 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("000003000000E80344444444") << "|" // command repetition
-                 << addCrc("00"                               // status OK
-                           "6400"                             // id 100
-                           "00"                               // groups 0x00
-                           "FFFF"                             // type InactiveObject
-                           "E803")                            // actual type 1000
+                 << addCrc(
+                        "00"    // status OK
+                        "6400"  // id 100
+                        "00"    // groups 0x00
+                        "FFFF"  // type InactiveObject
+                        "E803") // actual type 1000
                  << "\n";
 
         CHECK(out->str() == expected.str());
@@ -345,11 +352,12 @@ SCENARIO("A controlbox Box")
             // This allows to distinguish between an error in EEPROM or a communication error.
 
             expected << addCrc("0000066400") << "|"
-                     << addCrc("00"        // status
-                               "6400"      // id
-                               "00"        // stored groups
-                               "E803"      // stored type
-                               "44444444") // stored data
+                     << addCrc(
+                            "00"        // status
+                            "6400"      // id
+                            "00"        // stored groups
+                            "E803"      // stored type
+                            "44444444") // stored data
                      << "\n";
             CHECK(out->str() == expected.str());
         }
@@ -381,11 +389,12 @@ SCENARIO("A controlbox Box")
                 box.hexCommunicate();
 
                 expected << addCrc("0000066400") << "|"
-                         << addCrc("00"        // status
-                                   "6400"      // id
-                                   "00"        // stored groups
-                                   "E803"      // stored type
-                                   "44444444") // stored data
+                         << addCrc(
+                                "00"        // status
+                                "6400"      // id
+                                "00"        // stored groups
+                                "E803"      // stored type
+                                "44444444") // stored data
                          << "\n";
                 CHECK(out->str() == expected.str());
             }
@@ -404,11 +413,12 @@ SCENARIO("A controlbox Box")
             box.hexCommunicate();
 
             expected << addCrc("0000026400FFFFFF0000") << "|" // command repetition
-                     << addCrc("00"                           // status OK
-                               "6400"                         // id
-                               "7F"                           // groups, system group is allowed to be set
-                               "E803"                         // stored type
-                               "44444444")                    // stored data
+                     << addCrc(
+                            "00"        // status OK
+                            "6400"      // id
+                            "7F"        // groups, system group is allowed to be set
+                            "E803"      // stored type
+                            "44444444") // stored data
                      << "\n";
 
             CHECK(out->str() == expected.str());
@@ -422,11 +432,12 @@ SCENARIO("A controlbox Box")
                 box.hexCommunicate();
 
                 expected << addCrc("0000066400") << "|"
-                         << addCrc("00"        // status
-                                   "6400"      // id
-                                   "7F"        // stored groups
-                                   "E803"      // stored type
-                                   "44444444") // stored data
+                         << addCrc(
+                                "00"        // status
+                                "6400"      // id
+                                "7F"        // stored groups
+                                "E803"      // stored type
+                                "44444444") // stored data
                          << "\n";
                 CHECK(out->str() == expected.str());
             }
@@ -736,7 +747,7 @@ SCENARIO("A controlbox Box")
 
     THEN("Objects update at their requested interval")
     {
-        cbox::Tracing::unpause();
+        cbox::tracing::unpause();
         box.update(0);
         // create 2 counter objects with different update intervals
         // object creation and write also triggers an object update
@@ -751,12 +762,13 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("00000364007FEA03E803") << "|" // command repetition
-                 << addCrc("00"                           // status OK
-                           "6400"                         // id 100
-                           "7F"                           // groups 0x7F (system profile not set)
-                           "EA03"                         // type 1002
-                           "E803"                         // interval 1000
-                           "0100")                        // count 1
+                 << addCrc(
+                        "00"    // status OK
+                        "6400"  // id 100
+                        "7F"    // groups 0x7F (system profile not set)
+                        "EA03"  // type 1002
+                        "E803"  // interval 1000
+                        "0100") // count 1
                  << "\n";
 
         CHECK(out->str() == expected.str());
@@ -771,56 +783,57 @@ SCENARIO("A controlbox Box")
         box.hexCommunicate();
 
         expected << addCrc("00000365007FEA03D007") << "|" // command repetition
-                 << addCrc("00"                           // status OK
-                           "6500"                         // id 101
-                           "7F"                           // groups 0xFF
-                           "EA03"                         // type 1002
-                           "D007"                         // interval 2000
-                           "0100")                        // count 1
+                 << addCrc(
+                        "00"    // status OK
+                        "6500"  // id 101
+                        "7F"    // groups 0xFF
+                        "EA03"  // type 1002
+                        "D007"  // interval 2000
+                        "0100") // count 1
                  << "\n";
 
         THEN("Last actions performed on objects are traced")
         {
 
-            auto it = cbox::Tracing::history().begin();
+            auto it = cbox::tracing::history().cbegin();
 
-            CHECK(it->action == cbox::Tracing::Action::NONE);
+            CHECK(it->action == cbox::tracing::Action::NONE);
             CHECK(it->id == 0);
             CHECK(it->type == 0);
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::NONE);
+            CHECK(it->action == cbox::tracing::Action::NONE);
             CHECK(it->id == 0);
             CHECK(it->type == 0);
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::NONE);
+            CHECK(it->action == cbox::tracing::Action::NONE);
             CHECK(it->id == 0);
             CHECK(it->type == 0);
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::UPDATE_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::UPDATE_OBJECT);
             CHECK(it->id == 1);
             CHECK(it->type == GroupsObject::staticTypeId());
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::UPDATE_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::UPDATE_OBJECT);
             CHECK(it->id == 2);
             CHECK(it->type == LongIntObject::staticTypeId());
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::UPDATE_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::UPDATE_OBJECT);
             CHECK(it->id == 3);
             CHECK(it->type == LongIntObject::staticTypeId());
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::CREATE_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::CREATE_OBJECT);
             CHECK(it->id == 100);
             CHECK(it->type == 1002);
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::PERSIST_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::PERSIST_OBJECT);
             CHECK(it->id == 100);
             CHECK(it->type == 1002);
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::CREATE_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::CREATE_OBJECT);
             CHECK(it->id == 101);
             CHECK(it->type == 1002);
             ++it;
-            CHECK(it->action == cbox::Tracing::Action::PERSIST_OBJECT);
+            CHECK(it->action == cbox::tracing::Action::PERSIST_OBJECT);
             CHECK(it->id == 101);
             CHECK(it->type == 1002);
             ++it;
@@ -926,17 +939,18 @@ SCENARIO("A controlbox Box")
 
         expected
             << addCrc(command) << "|" // command repetition
-            << addCrc("00"            // status OK
-                      "6400"          // id 100
-                      "7F"            // groups 0xFF
-                      "ED03"          // type 1002
-                      "0200"          // ptr 1 points to ID 2
-                      "0300"          // ptr 2 points to ID 3
-                      "01"            // ptr1 OK
-                      "01"            // ptr2 OK
-                      "11111111"      // value 1
-                      "22222222"      // value 2
-                      )
+            << addCrc(
+                   "00"       // status OK
+                   "6400"     // id 100
+                   "7F"       // groups 0xFF
+                   "ED03"     // type 1002
+                   "0200"     // ptr 1 points to ID 2
+                   "0300"     // ptr 2 points to ID 3
+                   "01"       // ptr1 OK
+                   "01"       // ptr2 OK
+                   "11111111" // value 1
+                   "22222222" // value 2
+                   )
             << "\n";
 
         CHECK(out->str() == expected.str());
@@ -959,17 +973,18 @@ SCENARIO("A controlbox Box")
 
             expected
                 << addCrc(command) << "|" // command repetition
-                << addCrc("00"            // status OK
-                          "6400"          // id 100
-                          "7F"            // groups 0x7F
-                          "ED03"          // type 1002
-                          "0300"          // ptr 1 points to ID 3
-                          "0400"          // ptr 2 points to ID 4
-                          "01"            // ptr1 OK
-                          "00"            // ptr2 not OK
-                          "22222222"      // value 1
-                          "00000000"      // value 2 is default value 0
-                          )
+                << addCrc(
+                       "00"       // status OK
+                       "6400"     // id 100
+                       "7F"       // groups 0x7F
+                       "ED03"     // type 1002
+                       "0300"     // ptr 1 points to ID 3
+                       "0400"     // ptr 2 points to ID 4
+                       "01"       // ptr1 OK
+                       "00"       // ptr2 not OK
+                       "22222222" // value 1
+                       "00000000" // value 2 is default value 0
+                       )
                 << "\n";
 
             CHECK(out->str() == expected.str());
