@@ -46,5 +46,4 @@ applicationCommand(uint8_t cmdId, DataIn& in, EncodedDataOut& out)
     }
 }
 
-Tracing::trace_t cbox::Tracing::trace;
 } // end namespace cbox

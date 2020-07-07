@@ -132,7 +132,7 @@ setup()
     HAL_Delay_Milliseconds(1);
 #endif
 
-    cbox::Tracing::pause(); // ensure tracing is paused until service resumes it
+    cbox::tracing::pause(); // ensure tracing is paused until service resumes it
 
     // init display
     D4D_Init(nullptr);
@@ -195,23 +195,23 @@ void
 loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
-    cbox::Tracing::add(cbox::Tracing::Action::UPDATE_DISPLAY, 0, 0);
+    cbox::tracing::add(cbox::tracing::Action::UPDATE_DISPLAY, 0, 0);
     displayTick();
     if (!listeningModeEnabled()) {
 
         ticks.switchTaskTimer(TicksClass::TaskId::Communication);
-        cbox::Tracing::add(cbox::Tracing::Action::UPDATE_CONNECTIONS, 0, 0);
+        cbox::tracing::add(cbox::tracing::Action::UPDATE_CONNECTIONS, 0, 0);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
 
-        cbox::Tracing::add(cbox::Tracing::Action::UPDATE_BLOCKS, 0, 0);
+        cbox::tracing::add(cbox::tracing::Action::UPDATE_BLOCKS, 0, 0);
         ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
         updateBrewbloxBox();
 
         watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
     ticks.switchTaskTimer(TicksClass::TaskId::System);
-    cbox::Tracing::add(cbox::Tracing::Action::SYSTEM_TASKS, 0, 0);
+    cbox::tracing::add(cbox::tracing::Action::SYSTEM_TASKS, 0, 0);
     HAL_Delay_Milliseconds(1);
 }
 
