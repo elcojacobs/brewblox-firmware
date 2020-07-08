@@ -286,6 +286,7 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
         THEN("A DS2413 class can use it as input")
         {
             DS2413 ds1(ow, addr3);
+            ds1.update();
 
             ActuatorDigitalBase::State result;
             CHECK(ds1.writeChannelConfig(1, IoArray::ChannelConfig::INPUT));
