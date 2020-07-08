@@ -58,7 +58,6 @@ WarningScreen::activate()
 void
 ScrWarning_OnInit()
 {
-    Buzzer.beep(2, 200);
 }
 
 void
@@ -69,6 +68,7 @@ ScrWarning_OnMain()
 void
 ScrWarning_OnActivate()
 {
+    Buzzer.beep(2, 200);
 }
 
 void
