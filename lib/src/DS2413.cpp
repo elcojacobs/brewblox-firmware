@@ -38,24 +38,26 @@ DS2413::update()
             }
             success = processStatus(status);
         }
+        oneWire.reset();
     }
     if (writeNeeded()) { // check again
         success = false;
         if (selectRom()) {
-            oneWire.write(ACCESS_WRITE);
             uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
-            uint8_t bytes[2] = {data, uint8_t(~data)}; // normal and inverted for error checking
-            if (!oneWire.write_bytes(bytes, 2)) {
-                return false;
-            }
-            if (oneWire.read(data) && data == ACK_SUCCESS) {
-                if (oneWire.read(data)) {
-                    success = processStatus(data);
+            uint8_t bytes[3] = {ACCESS_WRITE, data, uint8_t(~data)};
+
+            if (oneWire.write_bytes(bytes, 3)) {
+                /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
+
+                if (oneWire.read(data) && data == ACK_SUCCESS) {
+                    if (oneWire.read(data)) {
+                        success = processStatus(data);
+                    }
                 }
             }
         }
+        oneWire.reset();
     }
-    oneWire.reset();
 
     connected(success);
     return success;
@@ -85,7 +87,9 @@ DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
     } else {
         desiredState |= bitmask;
     }
-    if (writeNeeded()) {
+    if (connected() && writeNeeded()) {
+        // only directly update when connected, to prevent disconnected devices to continuously try to update
+        // they will reconnect in the normal update tick, which should happen every second
         return update();
     }
     return true;

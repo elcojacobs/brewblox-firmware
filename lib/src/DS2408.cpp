@@ -116,7 +116,9 @@ DS2408::writeChannelImpl(uint8_t channel, ChannelConfig config)
     } else {
         desiredLatches |= mask;
     }
-    if (writeNeeded()) {
+    if (connected() && writeNeeded()) {
+        // only directly update when connected, to prevent disconnected devices to continuously try to update
+        // they will reconnect in the normal update tick, which should happen every second
         return update();
     }
     return true;
