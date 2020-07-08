@@ -201,10 +201,13 @@ theOneWire()
     return ow;
 }
 #else
+extern void
+handleOneWireShorted();
+
 OneWire&
 theOneWire()
 {
-    static auto owDriver = DS248x(0x00);
+    static auto owDriver = DS248x(0x00, handleOneWireShorted);
     static auto ow = OneWire(owDriver);
     return ow;
 }

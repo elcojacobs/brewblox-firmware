@@ -68,7 +68,7 @@ std::array<WidgetWrapper, 6> widgetWrappers = {
     WidgetWrapper(5),
 };
 
-D4D_DECLARE_STD_SCREEN_BEGIN(widgets_screen, scrWidgets_)
+D4D_DECLARE_SCREEN_BEGIN(widgets_screen, scrWidgets_, 0, 0, (D4D_COOR)(D4D_SCREEN_SIZE_LONGER_SIDE), (D4D_COOR)(D4D_SCREEN_SIZE_SHORTER_SIDE), nullptr, 0, nullptr, (D4D_SCR_F_DEFAULT | D4D_SCR_F_TOUCHENABLE), nullptr)
 &scrWidgets_usb_icon,
     &scrWidgets_usb_text,
     &scrWidgets_wifi_icon,
@@ -141,7 +141,6 @@ void
 WidgetsScreen::activate()
 {
     D4D_ActivateScreen(&widgets_screen, D4D_TRUE);
-    loadSettings();
 }
 
 void
@@ -212,6 +211,7 @@ scrWidgets_OnMain()
 void
 scrWidgets_OnActivate()
 {
+    WidgetsScreen::loadSettings();
 }
 
 void

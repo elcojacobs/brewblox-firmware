@@ -44,6 +44,12 @@ AS_D4D_COLOR_SCHEME(SmallColorScheme* small)
     return reinterpret_cast<D4D_CLR_SCHEME*>(address);
 }
 
+inline D4D_CLR_SCHEME*
+AS_D4D_COLOR_SCHEME(const SmallColorScheme* small)
+{
+    return AS_D4D_COLOR_SCHEME(const_cast<SmallColorScheme*>(small));
+}
+
 static constexpr SmallColorScheme
 makeSmallColorScheme(const uint8_t r, const uint8_t g, const uint8_t b)
 {

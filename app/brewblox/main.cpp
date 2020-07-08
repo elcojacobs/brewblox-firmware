@@ -31,6 +31,7 @@
 #include "display/screens/WidgetsScreen.h"
 #include "display/screens/listening_screen.h"
 #include "display/screens/startup_screen.h"
+#include "display/screens/warning_screen.h"
 #include "eeprom_hal.h"
 #include "reset.h"
 #include "spark_wiring_startup.h"
@@ -110,6 +111,24 @@ void
 onOutOfMemory(system_event_t event, int param)
 {
     HAL_Delay_Milliseconds(1000);
+}
+
+void
+handleReset(bool exitFlag, uint8_t reason)
+{
+    if (exitFlag) {
+#if PLATFORM_ID == PLATFORM_GCC
+        exit(0);
+#else
+        System.reset(reason);
+#endif
+    }
+}
+
+void
+handleOneWireShorted()
+{
+    WarningScreen::activate();
 }
 
 #if PLATFORM_ID != PLATFORM_GCC
@@ -213,16 +232,4 @@ loop()
     ticks.switchTaskTimer(TicksClass::TaskId::System);
     cbox::tracing::add(cbox::tracing::Action::SYSTEM_TASKS, 0, 0);
     HAL_Delay_Milliseconds(1);
-}
-
-void
-handleReset(bool exitFlag, uint8_t reason)
-{
-    if (exitFlag) {
-#if PLATFORM_ID == PLATFORM_GCC
-        exit(0);
-#else
-        System.reset(reason);
-#endif
-    }
 }

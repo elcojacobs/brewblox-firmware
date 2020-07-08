@@ -48,6 +48,11 @@ DS248x::busyWait()
     for (uint8_t retries = 0; retries < 5; retries++) {
         if (Wire.requestFrom(mAddress, size_t{1})) {
             mStatus = Wire.read();
+
+            if (mStatus & DS248X_STATUS_SD) {
+                mHandleShorted();
+                break;
+            }
             if ((mStatus & DS248X_STATUS_BUSY) == 0) {
                 return true;
             }

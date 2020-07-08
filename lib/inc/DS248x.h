@@ -22,6 +22,7 @@
 
 #include "OneWireLowLevelInterface.h"
 #include <cstdint>
+#include <functional>
 
 constexpr uint8_t DS248X_CONFIG_APU = (0x1 << 0);
 constexpr uint8_t DS248X_CONFIG_PPM = (0x1 << 1);
@@ -53,8 +54,9 @@ class DS248x : public OneWireLowLevelInterface {
 public:
     //Address is 0-3
 
-    DS248x(uint8_t address)
+    DS248x(uint8_t address, std::function<void()> handleShorted)
         : mAddress(0x18 | address)
+        , mHandleShorted(handleShorted)
     {
     }
 
@@ -102,5 +104,6 @@ private:
     uint8_t mAddress;
     uint8_t mStatus = 0;
 
-    bool busyWait(); //blocks until ready or timeout, updates status
+    bool busyWait();                            //blocks until ready or timeout, updates status
+    const std::function<void()> mHandleShorted; // function to call when a short is detected between OneWire data and GND
 };
