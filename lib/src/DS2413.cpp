@@ -28,22 +28,31 @@ DS2413::update()
 
     bool success = false;
     if (!writeNeeded()) { // skip read if we need to write anyway, which also returns status
-        selectRom();
-        oneWire.write(ACCESS_READ);
-        uint8_t data = oneWire.read();
-        success = processStatus(data);
+        if (selectRom()) {
+            if (!oneWire.write(ACCESS_READ)) {
+                return false;
+            }
+            uint8_t status;
+            if (!oneWire.read(status)) {
+                return false;
+            }
+            success = processStatus(status);
+        }
     }
     if (writeNeeded()) { // check again
-        selectRom();
-        oneWire.write(ACCESS_WRITE);
-        uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
-        oneWire.write(data);
-        oneWire.write(~data); // write inverted for error checking
-        data = oneWire.read();
         success = false;
-        if (data == ACK_SUCCESS) {
-            data = oneWire.read();
-            success = processStatus(data);
+        if (selectRom()) {
+            oneWire.write(ACCESS_WRITE);
+            uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
+            uint8_t bytes[2] = {data, uint8_t(~data)}; // normal and inverted for error checking
+            if (!oneWire.write_bytes(bytes, 2)) {
+                return false;
+            }
+            if (oneWire.read(data) && data == ACK_SUCCESS) {
+                if (oneWire.read(data)) {
+                    success = processStatus(data);
+                }
+            }
         }
     }
     oneWire.reset();

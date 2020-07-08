@@ -85,14 +85,18 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
         THEN("A read without issueing a command returns 0xFF")
         {
             ow.reset();
-            CHECK(ow.read() == 0xFF);
+            uint8_t v = 0;
+            ow.read(v);
+            CHECK(v == 0xFF);
         }
 
         THEN("An invalid command is ignored")
         {
             ow.reset();
             ow.write(0xFE);
-            CHECK(ow.read() == 0xFF);
+            uint8_t v = 0;
+            ow.read(v);
+            CHECK(v == 0xFF);
         }
 
         THEN("With a single device on the bus, a read ROM command can return its address")
@@ -100,9 +104,7 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             OneWireAddress addr(0);
             ow.reset();
             ow.write(0x33);
-            for (uint8_t i = 0; i < 8; i++) {
-                addr[i] = ow.read();
-            }
+            ow.read_bytes(&addr[0], 8);
             CHECK(addr == addr1);
         }
 
@@ -112,7 +114,9 @@ SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
             ow.reset();
             ow.skip();      // skip selecting by address
             ow.write(0xB4); // read power supply
-            CHECK(ow.read() == 0x80);
+            uint8_t v = 0;
+            ow.read(v);
+            CHECK(v == 0x80);
         }
 
         THEN("A OneWire sensor can use it on the fake bus")

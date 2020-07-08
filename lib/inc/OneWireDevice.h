@@ -46,10 +46,9 @@ public:
 
     void connected(bool _connected);
 
-    void selectRom() const
+    bool selectRom() const
     {
-        oneWire.reset();
-        oneWire.select(m_address);
+        return oneWire.reset() && oneWire.select(m_address);
     }
 
 protected:

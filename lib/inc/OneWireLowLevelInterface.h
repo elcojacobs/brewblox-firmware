@@ -38,16 +38,16 @@ public:
     virtual bool reset(void) = 0;
 
     // write a byte
-    virtual void write(uint8_t v) = 0;
+    virtual bool write(uint8_t v) = 0;
 
     // Read a byte.
-    virtual uint8_t read(void) = 0;
+    virtual bool read(uint8_t& v) = 0;
 
     // Write a bit
-    virtual void write_bit(uint8_t v) = 0;
+    virtual bool write_bit(bool v) = 0;
 
     // Read a bit.
-    virtual uint8_t read_bit(void) = 0;
+    virtual bool read_bit(bool& v) = 0;
 
     // Perform a triple operation which will perform 2 read bits and 1 write bit, returns device status
     virtual uint8_t search_triplet(bool search_direction) = 0;

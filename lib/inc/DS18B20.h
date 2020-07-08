@@ -51,7 +51,7 @@ class DS18B20 final : public TempSensor, public OneWireDevice {
         }
 
     private:
-        uint8_t data[9] = {};
+        uint8_t data[9] = {0};
     };
 
 public:

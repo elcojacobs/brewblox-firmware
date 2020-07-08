@@ -69,18 +69,16 @@ DS2408::update()
         dirty = false;
     }
     if (writeNeeded()) {
-        selectRom();
-        {
-            oneWire.write(ACCESS_WRITE);
-            oneWire.write(desiredLatches);
+        if (selectRom()) {
+            uint8_t bytes[3] = {ACCESS_WRITE, desiredLatches, uint8_t(~desiredLatches)};
 
-            /* data is sent again, inverted to guard against transmission errors */
-            oneWire.write(~desiredLatches);
-
-            /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
-            if (oneWire.read() == ACK_SUCCESS) {
-                pins = oneWire.read();
-            }
+            if (oneWire.write_bytes(bytes, 3)) {
+                /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
+                uint8_t ack;
+                if (oneWire.read(ack) && ack == ACK_SUCCESS) {
+                    success = success && oneWire.read(pins);
+                }
+            };
         }
     }
 
