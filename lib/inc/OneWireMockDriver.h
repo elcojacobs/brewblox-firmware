@@ -39,47 +39,40 @@ public:
         return true;
     }
 
-    virtual uint8_t read() override final
+    virtual bool read(uint8_t& v) override final
     {
         // if multiple devices are answering, the result is a binary AND
         // This will only give valid responses with single bit replies, just like the real hardware
-        uint8_t b = 0xFF;
+        v = 0xFF;
         for (auto& device : devices) {
-            b &= device->read();
+            v &= device->read();
         }
-        return b;
+        return true;
     }
 
-    virtual void write(uint8_t b) override final
+    virtual bool write(uint8_t b) override final
     {
         for (auto& device : devices) {
             device->write(b);
         }
-    }
-
-    void write_bytes(const uint8_t* buf, uint16_t count)
-    {
-        for (uint16_t i = 0; i < count; i++) {
-            write(buf[i]);
-        }
-    }
-
-    void read_bytes(uint8_t* buf, uint16_t count)
-    {
-        for (uint16_t i = 0; i < count; i++) {
-            buf[i] = read();
-        }
+        return true;
     }
 
     virtual uint8_t search_triplet(bool search_direction) override final;
 
-    virtual void write_bit(uint8_t bit) override final
+    virtual bool write_bit(bool bit) override final
     {
         write(bit ? 0x80 : 0x00);
+        return true;
     }
-    virtual uint8_t read_bit() override final
+    virtual bool read_bit(bool& bit) override final
     {
-        return read() ? 0x01 : 0x00;
+        uint8_t v;
+        if (read(v)) {
+            bit = v > 0;
+            return true;
+        }
+        return false;
     }
 
     virtual bool reset() override final

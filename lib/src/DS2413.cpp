@@ -28,27 +28,37 @@ DS2413::update()
 
     bool success = false;
     if (!writeNeeded()) { // skip read if we need to write anyway, which also returns status
-        selectRom();
-        oneWire.write(ACCESS_READ);
-        uint8_t data = oneWire.read();
-        success = processStatus(data);
+        if (selectRom()) {
+            if (!oneWire.write(ACCESS_READ)) {
+                return false;
+            }
+            uint8_t status;
+            if (!oneWire.read(status)) {
+                return false;
+            }
+            success = processStatus(status);
+        }
+        connected(success);
     }
     if (writeNeeded()) { // check again
-        selectRom();
-        oneWire.write(ACCESS_WRITE);
-        uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
-        oneWire.write(data);
-        oneWire.write(~data); // write inverted for error checking
-        data = oneWire.read();
-        success = false;
-        if (data == ACK_SUCCESS) {
-            data = oneWire.read();
-            success = processStatus(data);
+        if (selectRom()) {
+            uint8_t data = (desiredState & 0b1000) >> 2 | (desiredState & 0b0010) >> 1;
+            uint8_t bytes[3] = {ACCESS_WRITE, data, uint8_t(~data)};
+
+            if (oneWire.write_bytes(bytes, 3)) {
+                /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
+
+                if (oneWire.read(data) && data == ACK_SUCCESS) {
+                    if (oneWire.read(data)) {
+                        success = processStatus(data);
+                    }
+                }
+            }
         }
+        connected(success);
     }
     oneWire.reset();
 
-    connected(success);
     return success;
 }
 
@@ -76,7 +86,12 @@ DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
     } else {
         desiredState |= bitmask;
     }
+    if (!connected()) {
+        return false;
+    }
     if (writeNeeded()) {
+        // only directly update when connected, to prevent disconnected devices to continuously try to update
+        // they will reconnect in the normal update tick, which should happen every second
         return update();
     }
     return true;

@@ -58,6 +58,7 @@ DS2408::update()
     // device sends CRC inverted
     uint16_t crcReceived = ~((uint16_t(buf[12]) << 8) | uint16_t(buf[11]));
     bool success = crcCalculated == crcReceived;
+    connected(success);
 
     if (success) {
         pins = buf[3];
@@ -69,42 +70,39 @@ DS2408::update()
         dirty = false;
     }
     if (writeNeeded()) {
-        selectRom();
-        {
-            oneWire.write(ACCESS_WRITE);
-            oneWire.write(desiredLatches);
+        if (selectRom()) {
+            uint8_t bytes[3] = {ACCESS_WRITE, desiredLatches, uint8_t(~desiredLatches)};
 
-            /* data is sent again, inverted to guard against transmission errors */
-            oneWire.write(~desiredLatches);
-
-            /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
-            if (oneWire.read() == ACK_SUCCESS) {
-                pins = oneWire.read();
-            }
+            if (oneWire.write_bytes(bytes, 3)) {
+                /* Acknowledgement byte, 0xAA for success, 0xFF for failure. */
+                uint8_t ack;
+                if (oneWire.read(ack) && ack == ACK_SUCCESS) {
+                    success = success && oneWire.read(pins);
+                }
+            };
         }
+        connected(success);
     }
 
     oneWire.reset();
 
-    connected(success);
     return success;
 }
 
 bool
 DS2408::senseChannelImpl(uint8_t channel, State& result) const
 {
-    {
-        // to reduce onewire communication, we assume the last read value in update() is correct
-        // only in update(), actual onewire communication will take place to get the latest state
-        if (connected() && validChannel(channel)) {
-            uint8_t mask = uint8_t{0x01} << (channel - 1);
-            bool pinState = (pins & mask) > 0;
-            result = pinState ? State::Inactive : State::Active;
-            return true;
-        }
-        result = State::Unknown;
-        return false;
+
+    // to reduce onewire communication, we assume the last read value in update() is correct
+    // only in update(), actual onewire communication will take place to get the latest state
+    if (connected() && validChannel(channel)) {
+        uint8_t mask = uint8_t{0x01} << (channel - 1);
+        bool pinState = (pins & mask) > 0;
+        result = pinState ? State::Inactive : State::Active;
+        return true;
     }
+    result = State::Unknown;
+    return false;
 }
 
 bool
@@ -118,7 +116,12 @@ DS2408::writeChannelImpl(uint8_t channel, ChannelConfig config)
     } else {
         desiredLatches |= mask;
     }
+    if (!connected()) {
+        return false;
+    }
     if (writeNeeded()) {
+        // only directly update when connected, to prevent disconnected devices to continuously try to update
+        // they will reconnect in the normal update tick, which should happen every second
         return update();
     }
     return true;

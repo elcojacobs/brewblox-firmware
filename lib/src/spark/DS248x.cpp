@@ -35,55 +35,28 @@ Updates:
 #define PTR_CONFIG 0xc3
 #define PTR_PORTCONFIG 0xb4 //DS2484 only
 
-//-------helpers
-
-void
-DS248x::setReadPtr(uint8_t readPtr)
+bool
+DS248x::busyWait()
 {
-    static uint8_t failCount = 0;
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_SRP);
-    Wire.write(readPtr);
-    if (Wire.endTransmission(false) != 0) {
-        ++failCount;
-        if (failCount > 10) {
-            init(); // re-init I2C and master
-        }
-    };
-}
-
-uint8_t
-DS248x::readByte()
-{
-    Wire.requestFrom(mAddress, size_t{1});
-    return Wire.read();
-}
-
-uint8_t
-DS248x::wireReadStatus(bool setPtr)
-{
-    if (setPtr)
-        setReadPtr(PTR_STATUS);
-
-    return readByte();
-}
-
-uint8_t
-DS248x::busyWait(bool setReadPtr)
-{
-    uint8_t status;
-    int loopCount = 5;
-    while ((status = wireReadStatus(setReadPtr)) & DS248X_STATUS_BUSY) {
-        if (--loopCount <= 0) {
-            mTimeout = 1;
-            break;
-        }
-        delayMicroseconds(50);
+    Wire.write(PTR_STATUS);
+    if (Wire.endTransmission() != 0) {
+        return false;
     }
-    return status;
-}
 
-//----------interface
+    for (uint8_t retries = 0; retries < 5; retries++) {
+        if (Wire.requestFrom(mAddress, size_t{1})) {
+            mStatus = Wire.read();
+            if ((mStatus & DS248X_STATUS_BUSY) == 0) {
+                return true;
+            }
+            delayMicroseconds(50);
+        }
+    }
+    init();
+    return false;
+}
 
 bool
 DS248x::init()
@@ -99,22 +72,25 @@ DS248x::init()
 void
 DS248x::resetMaster()
 {
-    mTimeout = 0;
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_DRST);
-    Wire.endTransmission(false);
+    Wire.endTransmission();
 }
 
 bool
 DS248x::configure(uint8_t config)
 {
-    busyWait(true);
+    busyWait(); // continue even if busy
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_WCFG);
     Wire.write(config | (~config) << 4);
-    Wire.endTransmission(false);
+    Wire.endTransmission();
 
-    return readByte() == config;
+    if (Wire.requestFrom(mAddress, size_t{1})) {
+        return config == Wire.read();
+    }
+
+    return false;
 }
 
 bool
@@ -158,69 +134,94 @@ DS248x::selectChannel(uint8_t channel)
         break;
     };
 
-    busyWait(true);
-    Wire.beginTransmission(mAddress);
-    Wire.write(DS248X_CHSL);
-    Wire.write(ch);
-    Wire.endTransmission(false);
-    busyWait();
+    if (busyWait()) {
 
-    uint8_t check = readByte();
+        Wire.beginTransmission(mAddress);
+        Wire.write(DS248X_CHSL);
+        Wire.write(ch);
+        if (Wire.endTransmission() == 0) {
+            if (Wire.requestFrom(mAddress, size_t{1})) {
+                return ch_read == Wire.read();
+            }
+        }
+    }
 
-    return check == ch_read;
+    return false;
 }
 
 bool
 DS248x::reset()
 {
-    busyWait(true);
-    Wire.beginTransmission(mAddress);
-    Wire.write(DS248X_1WRS);
-    Wire.endTransmission(false);
-
-    uint8_t status = busyWait();
-
-    return status & DS248X_STATUS_PPD ? true : false;
+    if (busyWait()) {
+        Wire.beginTransmission(mAddress);
+        Wire.write(DS248X_1WRS);
+        if (!Wire.endTransmission()) {
+            if (busyWait()) {
+                return (mStatus & DS248X_STATUS_PPD) > 0;
+            }
+        }
+    }
+    return false;
 }
 
-void
+bool
 DS248x::write(uint8_t b)
 {
-    busyWait(true);
-    Wire.beginTransmission(mAddress);
-    Wire.write(DS248X_1WWB);
-    Wire.write(b);
-    Wire.endTransmission(false);
+    if (busyWait()) {
+        Wire.beginTransmission(mAddress);
+        Wire.write(DS248X_1WWB);
+        Wire.write(b);
+        return Wire.endTransmission() == 0;
+    }
+    return false;
 }
 
-uint8_t
-DS248x::read()
+bool
+DS248x::read(uint8_t& b)
 {
-    busyWait(true);
-    Wire.beginTransmission(mAddress);
-    Wire.write(DS248X_1WRB);
-    Wire.endTransmission(false);
-    busyWait();
-    setReadPtr(PTR_READ);
-    return readByte();
+    if (busyWait()) {
+        Wire.beginTransmission(mAddress);
+        Wire.write(DS248X_1WRB);
+        if (Wire.endTransmission() != 0) {
+            return false;
+        }
+        if (busyWait()) {
+            Wire.beginTransmission(mAddress);
+            Wire.write(DS248X_SRP);
+            Wire.write(PTR_READ);
+            if (Wire.endTransmission() != 0) {
+                return false;
+            }
+            if (Wire.requestFrom(mAddress, size_t{1})) {
+
+                b = Wire.read();
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
-void
-DS248x::write_bit(uint8_t bit)
+bool
+DS248x::write_bit(bool bit)
 {
-    busyWait(true);
-    Wire.beginTransmission(mAddress);
-    Wire.write(DS248X_1WSB);
-    Wire.write(bit ? 0x80 : 0);
-    Wire.endTransmission(false);
+    if (busyWait()) {
+        Wire.beginTransmission(mAddress);
+        Wire.write(DS248X_1WSB);
+        Wire.write(bit ? 0x80 : 0);
+        return Wire.endTransmission() == 0;
+    }
+    return false;
 }
 
-uint8_t
-DS248x::read_bit()
+bool
+DS248x::read_bit(bool& bit)
 {
-    write_bit(1);
-    uint8_t status = busyWait(true);
-    return status & DS248X_STATUS_SBR ? 1 : 0;
+    if (write_bit(1)) {
+        bit = (mStatus & DS248X_STATUS_SBR) > 0;
+        return true;
+    }
+    return false;
 }
 
 uint8_t
@@ -232,12 +233,13 @@ DS248x::search_triplet(bool search_direction)
     //                           Repeat until 1WB bit has changed to 0
     //  [] indicates from slave
     //  SS indicates byte containing search direction bit value in msbit
-    busyWait(true);
-    Wire.beginTransmission(mAddress);
-    Wire.write(DS248X_1WT);
-    Wire.write(search_direction ? 0x80 : 0x00);
-    Wire.endTransmission(false);
+    if (busyWait()) {
+        Wire.beginTransmission(mAddress);
+        Wire.write(DS248X_1WT);
+        Wire.write(search_direction ? 0x80 : 0x00);
+        Wire.endTransmission();
+    }
 
-    uint8_t status = busyWait();
-    return status;
+    busyWait();
+    return mStatus;
 }

@@ -151,13 +151,16 @@ bool
 DS18B20::readScratchPad(ScratchPad& scratchPad)
 {
     for (uint8_t retries = 0; retries < 2; retries++) {
-        selectRom();
-        oneWire.write(READSCRATCH);
-        for (uint8_t i = 0; i < 9; i++) {
-            scratchPad[i] = oneWire.read();
+        bool success = false;
+        if (selectRom()) {
+            if (oneWire.write(READSCRATCH)) {
+                if (oneWire.read_bytes(&scratchPad[0], 9)) {
+                    success = scratchPad.valid();
+                }
+            }
         }
         oneWire.reset();
-        if (scratchPad.valid()) {
+        if (success) {
             return true;
         }
     }
@@ -167,26 +170,26 @@ DS18B20::readScratchPad(ScratchPad& scratchPad)
 void
 DS18B20::writeScratchPad(const ScratchPad& scratchPad, bool copyToEeprom)
 {
-    selectRom();
-    oneWire.write(WRITESCRATCH);
-
-    for (uint8_t i = HIGH_ALARM_TEMP; i <= CONFIGURATION; i++) {
-        oneWire.write(scratchPad[i]); // high alarm temp
+    if (selectRom()) {
+        uint8_t bytes[4] = {WRITESCRATCH, scratchPad[HIGH_ALARM_TEMP], scratchPad[LOW_ALARM_TEMP], scratchPad[CONFIGURATION]};
+        if (oneWire.write_bytes(bytes, 4)) {
+            // save the newly written values to eeprom
+            if (copyToEeprom) {
+                selectRom();
+                oneWire.write(COPYSCRATCH);
+            }
+        }
     }
 
-    // save the newly written values to eeprom
-    if (copyToEeprom) {
-        selectRom();
-        oneWire.write(COPYSCRATCH);
-    }
     oneWire.reset();
 }
 
 void
 DS18B20::recallScratchpad()
 {
-    selectRom();
-    oneWire.write(RECALLSCRATCH);
+    if (selectRom()) {
+        oneWire.write(RECALLSCRATCH);
+    }
     oneWire.reset();
 }
 
@@ -194,12 +197,14 @@ bool
 DS18B20::
     isParasitePowered()
 {
-    selectRom();
-    oneWire.write(READPOWERSUPPLY);
-    // Parasite powered sensors pull the bus low
-    bool result = oneWire.read_bit() == 0;
+    bool busHigh = true;
+    if (selectRom()) {
+        oneWire.write(READPOWERSUPPLY);
+        // Parasite powered sensors pull the bus low
+        oneWire.read_bit(busHigh);
+    }
     oneWire.reset();
-    return result;
+    return !busHigh;
 }
 
 int16_t
