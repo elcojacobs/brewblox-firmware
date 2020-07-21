@@ -81,7 +81,7 @@ public:
 
     virtual bool hasNext() override
     {
-        return stream.available() > 0;
+        return stream.connected() && stream.available() > 0;
     }
 
     virtual uint8_t next() override

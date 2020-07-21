@@ -128,8 +128,8 @@ protected:
     virtual bool writeChannelImpl(uint8_t channel, ChannelConfig config) = 0;
 
     struct Channel {
-        ChannelConfig config;
-        State state;
+        ChannelConfig config = ChannelConfig::UNUSED;
+        State state = State::Unknown;
     };
 
     mutable std::vector<Channel> channels;
