@@ -98,18 +98,36 @@ public:
         auto now = millis();
         auto elapsed = now - lastTimerTick;
         uint8_t timerIdx = uint8_t(runningTask);
-        timers[timerIdx] = timers[timerIdx] - (timers[timerIdx] >> 5) + elapsed;
+        timersSum[timerIdx] += elapsed;
         runningTask = startedTask;
         lastTimerTick = now;
+        if (startedTask != TaskId::System) {
+            return;
+        }
+        ++timersCount;
+        if (timersCount < 16) {
+            return;
+        }
+        for (uint8_t i = 0; i < uint8_t(TaskId::NumTasks); i++) {
+            timersAvg[i] = timersSum[i] >> 4;
+            timersSum[i] = 0;
+        }
+        timersCount = 0;
     }
 
     ticks_millis_t taskTime(uint8_t id) const
     {
-        return timers[id];
+        return timersAvg[id];
+    }
+
+    void calcTaskTimes()
+    {
     }
 
 private:
-    ticks_millis_t timers[uint8_t(TaskId::NumTasks)]; // EMA of durations of each task
+    ticks_millis_t timersSum[uint8_t(TaskId::NumTasks)] = {0}; // Running sum of durations for each task
+    ticks_millis_t timersAvg[uint8_t(TaskId::NumTasks)] = {0}; // Average durations of last 10 loops
+    uint16_t timersCount = 0;                                  // count loops before taking average
     ticks_millis_t lastTimerTick = 0;
     TaskId runningTask = TaskId::System;
 };
