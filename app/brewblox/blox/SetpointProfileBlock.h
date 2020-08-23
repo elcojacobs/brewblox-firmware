@@ -22,14 +22,14 @@ protected:
     {
         const std::vector<Point>* points = reinterpret_cast<std::vector<Point>*>(*arg);
         for (const auto& p : *points) {
-            auto submsg = blox_SetpointProfile_Point();
+            auto submsg = blox_Point();
             submsg.time = p.time;
             submsg.temperature_oneof.temperature = cnl::unwrap(p.temp);
-            submsg.which_temperature_oneof = blox_SetpointProfile_Point_temperature_tag;
+            submsg.which_temperature_oneof = blox_Point_temperature_tag;
             if (!pb_encode_tag_for_field(stream, field)) {
                 return false;
             }
-            if (!pb_encode_submessage(stream, blox_SetpointProfile_Point_fields, &submsg)) {
+            if (!pb_encode_submessage(stream, blox_Point_fields, &submsg)) {
                 return false;
             }
         }
@@ -41,8 +41,8 @@ protected:
         std::vector<Point>* newPoints = reinterpret_cast<std::vector<Point>*>(*arg);
 
         if (stream->bytes_left) {
-            blox_SetpointProfile_Point submsg = blox_SetpointProfile_Point_init_zero;
-            if (!pb_decode(stream, blox_SetpointProfile_Point_fields, &submsg)) {
+            blox_Point submsg = blox_Point_init_zero;
+            if (!pb_decode(stream, blox_Point_fields, &submsg)) {
                 return false;
             }
             newPoints->push_back(Point{submsg.time, cnl::wrap<decltype(Point::temp)>(submsg.temperature_oneof.temperature)});

@@ -70,7 +70,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
     newPair.set_sensorid(sensorId);
     newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
     newPair.set_settingenabled(true);
-    newPair.set_filter(blox::SetpointSensorPair_FilterChoice::SetpointSensorPair_FilterChoice_FILT_15s);
+    newPair.set_filter(blox::FilterChoice::FILTER_15s);
     newPair.set_filterthreshold(cnl::unwrap(temp_t(1)));
     testBox.put(newPair);
 
@@ -141,17 +141,18 @@ SCENARIO("A Blox Pid object with mock analog actuator")
     THEN("The decoded proto message is correct")
     {
         // only nonzero values are shown in the debug string
-        CHECK(decoded.ShortDebugString() == "inputId: 101 outputId: 102 "
-                                            "inputValue: 81920 inputSetting: 86016 "
-                                            "outputValue: 61439 outputSetting: 61439 "
-                                            "enabled: true active: true "
-                                            "kp: 40960 ti: 2000 td: 200 "
-                                            "p: 40960 i: 20479 "
-                                            "error: 4096 integral: 4096000 "
-                                            "drivenOutputId: 102 "
-                                            "boilPointAdjust: -2048 "
-                                            "boilMinOutput: 102400 "
-                                            "derivativeFilter: FILT_3m");
+        CHECK(decoded.ShortDebugString() ==
+              "inputId: 101 outputId: 102 "
+              "inputValue: 81920 inputSetting: 86016 "
+              "outputValue: 61439 outputSetting: 61439 "
+              "enabled: true active: true "
+              "kp: 40960 ti: 2000 td: 200 "
+              "p: 40960 i: 20479 "
+              "error: 4096 integral: 4096000 "
+              "drivenOutputId: 102 "
+              "boilPointAdjust: -2048 "
+              "boilMinOutput: 102400 "
+              "derivativeFilter: FILTER_3m");
     }
 
     THEN("The integral value can be written externally to reset it trough the integralReset field")
@@ -170,17 +171,18 @@ SCENARIO("A Blox Pid object with mock analog actuator")
         testBox.processInputToProto(decoded);
 
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "inputId: 101 outputId: 102 "
-                                            "inputValue: 81920 inputSetting: 86016 "
-                                            "outputValue: 122900 outputSetting: 122900 "
-                                            "enabled: true active: true "
-                                            "kp: 40960 ti: 2000 td: 200 "
-                                            "p: 40960 i: 81940 "
-                                            "error: 4096 integral: 16388096 "
-                                            "drivenOutputId: 102 "
-                                            "boilPointAdjust: -2048 "
-                                            "boilMinOutput: 102400 "
-                                            "derivativeFilter: FILT_3m");
+        CHECK(decoded.ShortDebugString() ==
+              "inputId: 101 outputId: 102 "
+              "inputValue: 81920 inputSetting: 86016 "
+              "outputValue: 122900 outputSetting: 122900 "
+              "enabled: true active: true "
+              "kp: 40960 ti: 2000 td: 200 "
+              "p: 40960 i: 81940 "
+              "error: 4096 integral: 16388096 "
+              "drivenOutputId: 102 "
+              "boilPointAdjust: -2048 "
+              "boilMinOutput: 102400 "
+              "derivativeFilter: FILTER_3m");
     }
 
     AND_WHEN("The setpoint is disabled")
@@ -239,7 +241,7 @@ SCENARIO("A Blox Pid object with mock analog actuator")
         testBox.put(SetpointSensorPairBlock::staticTypeId());
         newPair.set_settingenabled(true);
         newPair.set_storedsetting(cnl::unwrap(Pid::in_t(99.5)));
-        newPair.set_filter(blox::SetpointSensorPair_FilterChoice(0)); // no filtering
+        newPair.set_filter(blox::FilterChoice::FILTER_NONE);
         testBox.put(newPair);
 
         auto decoded = blox::SetpointSensorPair();
@@ -260,16 +262,17 @@ SCENARIO("A Blox Pid object with mock analog actuator")
             testBox.processInputToProto(decoded);
 
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "inputId: 101 outputId: 102 "
-                                                "inputValue: 407552 inputSetting: 407552 "
-                                                "outputValue: 102400 outputSetting: 102400 "
-                                                "enabled: true active: true "
-                                                "kp: 40960 ti: 2000 td: 200 "
-                                                "drivenOutputId: 102 "
-                                                "boilPointAdjust: -2048 "
-                                                "boilMinOutput: 102400 "
-                                                "boilModeActive: true "
-                                                "derivativeFilter: FILT_3m");
+            CHECK(decoded.ShortDebugString() ==
+                  "inputId: 101 outputId: 102 "
+                  "inputValue: 407552 inputSetting: 407552 "
+                  "outputValue: 102400 outputSetting: 102400 "
+                  "enabled: true active: true "
+                  "kp: 40960 ti: 2000 td: 200 "
+                  "drivenOutputId: 102 "
+                  "boilPointAdjust: -2048 "
+                  "boilMinOutput: 102400 "
+                  "boilModeActive: true "
+                  "derivativeFilter: FILTER_3m");
         }
     }
 }

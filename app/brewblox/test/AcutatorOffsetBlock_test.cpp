@@ -107,7 +107,7 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
     blox::ActuatorOffset newAct;
     newAct.set_targetid(101);
     newAct.set_referenceid(103);
-    newAct.set_referencesettingorvalue(blox::ActuatorOffset_SettingOrValue(ActuatorOffset::SettingOrValue::SETTING));
+    newAct.set_referencesettingorvalue(blox::ActuatorOffset_ReferenceKind(ActuatorOffset::ReferenceKind::SETTING));
     newAct.set_desiredsetting(cnl::unwrap(ActuatorAnalog::value_t(12)));
     newAct.set_enabled(true);
 
@@ -126,10 +126,11 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         auto decoded = blox::ActuatorOffset();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "targetId: 101 referenceId: 103 "
-                                            "setting: 49152 value: 4096 " // setting is 12 (setpoint difference), value is 1 (21 - 20)
-                                            "drivenTargetId: 101 enabled: true "
-                                            "desiredSetting: 49152");
+        CHECK(decoded.ShortDebugString() ==
+              "targetId: 101 referenceId: 103 "
+              "setting: 49152 value: 4096 " // setting is 12 (setpoint difference), value is 1 (21 - 20)
+              "drivenTargetId: 101 enabled: true "
+              "desiredSetting: 49152");
     }
 
     // read reference pair
@@ -141,13 +142,14 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         auto decoded = blox::SetpointSensorPair();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "sensorId: 100 "
-                                            "setting: 131072 "
-                                            "value: 86016 "
-                                            "settingEnabled: true "
-                                            "storedSetting: 131072 "
-                                            "filterThreshold: 20480 "
-                                            "valueUnfiltered: 86016"); // setting 32, value 21 (setpoint adjusted to 20 + 12)
+        CHECK(decoded.ShortDebugString() ==
+              "sensorId: 100 "
+              "setting: 131072 "
+              "value: 86016 "
+              "settingEnabled: true "
+              "storedSetting: 131072 "
+              "filterThreshold: 20480 "
+              "valueUnfiltered: 86016"); // setting 32, value 21 (setpoint adjusted to 20 + 12)
     }
 
     // read target pair
@@ -159,13 +161,14 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
         auto decoded = blox::SetpointSensorPair();
         testBox.processInputToProto(decoded);
         CHECK(testBox.lastReplyHasStatusOk());
-        CHECK(decoded.ShortDebugString() == "sensorId: 102 "
-                                            "setting: 81920 "
-                                            "value: 110592 "
-                                            "settingEnabled: true "
-                                            "storedSetting: 81920 "
-                                            "filterThreshold: 20480 "
-                                            "valueUnfiltered: 110592"); // 20, 27 (unaffected)
+        CHECK(decoded.ShortDebugString() ==
+              "sensorId: 102 "
+              "setting: 81920 "
+              "value: 110592 "
+              "settingEnabled: true "
+              "storedSetting: 81920 "
+              "filterThreshold: 20480 "
+              "valueUnfiltered: 110592"); // 20, 27 (unaffected)
     }
 
     AND_WHEN("The reference setpoint is disabled")
@@ -196,10 +199,11 @@ SCENARIO("A Blox ActuatorOffset object can be created from streamed protobuf dat
                 auto decoded = blox::ActuatorOffset();
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "targetId: 101 referenceId: 103 "
-                                                    "enabled: true "
-                                                    "desiredSetting: 49152 "
-                                                    "strippedFields: 7 strippedFields: 6");
+                CHECK(decoded.ShortDebugString() ==
+                      "targetId: 101 referenceId: 103 "
+                      "enabled: true "
+                      "desiredSetting: 49152 "
+                      "strippedFields: 7 strippedFields: 6");
             }
         }
     }

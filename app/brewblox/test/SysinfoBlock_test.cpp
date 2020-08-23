@@ -34,7 +34,7 @@ SCENARIO("SysInfo Block")
     std::string protocolDate = stringify(PROTO_DATE);
     using commands = cbox::Box::CommandID;
     std::string replyWithoutTrace = std::string("deviceId: \"999999999999\"")
-                                    + " version: \"" + version + "\" platform: gcc protocolVersion: \"" + protocolVersion
+                                    + " version: \"" + version + "\" platform: PLATFORM_GCC protocolVersion: \"" + protocolVersion
                                     + "\" releaseDate: \"" + releaseDate + "\" protocolDate: \"" + protocolDate + "\"";
 
     std::string emptyTrace = "";
@@ -66,7 +66,7 @@ SCENARIO("SysInfo Block")
     {
         BrewBloxTestBox testBox;
 
-        auto sendCmd = [&testBox](blox::SysInfo_Command cmd) {
+        auto sendCmd = [&testBox](blox::SysInfo::SysInfoCommand cmd) {
             testBox.reset();
 
             testBox.put(uint16_t(0)); // msg id
@@ -84,9 +84,9 @@ SCENARIO("SysInfo Block")
             return decoded;
         };
 
-        WHEN("A READ_AND_RESUME_TRACE command is sent")
+        WHEN("A READ_AND_SYS_CMD_TRACE_RESUME command is sent")
         {
-            auto decoded = sendCmd(blox::SysInfo_Command::SysInfo_Command_READ_AND_RESUME_TRACE);
+            auto decoded = sendCmd(blox::SysInfo_SysInfoCommand_SYS_CMD_TRACE_READ_RESUME);
 
             THEN("Tracing is unpaused and the reply includes a trace (still empty in test)")
             {
@@ -97,8 +97,8 @@ SCENARIO("SysInfo Block")
 
         WHEN("a read trace command is sent to the SysInfo block")
         {
-            auto decoded = sendCmd(blox::SysInfo_Command::SysInfo_Command_READ_TRACE);
-            std::string emptyTrace = std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: gcc") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\"") + " trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { }";
+            auto decoded = sendCmd(blox::SysInfo_SysInfoCommand_SYS_CMD_TRACE_READ);
+            std::string emptyTrace = std::string("deviceId: \"999999999999\"") + std::string(" version: \"") + version + std::string("\" platform: PLATFORM_GCC") + std::string(" protocolVersion: \"") + protocolVersion + std::string("\" releaseDate: \"") + releaseDate + std::string("\" protocolDate: \"") + protocolDate + std::string("\"") + " trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { } trace { }";
 
             THEN("The last traced actions from previous run are included (from previous WHEN clause in test)")
             {
@@ -116,9 +116,9 @@ SCENARIO("SysInfo Block")
                                                         " trace { action: PERSIST_BLOCK id: 2 type: 256 }");
             }
 
-            AND_WHEN("A RESUME_TRACE command is sent")
+            AND_WHEN("A SYS_CMD_TRACE_RESUME command is sent")
             {
-                auto decoded = sendCmd(blox::SysInfo_Command::SysInfo_Command_RESUME_TRACE);
+                auto decoded = sendCmd(blox::SysInfo_SysInfoCommand_SYS_CMD_TRACE_RESUME);
                 THEN("The reply has no trace")
                 {
                     CHECK(decoded.ShortDebugString() == replyWithoutTrace);
@@ -126,7 +126,7 @@ SCENARIO("SysInfo Block")
 
                 THEN("Tracing is unpaused and the next trace read includes a non-empty trace")
                 {
-                    auto decoded = sendCmd(blox::SysInfo_Command::SysInfo_Command_READ_TRACE);
+                    auto decoded = sendCmd(blox::SysInfo_SysInfoCommand_SYS_CMD_TRACE_READ);
 
                     CHECK(testBox.lastReplyHasStatusOk());
                     CHECK(decoded.ShortDebugString() == replyWithoutTrace +

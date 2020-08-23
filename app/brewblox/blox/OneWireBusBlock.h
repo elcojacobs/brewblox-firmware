@@ -13,7 +13,7 @@ class OneWireBusBlock : public Block<BrewBloxTypes_BlockType_OneWireBus> {
 private:
     OneWire& bus;
 
-    mutable _blox_OneWireBus_Command command; // declared mutable so const streamTo functions can reset it
+    mutable _blox_OneWireBusCommand command; // declared mutable so const streamTo functions can reset it
 
     static const uint8_t NO_OP = 0;
     static const uint8_t RESET = 1;

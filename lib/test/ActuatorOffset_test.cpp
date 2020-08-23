@@ -83,7 +83,7 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(target->setting() == 22.0);
 
         // when using the reference value as value to offset from:
-        act->selectedReference(ActuatorOffset::SettingOrValue::VALUE);
+        act->selectedReference(ActuatorOffset::ReferenceKind::VALUE);
         act->setting(12.0);
 
         CHECK(act->value() == 5.0);    // value() returns target sensor - ref sensor value
@@ -91,11 +91,12 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(target->setting() == 27.0);
     }
 
-    WHEN("the reference setting is used and valid"
-         "and the reference sensor is invalid, "
-         "the target actuator is fully valid, because the reference sensor is unused")
+    WHEN(
+        "the reference setting is used and valid"
+        "and the reference sensor is invalid, "
+        "the target actuator is fully valid, because the reference sensor is unused")
     {
-        act->selectedReference(ActuatorOffset::SettingOrValue::SETTING);
+        act->selectedReference(ActuatorOffset::ReferenceKind::SETTING);
         target->setting(20);
         referenceSensor->connected(false);
         act->setting(12.0);
@@ -130,11 +131,12 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         }
     }
 
-    WHEN("the reference setting is used but invalid"
-         "but the reference sensor is valid, then "
-         "target setpoint will be set to invalid, and actuator value is invalid and 0")
+    WHEN(
+        "the reference setting is used but invalid"
+        "but the reference sensor is valid, then "
+        "target setpoint will be set to invalid, and actuator value is invalid and 0")
     {
-        act->selectedReference(ActuatorOffset::SettingOrValue::SETTING);
+        act->selectedReference(ActuatorOffset::ReferenceKind::SETTING);
         referenceSensor->connected(true);
         reference->settingValid(false);
         act->setting(12.0);
@@ -148,11 +150,12 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(target->settingValid() == false);
     }
 
-    WHEN("the reference value is used but invalid, "
-         "but the reference setpoint is valid, then "
-         "target setpoint will be invalid and actuator value is 0")
+    WHEN(
+        "the reference value is used but invalid, "
+        "but the reference setpoint is valid, then "
+        "target setpoint will be invalid and actuator value is 0")
     {
-        act->selectedReference(ActuatorOffset::SettingOrValue::VALUE);
+        act->selectedReference(ActuatorOffset::ReferenceKind::VALUE);
         target->setting(20);
         referenceSensor->connected(false);
         for (int i = 0; i <= 10; i++) {
@@ -168,11 +171,12 @@ SCENARIO("ActuatorOffset offsets one setpoint from another", "[ActuatorOffset]")
         CHECK(target->settingValid() == false);
     }
 
-    WHEN("the reference value is used and valid, "
-         "but the reference setpoint is invalid, then "
-         "target setpoint will be valid and actuator is fully valid")
+    WHEN(
+        "the reference value is used and valid, "
+        "but the reference setpoint is invalid, then "
+        "target setpoint will be valid and actuator is fully valid")
     {
-        act->selectedReference(ActuatorOffset::SettingOrValue::VALUE);
+        act->selectedReference(ActuatorOffset::ReferenceKind::VALUE);
         referenceSensor->connected(true);
         reference->settingValid(false);
         act->setting(12.0);

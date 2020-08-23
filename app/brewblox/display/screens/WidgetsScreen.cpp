@@ -102,7 +102,7 @@ WidgetsScreen::loadSettings()
     pb_size_t numWidgets = std::min(settings.widgets_count, pb_size_t(sizeof(settings.widgets) / sizeof(settings.widgets[0])));
     widgets.resize(numWidgets);
     for (pb_size_t i = 0; i < numWidgets; ++i) {
-        blox_DisplaySettings_Widget widgetDfn = settings.widgets[i];
+        blox_Widget widgetDfn = settings.widgets[i];
         auto pos = widgetDfn.pos;
         if (pos == 0 || pos > 6) {
             continue; // invalid position on screen
@@ -113,16 +113,16 @@ WidgetsScreen::loadSettings()
         wrapper.setColor(widgetDfn.color[0], widgetDfn.color[1], widgetDfn.color[2]);
 
         switch (widgetDfn.which_WidgetType) {
-        case blox_DisplaySettings_Widget_tempSensor_tag:
+        case blox_Widget_tempSensor_tag:
             widgets.push_back(std::make_unique<TempSensorWidget>(wrapper, cbox::obj_id_t(widgetDfn.WidgetType.tempSensor)));
             break;
-        case blox_DisplaySettings_Widget_setpointSensorPair_tag:
+        case blox_Widget_setpointSensorPair_tag:
             widgets.push_back(std::make_unique<SetpointSensorWidget>(wrapper, cbox::obj_id_t(widgetDfn.WidgetType.setpointSensorPair)));
             break;
-        case blox_DisplaySettings_Widget_actuatorAnalog_tag:
+        case blox_Widget_actuatorAnalog_tag:
             widgets.push_back(std::make_unique<ActuatorAnalogWidget>(wrapper, cbox::obj_id_t(widgetDfn.WidgetType.actuatorAnalog)));
             break;
-        case blox_DisplaySettings_Widget_pid_tag:
+        case blox_Widget_pid_tag:
             widgets.push_back(std::make_unique<PidWidget>(wrapper, cbox::obj_id_t(widgetDfn.WidgetType.pid)));
             break;
         default:
