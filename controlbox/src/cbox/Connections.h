@@ -81,7 +81,7 @@ public:
 
     virtual bool hasNext() override
     {
-        return stream.connected() && stream.available() > 0;
+        return available() > 0;
     }
 
     virtual uint8_t next() override
@@ -96,7 +96,10 @@ public:
 
     virtual stream_size_t available() override
     {
-        return stream_size_t(stream.available());
+        if (stream) {
+            return stream.available();
+        }
+        return 0;
     }
 
     static StreamType streamTypeImpl();
