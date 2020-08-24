@@ -38,9 +38,9 @@ class SysInfoBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_SysInfo> {
 
     enum class Command : uint8_t {
         NONE = 0,
-        READ_TRACE = 1,
-        RESUME_TRACE = 2,
-        READ_AND_RESUME_TRACE = 3,
+        SYS_CMD_TRACE_READ = 1,
+        SYS_CMD_TRACE_RESUME = 2,
+        READ_AND_SYS_CMD_TRACE_RESUME = 3,
     };
 
     mutable Command command = Command::NONE;

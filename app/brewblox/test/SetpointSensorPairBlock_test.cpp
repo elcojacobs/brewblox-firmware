@@ -68,7 +68,7 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     newPair.set_sensorid(100);
     newPair.set_settingenabled(true);
     newPair.set_storedsetting(cnl::unwrap(temp_t(21)));
-    newPair.set_filter(blox::SetpointSensorPair::FilterChoice::SetpointSensorPair_FilterChoice_FILT_3m);
+    newPair.set_filter(blox::FilterChoice::FILTER_3m);
     newPair.set_filterthreshold(cnl::unwrap(temp_t(0.5)));
     testBox.put(newPair);
 
@@ -83,14 +83,15 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
     auto decoded = blox::SetpointSensorPair();
     testBox.processInputToProto(decoded);
     CHECK(testBox.lastReplyHasStatusOk());
-    CHECK(decoded.ShortDebugString() == "sensorId: 100 "
-                                        "setting: 86016 "
-                                        "value: 81920 "
-                                        "settingEnabled: true "
-                                        "storedSetting: 86016 "
-                                        "filter: FILT_3m "
-                                        "filterThreshold: 2048 "
-                                        "valueUnfiltered: 81920");
+    CHECK(decoded.ShortDebugString() ==
+          "sensorId: 100 "
+          "setting: 86016 "
+          "value: 81920 "
+          "settingEnabled: true "
+          "storedSetting: 86016 "
+          "filter: FILTER_3m "
+          "filterThreshold: 2048 "
+          "valueUnfiltered: 81920");
 
     WHEN("The sensor is invalid for over 10 seconds")
     {
@@ -115,14 +116,15 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
             testBox.processInputToProto(decoded);
 
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "sensorId: 100 "
-                                                "setting: 86016 "
-                                                "settingEnabled: true "
-                                                "storedSetting: 86016 "
-                                                "filter: FILT_3m "
-                                                "filterThreshold: 2048 "
-                                                "strippedFields: 6 "
-                                                "strippedFields: 11");
+            CHECK(decoded.ShortDebugString() ==
+                  "sensorId: 100 "
+                  "setting: 86016 "
+                  "settingEnabled: true "
+                  "storedSetting: 86016 "
+                  "filter: FILTER_3m "
+                  "filterThreshold: 2048 "
+                  "strippedFields: 6 "
+                  "strippedFields: 11");
         }
     }
 
@@ -147,14 +149,15 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
             testBox.processInputToProto(decoded);
 
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "sensorId: 100 "
-                                                "setting: 86016 "
-                                                "value: 81920 "
-                                                "settingEnabled: true "
-                                                "storedSetting: 86016 "
-                                                "filter: FILT_3m "
-                                                "filterThreshold: 2048 "
-                                                "valueUnfiltered: 102400");
+            CHECK(decoded.ShortDebugString() ==
+                  "sensorId: 100 "
+                  "setting: 86016 "
+                  "value: 81920 "
+                  "settingEnabled: true "
+                  "storedSetting: 86016 "
+                  "filter: FILTER_3m "
+                  "filterThreshold: 2048 "
+                  "valueUnfiltered: 102400");
         }
 
         AND_THEN("Sending a filter reset trigger will force the filter state to the current value")
@@ -171,14 +174,15 @@ SCENARIO("A Blox SetpointSensorPair object can be created from streamed protobuf
             testBox.processInputToProto(decoded);
 
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "sensorId: 100 "
-                                                "setting: 86016 "
-                                                "value: 102400 "
-                                                "settingEnabled: true "
-                                                "storedSetting: 86016 "
-                                                "filter: FILT_3m "
-                                                "filterThreshold: 2048 "
-                                                "valueUnfiltered: 102400");
+            CHECK(decoded.ShortDebugString() ==
+                  "sensorId: 100 "
+                  "setting: 86016 "
+                  "value: 102400 "
+                  "settingEnabled: true "
+                  "storedSetting: 86016 "
+                  "filter: FILTER_3m "
+                  "filterThreshold: 2048 "
+                  "valueUnfiltered: 102400");
         }
     }
 }

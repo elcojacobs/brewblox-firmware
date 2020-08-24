@@ -105,7 +105,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 1 state: Active constrainedBy { constraints { mutexed { mutexId: 101 hasLock: true } } } desiredState: Active");
+            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 1 state: STATE_ACTIVE constrainedBy { constraints { mutexed { mutexId: 101 hasLock: true } } } desiredState: STATE_ACTIVE");
         }
 
         // read pin actuator 2, which is constrained and inactive
@@ -117,7 +117,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::DigitalActuator();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 2 constrainedBy { constraints { mutexed { mutexId: 101 } remaining: 101 } } desiredState: Active");
+            CHECK(decoded.ShortDebugString() == "hwDevice: 19 channel: 2 constrainedBy { constraints { mutexed { mutexId: 101 } remaining: 101 } } desiredState: STATE_ACTIVE");
         }
     }
 
@@ -248,7 +248,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             newPwm.set_enabled(true);
 
             auto c = newPwm.mutable_constrainedby()->add_constraints();
-            auto balanced = new blox::AnalogConstraint_Balanced();
+            auto balanced = new blox::Balanced();
             balanced->set_balancerid(balancerId);
             c->set_allocated_balanced(balanced);
 
@@ -272,7 +272,7 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             newPwm.set_enabled(true);
 
             auto c = newPwm.mutable_constrainedby()->add_constraints();
-            auto balanced = new blox::AnalogConstraint_Balanced();
+            auto balanced = new blox::Balanced();
             balanced->set_balancerid(balancerId);
             c->set_allocated_balanced(balanced);
 
@@ -294,8 +294,9 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::Balancer();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "clients { id: 1 requested: 327680 granted: 204800 } "  // 80*4096, 50*4096
-                                                "clients { id: 2 requested: 327680 granted: 204800 }"); // 80*4096, 50*4096
+            CHECK(decoded.ShortDebugString() ==
+                  "clients { id: 1 requested: 327680 granted: 204800 } "  // 80*4096, 50*4096
+                  "clients { id: 2 requested: 327680 granted: 204800 }"); // 80*4096, 50*4096
         }
 
         // read a pwm actuator 1
@@ -307,15 +308,16 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::ActuatorPwm();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "actuatorId: 102 "
-                                                "period: 4000 setting: 204800 "
-                                                "constrainedBy { "
-                                                "constraints { "
-                                                "balanced { balancerId: 200 granted: 204800 id: 1 } "
-                                                "limiting: true } } "
-                                                "drivenActuatorId: 102 "
-                                                "enabled: true "
-                                                "desiredSetting: 327680");
+            CHECK(decoded.ShortDebugString() ==
+                  "actuatorId: 102 "
+                  "period: 4000 setting: 204800 "
+                  "constrainedBy { "
+                  "constraints { "
+                  "balanced { balancerId: 200 granted: 204800 id: 1 } "
+                  "limiting: true } } "
+                  "drivenActuatorId: 102 "
+                  "enabled: true "
+                  "desiredSetting: 327680");
         }
 
         // read a pwm actuator 2
@@ -327,15 +329,16 @@ SCENARIO("Two pin actuators are constrained by a mutex", "[balancer, mutex]")
             auto decoded = blox::ActuatorPwm();
             testBox.processInputToProto(decoded);
             CHECK(testBox.lastReplyHasStatusOk());
-            CHECK(decoded.ShortDebugString() == "actuatorId: 103 "
-                                                "period: 4000 setting: 204800 "
-                                                "constrainedBy { "
-                                                "constraints { "
-                                                "balanced { balancerId: 200 granted: 204800 id: 2 } "
-                                                "limiting: true } } "
-                                                "drivenActuatorId: 103 "
-                                                "enabled: true "
-                                                "desiredSetting: 327680");
+            CHECK(decoded.ShortDebugString() ==
+                  "actuatorId: 103 "
+                  "period: 4000 setting: 204800 "
+                  "constrainedBy { "
+                  "constraints { "
+                  "balanced { balancerId: 200 granted: 204800 id: 2 } "
+                  "limiting: true } } "
+                  "drivenActuatorId: 103 "
+                  "enabled: true "
+                  "desiredSetting: 327680");
         }
 
         // run for a while

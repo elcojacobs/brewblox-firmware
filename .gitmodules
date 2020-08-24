@@ -4,7 +4,7 @@
 	branch = develop
 [submodule "platform/spark/device-os"]
 	path = platform/spark/device-os
-	url = https://github.com/particle-iot/device-os.git
+	url = https://github.com/brewblox/particle-device-os.git
 	branch = brewblox
 [submodule "app/brewblox/proto"]
 	path = app/brewblox/proto

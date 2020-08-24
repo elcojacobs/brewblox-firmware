@@ -17,13 +17,13 @@ protected:
     {
         const std::vector<Fluctuation>* flucts = reinterpret_cast<std::vector<Fluctuation>*>(*arg);
         for (const auto& f : *flucts) {
-            auto submsg = blox_TempSensorMock_Fluctuation();
+            auto submsg = blox_Fluctuation();
             submsg.amplitude = cnl::unwrap(f.amplitude);
             submsg.period = f.period;
             if (!pb_encode_tag_for_field(stream, field)) {
                 return false;
             }
-            if (!pb_encode_submessage(stream, blox_TempSensorMock_Fluctuation_fields, &submsg)) {
+            if (!pb_encode_submessage(stream, blox_Fluctuation_fields, &submsg)) {
                 return false;
             }
         }
@@ -35,8 +35,8 @@ protected:
         std::vector<Fluctuation>* newFlucts = reinterpret_cast<std::vector<Fluctuation>*>(*arg);
 
         if (stream->bytes_left) {
-            blox_TempSensorMock_Fluctuation submsg = blox_TempSensorMock_Fluctuation_init_zero;
-            if (!pb_decode(stream, blox_TempSensorMock_Fluctuation_fields, &submsg)) {
+            blox_Fluctuation submsg = blox_Fluctuation_init_zero;
+            if (!pb_decode(stream, blox_Fluctuation_fields, &submsg)) {
                 return false;
             }
             newFlucts->push_back(Fluctuation{

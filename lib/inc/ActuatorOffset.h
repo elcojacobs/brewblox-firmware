@@ -29,7 +29,7 @@
  */
 class ActuatorOffset final : public ActuatorAnalog {
 public:
-    enum SettingOrValue {
+    enum ReferenceKind {
         SETTING,
         VALUE
     };
@@ -44,7 +44,7 @@ private:
     // separate flag for manually disabling the offset actuator
     bool m_enabled = true;
 
-    SettingOrValue m_selectedReference = SettingOrValue::SETTING;
+    ReferenceKind m_selectedReference = ReferenceKind::SETTING;
 
 public:
     explicit ActuatorOffset(
@@ -98,12 +98,12 @@ public:
         }
     }
 
-    void selectedReference(const SettingOrValue& sel)
+    void selectedReference(const ReferenceKind& sel)
     {
         m_selectedReference = sel;
     }
 
-    SettingOrValue selectedReference() const
+    ReferenceKind selectedReference() const
     {
         return m_selectedReference;
     }
@@ -117,7 +117,7 @@ public:
 
         if (auto targetPtr = m_target()) {
             if (auto refPtr = m_reference()) {
-                if (m_selectedReference == SettingOrValue::SETTING) {
+                if (m_selectedReference == ReferenceKind::SETTING) {
                     if (refPtr->settingValid()) {
                         newTargetSetting = refPtr->setting() + m_setting;
                         newTargetSettingValid = true;
