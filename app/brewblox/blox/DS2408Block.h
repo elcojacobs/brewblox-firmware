@@ -30,6 +30,7 @@ theOneWire();
 class DS2408Block : public Block<BrewBloxTypes_BlockType_DS2408> {
 private:
     DS2408 device;
+    blox_DS2408_PinConnectMode connectMode = blox_DS2408_PinConnectMode_CONNECT_VALVE;
 
 public:
     DS2408Block()
@@ -44,6 +45,7 @@ public:
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
             device.address(OneWireAddress(newData.address));
+            connectMode = newData.connectMode;
         }
         return res;
     }
@@ -54,6 +56,7 @@ public:
 
         message.address = device.address();
         message.connected = device.connected();
+        message.connectMode = connectMode;
 
         message.pins_count = 8;
         message.pins[0].which_Pin = blox_DS2408IoPin_A_tag;
@@ -81,6 +84,7 @@ public:
         blox_DS2408 message = blox_DS2408_init_zero;
 
         message.address = device.address();
+        message.connectMode = connectMode;
         return streamProtoTo(out, &message, blox_DS2408_fields, blox_DS2408_size);
     }
 
