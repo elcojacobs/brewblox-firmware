@@ -64,15 +64,15 @@ public:
     {
         blox_Spark2Pins message = blox_Spark2Pins_init_zero;
 
-        message.pins[0].which_Pin = blox_Spark2Pins_IoPin_bottom1_tag;
+        message.pins[0].which_Pin = blox_Spark2PinsIoPin_bottom1_tag;
         readIo(*this, 1, message.pins[0].Pin.bottom1);
-        message.pins[1].which_Pin = blox_Spark2Pins_IoPin_bottom2_tag;
+        message.pins[1].which_Pin = blox_Spark2PinsIoPin_bottom2_tag;
         readIo(*this, 2, message.pins[1].Pin.bottom2);
-        message.pins[2].which_Pin = blox_Spark2Pins_IoPin_bottom3_tag;
+        message.pins[2].which_Pin = blox_Spark2PinsIoPin_bottom3_tag;
         readIo(*this, 3, message.pins[2].Pin.bottom3);
 
         if (getSparkVersion() != SparkVersion::V1) {
-            message.pins[3].which_Pin = blox_Spark2Pins_IoPin_bottom0_tag;
+            message.pins[3].which_Pin = blox_Spark2PinsIoPin_bottom0_tag;
             readIoConfig(*this, 4, message.pins[3].Pin.bottom0.config);
             message.pins_count = numPins;
         } else {
@@ -81,13 +81,13 @@ public:
 
         message.soundAlarm = HAL_GPIO_Read(PIN_ALARM);
 
-        auto hw = blox_Spark2Pins_Hardware::blox_Spark2Pins_Hardware_unknown_hw;
+        auto hw = blox_Spark2Pins_Hardware::blox_Spark2Pins_Hardware_HW_UNKNOWN;
         switch (getSparkVersion()) {
         case SparkVersion::V1:
-            hw = blox_Spark2Pins_Hardware_Spark1;
+            hw = blox_Spark2Pins_Hardware_HW_SPARK1;
             break;
         case SparkVersion::V2:
-            hw = blox_Spark2Pins_Hardware_Spark2;
+            hw = blox_Spark2Pins_Hardware_HW_SPARK2;
             break;
         }
         message.hardware = hw;
