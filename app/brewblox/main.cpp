@@ -132,6 +132,8 @@ setup()
     HAL_Delay_Milliseconds(1);
 #endif
 
+    cbox::tracing::pause(); // ensure tracing is paused until service resumes it
+
     // init display
     D4D_Init(nullptr);
     D4D_TOUCHSCREEN_CALIB defaultCalib = {1, 0, 0, 64, 64};
@@ -193,19 +195,23 @@ void
 loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
+    cbox::tracing::add(cbox::tracing::Action::UPDATE_DISPLAY, 0, 0);
     displayTick();
     if (!listeningModeEnabled()) {
 
         ticks.switchTaskTimer(TicksClass::TaskId::Communication);
+        cbox::tracing::add(cbox::tracing::Action::UPDATE_CONNECTIONS, 0, 0);
         manageConnections(ticks.millis());
         brewbloxBox().hexCommunicate();
 
+        cbox::tracing::add(cbox::tracing::Action::UPDATE_BLOCKS, 0, 0);
         ticks.switchTaskTimer(TicksClass::TaskId::BlocksUpdate);
         updateBrewbloxBox();
 
         watchdogCheckin(); // not done while listening, so 60s timeout for stuck listening mode
     }
     ticks.switchTaskTimer(TicksClass::TaskId::System);
+    cbox::tracing::add(cbox::tracing::Action::SYSTEM_TASKS, 0, 0);
     HAL_Delay_Milliseconds(1);
 }
 

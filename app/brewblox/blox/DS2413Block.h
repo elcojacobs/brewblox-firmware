@@ -43,7 +43,7 @@ public:
         cbox::CboxError res = streamProtoFrom(in, &newData, blox_DS2413_fields, blox_DS2413_size);
         /* if no errors occur, write new settings to wrapped object */
         if (res == cbox::CboxError::OK) {
-            device.setDeviceAddress(OneWireAddress(newData.address));
+            device.address(OneWireAddress(newData.address));
         }
         return res;
     }
@@ -52,13 +52,13 @@ public:
     {
         blox_DS2413 message = blox_DS2413_init_zero;
 
-        message.address = device.getDeviceAddress();
+        message.address = device.address();
         message.connected = device.connected();
 
         message.pins_count = 2;
-        message.pins[0].which_Pin = blox_DS2413_IoPin_A_tag;
+        message.pins[0].which_Pin = blox_DS2413IoPin_A_tag;
         readIo(device, 1, message.pins[0].Pin.A);
-        message.pins[1].which_Pin = blox_DS2413_IoPin_B_tag;
+        message.pins[1].which_Pin = blox_DS2413IoPin_B_tag;
         readIo(device, 2, message.pins[1].Pin.B);
 
         return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
@@ -68,7 +68,7 @@ public:
     {
         blox_DS2413 message = blox_DS2413_init_zero;
 
-        message.address = device.getDeviceAddress();
+        message.address = device.address();
         return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
     }
 

@@ -93,8 +93,6 @@ public:
                 return this->template convert_ptr<U>(std::move(sptr), thisPtr);
             }
         }
-        // the cast was not allowed, reset weak ptr
-        ptr.reset();
         // return empty share pointer
         return std::shared_ptr<U>();
     }

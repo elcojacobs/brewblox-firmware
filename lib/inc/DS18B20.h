@@ -51,7 +51,7 @@ class DS18B20 final : public TempSensor, public OneWireDevice {
         }
 
     private:
-        uint8_t data[9] = {};
+        uint8_t data[9] = {0};
     };
 
 public:
@@ -81,7 +81,7 @@ public:
 
     virtual bool valid() const override final
     {
-        return m_connected;
+        return connected();
     }
 
     virtual temp_t value() const override final; // return cached value
@@ -99,8 +99,6 @@ public:
 
 private:
     void init();
-
-    void connected(bool _connected);
 
     void requestConversion();
 

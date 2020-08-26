@@ -82,31 +82,53 @@ SCENARIO("ActuatorDigitalChangeLogged test", "[ActuatorChangeLog]")
 
         THEN("Durations of current and previous period are correctly calculated")
         {
-            for (; now < 10300; ++now) {
-                auto newState = ((now / 1000) % 2) == 0 ? State::Active : State::Inactive;
-                logged.state(newState, now);
-            }
-
-            // when output is still active
-            CHECK(logged.state() == State::Active);
-            auto durations = logged.activeDurations(now);
+            logged.state(State::Active, 0);
+            logged.state(State::Inactive, 1000);
+            logged.state(State::Active, 2000);
+            logged.state(State::Inactive, 3000);
+            logged.state(State::Active, 4000);
+            logged.state(State::Inactive, 5000);
+            logged.state(State::Active, 6000);
+            auto durations = logged.activeDurations(6300);
             CHECK(durations.currentActive == 300);
             CHECK(durations.currentPeriod == 1300);
             CHECK(durations.previousActive == 1000);
             CHECK(durations.previousPeriod == 2000);
 
-            for (; now < 11300; ++now) {
-                auto newState = ((now / 1000) % 2) == 0 ? State::Active : State::Inactive;
-                logged.state(newState, now);
-            }
+            logged.state(State::Inactive, 7000);
 
-            // when output is inactive
-            durations = logged.activeDurations(now);
+            durations = logged.activeDurations(7300);
             CHECK(durations.currentActive == 1000);
             CHECK(durations.currentPeriod == 1300);
             CHECK(durations.previousActive == 1000);
             CHECK(durations.previousPeriod == 2000);
         }
+
+        THEN("Inverting target actuator has no effect on durations")
+        {
+            mock.invert(true);
+            logged.state(State::Active, 0);
+            logged.state(State::Inactive, 1000);
+            logged.state(State::Active, 2000);
+            logged.state(State::Inactive, 3000);
+            logged.state(State::Active, 4000);
+            logged.state(State::Inactive, 5000);
+            logged.state(State::Active, 6000);
+            auto durations = logged.activeDurations(6300);
+            CHECK(durations.currentActive == 300);
+            CHECK(durations.currentPeriod == 1300);
+            CHECK(durations.previousActive == 1000);
+            CHECK(durations.previousPeriod == 2000);
+
+            logged.state(State::Inactive, 7000);
+
+            durations = logged.activeDurations(7300);
+            CHECK(durations.currentActive == 1000);
+            CHECK(durations.currentPeriod == 1300);
+            CHECK(durations.previousActive == 1000);
+            CHECK(durations.previousPeriod == 2000);
+        }
+
         THEN("durations are correct immediately after switching")
         {
             // toggle a few times to erase history

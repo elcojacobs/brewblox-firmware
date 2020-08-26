@@ -65,7 +65,7 @@ public:
     {
         return selectStage(stages.size() - 1) - stages.cbegin() + 1;
     }
-    uint8_t fractionBits(uint8_t idx = 255) const;
+
     int64_t readWithNFractionBits(uint8_t bits, uint8_t filterNr = 255) const;
     int32_t readLastInput() const;
     IirFilter::DerivativeResult readDerivative(uint8_t filterNr, bool smooth = true) const;
@@ -74,6 +74,5 @@ public:
 
 private:
     uint32_t sampleInterval(std::vector<Stage>::const_iterator stage) const;
-    std::vector<FilterChain::Stage>::iterator selectStage(uint8_t filterNr);
     std::vector<FilterChain::Stage>::const_iterator selectStage(uint8_t filterNr) const;
 };

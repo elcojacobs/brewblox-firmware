@@ -18,6 +18,7 @@
  */
 
 #include "../inc/OneWireDevice.h"
+#include "../inc/Logger.h"
 #include "../inc/OneWire.h"
 #include "../inc/OneWireAddress.h"
 
@@ -28,36 +29,45 @@
  */
 OneWireDevice::OneWireDevice(OneWire& oneWire_, const OneWireAddress& address_)
     : oneWire(oneWire_)
-    , address(address_)
+    , m_address(address_)
 {
 }
 
-/**
- * Get the device address
- * @return device address
- */
-OneWireAddress
-OneWireDevice::getDeviceAddress() const
-{
-    return address;
-}
-
-/**
- * Set the device address
- * @param new device address
- */
 void
-OneWireDevice::setDeviceAddress(const OneWireAddress& addr)
+OneWireDevice::connected(bool _connected)
 {
-    address = addr;
-}
+    if (m_connected == _connected) {
+        return; // state stays the same
+    }
 
-/**
- * Checks if the address is valid by performing a crc8 check on it
- * @return bool, true if valid
- */
-bool
-OneWireDevice::validAddress() const
-{
-    return address.valid();
+    std::string log;
+
+    switch (m_address[0]) {
+    case 0x28:
+        log += "Temp sensor ";
+        break;
+    case 0x3A:
+        log += "DS2413 ";
+        break;
+    case 0x29:
+        log += "DS2408 ";
+        break;                    // LCOV_EXCL_LINE
+    default:                      // LCOV_EXCL_LINE
+        log += "OneWire device "; // LCOV_EXCL_LINE
+    }
+
+    if (!_connected) {
+        log += "dis";
+    }
+    log += "connected: ";
+
+    log << m_address.toString();
+
+    if (_connected) {
+        CL_LOG_INFO(std::move(log));
+    } else {
+        CL_LOG_WARN(std::move(log));
+    }
+
+    m_connected = _connected;
 }

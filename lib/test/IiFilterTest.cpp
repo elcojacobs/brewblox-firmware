@@ -235,6 +235,34 @@ SCENARIO("Filtering 24-bit values with IIR Filters", "[filter]")
                     }
                 }
             }
+
+            WHEN("The filter index is changed for a filter that is in use")
+            {
+
+                IirFilter filter(i, INT32_MAX);
+
+                for (int i = 0; i < 10; i++) {
+                    filter.add(1000);
+                }
+                auto outputValue = filter.read();
+                CHECK(outputValue != 1000); // not reached end value yet
+                filter.setParamsIdx(i + 1);
+
+                THEN("The filter is reset to the last output to prevent instability")
+                {
+                    CHECK(filter.readLastInput() == outputValue);
+                }
+            }
         }
+    }
+
+    WHEN("A non-existing parameter idx is picked, it uses the params of idx 0")
+    {
+        CHECK(IirFilter::FilterDefinition(4).maxDerivative == IirFilter::FilterDefinition(0).maxDerivative);
+
+        IirFilter filter(1, INT32_MAX);
+        filter.setParamsIdx(4);
+        CHECK(filter.getParamsIdx() == 4);
+        CHECK(filter.unityStepDerivative() == IirFilter::FilterDefinition(0).maxDerivative);
     }
 }

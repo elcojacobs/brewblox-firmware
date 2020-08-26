@@ -18,6 +18,7 @@
  */
 
 #include "SysInfoBlock.h"
+#include "cbox/Tracing.h"
 #include "deviceid_hal.h"
 #include "stringify.h"
 #include <cstring>
@@ -40,13 +41,36 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
 
     message.platform = blox_SysInfo_Platform(PLATFORM_ID);
 
+    if (command == Command::SYS_CMD_TRACE_READ || command == Command::READ_AND_SYS_CMD_TRACE_RESUME) {
+        // circular buffer, idx - 1 has most recent action
+        auto history = cbox::tracing::history();
+        auto it = history.cbegin();
+        auto end = history.cend();
+        for (uint8_t i = 0; i < 10 && it < end; i++, it++) {
+            message.trace[i].action = blox_Trace_Action(it->action);
+            message.trace[i].id = it->id;
+            message.trace[i].type = it->type;
+        }
+        message.trace_count = 10;
+    }
+    if (command == Command::SYS_CMD_TRACE_RESUME || command == Command::READ_AND_SYS_CMD_TRACE_RESUME) {
+        cbox::tracing::unpause();
+    }
+
+    command = Command::NONE;
+
     return streamProtoTo(out, &message, blox_SysInfo_fields, blox_SysInfo_size);
 }
 
 cbox::CboxError
-SysInfoBlock::streamFrom(cbox::DataIn&)
+SysInfoBlock::streamFrom(cbox::DataIn& in)
 {
-    return cbox::CboxError::OK;
+    blox_SysInfo message = blox_SysInfo_init_zero;
+    auto res = streamProtoFrom(in, &message, blox_SysInfo_fields, blox_SysInfo_size);
+    if (res == cbox::CboxError::OK) {
+        command = Command(message.command);
+    }
+    return res;
 }
 
 cbox::CboxError

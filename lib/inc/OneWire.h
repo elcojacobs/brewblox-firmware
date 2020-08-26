@@ -32,23 +32,23 @@ public:
         return driver.init();
     }
 
-    uint8_t read()
+    bool read(uint8_t& v)
     {
-        return driver.read();
+        return driver.read(v);
     }
 
-    void write(uint8_t b)
+    bool write(uint8_t b)
     {
-        driver.write(b);
+        return driver.write(b);
     }
 
-    void write_bit(uint8_t bit)
+    bool write_bit(bool bit)
     {
-        driver.write_bit(bit);
+        return driver.write_bit(bit);
     }
-    uint8_t read_bit()
+    bool read_bit(bool& bit)
     {
-        return driver.read_bit();
+        return driver.read_bit(bit);
     }
 
     bool reset()
@@ -59,14 +59,14 @@ public:
     // high level functions
 
     // Issue a 1-Wire rom select command, you do the reset first.
-    void select(const OneWireAddress& rom);
+    bool select(const OneWireAddress& rom);
 
     // Issue a 1-Wire rom skip command, to address all on bus.
-    void skip(void);
+    bool skip();
 
-    void write_bytes(const uint8_t* buf, uint16_t count);
+    bool write_bytes(const uint8_t* buf, uint16_t count);
 
-    void read_bytes(uint8_t* buf, uint16_t count);
+    bool read_bytes(uint8_t* buf, uint16_t count);
 
     // Clear the search state so that if will start from the beginning again.
     void reset_search();
@@ -83,10 +83,4 @@ public:
     // When the last device has been return, reset_search or target_search has to be called
     // to reset the search.
     bool search(OneWireAddress& newAddr);
-
-    // Compute a Dallas Semiconductor 8 bit CRC, these are used in the
-    // ROM and scratchpad registers.
-    static uint8_t crc8(const uint8_t* addr, uint8_t len);
-
-    static uint16_t crc16(const uint8_t* input, uint16_t len);
 };

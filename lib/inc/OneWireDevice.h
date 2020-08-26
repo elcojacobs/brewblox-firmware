@@ -30,24 +30,31 @@ protected:
     ~OneWireDevice() = default;
 
 public:
-    OneWireAddress getDeviceAddress() const;
-    void setDeviceAddress(const OneWireAddress& addr);
-    bool validAddress() const;
+    OneWireAddress address() const
+    {
+        return m_address;
+    }
+    void address(const OneWireAddress& addr)
+    {
+        m_address = addr;
+    }
 
     bool connected() const
     {
         return m_connected;
     }
 
-    void selectRom() const
+    void connected(bool _connected);
+
+    bool selectRom() const
     {
-        oneWire.reset();
-        oneWire.select(address);
+        return oneWire.reset() && oneWire.select(m_address);
     }
 
 protected:
     OneWire& oneWire;
-    OneWireAddress address;
+    OneWireAddress m_address;
 
+private:
     bool m_connected = false;
 };

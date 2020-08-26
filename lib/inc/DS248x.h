@@ -23,41 +23,39 @@
 #include "OneWireLowLevelInterface.h"
 #include <cstdint>
 
-#define DS248X_CONFIG_APU (0x1 << 0)
-#define DS248X_CONFIG_PPM (0x1 << 1)
-#define DS248X_CONFIG_SPU (0x1 << 2)
-#define DS2484_CONFIG_WS (0x1 << 3)
+constexpr uint8_t DS248X_CONFIG_APU = (0x1 << 0);
+constexpr uint8_t DS248X_CONFIG_PPM = (0x1 << 1);
+constexpr uint8_t DS248X_CONFIG_SPU = (0x1 << 2);
+constexpr uint8_t DS2484_CONFIG_WS = (0x1 << 3);
 
-#define DS248X_STATUS_BUSY (0x1 << 0)
-#define DS248X_STATUS_PPD (0x1 << 1)
-#define DS248X_STATUS_SD (0x1 << 2)
-#define DS248X_STATUS_LL (0x1 << 3)
-#define DS248X_STATUS_RST (0x1 << 4)
-#define DS248X_STATUS_SBR (0x1 << 5)
-#define DS248X_STATUS_TSB (0x1 << 6)
-#define DS248X_STATUS_DIR (0x1 << 7)
+constexpr uint8_t DS248X_STATUS_BUSY = (0x1 << 0);
+constexpr uint8_t DS248X_STATUS_PPD = (0x1 << 1);
+constexpr uint8_t DS248X_STATUS_SD = (0x1 << 2);
+constexpr uint8_t DS248X_STATUS_LL = (0x1 << 3);
+constexpr uint8_t DS248X_STATUS_RST = (0x1 << 4);
+constexpr uint8_t DS248X_STATUS_SBR = (0x1 << 5);
+constexpr uint8_t DS248X_STATUS_TSB = (0x1 << 6);
+constexpr uint8_t DS248X_STATUS_DIR = (0x1 << 7);
 
 // I2C commands
-#define DS248X_DRST 0xf0 // Device Reset
-#define DS248X_WCFG 0xd2 // Write Configuration
-#define DS248X_CHSL 0xc3 // Channel Select (DS248X-800 only)
-#define DS248X_SRP 0xe1  // Set Read Pointer
-#define DS248X_1WRS 0xb4 // 1-Wire Reset
-#define DS248X_1WWB 0xa5 // 1-Wire Write Byte
-#define DS248X_1WRB 0x96 // 1-Wire Read Byte
-#define DS248X_1WSB 0x87 // 1-Wire Single Bit
-#define DS248X_1WT 0x78  // 1-Wire Triplet
-#define DS248X_ADJP 0xc3 // Adjust OneWire port config (DS2484 only))
+constexpr uint8_t DS248X_DRST = 0xf0; // Device Reset
+constexpr uint8_t DS248X_WCFG = 0xd2; // Write Configuration
+constexpr uint8_t DS248X_CHSL = 0xc3; // Channel Select (DS248X-800 only)
+constexpr uint8_t DS248X_SRP = 0xe1;  // Set Read Pointer
+constexpr uint8_t DS248X_1WRS = 0xb4; // 1-Wire Reset
+constexpr uint8_t DS248X_1WWB = 0xa5; // 1-Wire Write Byte
+constexpr uint8_t DS248X_1WRB = 0x96; // 1-Wire Read Byte
+constexpr uint8_t DS248X_1WSB = 0x87; // 1-Wire Single Bit
+constexpr uint8_t DS248X_1WT = 0x78;  // 1-Wire Triplet
+constexpr uint8_t DS248X_ADJP = 0xc3; // Adjust OneWire port config (DS2484 only))
 
 class DS248x : public OneWireLowLevelInterface {
 public:
     //Address is 0-3
 
     DS248x(uint8_t address)
-        : mAddress(address)
+        : mAddress(0x18 | address)
     {
-        mAddress = 0x18 | mAddress;
-        mTimeout = 0;
     }
 
     DS248x(const DS248x&) = delete;
@@ -77,11 +75,11 @@ public:
     // Returns 1 if a device asserted a presence pulse, 0 otherwise.
     virtual bool reset() override final;
 
-    virtual void write(uint8_t b) override final;
-    virtual uint8_t read() override final;
+    virtual bool write(uint8_t b) override final;
+    virtual bool read(uint8_t& b) override final;
 
-    virtual void write_bit(uint8_t bit) override final;
-    virtual uint8_t read_bit() override final;
+    virtual bool write_bit(bool bit) override final;
+    virtual bool read_bit(bool& bit) override final;
 
     // DS248X specific functions below
 
@@ -89,13 +87,6 @@ public:
 
     //DS2482-800 only
     bool selectChannel(uint8_t channel);
-
-    uint8_t wireReadStatus(bool setPtr = false);
-
-    uint8_t hasTimeout()
-    {
-        return mTimeout;
-    }
 
     //--------------------------------------------------------------------------
     // Use the DS248X help command '1-Wire triplet' to perform one bit of a
@@ -109,9 +100,7 @@ public:
 
 private:
     uint8_t mAddress;
-    uint8_t mTimeout;
-    uint8_t readByte();
-    void setReadPtr(uint8_t readPtr);
+    uint8_t mStatus = 0;
 
-    uint8_t busyWait(bool setReadPtr = false); //blocks until
+    bool busyWait(); //blocks until ready or timeout, updates status
 };

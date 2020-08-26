@@ -133,8 +133,8 @@ public:
         WRITE_OBJECT = 2,             // stream new data into an object from the data in
         CREATE_OBJECT = 3,            // add a new object
         DELETE_OBJECT = 4,            // delete an object by id
-        LIST_ACTIVE_OBJECTS = 5,      // list objects saved to persistent storage
-        READ_STORED_OBJECT = 6,       // list objects saved to persistent storage
+        LIST_ACTIVE_OBJECTS = 5,      // list active objects
+        READ_STORED_OBJECT = 6,       // list single object from persistent storage
         LIST_STORED_OBJECTS = 7,      // list objects saved to persistent storage
         CLEAR_OBJECTS = 8,            // remove all user objects
         REBOOT = 9,                   // reboot the system

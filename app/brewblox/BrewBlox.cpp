@@ -49,6 +49,7 @@
 #include "cbox/EepromObjectStorage.h"
 #include "cbox/ObjectContainer.h"
 #include "cbox/ObjectFactory.h"
+#include "cbox/Tracing.h"
 #include "cbox/spark/SparkEepromAccess.h"
 #include "deviceid_hal.h"
 #include "platforms.h"
@@ -112,6 +113,7 @@ using PinsBlock = Spark3PinsBlock;
 #endif
 
 cbox::ConnectionPool&
+
 theConnectionPool()
 {
 #if defined(SPARK)
@@ -305,6 +307,7 @@ connectionStarted(DataOut& out)
 #endif
     hexOut.write(resetData);
     out.write(',');
+
     uint8_t deviceId[12];
     HAL_device_ID(deviceId, 12);
     hexOut.writeBuffer(deviceId, 12);

@@ -83,7 +83,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
             auto lookup = brewbloxBox().makeCboxPtr<DS2413Block>(ds2413Id);
             auto devicePtr = lookup.lock();
             REQUIRE(devicePtr);
-            CHECK(devicePtr->get().getDeviceAddress() == OneWireAddress(0x0644'4444'4444'443A));
+            CHECK(devicePtr->get().address() == OneWireAddress(0x0644'4444'4444'443A));
         }
 
         AND_WHEN("A DigitalActuator block is created that uses one of the channels")
@@ -113,7 +113,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 auto decoded = blox::DigitalActuator();
                 testBox.processInputToProto(decoded);
 
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 state: Active desiredState: Active");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 state: STATE_ACTIVE desiredState: STATE_ACTIVE");
             }
             THEN("A read of the DS2413 is as expected")
             {
@@ -124,7 +124,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 auto decoded = blox::DS2413();
                 testBox.processInputToProto(decoded);
 
-                CHECK(decoded.ShortDebugString() == "address: 451560922637681722 connected: true pins { A { config: ACTIVE_HIGH state: Active } } pins { B { } }");
+                CHECK(decoded.ShortDebugString() == "address: 451560922637681722 connected: true pins { A { config: CHANNEL_ACTIVE_HIGH state: STATE_ACTIVE } } pins { B { } }");
             }
         }
 
@@ -158,7 +158,7 @@ SCENARIO("A DigitalActuator Block with a DS2413 target")
                 testBox.processInputToProto(decoded);
 
                 // in simulation, the hw device will not work and therefore the state will be unknown
-                CHECK(decoded.ShortDebugString() == "hwDevice: 102 channel: 1 desiredState: Active strippedFields: 3");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 102 channel: 1 desiredState: STATE_ACTIVE strippedFields: 3");
             }
         }
     }
@@ -227,7 +227,7 @@ SCENARIO("A DigitalActuator Block with Mockpins as target")
                 auto decoded = blox::DigitalActuator();
                 testBox.processInputToProto(decoded);
 
-                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 state: Active desiredState: Active");
+                CHECK(decoded.ShortDebugString() == "hwDevice: 100 channel: 1 state: STATE_ACTIVE desiredState: STATE_ACTIVE");
             }
             THEN("A read of the DS2413 is as expected")
             {
@@ -238,7 +238,7 @@ SCENARIO("A DigitalActuator Block with Mockpins as target")
                 auto decoded = blox::MockPins();
                 testBox.processInputToProto(decoded);
 
-                CHECK(decoded.ShortDebugString() == "pins { mock1 { config: ACTIVE_HIGH state: Active } } pins { mock2 { } } pins { mock3 { } } pins { mock4 { } } pins { mock5 { } } pins { mock6 { } } pins { mock7 { } } pins { mock8 { } }");
+                CHECK(decoded.ShortDebugString() == "pins { mock1 { config: CHANNEL_ACTIVE_HIGH state: STATE_ACTIVE } } pins { mock2 { } } pins { mock3 { } } pins { mock4 { } } pins { mock5 { } } pins { mock6 { } } pins { mock7 { } } pins { mock8 { } }");
             }
         }
     }

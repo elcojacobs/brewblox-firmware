@@ -45,21 +45,6 @@ FilterChain::FilterChain(
     }
 }
 
-std::vector<FilterChain::Stage>::iterator
-FilterChain::selectStage(uint8_t filterNr)
-{
-    auto stage = stages.begin() + filterNr;
-    if (stage >= stages.end()) {
-        stage = stages.end() - 1;
-    }
-    while (!stage->filter) {
-        // if selected filter is not initialized, pick previous
-        // first is always initialized
-        stage--;
-    }
-    return stage;
-}
-
 std::vector<FilterChain::Stage>::const_iterator
 FilterChain::selectStage(uint8_t filterNr) const
 {
@@ -207,13 +192,6 @@ FilterChain::intervalToFilterNr(uint32_t maxInterval) const
         ++it;
     }
     return filterNr;
-}
-
-uint8_t
-FilterChain::fractionBits(uint8_t filterNr) const
-{
-
-    return selectStage(filterNr)->filter->fractionBits();
 }
 
 int32_t

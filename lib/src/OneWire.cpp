@@ -124,44 +124,49 @@ sample code bearing this copyright.
 #include "../inc/OneWireAddress.h"
 #include "../inc/OneWireCrc.h"
 
-void
+bool
 OneWire::write_bytes(const uint8_t* buf, uint16_t count)
 {
     for (uint16_t i = 0; i < count; i++) {
-        driver.write(buf[i]);
+        if (!driver.write(buf[i])) {
+            return false;
+        }
     }
+    return true;
 }
 
-void
+bool
 OneWire::read_bytes(uint8_t* buf, uint16_t count)
 {
     for (uint16_t i = 0; i < count; i++) {
-        buf[i] = driver.read();
+        if (!driver.read(buf[i])) {
+            return false;
+        };
     }
+    return true;
 }
 
 //
 // Do a ROM select
 //
 
-void
+bool
 OneWire::select(const OneWireAddress& rom)
 {
-    driver.write(0x55); // Choose ROM
-
-    for (uint8_t i = 0; i < 8; i++) {
-        driver.write(rom[i]);
-    }
+    if (driver.write(0x55)) { // Choose ROM
+        return write_bytes(&rom[0], 8);
+    };
+    return false;
 }
 
 //
 // Do a ROM skip
 //
 
-void
+bool
 OneWire::skip()
 {
-    driver.write(0xCC); // Skip ROM
+    return driver.write(0xCC); // Skip ROM
 }
 
 void
@@ -248,16 +253,4 @@ OneWire::search(OneWireAddress& newAddr)
     }
 
     return search_result;
-}
-
-uint8_t
-OneWire::crc8(const uint8_t* addr, uint8_t len)
-{
-    return OneWireCrc8(addr, len);
-}
-
-uint16_t
-OneWire::crc16(const uint8_t* input, uint16_t len)
-{
-    return OneWireCrc16(input, len);
 }

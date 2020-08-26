@@ -4,11 +4,8 @@
 	branch = develop
 [submodule "platform/spark/device-os"]
 	path = platform/spark/device-os
-	url = https://github.com/particle-iot/device-os.git
+	url = https://github.com/brewblox/particle-device-os.git
 	branch = brewblox
 [submodule "app/brewblox/proto"]
 	path = app/brewblox/proto
 	url = https://github.com/BrewBlox/brewblox-proto.git
-[submodule "wiced-history"]
-	path = wiced-history
-	url = https://github.com/amlweems/wiced-history.git

@@ -67,7 +67,7 @@ public:
             stripped.add(blox_SetpointSensorPair_valueUnfiltered_tag);
         }
 
-        message.filter = blox_SetpointSensorPair_FilterChoice(pair.filterChoice());
+        message.filter = blox_FilterChoice(pair.filterChoice());
         message.filterThreshold = cnl::unwrap(pair.filterThreshold());
 
         stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 3);
@@ -81,7 +81,7 @@ public:
         message.sensorId = sensor.getId();
         message.storedSetting = cnl::unwrap(pair.setting());
         message.settingEnabled = pair.settingValid();
-        message.filter = blox_SetpointSensorPair_FilterChoice(pair.filterChoice());
+        message.filter = blox_FilterChoice(pair.filterChoice());
         message.filterThreshold = cnl::unwrap(pair.filterThreshold());
 
         return streamProtoTo(out, &message, blox_SetpointSensorPair_fields, blox_SetpointSensorPair_size);

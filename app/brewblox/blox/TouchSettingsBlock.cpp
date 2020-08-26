@@ -44,7 +44,7 @@ TouchSettingsBlock::streamFrom(cbox::DataIn& in)
     cbox::CboxError result = streamProtoFrom(in, &message, blox_TouchSettings_fields, blox_TouchSettings_size);
     if (result == cbox::CboxError::OK) {
         auto calib = D4D_GetTouchScreenCalibration();
-        if (message.calibrated == blox_TouchSettings_Calibrated_NEW || calib.ScreenCalibrated == 0) {
+        if (message.calibrated == blox_TouchSettings_Calibrated_CALIBRATED_NEW || calib.ScreenCalibrated == 0) {
             calib.ScreenCalibrated = 1;
             calib.TouchScreenXoffset = message.xOffset;
             calib.TouchScreenYoffset = message.yOffset;
