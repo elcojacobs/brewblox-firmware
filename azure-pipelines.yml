@@ -3,7 +3,7 @@ resources:
     - repository: self
   containers:
     - container: compiler
-      image: brewblox/firmware-compiler:amd-latest
+      image: brewblox/firmware-compiler:amd-develop
 
 pool:
   vmImage: "Ubuntu-20.04"

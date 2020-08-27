@@ -26,7 +26,7 @@ SPIArbiter::apply(SPIConfiguration& client)
         // first time using the SPI, initialize it.
         // this applies Particle defaults, so do it before configuring the mode, clock and bit order.
         // only do it when the SPI is first used.
-        HAL_SPI_Begin(HAL_SPI_INTERFACE1, client.getSSPin());
+        hal_spi_begin(HAL_SPI_INTERFACE1, client.getSSPin());
     }
 
     if (ss_pin_ != client.getSSPin()) {
@@ -35,17 +35,17 @@ SPIArbiter::apply(SPIConfiguration& client)
     }
     if (mode_ != client.getMode()) {
         mode_ = client.getMode();
-        HAL_SPI_Set_Data_Mode(HAL_SPI_INTERFACE1, mode_);
+        hal_spi_set_data_mode(HAL_SPI_INTERFACE1, mode_);
     }
 
     if (bitOrder_ != client.getBitOrder()) {
         bitOrder_ = client.getBitOrder();
-        HAL_SPI_Set_Bit_Order(HAL_SPI_INTERFACE1, bitOrder_);
+        hal_spi_set_bit_order(HAL_SPI_INTERFACE1, bitOrder_);
     }
 
     if (clockDivider_ != client.getClockDivider()) {
         clockDivider_ = client.getClockDivider();
-        HAL_SPI_Set_Clock_Divider(HAL_SPI_INTERFACE1, clockDivider_);
+        hal_spi_set_clock_divider(HAL_SPI_INTERFACE1, clockDivider_);
     }
 }
 
