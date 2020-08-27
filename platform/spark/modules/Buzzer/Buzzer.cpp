@@ -35,7 +35,7 @@ BuzzerClass::setActive(bool active)
         digitalWriteFast(PIN_ALARM, active);
         break;
     case SparkVersion::V3:
-        HAL_PWM_Write_With_Frequency(PIN_ALARM, active ? 128 : 0, 3000);
+        hal_pwm_write_with_frequency(PIN_ALARM, active ? 128 : 0, 3000);
         break;
     }
 }

@@ -152,7 +152,7 @@ void
 displayBrightness(uint8_t v)
 {
 #if defined(PIN_LCD_BACKLIGHT) && defined(SPARK)
-    HAL_PWM_Write_With_Frequency(PIN_LCD_BACKLIGHT, v, 100);
+    hal_pwm_write_with_frequency(PIN_LCD_BACKLIGHT, v, 100);
 #else
     (void)(v); // prevent unused warning
 #endif

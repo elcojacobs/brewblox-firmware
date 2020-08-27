@@ -100,7 +100,7 @@ public:
     {
         if (isClient(client)) {
 
-            return HAL_SPI_Send_Receive_Data(HAL_SPI_INTERFACE1, data);
+            return hal_spi_transfer(HAL_SPI_INTERFACE1, data);
         }
         return 0;
     }
@@ -108,7 +108,7 @@ public:
     inline void transfer(SPIConfiguration& client, void* tx_buffer, void* rx_buffer, size_t length, wiring_spi_dma_transfercomplete_callback_t user_callback)
     {
         if (isClient(client)) {
-            HAL_SPI_DMA_Transfer(HAL_SPI_INTERFACE1, tx_buffer, rx_buffer, length, user_callback);
+            hal_spi_transfer_dma(HAL_SPI_INTERFACE1, tx_buffer, rx_buffer, length, user_callback);
         }
         // todo - should we independently track that DMA is in progress?
     }
@@ -116,7 +116,7 @@ public:
     inline void transferCancel(SPIConfiguration& client)
     {
         if (isClient(client)) {
-            HAL_SPI_DMA_Transfer_Cancel(HAL_SPI_INTERFACE1);
+            hal_spi_transfer_dma_cancel(HAL_SPI_INTERFACE1);
         }
     }
 
