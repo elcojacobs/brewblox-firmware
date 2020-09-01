@@ -39,6 +39,7 @@
 #include "blox/SetpointProfileBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
 #include "blox/SysInfoBlock.h"
+#include "blox/TempSensorCombiBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "blox/TempSensorOneWireBlock.h"
 #include "blox/TouchSettingsBlock.h"
@@ -165,6 +166,7 @@ makeBrewBloxBox()
         {MotorValveBlock::staticTypeId(), []() { return std::make_shared<MotorValveBlock>(objects); }},
         {ActuatorLogicBlock::staticTypeId(), []() { return std::make_shared<ActuatorLogicBlock>(objects); }},
         {MockPinsBlock::staticTypeId(), []() { return std::make_shared<MockPinsBlock>(); }},
+        {TempSensorCombiBlock::staticTypeId(), []() { return std::make_shared<TempSensorCombiBlock>(objects); }},
     };
 
     static EepromAccessImpl eeprom;
