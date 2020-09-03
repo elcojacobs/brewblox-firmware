@@ -22,6 +22,7 @@
 #include "blox/Spark2PinsBlock.h"
 #include "Board.h"
 #include "proto/cpp/Spark2Pins.pb.h"
+#include "IoArrayHelpers.h"
 
 pin_t
 Spark2PinsBlock::channelToPin(uint8_t channel) const

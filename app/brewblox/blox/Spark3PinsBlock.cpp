@@ -17,6 +17,8 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if PLATFORM_ID == 8 || PLATFORM_ID == 3
+
 #include "blox/Spark3PinsBlock.h"
 #include "Board.h"
 #include "IoArrayHelpers.h"
@@ -131,3 +133,4 @@ Spark3PinsBlock::implements(const cbox::obj_type_t& iface)
     }
     return nullptr;
 }
+#endif
