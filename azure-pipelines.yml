@@ -180,7 +180,7 @@ jobs:
       - bash: |
           set -e
           mkdir ${SRC}
-          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox ${SRC}/brewblox-amd
+          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox-gcc ${SRC}/brewblox-amd
         displayName: Copy to firmware-simulator context
         env:
           SRC: docker/firmware-simulator/source
