@@ -21,15 +21,10 @@
 
 #include "ActuatorDigitalBase.h"
 #include "TicksTypes.h"
-#include <algorithm>
 #include <array>
-#include <cstdint>
 /*
  * An ActuatorDigitalBase wrapper that logs the most recent changes
  */
-
-// uneven length makes last entry equal to first for toggling (PWM) behavior
-const uint8_t historyLength = 5;
 
 class ActuatorDigitalChangeLogged {
 public:
@@ -42,7 +37,7 @@ public:
 
 private:
     ActuatorDigitalBase& actuator;
-    std::array<StateChange, historyLength> history;
+    std::array<StateChange, 5> history; // uneven length makes last entry equal to first for toggling (PWM) behavior
 
 protected:
     ticks_millis_t lastUpdateTime = 0;
@@ -58,124 +53,33 @@ public:
 
     virtual ~ActuatorDigitalChangeLogged() = default;
 
-    void state(const State& val, const ticks_millis_t& now)
-    {
-        actuator.state(val);
-        update(now);
-    }
+    void state(const State& val, const ticks_millis_t& now);
 
-    void state(const State& val)
-    {
-        state(val, lastUpdateTime);
-    }
+    void state(const State& val);
 
-    void setStateUnlogged(const State& val)
-    {
-        actuator.state(val);
-    }
+    void setStateUnlogged(const State& val);
 
-    State state() const
-    {
-        return actuator.state();
-    }
+    State state() const;
 
-    void update(const ticks_millis_t& now)
-    {
-        if (state() != history.front().newState) {
-            std::rotate(history.rbegin(), history.rbegin() + 1, history.rend());
-            history[0] = {state(), now};
-        }
-        lastUpdateTime = now;
-    }
+    void update(const ticks_millis_t& now);
 
-    auto getLastStartEndTime(const State& state, const ticks_millis_t& now) const
-    {
-        struct {
-            ticks_millis_t start;
-            ticks_millis_t end;
-        } result;
+    struct StartEnd {
+        ticks_millis_t start;
+        ticks_millis_t end;
+    };
 
-        result.start = now + 1;
-        result.end = (actuator.state() == state) ? now : now + 1;
+    StartEnd getLastStartEndTime(const State& state, const ticks_millis_t& now) const;
 
-        ticks_millis_t end = result.end;
-        for (const auto& h : history) {
-            if (h.newState == state) {
-                result.start = h.startTime;
-                result.end = end;
-                break;
-            }
-            end = h.startTime;
-        }
-        return result;
-    }
+    struct Durations {
+        ticks_millis_t currentActive;
+        ticks_millis_t currentPeriod;
+        ticks_millis_t previousActive;
+        ticks_millis_t previousPeriod;
+        State lastState;
+    };
+    Durations activeDurations(const ticks_millis_t& now);
 
-    auto activeDurations(const ticks_millis_t& now)
-    {
-        struct {
-            ticks_millis_t currentActive;
-            ticks_millis_t currentPeriod;
-            ticks_millis_t previousActive;
-            ticks_millis_t previousPeriod;
-            State lastState;
-        } result;
+    void resetHistory();
 
-        result.currentActive = 0;
-        result.currentPeriod = 0;
-        result.previousActive = 0;
-        result.previousPeriod = 0;
-        result.lastState = history.front().newState;
-        auto end = now;
-        auto start = ticks_millis_t(0);
-        //auto minStartTime = now - maxHistory;
-        uint8_t activePeriods = 0;
-
-        auto h = history.cbegin();
-        for (; h < history.cend(); ++h) {
-            start = h->startTime;
-            auto duration = end - start;
-            end = start;
-            if (h->newState == State::Active) {
-                ++activePeriods;
-                if (activePeriods == 1) {
-                    result.currentActive = duration;
-                    result.currentPeriod += duration;
-                } else if (activePeriods == 2) {
-                    result.previousActive = duration;
-                    result.previousPeriod += duration;
-                } else {
-                    break;
-                }
-            } else {
-                if (history.front().newState == State::Inactive) {
-                    if (activePeriods == 0) {
-                        result.currentPeriod += duration;
-                    } else if (activePeriods <= 1) {
-                        result.previousPeriod += duration;
-                    } else {
-                        break;
-                    }
-                } else {
-                    if (activePeriods <= 1) {
-                        result.currentPeriod += duration;
-                    } else {
-                        result.previousPeriod += duration;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    void resetHistory()
-    {
-        history.fill(StateChange{State::Unknown, ticks_millis_t(-1)});
-        history[0] = {actuator.state(), 0};
-        lastUpdateTime = 0;
-    }
-
-    bool supportsFastIo() const
-    {
-        return actuator.supportsFastIo();
-    }
+    bool supportsFastIo() const;
 };

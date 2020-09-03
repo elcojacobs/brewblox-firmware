@@ -1,6 +1,15 @@
 #include "DigitalActuatorBlock.h"
 #include "ActuatorDigitalConstraintsProto.h"
 #include "FieldTags.h"
+#include "IoArray.h"
+
+DigitalActuatorBlock::DigitalActuatorBlock(cbox::ObjectContainer& objects)
+    : objectsRef(objects)
+    , hwDevice(objects)
+    , actuator(hwDevice.lockFunctor(), 0)
+    , constrained(actuator)
+{
+}
 
 cbox::CboxError
 DigitalActuatorBlock::streamFrom(cbox::DataIn& dataIn)

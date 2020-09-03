@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 
@@ -29,7 +30,7 @@
  */
 class ActuatorDigitalBase {
 public:
-    enum State : uint8_t {
+    enum class State : uint8_t {
         Inactive = 0,
         Active = 1,
         Unknown = 2,

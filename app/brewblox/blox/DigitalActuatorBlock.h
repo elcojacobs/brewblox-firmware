@@ -6,6 +6,8 @@
 #include "cbox/CboxPtr.h"
 #include "proto/cpp/DigitalActuator.pb.h"
 
+class IoArray;
+
 class DigitalActuatorBlock : public Block<BrewBloxTypes_BlockType_DigitalActuator> {
 private:
     cbox::ObjectContainer& objectsRef; // remember object container reference to create constraints
@@ -14,13 +16,7 @@ private:
     ActuatorDigitalConstrained constrained;
 
 public:
-    DigitalActuatorBlock(cbox::ObjectContainer& objects)
-        : objectsRef(objects)
-        , hwDevice(objects)
-        , actuator(hwDevice.lockFunctor(), 0)
-        , constrained(actuator)
-    {
-    }
+    DigitalActuatorBlock(cbox::ObjectContainer& objects);
     virtual ~DigitalActuatorBlock() = default;
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& dataIn) override final;
