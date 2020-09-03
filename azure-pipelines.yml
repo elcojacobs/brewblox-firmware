@@ -28,7 +28,9 @@ jobs:
 
     steps:
       - checkout: self
-        submodules: recursive
+      
+      - script: git submodule update --init --recursive --depth 1
+        displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
         target: compiler
@@ -54,7 +56,9 @@ jobs:
 
     steps:
       - checkout: self
-        submodules: recursive
+      
+      - script: git submodule update --init --recursive --depth 1
+        displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
         target: compiler
@@ -74,14 +78,16 @@ jobs:
 
   #   steps:
   #     - checkout: self
-  #       submodules: recursive
+  
+  #     - script: git submodule update --init --recursive --depth 1
+  #       displayName: Checkout submodules
 
-  #     script: bash build/ compile-proto.sh
+  #     - script: bash build/ compile-proto.sh
   #       target: compiler
   #       displayName: Compile proto
 
   #       # should not be run in compiler
-  #     script: bash build/build-sim-arm.sh
+  #     - script: bash build/build-sim-arm.sh
   #       displayName: Build executable
 
   #     - publish: build/target/brewblox-gcc
@@ -94,7 +100,9 @@ jobs:
 
     steps:
       - checkout: self
-        submodules: recursive
+
+      - script: git submodule update --init --recursive --depth 1
+        displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
         target: compiler
@@ -115,7 +123,9 @@ jobs:
 
     steps:
       - checkout: self
-        submodules: recursive
+
+      - script: git submodule update --init --recursive --depth 1
+        displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
         target: compiler
