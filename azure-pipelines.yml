@@ -100,7 +100,7 @@ jobs:
         target: compiler
         displayName: Compile proto
 
-      - script: make APP=brewblox PLATFORM=p1
+      - script: make -j APP=brewblox PLATFORM=p1
         target: compiler
         workingDirectory: build
         displayName: Build p1
@@ -121,7 +121,7 @@ jobs:
         target: compiler
         displayName: Compile proto
 
-      - script: make APP=brewblox PLATFORM=photon
+      - script: make -j APP=brewblox PLATFORM=photon
         target: compiler
         workingDirectory: build
         displayName: Build photon
