@@ -6,14 +6,15 @@ current_dir := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SPARKDIR :=  $(realpath $(current_dir)/../platform/spark/device-os)
 
 APP ?= brewblox
-APPDIR := $(realpath $(current_dir)/../$(APP))
+APPDIR := $(realpath $(current_dir)/..)
 APP_MAKEFILE := app/$(APP)/build.mk
 WARNINGS_AS_ERRORS ?=n
 USE_PRINTF_FLOAT ?=n
 
 # using both APP and APPDIR causes problems in Particle's makefiles, rename to APPNAME
 APPNAME:=$(APP)
-undefine APP
+
+override undefine APP
 
 run_make:
 	@echo "Building app $(APPNAME) from $(APP_MAKEFILE)"
