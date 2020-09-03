@@ -6,7 +6,7 @@ PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${
 PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 
 MY_DIR=$(dirname "$(readlink -f "$0")")
-git submodule update --init "$MY_DIR/../app/brewblox/proto"
+git submodule update --init --depth 1 "$MY_DIR/../app/brewblox/proto"
 
 echo "proto_version=$(cd "$MY_DIR/../app/brewblox/proto"; git rev-parse --short HEAD)"
 
