@@ -21,8 +21,8 @@
 
 #include "TempSensor.h"
 #include <functional>
+#include <memory>
 #include <vector>
-
 /*
  * A process value has a setting and an current value
  */

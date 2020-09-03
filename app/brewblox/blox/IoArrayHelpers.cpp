@@ -17,16 +17,30 @@
  * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "IoArray.h"
-#include "proto/cpp/IoArray.pb.h"
+#include "IoArrayHelpers.h"
 
 void
-writeIoConfig(IoArray& device, uint8_t chan, const blox_ChannelConfig& v);
+writeIoConfig(IoArray& device, uint8_t chan, const blox_ChannelConfig& v)
+{
+    device.writeChannelConfig(chan, IoArray::ChannelConfig(v));
+}
 
 void
-readIoConfig(const IoArray& device, uint8_t chan, blox_ChannelConfig& result);
+readIoConfig(const IoArray& device, uint8_t chan, blox_ChannelConfig& result)
+{
+    auto res = IoArray::ChannelConfig::UNKNOWN;
+    device.readChannelConfig(chan, res);
+    result = blox_ChannelConfig(res);
+}
 
 void
-readIo(const IoArray& device, uint8_t chan, blox_IoChannel& result);
+readIo(const IoArray& device, uint8_t chan, blox_IoChannel& result)
+{
+    auto config = IoArray::ChannelConfig::UNKNOWN;
+    device.readChannelConfig(chan, config);
+    result.config = blox_ChannelConfig(config);
+
+    auto state = IoArray::State::Unknown;
+    device.senseChannel(chan, state);
+    result.state = _blox_DigitalState(state);
+}
