@@ -26,7 +26,7 @@ docker run \
     --platform=linux/arm/v7 \
     -v "$(pwd)/":/firmware/ \
     brewblox/firmware-compiler:arm-latest \
-    make APP=brewblox PLATFORM=gcc
+    make -j APP=brewblox PLATFORM=gcc
 
 # reset modified file
 cd platform/spark/device-os

@@ -4,4 +4,4 @@ set -e
 BUILD_DIR=$(dirname "$(readlink -f "$0")")
 
 cd "$BUILD_DIR"
-make APP=brewblox PLATFORM=gcc
+make -j APP=brewblox PLATFORM=gcc
