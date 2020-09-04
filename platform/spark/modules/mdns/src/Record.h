@@ -210,44 +210,8 @@ public:
 
     void setHostRecord(Record* host);
     void setPort(uint16_t port);
-    virtual void matched(uint16_t qtype) override final
-    {
-        switch (qtype) {
-        case PTR_TYPE:
-        case ANY_TYPE:
-            ptrRecord->setAnswerRecord();
-            this->setAdditionalRecord();
-            if (txtRecord) {
-                txtRecord->setAdditionalRecord();
-            }
-            aRecord->setAdditionalRecord();
-            aRecord->nsecRecord->setAdditionalRecord();
-            break;
-        case SRV_TYPE:
-            this->setAnswerRecord();
-            ptrRecord->setAdditionalRecord();
-            if (txtRecord) {
-                txtRecord->setAdditionalRecord();
-            }
-            aRecord->setAdditionalRecord();
-            aRecord->nsecRecord->setAdditionalRecord();
-            break;
-        case TXT_TYPE:
-            if (txtRecord) {
-                txtRecord->setAnswerRecord();
-                this->setAdditionalRecord();
-                ptrRecord->setAdditionalRecord();
-                aRecord->setAdditionalRecord();
-                aRecord->nsecRecord->setAdditionalRecord();
-            }
-            break;
-        default:
-            if (nsecRecord) {
-                nsecRecord->setAnswerRecord();
-            }
-        }
-    }
-
+    virtual void matched(uint16_t qtype) override final;
+  
     // TXT and NSEC record will use use this record for their label, so need to be set after construction
     void setTxtRecord(TXTRecord* txt)
     {
