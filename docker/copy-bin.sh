@@ -8,9 +8,7 @@ git submodule update --init --depth 1 app/brewblox/proto
 git submodule update --init --depth 1 platform/spark/device-os
 echo "proto_version=$(cd app/brewblox/proto && git rev-parse --short HEAD)"
 
-# Temporary workaround for bugfix on top of v1.5.2
-# PARTICLE_TAG=$(cd platform/spark/device-os && git describe --tags)
-PARTICLE_TAG=v1.5.2 # $(cd platform/spark/device-os && git describe --tags)
+PARTICLE_TAG=$(cd platform/spark/device-os && git describe --tags)
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
 PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 echo "particle_tag=$PARTICLE_TAG"
