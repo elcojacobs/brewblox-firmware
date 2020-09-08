@@ -28,7 +28,7 @@ public:
         blox_TempSensorCombi newData = blox_TempSensorCombi_init_zero;
         cbox::CboxError result = streamProtoFrom(in, &newData, blox_TempSensorCombi_fields, blox_TempSensorCombi_size);
         if (result == cbox::CboxError::OK) {
-            sensor.func = TempSensorCombi::CombineFunc(newData.combinefunc);
+            sensor.func = TempSensorCombi::CombineFunc(newData.combineFunc);
             inputs.clear();
             sensor.inputs.clear();
             inputs.reserve(newData.sensors_count);
@@ -49,7 +49,7 @@ public:
         FieldTags stripped;
 
         message.sensors_count = sensor.inputs.size();
-        message.combinefunc = _blox_SensorCombiFunc(sensor.func);
+        message.combineFunc = _blox_SensorCombiFunc(sensor.func);
         for (uint8_t i = 0; i < message.sensors_count && i < 8; i++) {
             message.sensors[i] = inputs[i].getId();
         }
