@@ -4,8 +4,8 @@ set -e
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 pushd "${SCRIPT_DIR}/.." > /dev/null # Run from repo root
 
-git submodule update --init --depth 1 app/brewblox/proto
-git submodule update --init --depth 1 platform/spark/device-os
+git submodule sync
+git submodule update --init --depth 1 --recursive
 
 FIRMWARE_VERSION=$(git rev-parse --short HEAD)
 FIRMWARE_DATE=$(git show -s --format=%ci)
@@ -13,7 +13,7 @@ FIRMWARE_DATE=$(git show -s --format=%ci)
 PROTO_VERSION=$(git --git-dir ./app/brewblox/proto/.git rev-parse --short HEAD)
 PROTO_DATE=$(git --git-dir ./app/brewblox/proto/.git show -s --format=%ci)
 
-PARTICLE_TAG=$(git --git-dir "./platform/spark/device-os/.git" fetch --tags && git --git-dir "./platform/spark/device-os/.git" describe --tags)
+PARTICLE_TAG=$(git --git-dir "./platform/spark/device-os/.git" fetch --tags --no-recurse-submodules && git --git-dir "./platform/spark/device-os/.git" describe --tags)
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
 PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 
