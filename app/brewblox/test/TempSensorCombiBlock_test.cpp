@@ -159,7 +159,7 @@ SCENARIO("A TempSensorCombi block")
                 testBox.processInputToProto(decoded);
 
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "value: 94208 combinefunc: SENSOR_COMBI_FUNC_MAX sensors: 101 sensors: 102 sensors: 103");
+                CHECK(decoded.ShortDebugString() == "value: 94208 combineFunc: SENSOR_COMBI_FUNC_MAX sensors: 101 sensors: 102 sensors: 103");
             }
         }
     }
@@ -192,7 +192,7 @@ SCENARIO("A TempSensorCombi block")
                 testBox.processInputToProto(decoded);
 
                 CHECK(testBox.lastReplyHasStatusOk());
-                CHECK(decoded.ShortDebugString() == "value: 86016 combinefunc: SENSOR_COMBI_FUNC_MIN sensors: 101 sensors: 102 sensors: 103");
+                CHECK(decoded.ShortDebugString() == "value: 86016 combineFunc: SENSOR_COMBI_FUNC_MIN sensors: 101 sensors: 102 sensors: 103");
             }
         }
     }
