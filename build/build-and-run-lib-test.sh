@@ -13,7 +13,7 @@ fi
 
 pushd "$MY_DIR/../lib/test" > /dev/null
 echo "Building BrewBlox app unit tests"
-make $MAKE_ARGS -s runner
+make -j $MAKE_ARGS -s runner
 (( result = $? ))
 status $result
 (( exit_status = exit_status || result ))

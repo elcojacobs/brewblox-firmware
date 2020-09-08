@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include "string_operators.h"
 #include <cstdint>
 #include <functional>
 #include <memory>

@@ -21,8 +21,8 @@
 
 #include "TempSensor.h"
 #include <functional>
+#include <memory>
 #include <vector>
-
 /*
  * A process value has a setting and an current value
  */
@@ -56,66 +56,5 @@ public:
         return m_value;
     }
 
-    void update()
-    {
-        m_value = 0;
-        m_valid = false;
-        switch (func) {
-        case CombineFunc::AVG: {
-            auto sum = safe_elastic_fixed_point<18, 12>{0};
-            uint16_t count = 0;
-            for (auto sensorLookup : inputs) {
-                if (auto sens = sensorLookup()) {
-                    if (sens->valid()) {
-                        ++count;
-                        sum += sens->value();
-                    }
-                }
-            }
-            if (count > 0) {
-                m_valid = true;
-                m_value = sum / count;
-            } else {
-                m_valid = false;
-            }
-            return;
-        }
-        case CombineFunc::MIN: {
-            for (auto sensorLookup : inputs) {
-                if (auto sens = sensorLookup()) {
-                    if (sens->valid()) {
-                        if (m_valid) {
-                            auto v = sens->value();
-                            if (v < m_value) {
-                                m_value = v;
-                            }
-                        } else {
-                            m_value = sens->value();
-                        }
-                        m_valid = true;
-                    }
-                }
-            }
-            return;
-        }
-        case CombineFunc::MAX: {
-            for (auto sensorLookup : inputs) {
-                if (auto sens = sensorLookup()) {
-                    if (sens->valid()) {
-                        if (m_valid) {
-                            auto v = sens->value();
-                            if (v > m_value) {
-                                m_value = v;
-                            }
-                        } else {
-                            m_value = sens->value();
-                        }
-                        m_valid = true;
-                    }
-                }
-            }
-            return;
-        }
-        }
-    }
+    void update();
 };

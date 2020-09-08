@@ -20,9 +20,7 @@
 #pragma once
 
 #include "DS2413.h"
-#include "IoArrayHelpers.h"
 #include "blox/Block.h"
-#include "proto/cpp/DS2413.pb.h"
 
 OneWire&
 theOneWire();
@@ -37,65 +35,11 @@ public:
     {
     }
 
-    virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
-    {
-        blox_DS2413 newData = blox_DS2413_init_zero;
-        cbox::CboxError res = streamProtoFrom(in, &newData, blox_DS2413_fields, blox_DS2413_size);
-        /* if no errors occur, write new settings to wrapped object */
-        if (res == cbox::CboxError::OK) {
-            device.address(OneWireAddress(newData.address));
-        }
-        return res;
-    }
-
-    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
-    {
-        blox_DS2413 message = blox_DS2413_init_zero;
-
-        message.address = device.address();
-        message.connected = device.connected();
-
-        message.pins_count = 2;
-        message.pins[0].which_Pin = blox_DS2413IoPin_A_tag;
-        readIo(device, 1, message.pins[0].Pin.A);
-        message.pins[1].which_Pin = blox_DS2413IoPin_B_tag;
-        readIo(device, 2, message.pins[1].Pin.B);
-
-        return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
-    }
-
-    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
-    {
-        blox_DS2413 message = blox_DS2413_init_zero;
-
-        message.address = device.address();
-        return streamProtoTo(out, &message, blox_DS2413_fields, blox_DS2413_size);
-    }
-
-    virtual cbox::update_t update(const cbox::update_t& now) override final
-    {
-        device.update();
-        return update_1s(now);
-    }
-
-    virtual void* implements(const cbox::obj_type_t& iface) override final
-    {
-        if (iface == BrewBloxTypes_BlockType_DS2413) {
-            return this; // me!
-        }
-        if (iface == cbox::interfaceId<IoArray>()) {
-            // return the member that implements the interface in this case
-            IoArray* ptr = &device;
-            return ptr;
-        }
-        if (iface == cbox::interfaceId<OneWireDevice>()) {
-            // return the member that implements the interface in this case
-            DS2413* dsPtr = &device;
-            OneWireDevice* devicePtr = dsPtr;
-            return devicePtr;
-        }
-        return nullptr;
-    }
+    virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final;
+    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final;
+    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final;
+    virtual cbox::update_t update(const cbox::update_t& now) override final;
+    virtual void* implements(const cbox::obj_type_t& iface) override final;
 
     DS2413& get()
     {

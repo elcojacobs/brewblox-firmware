@@ -4,8 +4,8 @@ set -e
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 pushd "$SCRIPT_DIR/.." > /dev/null # Run from repo root
 
-git submodule update --init app/brewblox/proto
-git submodule update --init platform/spark/device-os
+git submodule update --init --depth 1 app/brewblox/proto
+git submodule update --init --depth 1 platform/spark/device-os
 echo "proto_version=$(cd app/brewblox/proto && git rev-parse --short HEAD)"
 
 # Temporary workaround for bugfix on top of v1.5.2

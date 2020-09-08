@@ -118,6 +118,9 @@ enum class SparkVersion : uint8_t {
 #define PIN_LCD_BACKLIGHT 10
 #define PIN_5V_ENABLE 11
 #define PIN_12V_ENABLE 12
+
+#else
+#error PLATFORM_ID not set
 #endif
 
 void

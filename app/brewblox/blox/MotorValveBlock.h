@@ -1,14 +1,30 @@
+/*
+ * Copyright 2020 BrewPi B.V.
+ *
+ * This file is part of BrewBlox.
+ *
+ * BrewBlox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BrewBlox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include "ActuatorDigitalConstrained.h"
-#include "ActuatorDigitalConstraintsProto.h"
-#include "DS2408Block.h"
-#include "FieldTags.h"
+#include "DS2408.h"
 #include "MotorValve.h"
 #include "blox/Block.h"
 #include "cbox/CboxPtr.h"
 #include "proto/cpp/MotorValve.pb.h"
-#include <cstdint>
 
 class MotorValveBlock : public Block<BrewBloxTypes_BlockType_MotorValve> {
 private:
@@ -27,84 +43,21 @@ public:
     }
     virtual ~MotorValveBlock() = default;
 
-    virtual cbox::CboxError streamFrom(cbox::DataIn& dataIn) override final
-    {
-        blox_MotorValve message = blox_MotorValve_init_zero;
-        cbox::CboxError result = streamProtoFrom(dataIn, &message, blox_MotorValve_fields, blox_MotorValve_size);
+    virtual cbox::CboxError streamFrom(cbox::DataIn& dataIn) override final;
 
-        if (result == cbox::CboxError::OK) {
-            if (hwDevice.getId() != message.hwDevice) {
-                valve.startChannel(0); // unregister at old hwDevice
-                hwDevice.setId(message.hwDevice);
-            }
-            valve.startChannel(message.startChannel);
-            setDigitalConstraints(message.constrainedBy, constrained, objectsRef);
-            constrained.desiredState(ActuatorDigitalBase::State(message.desiredState));
-        }
+    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final;
 
-        return result;
-    }
-    void writePersistedStateToMessage(blox_MotorValve& message) const
-    {
-        message.desiredState = blox_DigitalState(constrained.desiredState());
-        message.hwDevice = hwDevice.getId();
-        message.startChannel = valve.startChannel();
-        getDigitalConstraints(message.constrainedBy, constrained);
-    }
+    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final;
 
-    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
-    {
-        blox_MotorValve message = blox_MotorValve_init_zero;
-        FieldTags stripped;
+    virtual cbox::update_t update(const cbox::update_t& now) override final;
 
-        writePersistedStateToMessage(message);
-
-        auto state = valve.state();
-        if (state == ActuatorDigitalBase::State::Unknown) {
-            stripped.add(blox_MotorValve_state_tag);
-        } else {
-            message.state = blox_DigitalState(valve.state());
-        }
-        auto valveState = valve.valveState();
-        if (valveState == MotorValve::ValveState::Unknown) {
-            stripped.add(blox_MotorValve_valveState_tag);
-        } else {
-            message.valveState = blox_MotorValve_ValveState(valve.valveState());
-        }
-
-        stripped.copyToMessage(message.strippedFields, message.strippedFields_count, 1);
-        return streamProtoTo(out, &message, blox_MotorValve_fields, blox_MotorValve_size);
-    }
-
-    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
-    {
-
-        blox_MotorValve message = blox_MotorValve_init_zero;
-        writePersistedStateToMessage(message);
-        return streamProtoTo(out, &message, blox_MotorValve_fields, blox_MotorValve_size);
-    }
-
-    virtual cbox::update_t update(const cbox::update_t& now) override final
-    {
-        valve.update();
-        return constrained.update(now);
-    }
-
-    virtual void* implements(const cbox::obj_type_t& iface) override final
-    {
-        if (iface == BrewBloxTypes_BlockType_MotorValve) {
-            return this; // me!
-        }
-        if (iface == cbox::interfaceId<ActuatorDigitalConstrained>()) {
-            // return the member that implements the interface in this case
-            ActuatorDigitalConstrained* ptr = &constrained;
-            return ptr;
-        }
-        return nullptr;
-    }
+    virtual void* implements(const cbox::obj_type_t& iface) override final;
 
     ActuatorDigitalConstrained& getConstrained()
     {
         return constrained;
     }
+
+private:
+    void writePersistedStateToMessage(blox_MotorValve& message) const;
 };
