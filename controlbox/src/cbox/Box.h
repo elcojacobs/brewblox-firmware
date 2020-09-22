@@ -144,14 +144,19 @@ public:
     };
     // application can add additional commands, starting at 100.
 
-    void startConnections()
+    void startConnectionSources()
     {
         connections.startAll();
     }
 
-    void stopConnections()
+    void stopConnectionSources()
     {
         connections.stopAll();
+    }
+
+    void disconnect()
+    {
+        connections.disconnect();
     }
 
     void unloadAllObjects()

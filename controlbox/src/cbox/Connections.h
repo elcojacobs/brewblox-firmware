@@ -275,9 +275,14 @@ public:
         return currentDataOut;
     }
 
-    void stopAll()
+    void disconnect()
     {
         connections.resize(0);
+    }
+
+    void stopAll()
+    {
+        disconnect();
         for (auto& source : connectionSources) {
             source.get().stop();
         }
