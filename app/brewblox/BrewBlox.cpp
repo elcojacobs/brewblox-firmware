@@ -332,7 +332,9 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
         out.endMessage();
         if (status == CboxError::OK) {
             changeLedColor();
-            brewbloxBox().stopConnections();
+            ticks.delayMillis(10); // ensure system thread runs
+            brewbloxBox().disconnect();
+            ticks.delayMillis(10); // ensure system thread runs
             updateFirmwareFromStream(in.streamType());
             uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
             handleReset(true, reason); // reset in case the firmware update failed

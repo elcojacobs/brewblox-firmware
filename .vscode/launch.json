@@ -108,7 +108,7 @@
       "request": "attach",
       "servertype": "openocd",
       "cwd": "${workspaceRoot}",
-      "executable": "./build/target/brewblox-p1/brewblox.elf",
+      "executable": "./build/target/brewblox-p1/brewblox-p1.elf",
       "debuggerArgs": [
         "-command=./tools/system.gdbinit",
         "-command=./tools/arm-pretty.gdbinit",
@@ -119,9 +119,9 @@
         "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
         "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
+      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin",
       // sudo apt-get install libpython2.7:i386 for the line below to work
-      "gdbpath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin/arm-none-eabi-gdb-py", // hidden setting
+      "gdbpath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi-gdb-py", // hidden setting
       // "showDevDebugOutput": true,
       "svdFile": "./tools/STM32F215.svd",
     },
@@ -159,7 +159,7 @@
         "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
         "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin",
+      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin",
       "showDevDebugOutput": true,
       "runToMain": true,
       "rtos": "FreeRTOS",

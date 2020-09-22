@@ -22,6 +22,7 @@
 #include "BrewBlox.h"
 #include "MDNS.h"
 #include "deviceid_hal.h"
+#include "reset.h"
 #include "spark_wiring_tcpclient.h"
 #include "spark_wiring_tcpserver.h"
 #include "spark_wiring_usbserial.h"
@@ -151,10 +152,11 @@ manageConnections(uint32_t now)
                 client.setTimeout(100);
                 while (client.read() != -1) {
                 }
-                const uint8_t start[] = "HTTP/1.1 200 Ok\n\n<html><body>"
-                                        "<p>Your BrewBlox Spark is online but it does not run its own web server. "
-                                        "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
-                                        "<p>Device ID = ";
+                const uint8_t start[] =
+                    "HTTP/1.1 200 Ok\n\n<html><body>"
+                    "<p>Your BrewBlox Spark is online but it does not run its own web server. "
+                    "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
+                    "<p>Device ID = ";
                 const uint8_t end[] = "</p></body></html>\n\n";
 
                 client.write(start, sizeof(start), 0);
@@ -275,7 +277,13 @@ updateFirmwareStreamHandler(Stream* stream)
                 // just exit for sim
                 HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
 #else
-                system_firmwareUpdate(stream);
+                bool success = system_firmwareUpdate(stream);
+                if (!success) {
+                    handleReset(true, uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED));
+                }
+                while (true) {
+                    HAL_Delay_Milliseconds(10); // wait for system thread to perform reset
+                }
 #endif
 
                 break;

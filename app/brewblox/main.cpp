@@ -95,8 +95,8 @@ onSetupModeBegin()
 {
     ListeningScreen::activate();
     manageConnections(ticks.millis()); // stop http server
-    brewbloxBox().stopConnections();
     brewbloxBox().unloadAllObjects();
+    brewbloxBox().disconnect();
     HAL_Delay_Milliseconds(100);
 }
 
@@ -183,7 +183,7 @@ setup()
     // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
 #endif
 
-    brewbloxBox().startConnections();
+    brewbloxBox().startConnectionSources();
     WidgetsScreen::activate();
 }
 
