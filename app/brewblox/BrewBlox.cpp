@@ -417,9 +417,9 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
             ticks.delayMillis(10);
 #if PLATFORM_ID != PLATFORM_GCC
             updateFirmwareFromStream(in.streamType());
-#endif
             // reset in case the firmware update failed
             System.reset(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+#endif
         }
         return true;
     }
