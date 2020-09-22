@@ -1,13 +1,15 @@
-FROM node:12-alpine
+FROM node:14-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache make gcc g++ linux-headers eudev-dev python bash usbutils curl \
-  && apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ dfu-util \
+RUN set -ex \
+  && apt-get update \
+  && apt-get install -y make gcc g++ libudev-dev python usbutils curl dfu-util \
   && npm install serialport --build-from-source --unsafe-perm \
   && npm install particle-cli --unsafe-perm \
   && npm install particle-usb \
-  && apk del make gcc g++ linux-headers
+  && apt-get remove -y make gcc g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY particle /usr/local/bin/particle
 
