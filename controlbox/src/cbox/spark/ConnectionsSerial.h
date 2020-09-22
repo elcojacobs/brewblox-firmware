@@ -72,7 +72,7 @@ public:
 
     virtual void stop() override final
     {
-        ser.end();
+        // ser.end(); Don't close serial, leave it open
         serial_enabled = false;
     }
 };

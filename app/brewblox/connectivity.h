@@ -47,10 +47,3 @@ listeningModeEnabled();
 
 void
 manageConnections(uint32_t now);
-
-namespace cbox {
-enum class StreamType : uint8_t;
-}
-
-void
-updateFirmwareFromStream(cbox::StreamType streamType);

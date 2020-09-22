@@ -284,6 +284,85 @@ versionCsv()
     return version;
 }
 
+#if PLATFORM_ID != PLATFORM_GCC
+void
+updateFirmwareStreamHandler(Stream* stream)
+{
+    enum class DCMD : uint8_t {
+        None,
+        Ack,
+        FlashFirmware,
+    };
+
+    auto command = DCMD::Ack;
+    uint8_t invalidCommands = 0;
+
+    while (true) {
+        HAL_Delay_Milliseconds(1);
+        int recv = stream->read();
+        switch (recv) {
+        case 'F':
+            command = DCMD::FlashFirmware;
+            break;
+        case '\n':
+            if (command == DCMD::Ack) {
+                stream->write("<!FIRMWARE_UPDATER,");
+                stream->write(versionCsv());
+                stream->write(">\n");
+                stream->flush();
+                HAL_Delay_Milliseconds(10);
+            } else if (command == DCMD::FlashFirmware) {
+                stream->write("<!READY_FOR_FIRMWARE>\n");
+                stream->flush();
+                HAL_Delay_Milliseconds(10);
+#if PLATFORM_ID == PLATFORM_GCC
+                // just exit for sim
+                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
+#else
+                bool success = system_firmwareUpdate(stream);
+                System.reset(success ? RESET_USER_REASON::FIRMWARE_UPDATE_SUCCESS : RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+#endif
+                break;
+            } else {
+                stream->write("<Invalid command received>\n");
+                stream->flush();
+                HAL_Delay_Milliseconds(10);
+                if (++invalidCommands > 2) {
+                    return;
+                }
+            }
+            command = DCMD::Ack;
+            break;
+        case -1:
+            continue; // empty
+        default:
+            command = DCMD::None;
+            break;
+        }
+    }
+}
+
+void
+updateFirmwareFromStream(cbox::StreamType streamType)
+{
+    theConnectionPool().stopAll();
+    if (streamType == cbox::StreamType::Usb) {
+        updateFirmwareStreamHandler(&_fetch_usbserial());
+    } else {
+        TCPServer server(8332); // re-open a TCP server
+        while (true) {
+            HAL_Delay_Milliseconds(10); // allow thread switch so system thread can set up client
+            {
+                TCPClient client = server.available();
+                if (client) {
+                    updateFirmwareStreamHandler(&client);
+                }
+            }
+        }
+    }
+}
+#endif
+
 namespace cbox {
 void
 connectionStarted(DataOut& out)
@@ -316,6 +395,7 @@ connectionStarted(DataOut& out)
     out.write('>');
 }
 
+// handler for custom commands outside of controlbox
 bool
 applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
 {
@@ -330,20 +410,20 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
         out.writeResponseSeparator();
         out.write(asUint8(status));
         out.endMessage();
+        ticks.delayMillis(10);
         if (status == CboxError::OK) {
             changeLedColor();
-            ticks.delayMillis(10); // ensure system thread runs
             brewbloxBox().disconnect();
-            ticks.delayMillis(10); // ensure system thread runs
+            ticks.delayMillis(10);
+#if PLATFORM_ID != PLATFORM_GCC
             updateFirmwareFromStream(in.streamType());
-            uint8_t reason = uint8_t(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
-            handleReset(true, reason); // reset in case the firmware update failed
+            // reset in case the firmware update failed
+            System.reset(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+#endif
         }
         return true;
     }
-    default:
-        return false;
     }
+    return false;
 }
-
 } // end namespace cbox
