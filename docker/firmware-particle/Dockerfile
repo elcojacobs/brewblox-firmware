@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN set -ex \
   && apt-get update \
-  && apt-get install -y make gcc g++ libudev-dev python usbutils curl dfu-util \
+  && apt-get install -y make gcc g++ udev libudev-dev python usbutils curl dfu-util \
   && npm install serialport --build-from-source --unsafe-perm \
   && npm install particle-cli --unsafe-perm \
   && npm install particle-usb \
