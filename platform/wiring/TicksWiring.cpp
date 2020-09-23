@@ -7,8 +7,10 @@
 utc_seconds_t
 TicksWiring::utc() const
 {
-    if (HAL_RTC_Time_Is_Valid(nullptr)) {
-        return HAL_RTC_Get_UnixTime();
+    if (hal_rtc_time_is_valid(nullptr)) {
+        timeval time;
+        hal_rtc_get_time(&time, nullptr);
+        return time.tv_sec;
     }
     return 0;
 }
@@ -16,7 +18,10 @@ TicksWiring::utc() const
 void
 TicksWiring::setUtc(const utc_seconds_t& t)
 {
-    HAL_RTC_Set_UnixTime(t);
+    timeval time;
+    time.tv_sec = t;
+    time.tv_usec = 0;
+    hal_rtc_set_time(&time, nullptr);
 }
 
 ticks_millis_t

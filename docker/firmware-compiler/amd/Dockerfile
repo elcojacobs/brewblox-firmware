@@ -15,11 +15,8 @@ RUN apt-get update -q \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # install arm compiler
-ENV GCC_ARM_URL="https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2" \
-  GCC_ARM_VERSION="5_3-2016q1"
-
-# ENV GCC_ARM_URL="https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/8-2019q3/RC1.1/gcc-arm-none-eabi-8-2019-q3-update-linux.tar.bz2" \
-#  GCC_ARM_VERSION="8-2019-q3-update"  
+ENV GCC_ARM_URL="https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2020q2/gcc-arm-none-eabi-9-2020-q2-update-x86_64-linux.tar.bz2" \
+  GCC_ARM_VERSION="9-2020-q2-update"
 
 RUN dpkg --add-architecture i386 \
   && apt-get update -q \

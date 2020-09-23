@@ -2,21 +2,26 @@
 set -e
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-pushd "$SCRIPT_DIR/.." > /dev/null # Run from repo root
+pushd "${SCRIPT_DIR}/.." > /dev/null # Run from repo root
 
-git submodule update --init app/brewblox/proto
-git submodule update --init platform/spark/device-os
-echo "proto_version=$(cd app/brewblox/proto && git rev-parse --short HEAD)"
+git submodule sync
+git submodule update --init --depth 1 app/brewblox/proto
+git submodule update --init --depth 1 platform/spark/device-os
 
-# Temporary workaround for bugfix on top of v1.5.2
-# PARTICLE_TAG=$(cd platform/spark/device-os && git describe --tags)
-PARTICLE_TAG=v1.5.2 # $(cd platform/spark/device-os && git describe --tags)
+FIRMWARE_VERSION=$(git rev-parse --short=8 HEAD)
+FIRMWARE_DATE=$(git show -s --format=%ci)
+
+PROTO_VERSION=$(git --git-dir ./app/brewblox/proto/.git rev-parse --short=8 HEAD)
+PROTO_DATE=$(git --git-dir ./app/brewblox/proto/.git show -s --format=%ci)
+
+PARTICLE_TAG=$(git --git-dir "./platform/spark/device-os/.git" fetch --tags --no-recurse-submodules && git --git-dir "./platform/spark/device-os/.git" describe --tags)
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
 PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
-echo "particle_tag=$PARTICLE_TAG"
+
 
 OUT_DIR=docker/firmware-bin/source
-mkdir -p ${OUT_DIR}
+mkdir -p "${OUT_DIR}"
+
 
 curl -fL -o ${OUT_DIR}/bootloader-p1.bin "${PARTICLE_RELEASES}/p1-bootloader@${PARTICLE_VERSION}+lto.bin"
 curl -fL -o ${OUT_DIR}/system-part1-p1.bin "${PARTICLE_RELEASES}/p1-system-part1@${PARTICLE_VERSION}.bin"
@@ -28,11 +33,11 @@ curl -fL -o ${OUT_DIR}/system-part2-photon.bin "${PARTICLE_RELEASES}/photon-syst
 
 {
     echo "[FIRMWARE]"
-    echo "firmware_version=$(git rev-parse --short HEAD)"
-    echo "firmware_date=$(git show -s --format=%ci)"
-    echo "proto_version=$(cd app/brewblox/proto && git rev-parse --short HEAD)"
-    echo "proto_date=$(cd app/brewblox/proto && git show -s --format=%ci)"
+    echo "firmware_version=$FIRMWARE_VERSION"
+    echo "firmware_date=$FIRMWARE_DATE"
+    echo "proto_version=$PROTO_VERSION"
+    echo "proto_date=$PROTO_DATE"
     echo "system_version=${PARTICLE_VERSION}"
-} | tee ${OUT_DIR}/firmware.ini
+} | tee "${OUT_DIR}/firmware.ini"
 
 popd > /dev/null

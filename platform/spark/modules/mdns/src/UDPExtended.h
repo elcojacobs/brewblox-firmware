@@ -1,5 +1,7 @@
 #pragma once
 #include "spark_wiring_udp.h"
+#include <string>
+
 class UDPExtended : public UDP {
 private:
     uint16_t write_offset = 0; // UDP already implements an write_offset, but it is private

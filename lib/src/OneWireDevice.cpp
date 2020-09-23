@@ -61,7 +61,7 @@ OneWireDevice::connected(bool _connected)
     }
     log += "connected: ";
 
-    log << m_address.toString();
+    log += m_address.toString();
 
     if (_connected) {
         CL_LOG_INFO(std::move(log));

@@ -4,8 +4,7 @@ set -e
 # The particle image is expected to remain relatively stable
 # It wraps the Particle CLI in a docker image, so it can easily be used to flash the firmware
 
-SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-pushd "$SCRIPT_DIR" > /dev/null
+pushd "$(dirname "$0")" > /dev/null
 
 bash ./enable-experimental.sh
 bash ./prepare-buildx.sh
@@ -16,5 +15,3 @@ docker buildx build \
     --tag brewblox/firmware-particle:latest \
     "$@" \
     firmware-particle
-
-popd > /dev/null

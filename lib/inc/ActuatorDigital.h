@@ -21,9 +21,11 @@
 #pragma once
 
 #include "ActuatorDigitalBase.h"
-#include "IoArray.h"
+#include <cstdint>
 #include <functional>
 #include <memory>
+
+class IoArray;
 
 /*
  * A digital actuator that toggles a channel of an ArrayIo object.
@@ -51,36 +53,9 @@ public:
         channel(0); // release channel before destruction
     }
 
-    virtual void state(const State& v) override final
-    {
-        if (channelReady()) {
-            if (auto devPtr = m_target()) {
-                auto newState = v;
-                if (m_invert) {
-                    newState = invertState(v);
-                }
-                IoArray::ChannelConfig config = newState == State::Active ? IoArray::ChannelConfig::ACTIVE_HIGH : IoArray::ChannelConfig::ACTIVE_LOW;
-                devPtr->writeChannelConfig(m_channel, config);
-            }
-        }
-    }
+    virtual void state(const State& v) override final;
 
-    virtual State state() const override final
-    {
-        if (channelReady()) {
-            if (auto devPtr = m_target()) {
-                State result = State::Unknown;
-                if (devPtr->senseChannel(m_channel, result)) {
-                    if (m_invert) {
-                        result = invertState(result);
-                    }
-                    return result;
-                }
-            }
-        }
-
-        return State::Unknown;
-    }
+    virtual State state() const override final;
 
     bool invert() const
     {
@@ -99,24 +74,7 @@ public:
         return m_desiredChannel;
     }
 
-    void claimChannel()
-    {
-        if (auto devPtr = m_target()) {
-            if (m_channel != 0) {
-                if (!devPtr->releaseChannel(m_channel)) {
-                    return;
-                }
-            }
-
-            if (m_desiredChannel == 0) {
-                m_channel = 0;
-                return;
-            }
-            if (devPtr->claimChannel(m_desiredChannel, IoArray::ChannelConfig::ACTIVE_LOW)) {
-                m_channel = m_desiredChannel;
-            }
-        }
-    }
+    void claimChannel();
 
     bool channelReady() const
     {
@@ -138,11 +96,5 @@ public:
         update();
     }
 
-    virtual bool supportsFastIo() const override final
-    {
-        if (auto devPtr = m_target()) {
-            return devPtr->supportsFastIo();
-        }
-        return false;
-    }
+    virtual bool supportsFastIo() const override final;
 };

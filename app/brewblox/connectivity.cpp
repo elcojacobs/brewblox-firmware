@@ -22,6 +22,7 @@
 #include "BrewBlox.h"
 #include "MDNS.h"
 #include "deviceid_hal.h"
+#include "reset.h"
 #include "spark_wiring_tcpclient.h"
 #include "spark_wiring_tcpserver.h"
 #include "spark_wiring_usbserial.h"
@@ -151,10 +152,11 @@ manageConnections(uint32_t now)
                 client.setTimeout(100);
                 while (client.read() != -1) {
                 }
-                const uint8_t start[] = "HTTP/1.1 200 Ok\n\n<html><body>"
-                                        "<p>Your BrewBlox Spark is online but it does not run its own web server. "
-                                        "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
-                                        "<p>Device ID = ";
+                const uint8_t start[] =
+                    "HTTP/1.1 200 Ok\n\n<html><body>"
+                    "<p>Your BrewBlox Spark is online but it does not run its own web server. "
+                    "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
+                    "<p>Device ID = ";
                 const uint8_t end[] = "</p></body></html>\n\n";
 
                 client.write(start, sizeof(start), 0);
@@ -239,85 +241,4 @@ wifiInit()
     spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
     System.on(network_status, handleNetworkEvent);
     initMdns();
-}
-
-void
-updateFirmwareStreamHandler(Stream* stream)
-{
-    enum class DCMD : uint8_t {
-        None,
-        Ack,
-        FlashFirmware,
-    };
-
-    auto command = DCMD::Ack;
-    uint8_t invalidCommands = 0;
-
-    while (true) {
-        HAL_Delay_Milliseconds(1);
-        int recv = stream->read();
-        switch (recv) {
-        case 'F':
-            command = DCMD::FlashFirmware;
-            break;
-        case '\n':
-            if (command == DCMD::Ack) {
-                stream->write("<!FIRMWARE_UPDATER,");
-                stream->write(versionCsv());
-                stream->write(">\n");
-                stream->flush();
-                HAL_Delay_Milliseconds(10);
-            } else if (command == DCMD::FlashFirmware) {
-                stream->write("<!READY_FOR_FIRMWARE>\n");
-                stream->flush();
-                HAL_Delay_Milliseconds(10);
-#if PLATFORM_ID == PLATFORM_GCC
-                // just exit for sim
-                HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
-#else
-                system_firmwareUpdate(stream);
-#endif
-
-                break;
-            } else {
-                stream->write("<Invalid command received>\n");
-                stream->flush();
-                HAL_Delay_Milliseconds(10);
-                if (++invalidCommands > 2) {
-                    return;
-                }
-            }
-            command = DCMD::Ack;
-            break;
-        case -1:
-            continue; // empty
-        default:
-            command = DCMD::None;
-            break;
-        }
-    }
-}
-
-void
-updateFirmwareFromStream(cbox::StreamType streamType)
-{
-    if (streamType == cbox::StreamType::Usb) {
-        auto ser = Serial;
-        if (ser.baud() == 0) {
-            ser.begin(115200);
-        }
-        updateFirmwareStreamHandler(&ser);
-    } else {
-        TCPServer server(8332); // re-open TCP server
-
-        while (true) {
-            HAL_Delay_Milliseconds(10); // allow thread switch so system thread can set up client
-            {
-                TCPClient client = server.available();
-                if (client) {
-                    updateFirmwareStreamHandler(&client);
-                }
-            }
-        }
-    }
 }

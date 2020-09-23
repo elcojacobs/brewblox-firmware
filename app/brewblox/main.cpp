@@ -95,8 +95,8 @@ onSetupModeBegin()
 {
     ListeningScreen::activate();
     manageConnections(ticks.millis()); // stop http server
-    brewbloxBox().stopConnections();
     brewbloxBox().unloadAllObjects();
+    brewbloxBox().disconnect();
     HAL_Delay_Milliseconds(100);
 }
 
@@ -112,11 +112,6 @@ onOutOfMemory(system_event_t event, int param)
     HAL_Delay_Milliseconds(1000);
 }
 
-#if PLATFORM_ID != PLATFORM_GCC
-STARTUP(
-    boardInit(););
-#endif
-
 void
 setup()
 {
@@ -128,6 +123,7 @@ setup()
     boardInit();
     manageConnections(0); // init network early to websocket display emulation works during setup()
 #else
+    boardInit();
     Buzzer.beep(2, 50);
     HAL_Delay_Milliseconds(1);
 #endif
@@ -187,7 +183,7 @@ setup()
     // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
 #endif
 
-    brewbloxBox().startConnections();
+    brewbloxBox().startConnectionSources();
     WidgetsScreen::activate();
 }
 

@@ -280,6 +280,45 @@ SRVRecord::SRVRecord(Label label, uint16_t _port, PTRRecord* ptr, ARecord* a)
 }
 
 void
+SRVRecord::matched(uint16_t qtype)
+{
+    switch (qtype) {
+    case PTR_TYPE:
+    case ANY_TYPE:
+        ptrRecord->setAnswerRecord();
+        this->setAdditionalRecord();
+        if (txtRecord) {
+            txtRecord->setAdditionalRecord();
+        }
+        aRecord->setAdditionalRecord();
+        aRecord->nsecRecord->setAdditionalRecord();
+        break;
+    case SRV_TYPE:
+        this->setAnswerRecord();
+        ptrRecord->setAdditionalRecord();
+        if (txtRecord) {
+            txtRecord->setAdditionalRecord();
+        }
+        aRecord->setAdditionalRecord();
+        aRecord->nsecRecord->setAdditionalRecord();
+        break;
+    case TXT_TYPE:
+        if (txtRecord) {
+            txtRecord->setAnswerRecord();
+            this->setAdditionalRecord();
+            ptrRecord->setAdditionalRecord();
+            aRecord->setAdditionalRecord();
+            aRecord->nsecRecord->setAdditionalRecord();
+        }
+        break;
+    default:
+        if (nsecRecord) {
+            nsecRecord->setAnswerRecord();
+        }
+    }
+}
+
+void
 SRVRecord::writeSpecific(UDPExtended& udp) const
 {
     uint16_t ptrLabelSize = aRecord->getLabel().writeSize();
