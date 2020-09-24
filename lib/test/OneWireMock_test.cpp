@@ -39,13 +39,6 @@ struct StringMaker<OneWireAddress> {
 };
 }
 
-OneWireAddress
-makeValidAddress(OneWireAddress addr)
-{
-    addr[7] = OneWireCrc8(&addr[0], 7);
-    return addr;
-}
-
 SCENARIO("A mocked OneWire bus and mocked slaves", "[onewire]")
 {
     OneWireMockDriver owMock;

@@ -48,3 +48,11 @@ OneWireAddress::valid() const
 {
     return OneWireCrc8(&asUint8ptr()[0], 7) == (*this)[7];
 }
+
+// used in tests to get a mock address with a valid CRC
+OneWireAddress
+makeValidAddress(OneWireAddress addr)
+{
+    addr[7] = OneWireCrc8(&addr[0], 7);
+    return addr;
+}

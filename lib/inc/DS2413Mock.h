@@ -23,7 +23,7 @@
 
 class DS2413Mock : public OneWireMockDevice {
 private:
-    bool latchA = true; // a zero means latch disabled for the DS2413
+    bool latchA = true; // a zero means latch enabled for the DS2413
     bool latchB = true;
     bool pinA = true;
     bool pinB = true;
@@ -108,5 +108,25 @@ public:
         } else {
             cmd = 0x00;
         }
+    }
+
+    void setLatchA(bool state)
+    {
+        latchA = state;
+    }
+
+    void setLatchB(bool state)
+    {
+        latchA = state;
+    }
+
+    bool getLatchA()
+    {
+        return latchA;
+    }
+
+    bool getLatchB()
+    {
+        return latchB;
     }
 };

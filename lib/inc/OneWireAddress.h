@@ -87,3 +87,7 @@ private:
 
     uint64_t address;
 };
+
+// used in tests to get a mock address with a valid CRC
+OneWireAddress
+makeValidAddress(OneWireAddress addr);
