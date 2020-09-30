@@ -66,8 +66,9 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                 CHECK(res == CboxError::OK);
             }
 
-            THEN("Free space has decreased by 16 bytes "
-                 "(4 bytes object data + 2 bytes object id + 4 bytes overprovision + 5 bytes object header + 1 byte CRC")
+            THEN(
+                "Free space has decreased by 16 bytes "
+                "(4 bytes object data + 2 bytes object id + 4 bytes overprovision + 5 bytes object header + 1 byte CRC")
             {
                 CHECK(storage.freeSpace() == totalSpace - 16);
             }
@@ -414,6 +415,41 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
         THEN("But we can still create a small object")
         {
             CHECK(CboxError::OK == saveObjectToStorage(id, small));
+        }
+
+        THEN("We can still create a small variable size object")
+        {
+
+            LongIntVectorObject obj = {0x11111111, 0x22222222};
+
+            auto res = saveObjectToStorage(obj_id_t(id), obj);
+            CHECK(res == CboxError::OK);
+
+            AND_WHEN("the same object grows within the reserved space, it can be stored and retreived")
+            {
+                obj = {0x22222222, 0x33333333, 0x44444444};
+                auto res = saveObjectToStorage(obj_id_t(id), obj);
+                CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+
+                LongIntVectorObject received;
+                res = retreiveObjectFromStorage(obj_id_t(id), received);
+                CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                CHECK(obj == received);
+
+                AND_WHEN("the object grows beyond the reserved space, we get an error")
+                {
+                    auto res = saveObjectToStorage(obj_id_t(id), big);
+                    CHECK(uint8_t(res) == uint8_t(CboxError::INSUFFICIENT_PERSISTENT_STORAGE));
+
+                    AND_THEN("the original object is unchanged in eeprom")
+                    {
+                        LongIntVectorObject received;
+                        res = retreiveObjectFromStorage(obj_id_t(id), received);
+                        CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                        CHECK(obj == received);
+                    }
+                }
+            }
         }
 
         AND_WHEN("Only the small objects are deleted")

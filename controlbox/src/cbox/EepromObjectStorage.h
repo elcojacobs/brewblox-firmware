@@ -63,21 +63,18 @@ public:
         const storage_id_t& id,
         const std::function<CboxError(DataOut&)>& handler) override final
     {
-        CountingBlackholeDataOut counter;
         RegionDataOut objectEepromData = getObjectWriter(id);
         uint16_t dataLocation = writer.offset();
         uint16_t blockSize = objectEepromData.availableForWrite();
 
-        TeeDataOut tee(objectEepromData, counter);
-
-        auto writeWithCrc = [&id, &tee, &handler]() -> CboxError {
+        auto writeWithCrc = [&id, &objectEepromData, &handler]() -> CboxError {
             // we want the ID to be part of the CRC
             // we stream it again to a discarded stream and start the actual stream with the resulting CRC
             BlackholeDataOut hole;
             CrcDataOut idCrc(hole);
             idCrc.put(id);
 
-            CrcDataOut crcOut(tee, idCrc.crc());
+            CrcDataOut crcOut(objectEepromData, idCrc.crc());
             CboxError res = handler(crcOut);
 
             bool error = res != CboxError::OK;
@@ -93,17 +90,21 @@ public:
             return CboxError::OK;
         };
 
-        CboxError res = writeWithCrc();
+        // write to counter to get size
+        CountingBlackholeDataOut counter;
+        handler(counter);
+        uint16_t dataSize = counter.count() + 1;
 
-        if (counter.count() > blockSize) {
+        CboxError res = CboxError::INSUFFICIENT_PERSISTENT_STORAGE;
+        if (dataSize <= blockSize) { // data + crc
+            // should fit in existing location, write to EEPROM overwriting old data
+            res = writeWithCrc();
+        } else {
             // block didn't fit or not found, should allocate a new block
-            if (blockSize > 0) {
-                // object did exist but didn't fit in old region, remove old region
-                disposeObject(id);
-            }
+            bool isRelocate = (blockSize > 0);
 
-            uint16_t dataSize = counter.count();
-            // over-provision at least 4 bytes or 12.5% to prevent having to relocate the block if it grows
+            // over-provision 4 bytes or 12.5% to prevent having to relocate the block if it grows
+
             uint16_t overProvision = std::max(dataSize >> 3, 4);
             uint16_t requestedSize = dataSize + overProvision;
             objectEepromData = newObjectWriter(id, requestedSize); // get new writer
@@ -122,7 +123,10 @@ public:
                     return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // still not enough free space
                 }
             }
-
+            // looks like we can relocate the object, remove the old and write the new block
+            if (isRelocate) {
+                disposeObject(id);
+            }
             res = writeWithCrc(); // try again
         }
         // check how many bytes were written
