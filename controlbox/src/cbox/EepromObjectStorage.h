@@ -63,21 +63,22 @@ public:
         const storage_id_t& id,
         const std::function<CboxError(DataOut&)>& handler) override final
     {
-        CountingBlackholeDataOut counter;
+        if (!id) {
+            return CboxError::INVALID_OBJECT_ID;
+        }
+
         RegionDataOut objectEepromData = getObjectWriter(id);
         uint16_t dataLocation = writer.offset();
         uint16_t blockSize = objectEepromData.availableForWrite();
 
-        TeeDataOut tee(objectEepromData, counter);
-
-        auto writeWithCrc = [&id, &tee, &handler]() -> CboxError {
+        auto writeWithCrc = [&id, &objectEepromData, &handler]() -> CboxError {
             // we want the ID to be part of the CRC
             // we stream it again to a discarded stream and start the actual stream with the resulting CRC
             BlackholeDataOut hole;
             CrcDataOut idCrc(hole);
             idCrc.put(id);
 
-            CrcDataOut crcOut(tee, idCrc.crc());
+            CrcDataOut crcOut(objectEepromData, idCrc.crc());
             CboxError res = handler(crcOut);
 
             bool error = res != CboxError::OK;
@@ -93,22 +94,27 @@ public:
             return CboxError::OK;
         };
 
-        CboxError res = writeWithCrc();
+        // write to counter to get size
+        CountingBlackholeDataOut counter;
+        handler(counter);
+        uint16_t dataSize = counter.count() + 1;
 
-        if (counter.count() > blockSize) {
+        CboxError res = CboxError::INSUFFICIENT_PERSISTENT_STORAGE;
+        if (dataSize <= blockSize) { // data + crc
+            // should fit in existing location, write to EEPROM overwriting old data
+            res = writeWithCrc();
+        } else {
             // block didn't fit or not found, should allocate a new block
-            if (blockSize > 0) {
-                // object did exist but didn't fit in old region, remove old region
-                disposeObject(id);
-            }
+            bool isRelocate = (blockSize > 0);
 
-            uint16_t dataSize = counter.count();
-            // over-provision at least 4 bytes or 12.5% to prevent having to relocate the block if it grows
+            // over-provision 4 bytes or 12.5% to prevent having to relocate the block if it grows
+
             uint16_t overProvision = std::max(dataSize >> 3, 4);
             uint16_t requestedSize = dataSize + overProvision;
-            objectEepromData = newObjectWriter(id, requestedSize); // get new writer
+            objectEepromData = newObjectWriter(0, requestedSize); // get new writer, set block id to invalid until sucessfully relocated
             dataLocation = writer.offset();
-            if (objectEepromData.availableForWrite() < requestedSize) {
+            uint16_t eepromBlockSize = objectEepromData.availableForWrite();
+            if (eepromBlockSize < requestedSize) {
                 // not enough continuous free space
                 if (freeSpace() < requestedSize + (objectHeaderLength() - blockHeaderLength())) {
                     return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // not even enough total free space
@@ -119,17 +125,23 @@ public:
                 objectEepromData = newObjectWriter(id, requestedSize);
                 dataLocation = writer.offset();
                 if (objectEepromData.availableForWrite() < requestedSize) {
-                    return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // still not enough free space
+                    // LCOV_EXCL_LINE still not enough free space, exclude from coverage, because this should not be possible with the check above
+                    return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // LCOV_EXCL_LINE
                 }
             }
-
+            // looks like we can relocate the object, remove the old and write the new block
+            if (isRelocate) {
+                disposeObject(id);
+                writer.reset(dataLocation, eepromBlockSize);
+            }
             res = writeWithCrc(); // try again
         }
         // check how many bytes were written
         uint16_t actualSize = writer.offset() - dataLocation;
         // write the actual object size as first 2 bytes in the block
-        writer.reset(dataLocation - (objectHeaderLength() - blockHeaderLength()), sizeof(uint16_t));
+        writer.reset(dataLocation - (objectHeaderLength() - blockHeaderLength()), 2 * sizeof(uint16_t));
         writer.put(actualSize);
+        writer.put(id); // overwrite invalid id with actual id
         return res;
     }
 
@@ -273,6 +285,9 @@ public:
     void
     defrag()
     {
+        // ensure no invalid objects with ID zero remain in eeprom
+        // these are only temporary while relocating data
+        disposeObject(0);
         do {
             mergeDisposedBlocks();
         } while (moveDisposedBackwards());

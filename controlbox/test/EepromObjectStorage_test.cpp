@@ -66,8 +66,9 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                 CHECK(res == CboxError::OK);
             }
 
-            THEN("Free space has decreased by 16 bytes "
-                 "(4 bytes object data + 2 bytes object id + 4 bytes overprovision + 5 bytes object header + 1 byte CRC")
+            THEN(
+                "Free space has decreased by 16 bytes "
+                "(4 bytes object data + 2 bytes object id + 4 bytes overprovision + 5 bytes object header + 1 byte CRC")
             {
                 CHECK(storage.freeSpace() == totalSpace - 16);
             }
@@ -304,6 +305,32 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                 LongIntObject received2;
                 CHECK(CboxError::OK == retreiveObjectFromStorage(obj_id_t(4), received2));
                 CHECK(obj4 == received2);
+
+                AND_THEN("A handler handling all objects does not see the deleted object")
+                {
+                    std::vector<obj_id_t> ids;
+                    auto idCollector = [&ids](const storage_id_t& id, DataIn& objInStorage) -> CboxError {
+                        ids.push_back(id);
+                        return CboxError::OK;
+                    };
+                    CHECK(storage.retrieveObjects(idCollector) == CboxError::OK);
+                    CHECK(ids == std::vector<obj_id_t>({1, 3, 4}));
+                }
+            }
+
+            AND_THEN("When a storage stream error occurs when handling a block, blocks processing is stopped")
+            {
+                std::vector<obj_id_t> ids;
+                auto errorOn3 = [&ids](const storage_id_t& id, DataIn& objInStorage) -> CboxError {
+                    if (id == 3) {
+                        return CboxError::PERSISTED_BLOCK_STREAM_ERROR;
+                    }
+                    ids.push_back(id);
+                    return CboxError::OK;
+                };
+
+                CHECK(storage.retrieveObjects(errorOn3) == CboxError::PERSISTED_BLOCK_STREAM_ERROR);
+                CHECK(ids == std::vector<obj_id_t>({1, 2}));
             }
         }
     }
@@ -416,6 +443,67 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
             CHECK(CboxError::OK == saveObjectToStorage(id, small));
         }
 
+        THEN("We can still create a small variable size object")
+        {
+
+            LongIntVectorObject obj = {0x11111111, 0x22222222};
+
+            auto res = saveObjectToStorage(obj_id_t(id), obj);
+            CHECK(res == CboxError::OK);
+
+            AND_WHEN("the same object grows within the reserved space, it can be stored and retreived")
+            {
+                obj = {0x22222222, 0x33333333, 0x44444444};
+                auto res = saveObjectToStorage(obj_id_t(id), obj);
+                CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+
+                LongIntVectorObject received;
+                res = retreiveObjectFromStorage(obj_id_t(id), received);
+                CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                CHECK(obj == received);
+
+                auto spaceBefore = storage.freeSpace();
+
+                AND_WHEN("the object grows beyond the reserved space, we get an error")
+                {
+                    auto res = saveObjectToStorage(obj_id_t(id), big);
+                    CHECK(uint8_t(res) == uint8_t(CboxError::INSUFFICIENT_PERSISTENT_STORAGE));
+
+                    AND_THEN("the original object is unchanged in eeprom")
+                    {
+                        LongIntVectorObject received;
+                        res = retreiveObjectFromStorage(obj_id_t(id), received);
+                        CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                        CHECK(obj == received);
+                    }
+
+                    AND_THEN("The free space is unchanged")
+                    {
+                        CHECK(storage.freeSpace() == spaceBefore);
+                    }
+
+                    AND_WHEN("We delete a big object allocated near the start of EEPROM")
+                    {
+                        CHECK(storage.disposeObject(3));
+                        auto spaceAfterDelete = spaceBefore + bigSizeReserved + headerSize; // freed up 1 big object of bytes
+                        CHECK(storage.freeSpace() == spaceAfterDelete);
+
+                        THEN("We can store the grown object again, it is relocated")
+                        {
+                            auto res = saveObjectToStorage(obj_id_t(id), big);
+                            CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                            CHECK(storage.freeSpace() == spaceAfterDelete - bigSizeReserved + smallSizeReserved);
+
+                            LongIntVectorObject received;
+                            res = retreiveObjectFromStorage(obj_id_t(id), received);
+                            CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                            CHECK(big == received);
+                        }
+                    }
+                }
+            }
+        }
+
         AND_WHEN("Only the small objects are deleted")
         {
             obj_id_t id;
@@ -460,6 +548,23 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                     }
                 }
             }
+        }
+    }
+
+    WHEN("An object is stored with id 0")
+    {
+        LongIntObject obj(0x33333333);
+
+        auto res = saveObjectToStorage(obj_id_t(0), obj);
+
+        THEN("an error is returned")
+        {
+            CHECK(res == CboxError::INVALID_OBJECT_ID);
+        }
+
+        THEN("free space is unaffected")
+        {
+            CHECK(storage.freeSpace() == totalSpace);
         }
     }
 }
