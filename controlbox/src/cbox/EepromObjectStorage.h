@@ -125,7 +125,8 @@ public:
                 objectEepromData = newObjectWriter(id, requestedSize);
                 dataLocation = writer.offset();
                 if (objectEepromData.availableForWrite() < requestedSize) {
-                    return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // still not enough free space
+                    // LCOV_EXCL_LINE still not enough free space, exclude from coverage, because this should not be possible with the check above
+                    return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // LCOV_EXCL_LINE
                 }
             }
             // looks like we can relocate the object, remove the old and write the new block
