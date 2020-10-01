@@ -63,6 +63,10 @@ public:
         const storage_id_t& id,
         const std::function<CboxError(DataOut&)>& handler) override final
     {
+        if (!id) {
+            return CboxError::INVALID_OBJECT_ID;
+        }
+
         RegionDataOut objectEepromData = getObjectWriter(id);
         uint16_t dataLocation = writer.offset();
         uint16_t blockSize = objectEepromData.availableForWrite();
@@ -107,9 +111,10 @@ public:
 
             uint16_t overProvision = std::max(dataSize >> 3, 4);
             uint16_t requestedSize = dataSize + overProvision;
-            objectEepromData = newObjectWriter(id, requestedSize); // get new writer
+            objectEepromData = newObjectWriter(0, requestedSize); // get new writer, set block id to invalid until sucessfully relocated
             dataLocation = writer.offset();
-            if (objectEepromData.availableForWrite() < requestedSize) {
+            uint16_t eepromBlockSize = objectEepromData.availableForWrite();
+            if (eepromBlockSize < requestedSize) {
                 // not enough continuous free space
                 if (freeSpace() < requestedSize + (objectHeaderLength() - blockHeaderLength())) {
                     return CboxError::INSUFFICIENT_PERSISTENT_STORAGE; // not even enough total free space
@@ -126,14 +131,16 @@ public:
             // looks like we can relocate the object, remove the old and write the new block
             if (isRelocate) {
                 disposeObject(id);
+                writer.reset(dataLocation, eepromBlockSize);
             }
             res = writeWithCrc(); // try again
         }
         // check how many bytes were written
         uint16_t actualSize = writer.offset() - dataLocation;
         // write the actual object size as first 2 bytes in the block
-        writer.reset(dataLocation - (objectHeaderLength() - blockHeaderLength()), sizeof(uint16_t));
+        writer.reset(dataLocation - (objectHeaderLength() - blockHeaderLength()), 2 * sizeof(uint16_t));
         writer.put(actualSize);
+        writer.put(id); // overwrite invalid id with actual id
         return res;
     }
 
@@ -277,6 +284,9 @@ public:
     void
     defrag()
     {
+        // ensure no invalid objects with ID zero remain in eeprom
+        // these are only temporary while relocating data
+        disposeObject(0);
         do {
             mergeDisposedBlocks();
         } while (moveDisposedBackwards());

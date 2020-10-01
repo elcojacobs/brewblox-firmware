@@ -436,6 +436,8 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                 CHECK(uint8_t(res) == uint8_t(CboxError::OK));
                 CHECK(obj == received);
 
+                auto spaceBefore = storage.freeSpace();
+
                 AND_WHEN("the object grows beyond the reserved space, we get an error")
                 {
                     auto res = saveObjectToStorage(obj_id_t(id), big);
@@ -447,6 +449,30 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                         res = retreiveObjectFromStorage(obj_id_t(id), received);
                         CHECK(uint8_t(res) == uint8_t(CboxError::OK));
                         CHECK(obj == received);
+                    }
+
+                    AND_THEN("The free space is unchanged")
+                    {
+                        CHECK(storage.freeSpace() == spaceBefore);
+                    }
+
+                    AND_WHEN("We delete a big object allocated near the start of EEPROM")
+                    {
+                        CHECK(storage.disposeObject(3));
+                        auto spaceAfterDelete = spaceBefore + bigSizeReserved + headerSize; // freed up 1 big object of bytes
+                        CHECK(storage.freeSpace() == spaceAfterDelete);
+
+                        THEN("We can store the grown object again, it is relocated")
+                        {
+                            auto res = saveObjectToStorage(obj_id_t(id), big);
+                            CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                            CHECK(storage.freeSpace() == spaceAfterDelete - bigSizeReserved + smallSizeReserved);
+
+                            LongIntVectorObject received;
+                            res = retreiveObjectFromStorage(obj_id_t(id), received);
+                            CHECK(uint8_t(res) == uint8_t(CboxError::OK));
+                            CHECK(big == received);
+                        }
                     }
                 }
             }
