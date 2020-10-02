@@ -53,17 +53,6 @@ public:
         }
         return result;
     }
-
-    virtual bool writeBuffer(const uint8_t* data, stream_size_t len) override
-    {
-        bool result = true;
-        for (auto& source : container) {
-            DataOut& out = transformFunc(source);
-            bool written = out.writeBuffer(data, len);
-            result = result && written;
-        }
-        return result;
-    }
 };
 
 } // end namespace cbox

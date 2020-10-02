@@ -226,13 +226,13 @@ private:
     std::vector<std::unique_ptr<Connection>> connections;
 
     CompositeDataOut<decltype(connections)> allConnectionsDataOut;
-    DataOut& currentDataOut;
+    DataOut* currentDataOut;
 
 public:
     ConnectionPool(std::initializer_list<std::reference_wrapper<ConnectionSource>> list)
         : connectionSources(list)
         , allConnectionsDataOut(connections, [](const decltype(connections)::value_type& conn) -> DataOut& { return conn->getDataOut(); })
-        , currentDataOut(allConnectionsDataOut)
+        , currentDataOut(&allConnectionsDataOut)
     {
     }
 
@@ -264,15 +264,15 @@ public:
         for (auto& conn : connections) {
             DataIn& in = conn->getDataIn();
             DataOut& out = conn->getDataOut();
-            currentDataOut = out;
+            currentDataOut = &out;
             handler(in, out);
         }
-        currentDataOut = allConnectionsDataOut;
+        currentDataOut = &allConnectionsDataOut;
     }
 
     DataOut& logDataOut() const
     {
-        return currentDataOut;
+        return *currentDataOut;
     }
 
     void disconnect()

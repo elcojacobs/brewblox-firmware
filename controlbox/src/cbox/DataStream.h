@@ -85,7 +85,7 @@ public:
 	 * @param len	The number of bytes to write.
 	 * @return {@code true} if the byte was successfully written, false otherwise.
 	 */
-    virtual bool writeBuffer(const uint8_t* data, stream_size_t len)
+    bool writeBuffer(const uint8_t* data, stream_size_t len)
     {
         const uint8_t* d = data;
         while (len-- > 0) {
