@@ -398,11 +398,10 @@ Box::readStoredObject(DataIn& in, EncodedDataOut& out)
         return CboxError::OK;
     };
     status = storage.retrieveObject(storage_id_t(id), objectStreamer);
-    if (status != CboxError::OK) {
-        out.writeError(status);
-    }
     if (!handlerCalled) {
-        out.write(asUint8(CboxError::INVALID_OBJECT_ID)); // write status if handler has not written it
+        out.write(asUint8(CboxError::PERSISTED_OBJECT_NOT_FOUND)); // write status if handler has not written it
+    } else if (status != CboxError::OK) {
+        out.writeError(status); // write error as event, because objectStreamer has already written a status
     }
 }
 

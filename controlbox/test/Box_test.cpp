@@ -95,14 +95,14 @@ SCENARIO("A controlbox Box")
 
     WHEN(
         "A connection sends a read stored object command for a non-existing object, "
-        "INVALID_OBJECT_ID is returned, and an error event is sent with PERSISTED_OBJECT_NOT_FOUND")
+        "status PERSISTED_OBJECT_NOT_FOUND is returned")
     {
         *in << "0000060800"; // read stored object 8
         *in << crc(in->str()) << "\n";
         box.hexCommunicate();
 
         expected << addCrc("0000060800")
-                 << "|<!CBOXERROR:11>" << addCrc("40")
+                 << "|" << addCrc("11")
                  << "\n";
         CHECK(out->str() == expected.str());
     }
@@ -568,7 +568,7 @@ SCENARIO("A controlbox Box")
                          << "\n";
                 CHECK(out->str() == expected.str());
 
-                auto listObjectsOriginal = expected.str();
+                std::string listObjectsOriginal(expected.str());
 
                 AND_WHEN("A new box is created from existing storage (for example after a reboot)")
                 {
@@ -671,9 +671,10 @@ SCENARIO("A controlbox Box")
                             box2.hexCommunicate();
 
                             // remove object with CRC error from expected string
+                            std::string listObjectsWithObjectMissing(listObjectsOriginal);
                             std::string toRemove = "," + addCrc("650002E80344444444");
-                            size_t pos = listObjectsOriginal.find(toRemove);
-                            auto listObjectsWithObjectMissing = listObjectsOriginal.replace(pos, toRemove.length(), ""); // remove single element
+                            size_t pos = listObjectsWithObjectMissing.find(toRemove);
+                            listObjectsWithObjectMissing.replace(pos, toRemove.length(), ""); // remove single element
 
                             CHECK(out2->str() == listObjectsWithObjectMissing);
 
@@ -695,6 +696,100 @@ SCENARIO("A controlbox Box")
                                                    + damagedObject) // obj data
                                          << "\n";
                                 CHECK(out2->str() == expected.str());
+                            }
+                        }
+
+                        WHEN("An object is found of a type that is no longer supported, it is replaced by a deprecated object with a new id")
+                        {
+                            const std::string originalObject = "650002E80344444444";
+                            const std::string unsupportedTypeObject = "650002EEEE44444444";
+
+                            CHECK(eepromReplace(addCrc(originalObject), addCrc(unsupportedTypeObject)));
+
+                            Box box2(factory2, container2, storage2, connPool2);
+                            box2.loadObjectsFromStorage();
+
+                            auto in2 = std::make_shared<std::stringstream>();
+                            auto out2 = std::make_shared<std::stringstream>();
+                            connSource2.add(in2, out2);
+
+                            *in2 << "000005"; // list all objects
+                            *in2 << crc(in2->str()) << "\n";
+                            box2.hexCommunicate();
+
+                            std::string newReply(listObjectsOriginal);
+                            std::string toRemove = "," + addCrc(originalObject);
+                            size_t pos = newReply.find(toRemove);
+                            newReply.replace(pos, toRemove.length(), "");
+
+                            auto deprecatedObject = addCrc(
+                                "6700"   // id
+                                "FF"     // all groups
+                                "FDFF"   // deprecated object
+                                "6500"); // original id
+
+                            newReply.pop_back(); // remove \n
+                            newReply += "," + deprecatedObject + "\n";
+
+                            CHECK(out2->str() == newReply);
+
+                            AND_THEN("The original unsupported object can still be read from EEPROM with READ_STORED_VALUE")
+                            {
+                                in2->str("");
+                                in2->clear();
+                                out2->str("");
+                                out2->clear();
+                                expected.str("");
+                                expected.clear();
+
+                                *in2 << "0000066500"; // read stored object 101
+                                *in2 << crc(in2->str()) << "\n";
+                                box2.hexCommunicate();
+
+                                expected << addCrc("0000066500") << "|"
+                                         << addCrc("00"                     // status
+                                                   + unsupportedTypeObject) // obj data
+                                         << "\n";
+                                CHECK(out2->str() == expected.str());
+                            }
+
+                            AND_WHEN("The deprecated object is deleted)")
+                            {
+                                in2->str("");
+                                in2->clear();
+                                out2->str("");
+                                out2->clear();
+                                expected.str("");
+                                expected.clear();
+
+                                *in2 << "000004"
+                                     << "6700";
+                                *in2 << crc(in2->str()) << "\n";
+                                box2.hexCommunicate();
+
+                                expected << addCrc("0000046700")
+                                         << "|" << addCrc("00")
+                                         << "\n";
+                                CHECK(out2->str() == expected.str());
+
+                                THEN("the original object is also deleted from EERPOM")
+                                {
+                                    in2->str("");
+                                    in2->clear();
+                                    out2->str("");
+                                    out2->clear();
+                                    expected.str("");
+                                    expected.clear();
+
+                                    *in2 << "0000066500"; // read stored object 101
+                                    *in2 << crc(in2->str()) << "\n";
+                                    box2.hexCommunicate();
+
+                                    expected << addCrc("0000066500") << "|"
+                                             << addCrc("11") // status persisted object not found
+                                             << "\n";
+                                    CHECK(out2->str() == expected.str());
+                                }
                             }
                         }
                     }
