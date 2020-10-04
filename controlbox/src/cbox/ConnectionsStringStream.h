@@ -48,7 +48,10 @@ public:
         , dataOut(*_out)
     {
     }
-    virtual ~StringStreamConnection() = default;
+    virtual ~StringStreamConnection()
+    {
+        stop();
+    };
 
     virtual DataOut& getDataOut() override final
     {
