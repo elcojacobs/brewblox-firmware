@@ -67,6 +67,16 @@ public:
             return CboxError::INVALID_OBJECT_ID;
         }
 
+        // write to counter to get size and to do a test serialization
+        CountingBlackholeDataOut counter;
+        CboxError res = handler(counter);
+        uint16_t dataSize = counter.count() + 1;
+
+        if (res != CboxError::OK) {
+            return res;
+        };
+
+        // get actual writable region in eeprom
         RegionDataOut objectEepromData = getObjectWriter(id);
         uint16_t dataLocation = writer.offset();
         uint16_t blockSize = objectEepromData.availableForWrite();
@@ -94,12 +104,6 @@ public:
             return CboxError::OK;
         };
 
-        // write to counter to get size
-        CountingBlackholeDataOut counter;
-        handler(counter);
-        uint16_t dataSize = counter.count() + 1;
-
-        CboxError res = CboxError::INSUFFICIENT_PERSISTENT_STORAGE;
         if (dataSize <= blockSize) { // data + crc
             // should fit in existing location, write to EEPROM overwriting old data
             res = writeWithCrc();

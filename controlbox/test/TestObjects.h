@@ -92,6 +92,11 @@ public:
     {
         return obj;
     }
+
+    void value(uint32_t v)
+    {
+        obj = v;
+    }
 };
 
 // variable size object of multiple long ints

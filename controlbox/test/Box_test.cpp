@@ -158,6 +158,68 @@ SCENARIO("A controlbox Box")
         CHECK(out->str() == expected.str());
         CHECK(box.getObject(100).lock());
 
+        WHEN("The object is modified by the application, not by an incoming command")
+        {
+
+            auto objLookup = box.makeCboxPtr<LongIntObject>(100);
+            auto obj = objLookup.lock();
+            REQUIRE(obj);
+            obj->value(0x22222222);
+
+            auto checkEepromVal = [&box, &clearStreams, &in, &out, &expected](std::string eepromVal) -> void {
+                clearStreams();
+
+                *in << "0000066400"; // read stored object 100
+                *in << crc(in->str()) << "\n";
+                box.hexCommunicate();
+
+                // Objects are stored with a CRC in EEPROM.
+                // The message will have 2 CRCs appended.
+                // This allows to distinguish between an error in EEPROM or a communication error.
+
+                expected << addCrc("0000066400") << "|"
+                         << addCrc(
+                                "00"         // status
+                                "6400"       // id
+                                "7F"         // stored groups
+                                "E803"       // stored type
+                                + eepromVal) // stored data
+                         << "\n";
+
+                CHECK(out->str() == expected.str());
+            };
+
+            THEN("The data in eeprom is not changed")
+            {
+                CHECK(obj->value() == 0x22222222);
+                checkEepromVal("44444444");
+
+                AND_THEN("The eeprom data can be reloaded")
+                {
+                    box.reloadStoredObject(100);
+                    CHECK(obj->value() == 0x44444444);
+                }
+            }
+
+            AND_WHEN("storeUpdatedObject is invoked, the object is written to eeprom")
+            {
+
+                CHECK(box.storeUpdatedObject(obj_id_t(100)) == CboxError::OK);
+                checkEepromVal("22222222");
+                box.reloadStoredObject(100);
+                CHECK(obj->value() == 0x22222222);
+
+                AND_WHEN("storeUpdatedObject is called with a non-existing id, an error is returned")
+                {
+                    CHECK(box.storeUpdatedObject(obj_id_t(200)) == CboxError::INVALID_OBJECT_ID);
+                }
+                AND_WHEN("reloadStoredObject is called with a non-existing id, an error is returned")
+                {
+                    CHECK(box.reloadStoredObject(obj_id_t(200)) == CboxError::INVALID_OBJECT_ID);
+                }
+            }
+        }
+
         AND_WHEN("A connection sends a delete object command for a user object, it is processed by the Box")
         {
             clearStreams();
@@ -360,6 +422,11 @@ SCENARIO("A controlbox Box")
                             "44444444") // stored data
                      << "\n";
             CHECK(out->str() == expected.str());
+        }
+
+        THEN("An inactive object is never persisted")
+        {
+            CHECK(box.storeUpdatedObject(100) == CboxError::PERSISTING_TO_INACTIVE_OBJECT);
         }
 
         THEN("Writing an inactive object as the actual object it replaces, gives invalid object type error")
@@ -732,6 +799,41 @@ SCENARIO("A controlbox Box")
                             newReply += "," + deprecatedObject + "\n";
 
                             CHECK(out2->str() == newReply);
+
+                            THEN("Deprecated object is never updated")
+                            {
+                                box2.update(0); // cover update function
+                            }
+
+                            THEN("Deprecated object is never rewritten to eeprom")
+                            {
+                                CHECK(box2.storeUpdatedObject(obj_id_t(0x67)) == CboxError::OBJECT_NOT_WRITABLE);
+                            }
+
+                            AND_THEN("The deprecated object is not writable")
+                            {
+                                in2->str("");
+                                in2->clear();
+                                out2->str("");
+                                out2->clear();
+                                expected.str("");
+                                expected.clear();
+
+                                *in2 << "000002"; // write counter object
+                                auto alteredObject =
+                                    "6700"  // id
+                                    "FF"    // all groups
+                                    "FDFF"  // deprecated object
+                                    "7000"; // overwrite original id
+                                *in2 << alteredObject;
+                                *in2 << crc(in2->str()) << "\n";
+                                box2.hexCommunicate();
+
+                                expected << addCrc("0000026700FFFDFF7000") << "|"
+                                         << addCrc("20") // status OBJECT_NOT_WRITABLE
+                                         << "\n";
+                                CHECK(out2->str() == expected.str());
+                            }
 
                             AND_THEN("The original unsupported object can still be read from EEPROM with READ_STORED_VALUE")
                             {
