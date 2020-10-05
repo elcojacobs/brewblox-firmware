@@ -143,16 +143,14 @@ public:
     {
         tracing::add(tracing::Action::PERSIST_OBJECT, _id, _obj->typeId());
         // id is not streamed out. It is passed to storage separately
-        if (_obj->typeId() == InactiveObject::staticTypeId()) {
-            // inactive objects are not persisted, but no error is returned
-            // never happens, because for a write an inactive object is temporarily replaced with an active object to process the write
-            return CboxError::OK; // LCOV_EXCL_LINE
-        }
-        if (!out.put(_groups)) {
-            return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
-        }
-        if (!out.put(_obj->typeId())) {
-            return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
+        // if the object is not inactive, we write the groups and typeid to eeprom
+        if (_obj->typeId() != InactiveObject::staticTypeId()) {
+            if (!out.put(_groups)) {
+                return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
+            }
+            if (!out.put(_obj->typeId())) {
+                return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
+            }
         }
         return _obj->streamPersistedTo(out);
     }

@@ -310,6 +310,7 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
                 {
                     std::vector<obj_id_t> ids;
                     auto idCollector = [&ids](const storage_id_t& id, DataIn& objInStorage) -> CboxError {
+                        CHECK(objInStorage.streamType() == StreamType::Eeprom); // for test coverage
                         ids.push_back(id);
                         return CboxError::OK;
                     };
@@ -565,6 +566,37 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
         THEN("free space is unaffected")
         {
             CHECK(storage.freeSpace() == totalSpace);
+        }
+    }
+
+    WHEN("An error occurs when an object is persisted")
+    {
+        MockStreamObject obj;
+
+        WHEN("The error occurs during test serialization, the error raised is returned")
+        {
+            obj.streamPersistedToFunc = [](cbox::DataOut& out) { return CboxError::OUTPUT_STREAM_WRITE_ERROR; };
+            auto res = saveObjectToStorage(obj_id_t(1234), obj);
+            CHECK(int(res) == int(CboxError::OUTPUT_STREAM_WRITE_ERROR));
+
+            obj.streamPersistedToFunc = [](cbox::DataOut& out) { return CboxError::OUTPUT_STREAM_ENCODING_ERROR; };
+            res = saveObjectToStorage(obj_id_t(1234), obj);
+            CHECK(int(res) == int(CboxError::OUTPUT_STREAM_ENCODING_ERROR));
+        }
+
+        WHEN("The object is too big to fit in eeprom, INSUFFICIENT_PERSISTENT_STORAGE is returned")
+        {
+            obj.streamPersistedToFunc = [](cbox::DataOut& out) {
+                for (uint16_t i = 0; i < 2000; i++) {
+                    bool written = out.write(0);
+                    if (!written) {
+                        return CboxError::OUTPUT_STREAM_WRITE_ERROR;
+                    }
+                }
+                return CboxError::OK;
+            };
+            auto res = saveObjectToStorage(obj_id_t(1234), obj);
+            CHECK(int(res) == int(CboxError::INSUFFICIENT_PERSISTENT_STORAGE));
         }
     }
 }
