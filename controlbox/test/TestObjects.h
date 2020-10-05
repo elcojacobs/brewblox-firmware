@@ -341,3 +341,34 @@ public:
         return cbox::Object::update_never(now);
     }
 };
+
+class MockStreamObject : public cbox::ObjectBase<1006> {
+public:
+    MockStreamObject() = default;
+    virtual ~MockStreamObject() = default;
+
+    std::function<cbox::CboxError(cbox::DataOut&)> streamToFunc = [](cbox::DataOut& out) { return cbox::CboxError::OK; };
+    std::function<cbox::CboxError(cbox::DataIn&)> streamFromFunc = [](cbox::DataIn& in) { return cbox::CboxError::OK; };
+    std::function<cbox::CboxError(cbox::DataOut&)> streamPersistedToFunc = [](cbox::DataOut& out) { return cbox::CboxError::OK; };
+
+    virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
+    {
+        return streamToFunc(out);
+    }
+
+    virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
+    {
+
+        return streamFromFunc(in);
+    }
+
+    virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
+    {
+        return streamPersistedToFunc(out);
+    }
+
+    virtual cbox::update_t update(const cbox::update_t& now) override
+    {
+        return cbox::Object::update_never(now);
+    }
+};

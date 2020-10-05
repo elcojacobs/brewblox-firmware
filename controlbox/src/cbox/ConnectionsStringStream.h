@@ -51,7 +51,7 @@ public:
     virtual ~StringStreamConnection()
     {
         stop();
-    };
+    }
 
     virtual DataOut& getDataOut() override final
     {

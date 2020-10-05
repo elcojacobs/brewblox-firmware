@@ -91,17 +91,15 @@ public:
             CrcDataOut crcOut(objectEepromData, idCrc.crc());
             CboxError res = handler(crcOut);
 
-            bool error = res != CboxError::OK;
-            if (error) {
+            if (res != CboxError::OK) {
                 crcOut.invalidateCrc();
             }
             bool crcWritten = crcOut.writeCrc(); // write CRC after object data so we can check integrity
-            error = error || !crcWritten;
-
-            if (error) {
+            if (!crcWritten) {
                 return CboxError::PERSISTED_STORAGE_WRITE_ERROR;
             }
-            return CboxError::OK;
+
+            return res;
         };
 
         if (dataSize <= blockSize) { // data + crc

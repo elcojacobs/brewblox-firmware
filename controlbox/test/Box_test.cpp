@@ -39,6 +39,7 @@ SCENARIO("A controlbox Box")
              return std::make_shared<PtrLongIntObject>(container);
          }},
         {NameableLongIntObject::staticTypeId(), std::make_shared<NameableLongIntObject>},
+        {MockStreamObject::staticTypeId(), std::make_shared<MockStreamObject>},
     };
 
     StringStreamConnectionSource connSource;
@@ -1351,6 +1352,59 @@ SCENARIO("A controlbox Box")
         {
             expected << addCrc("000064") << "|"
                      << addCrc("0064") // CboxError OK + 100
+                     << "\n";
+            CHECK(out->str() == expected.str());
+        }
+    }
+
+    WHEN("An object generates an error while it streams its values")
+    {
+        *in << "000003" // create object
+            << "0000"   // ID assigned by box
+            << "7F"     // groups 7F
+            << "EE03";  // type 1006 MockStreamObject
+        *in << crc(in->str()) << "\n";
+        box.hexCommunicate();
+
+        expected << addCrc("00000300007FEE03") << "|"
+                 << "00"   // status
+                    "6400" // id 100
+                    "7F"   // groups
+                    "EE03" // type
+                    "F5"   // CRC
+                 << "\n";
+        CHECK(out->str() == expected.str());
+
+        auto lookup = box.makeCboxPtr<MockStreamObject>(100);
+        auto obj = lookup.lock();
+        REQUIRE(obj);
+
+        clearStreams();
+
+        *in << "0000016400"; // read object 100
+        *in << crc(in->str()) << "\n";
+        box.hexCommunicate();
+
+        expected << addCrc("0000016400")
+                 << "|0064007FEE03F5"
+                 << "\n";
+        CHECK(out->str() == expected.str());
+
+        THEN("An error event annotation is inserted and the message ends in an invalid CRC (1 off)")
+        {
+            // because the error occurs after the status code 00 has been sent, a CRC error is generated to invalidate the message
+            obj->streamToFunc = [](cbox::DataOut& out) {
+                return CboxError::OUTPUT_STREAM_WRITE_ERROR;
+            };
+
+            clearStreams();
+
+            *in << "0000016400"; // read object 100
+            *in << crc(in->str()) << "\n";
+            box.hexCommunicate();
+
+            expected << addCrc("0000016400")
+                     << "|0064007FEE03<!CBOXERROR:09>F6"
                      << "\n";
             CHECK(out->str() == expected.str());
         }
