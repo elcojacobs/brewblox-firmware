@@ -60,6 +60,8 @@ enum class CboxError : uint8_t {
     CRC_ERROR_IN_COMMAND = 67,
     OBJECT_DATA_NOT_ACCEPTED = 68,
 
+    INVALID_OBJECT_PTR = 69,
+
     // freak events that should not be possible
     PERSISTING_TO_INACTIVE_OBJECT = 200,
 };

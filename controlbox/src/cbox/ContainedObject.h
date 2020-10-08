@@ -39,14 +39,16 @@ public:
         , _obj(std::move(obj))
         , _nextUpdateTime(0)
     {
-        tracing::add(tracing::Action::CREATE_OBJECT, _id, _obj ? _obj->typeId() : obj_type_t(0));
+        if (_obj) {
+            tracing::add(tracing::Action::CONSTRUCT_OBJECT, _id, _obj->typeId());
+        }
     }
 
     virtual ~ContainedObject()
     {
         if (_obj) {
             // this check is needed because otherwise a trace would be created if a vector is relocated and reserved space is destructed
-            tracing::add(tracing::Action::DELETE_OBJECT, _id, _obj->typeId());
+            tracing::add(tracing::Action::DESTRUCT_OBJECT, _id, _obj->typeId());
         }
     }
 
@@ -79,80 +81,93 @@ public:
 
     void deactivate()
     {
-        obj_type_t oldType = _obj->typeId();
+        obj_type_t oldType = _obj ? _obj->typeId() : obj_type_t(0);
         _obj = std::make_shared<InactiveObject>(oldType);
     }
 
     void update(const update_t& now)
     {
-        tracing::add(tracing::Action::UPDATE_OBJECT, _id, _obj->typeId());
         const update_t overflowGuard = std::numeric_limits<update_t>::max() / 2;
         if (overflowGuard - now + _nextUpdateTime <= overflowGuard) {
-            _nextUpdateTime = _obj->update(now);
+            forcedUpdate(now);
         }
     }
 
     void forcedUpdate(const uint32_t& now)
     {
-        _nextUpdateTime = _obj->update(now);
+        if (_obj) {
+            tracing::add(tracing::Action::UPDATE_OBJECT, _id, _obj->typeId());
+            _nextUpdateTime = _obj->update(now);
+            return;
+        }
+        _nextUpdateTime += 1000;
     }
 
     CboxError streamTo(DataOut& out) const
     {
-        tracing::add(tracing::Action::SEND_OBJECT, _id, _obj->typeId());
-        if (!out.put(_id)) {
-            return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
+        if (_obj) {
+            tracing::add(tracing::Action::STREAM_TO_OBJECT, _id, _obj->typeId());
+            if (!out.put(_id)) {
+                return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
+            }
+            if (!out.put(_groups)) {
+                return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
+            }
+            if (!out.put(_obj->typeId())) {
+                return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
+            }
+            return _obj->streamTo(out);
         }
-        if (!out.put(_groups)) {
-            return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
-        }
-        if (!out.put(_obj->typeId())) {
-            return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
-        }
-        return _obj->streamTo(out);
+        return CboxError::INVALID_OBJECT_PTR;
     }
 
     CboxError streamFrom(DataIn& in)
     {
-        // id is not streamed in. It is immutable and assumed to be already read to find this entry
-        tracing::add(tracing::Action::RECEIVE_OBJECT, _id, _obj->typeId());
-        uint8_t newGroups;
-        obj_type_t expectedType;
-        if (!in.get(newGroups)) {
-            return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
-        }
-        if (!in.get(expectedType)) {
-            return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
-        }
-
-        if (expectedType == _obj->typeId()) {
-            if (_groups & 0x80) {
-                // system object, always keep system group flag
-                _groups = newGroups | 0x80;
-            } else {
-                // user object, don't allow system group flag
-                _groups = newGroups & 0x7F;
+        if (_obj) {
+            // id is not streamed in. It is immutable and assumed to be already read to find this entry
+            tracing::add(tracing::Action::STREAM_FROM_OBJECT, _id, _obj->typeId());
+            uint8_t newGroups;
+            obj_type_t expectedType;
+            if (!in.get(newGroups)) {
+                return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
+            }
+            if (!in.get(expectedType)) {
+                return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
             }
 
-            return _obj->streamFrom(in);
+            if (expectedType == _obj->typeId()) {
+                if (_groups & 0x80) {
+                    // system object, always keep system group flag
+                    _groups = newGroups | 0x80;
+                } else {
+                    // user object, don't allow system group flag
+                    _groups = newGroups & 0x7F;
+                }
+
+                return _obj->streamFrom(in);
+            }
+            return CboxError::INVALID_OBJECT_TYPE;
         }
-        return CboxError::INVALID_OBJECT_TYPE;
+        return CboxError::INVALID_OBJECT_PTR;
     }
 
     CboxError streamPersistedTo(DataOut& out) const
     {
-        tracing::add(tracing::Action::PERSIST_OBJECT, _id, _obj->typeId());
-        // id is not streamed out. It is passed to storage separately
-        // if the object is not inactive, we write the groups and typeid to eeprom
-        if (_obj->typeId() != InactiveObject::staticTypeId()) {
-            if (!out.put(_groups)) {
-                return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
+        if (_obj) {
+            tracing::add(tracing::Action::PERSIST_OBJECT, _id, _obj->typeId());
+            // id is not streamed out. It is passed to storage separately
+            // if the object is not inactive, we write the groups and typeid to eeprom
+            if (_obj->typeId() != InactiveObject::staticTypeId()) {
+                if (!out.put(_groups)) {
+                    return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
+                }
+                if (!out.put(_obj->typeId())) {
+                    return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
+                }
             }
-            if (!out.put(_obj->typeId())) {
-                return CboxError::PERSISTED_STORAGE_WRITE_ERROR; // LCOV_EXCL_LINE
-            }
+            return _obj->streamPersistedTo(out);
         }
-        return _obj->streamPersistedTo(out);
+        return CboxError::INVALID_OBJECT_PTR;
     }
 };
 

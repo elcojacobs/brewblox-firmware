@@ -48,3 +48,16 @@ versionCsv();
 
 void
 logEvent(const std::string& event);
+
+enum AppTrace : uint8_t {
+    UPDATE_DISPLAY = 101,
+    SYSTEM_TASKS = 102,
+    MANAGE_CONNECTIVITY = 103,
+    MDNS_START = 104,
+    MDNS_PROCESS = 105,
+    HTTP_START = 106,
+    HTTP_STOP = 107,
+    HTTP_RESPONSE = 108,
+    WIFI_CONNECT = 109,
+    FIRMWARE_UPDATE_STARTED = 110,
+};
