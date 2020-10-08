@@ -76,5 +76,5 @@ SysInfoBlock::streamFrom(cbox::DataIn& in)
 cbox::CboxError
 SysInfoBlock::streamPersistedTo(cbox::DataOut&) const
 {
-    return cbox::CboxError::OK;
+    return cbox::CboxError::PERSISTING_NOT_NEEDED;
 }

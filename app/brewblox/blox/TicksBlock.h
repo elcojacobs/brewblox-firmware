@@ -62,7 +62,7 @@ public:
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut&) const override final
     {
-        return cbox::CboxError::OK;
+        return cbox::CboxError::PERSISTING_NOT_NEEDED;
     }
 
     virtual cbox::update_t update(const cbox::update_t& now) override final
