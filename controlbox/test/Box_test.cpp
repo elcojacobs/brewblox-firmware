@@ -995,46 +995,45 @@ SCENARIO("A controlbox Box")
 
             auto it = cbox::tracing::history().cbegin();
 
-            CHECK(it->action == cbox::tracing::Action::NONE);
-            CHECK(it->id == 0);
-            CHECK(it->type == 0);
-            ++it;
-            CHECK(it->action == cbox::tracing::Action::NONE);
-            CHECK(it->id == 0);
-            CHECK(it->type == 0);
-            ++it;
-            CHECK(it->action == cbox::tracing::Action::NONE);
-            CHECK(it->id == 0);
-            CHECK(it->type == 0);
-            ++it;
-            CHECK(it->action == cbox::tracing::Action::UPDATE_OBJECT);
-            CHECK(it->id == 1);
-            CHECK(it->type == GroupsObject::staticTypeId());
-            ++it;
             CHECK(it->action == cbox::tracing::Action::UPDATE_OBJECT);
             CHECK(it->id == 2);
             CHECK(it->type == LongIntObject::staticTypeId());
-            ++it;
+            ++it; // 1
             CHECK(it->action == cbox::tracing::Action::UPDATE_OBJECT);
             CHECK(it->id == 3);
             CHECK(it->type == LongIntObject::staticTypeId());
-            ++it;
+            ++it; // 2
+            CHECK(it->action == cbox::tracing::Action::UPDATE_CONNECTIONS);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it; // 3
             CHECK(it->action == cbox::tracing::Action::CREATE_OBJECT);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it; // 4
+            CHECK(it->action == cbox::tracing::Action::CONSTRUCT_OBJECT);
             CHECK(it->id == 100);
             CHECK(it->type == 1002);
-            ++it;
+            ++it; // 5
             CHECK(it->action == cbox::tracing::Action::PERSIST_OBJECT);
             CHECK(it->id == 100);
             CHECK(it->type == 1002);
-            ++it;
+            ++it; // 6
+            CHECK(it->action == cbox::tracing::Action::UPDATE_CONNECTIONS);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it; // 7
             CHECK(it->action == cbox::tracing::Action::CREATE_OBJECT);
+            CHECK(it->id == 0);
+            CHECK(it->type == 0);
+            ++it; // 8
+            CHECK(it->action == cbox::tracing::Action::CONSTRUCT_OBJECT);
             CHECK(it->id == 101);
             CHECK(it->type == 1002);
-            ++it;
+            ++it; // 9
             CHECK(it->action == cbox::tracing::Action::PERSIST_OBJECT);
             CHECK(it->id == 101);
             CHECK(it->type == 1002);
-            ++it;
         }
 
         auto counterObjPtr1 = box.getObject(100).lock();

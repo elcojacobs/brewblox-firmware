@@ -32,6 +32,7 @@
 #include "ObjectFactory.h"
 #include "ObjectStorage.h"
 #include "ScanningFactory.h"
+#include "Tracing.h"
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -101,7 +102,7 @@ Box::readObject(DataIn& in, EncodedDataOut& out)
     out.write(asUint8(status));
     if (status == CboxError::OK) {
         // stream object as id, groups, typeId, data
-        status = cobj->streamTo(out);
+        status = cobj->streamTo(out); // traced READ_OBJECT here
         if (status != CboxError::OK) {
             out.writeError(status);
             out.invalidateCrc();
@@ -417,7 +418,6 @@ Box::listStoredObjects(DataIn& in, EncodedDataOut& out)
         out.write(asUint8(CboxError::CRC_ERROR_IN_COMMAND));
         return;
     }
-
     out.write(asUint8(CboxError::OK));
     auto listObjectStreamer = [&out](const storage_id_t& id, DataIn& objInStorage) -> CboxError {
         out.writeListSeparator();
@@ -443,6 +443,8 @@ Box::loadObjectsFromStorage()
     const auto objectLoader = [this, &deprecatedList](storage_id_t id, RegionDataIn& objInStorage) -> CboxError {
         obj_id_t objId = obj_id_t(id);
         CboxError status = CboxError::OK;
+
+        tracing::add(tracing::Action::LOAD_STORED_OBJECT, objId, obj_type_t(0));
 
         // use a CrcDataOut to a black hole to check the CRC
         BlackholeDataOut hole;
@@ -522,10 +524,8 @@ Box::factoryReset(DataIn& in, EncodedDataOut& out)
         out.write(asUint8(CboxError::CRC_ERROR_IN_COMMAND));
         return;
     }
-
-    storage.clear();
-
     out.write(asUint8(CboxError::OK));
+    storage.clear();
 
     ::handleReset(true, 3);
 }
@@ -621,6 +621,7 @@ Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
     uint8_t cmd_id = in.next(); // get command type code
 
     if (cmd_id < 100) {
+        tracing::add(tracing::Action(cmd_id)); // non-custom commands trace that they are invoked
         switch (cmd_id) {
         case NONE:
             connectionStarted(dataOut); // insert welcome message annotation

@@ -312,10 +312,10 @@ public:
  * A DataIn that provides no data.
  */
 class EmptyDataIn : public DataIn {
+public:
     EmptyDataIn() = default;
     virtual ~EmptyDataIn() = default;
 
-public:
     virtual bool hasNext() override { return false; }
     virtual uint8_t next() override { return 0; }
     virtual uint8_t peek() override { return 0; }

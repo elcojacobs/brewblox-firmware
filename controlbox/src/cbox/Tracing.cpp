@@ -27,16 +27,16 @@ namespace cbox {
 
 namespace tracing {
     namespace detail {
-        __attribute__((section(".retained_user"))) std::array<TraceEvent, 10> historyRetained = std::array<TraceEvent, 10>{TraceEvent{tracing::Action::NONE, 0, 0}};
+        __attribute__((section(".retained_user"))) std::array<TraceEvent, 10> historyRetained = std::array<TraceEvent, 10>{TraceEvent{uint8_t(tracing::Action::NONE), 0, 0}};
         __attribute__((section(".retained_user"))) uint8_t lastIdx = 0;
         bool writeEnabled = false;
     }
 
-    void add(Action a, obj_id_t i, obj_type_t t)
+    void add(uint8_t a, obj_id_t i, obj_type_t t)
     {
         using namespace detail;
         if (writeEnabled) {
-            if (historyRetained[lastIdx].action == Action::PERSIST_OBJECT && historyRetained[lastIdx].id == i) {
+            if (historyRetained[lastIdx].action == uint8_t(Action::PERSIST_OBJECT) && historyRetained[lastIdx].id == i) {
                 return; // persisting a block can take a retry if a new block needs to be allocated, don't log twice.
             }
             lastIdx = (lastIdx < 9) ? lastIdx + 1 : 0;

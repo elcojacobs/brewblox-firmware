@@ -22,6 +22,7 @@
 #include "CompositeDataStream.h"
 #include "DataStream.h"
 #include "DataStreamConverters.h"
+#include "Tracing.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -260,6 +261,7 @@ public:
 
     void process(std::function<void(DataIn& in, DataOut& out)> handler)
     {
+        tracing::add(tracing::Action::UPDATE_CONNECTIONS);
         updateConnections();
         for (auto& conn : connections) {
             DataIn& in = conn->getDataIn();
