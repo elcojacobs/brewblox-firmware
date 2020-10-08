@@ -84,6 +84,8 @@ SCENARIO("SysInfo Block")
             return decoded;
         };
 
+        testBox.update(0);
+
         WHEN("A READ_AND_SYS_CMD_TRACE_RESUME command is sent")
         {
             auto decoded = sendCmd(blox::SysInfo_SysInfoCommand_SYS_CMD_TRACE_READ_RESUME);
@@ -104,8 +106,8 @@ SCENARIO("SysInfo Block")
             {
                 CHECK(testBox.lastReplyHasStatusOk());
                 CHECK(decoded.ShortDebugString() == replyWithoutTrace +
-                                                        " trace { }"
-                                                        " trace { }"
+                                                        " trace { action: UPDATE_BLOCK id: 7 type: 314 }"
+                                                        " trace { action: UPDATE_BLOCK id: 19 type: 319 }"
                                                         " trace { action: UPDATE_BLOCK id: 1 type: 65534 }"
                                                         " trace { action: UPDATE_BLOCK id: 2 type: 256 }"
                                                         " trace { action: UPDATE_BLOCK id: 3 type: 257 }"

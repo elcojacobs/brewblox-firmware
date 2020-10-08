@@ -599,4 +599,20 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
             CHECK(int(res) == int(CboxError::INSUFFICIENT_PERSISTENT_STORAGE));
         }
     }
+
+    WHEN("An object indicates it does not need persistence")
+    {
+        MockStreamObject obj;
+        obj.streamPersistedToFunc = [](cbox::DataOut& out) {
+            return CboxError::PERSISTING_NOT_NEEDED;
+        };
+
+        THEN("The object does not end up in eeprom")
+        {
+            auto res = saveObjectToStorage(obj_id_t(1), obj);
+            CHECK(res == CboxError::OK);
+
+            CHECK(CboxError::PERSISTED_OBJECT_NOT_FOUND == retreiveObjectFromStorage(1, obj));
+        }
+    }
 }

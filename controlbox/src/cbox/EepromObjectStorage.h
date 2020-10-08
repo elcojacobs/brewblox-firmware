@@ -72,6 +72,11 @@ public:
         CboxError res = handler(counter);
         uint16_t dataSize = counter.count() + 1;
 
+        if (res == CboxError::PERSISTING_NOT_NEEDED) {
+            // exit for objects that don't need to exist in EEPROM. Not even their id/groups/existence
+            return CboxError::OK;
+        }
+
         if (res != CboxError::OK) {
             return res;
         };
