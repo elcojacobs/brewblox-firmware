@@ -20,12 +20,12 @@
 #include "SmallColorScheme.h"
 
 SmallColorScheme TOP_BAR_SCHEME = {
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in standard state
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in disabled state
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in focused state
-    D4D_COLOR_RGB(0, 0, 0),      ///< The object background color in captured state
-    D4D_COLOR_RGB(80, 128, 150), ///< The object fore color in standard state
-    D4D_COLOR_RGB(64, 64, 64),   ///< The object fore color in disabled state
-    D4D_COLOR_RGB(64, 100, 200), ///< The object fore color in focused state
-    D4D_COLOR_RGB(64, 100, 255), ///< The object fore color in captured state
+    D4D_COLOR_RGB(0, 0, 0),       ///< The object background color in standard state
+    D4D_COLOR_RGB(0, 0, 0),       ///< The object background color in disabled state
+    D4D_COLOR_RGB(0, 0, 0),       ///< The object background color in focused state
+    D4D_COLOR_RGB(0, 0, 0),       ///< The object background color in captured state
+    D4D_COLOR_RGB(122, 164, 184), ///< The object fore color in standard state
+    D4D_COLOR_RGB(80, 80, 80),    ///< The object fore color in disabled state
+    D4D_COLOR_RGB(64, 100, 200),  ///< The object fore color in focused state
+    D4D_COLOR_RGB(64, 100, 255),  ///< The object fore color in captured state
 };
