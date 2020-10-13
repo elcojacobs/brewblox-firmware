@@ -9,3 +9,6 @@
 [submodule "app/brewblox/proto"]
 	path = app/brewblox/proto
 	url = https://github.com/BrewBlox/brewblox-proto.git
+[submodule "platform/nanopb"]
+	path = platform/nanopb
+	url = https://github.com/nanopb/nanopb.git

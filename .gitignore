@@ -10,3 +10,4 @@ build/coverage
 *.pyc
 callgraph.dot*
 build/coverage.xml
+app/brewblox-esp/build/
