@@ -935,6 +935,33 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
     }
 }
 
+// small helper class to compare 2 duty values
+class Duties {
+public:
+    double first;
+    double second;
+    double margin;
+
+    Duties(double f, double s, double m = 0.5)
+        : first(f)
+        , second(s)
+        , margin(m)
+    {
+    }
+
+    bool operator==(const Duties& rhs) const
+    {
+        return first == Approx(rhs.first).margin(rhs.margin) && first == Approx(rhs.first).margin(rhs.margin);
+    }
+};
+
+std::ostream&
+operator<<(std::ostream& os, Duties const& v)
+{
+    os << std::setprecision(4) << v.first << ", " << v.second;
+    return os;
+}
+
 SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 {
     auto now = ticks_millis_t(0);
@@ -967,57 +994,90 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         0,
         true));
 
-    auto checkDuties = [&](value_t duty1, value_t duty2, double expected1, double expected2) {
+    auto getDuties = [&](value_t duty1, value_t duty2, duration_millis_t randomDelay = 0) {
         auto timeHigh1 = duration_millis_t(0);
         auto timeHigh2 = duration_millis_t(0);
         auto timeIdle = duration_millis_t(0);
 
         auto nextUpdate1 = ticks_millis_t(now);
         auto nextUpdate2 = ticks_millis_t(now);
+        auto nextUpdate3 = ticks_millis_t(now);
+
+        // start unbalanced to try to trigger effects that throw off the balancing
+        auto start = now;
+        constrainedPwm1.setting(100);
+        constrainedPwm2.setting(0);
+        while (now - start <= 5 * period) {
+            if (now >= nextUpdate1) {
+                nextUpdate1 = pwm1.update(now);
+                constrainedPwm1.update();
+            }
+            if (now >= nextUpdate2) {
+                nextUpdate2 = pwm2.update(now);
+                constrainedPwm2.update();
+            }
+            if (now >= nextUpdate3 + 1000) {
+                nextUpdate3 = now;
+                balancer->update();
+            }
+            now += 100;
+        }
 
         constrainedPwm1.setting(duty1);
         constrainedPwm2.setting(duty2);
+        balancer->update();
+        pwm1.update(now);
+        pwm2.update(now);
 
-        auto start = now;
-        while (++now - start <= 100 * period) {
+        start = now;
+        while (now - start <= 50 * period) {
             if (now >= nextUpdate1) {
                 nextUpdate1 = pwm1.update(now);
+                constrainedPwm1.update();
                 REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
             if (now >= nextUpdate2) {
                 nextUpdate2 = pwm2.update(now);
+                constrainedPwm2.update();
                 REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
-            if (now % 1000 == 0) {
-                // keep setting the value to the constrained PWM, this is when the balancer gets its values. TODO: change that this is necessary ?
+            if (now >= nextUpdate3 + 1000) {
+                nextUpdate3 = now;
                 balancer->update();
-                constrainedPwm1.setting(duty1);
-                constrainedPwm2.setting(duty2);
+                // check that the reported value is close enough at all times
+                //CHECK(pwm1.value() == Approx(duty1).margin(1));
+                //CHECK(pwm2.value() == Approx(duty2).margin(1));
             }
-            if (mock1.state() == State::Active) {
-                timeHigh1++;
-            } else if (mock2.state() == State::Active) {
-                timeHigh2++;
-            } else {
-                timeIdle++;
+            duration_millis_t interval = randomDelay ? 1 + std::rand() % randomDelay : 1;
+            now += interval;
+            if (now > start + 10 * period) { // give some time to adjust first
+                if (mock1.state() == State::Active) {
+                    timeHigh1 += interval;
+                } else if (mock2.state() == State::Active) {
+                    timeHigh2 += interval;
+                } else {
+                    timeIdle += interval;
+                }
             }
         }
+
         auto timeTotal = timeHigh1 + timeHigh2 + timeIdle;
         // INFO(std::to_string(timeHigh1) + ", " + std::to_string(timeHigh2) + ", " + std::to_string(timeIdle));
         auto avgDuty1 = double(timeHigh1) * 100 / timeTotal;
         auto avgDuty2 = double(timeHigh2) * 100 / timeTotal;
-        CHECK(avgDuty1 == Approx(double(expected1)).margin(0.5));
-        CHECK(avgDuty2 == Approx(double(expected2)).margin(0.5));
-        bool duty2_correct = avgDuty1 == Approx(double(expected1)).margin(0.5);
-        bool duty1_correct = avgDuty2 == Approx(double(expected2)).margin(0.5);
-        return duty1_correct && duty2_correct; // also return result to find which call triggered the fail
+
+        return Duties(avgDuty1, avgDuty2); // also return result to find which call triggered the fail
     };
 
     WHEN("The sum of duty cycles is under 100, they can both reach their target by alternating")
     {
-        CHECK(checkDuties(40, 50, 40, 50));
-        CHECK(checkDuties(50, 50, 50, 50));
-        CHECK(checkDuties(30, 60, 30, 60));
+        CHECK(getDuties(40, 50) == Duties(40, 50));
+        CHECK(getDuties(50, 50) == Duties(50, 50));
+        CHECK(getDuties(30, 60) == Duties(30, 60));
+
+        CHECK(getDuties(40, 50, 100) == Duties(40, 50));
+        CHECK(getDuties(50, 50, 100) == Duties(50, 50));
+        CHECK(getDuties(30, 60, 100) == Duties(30, 60));
     }
 
     WHEN("A balancing constraint is added")
@@ -1027,19 +1087,36 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 
         THEN("Achieved duty cycle matches the setting if the total is under 100")
         {
-            CHECK(checkDuties(40, 50, 40, 50));
-            CHECK(checkDuties(50, 50, 50, 50));
-            CHECK(checkDuties(30, 60, 30, 60));
+            CHECK(getDuties(40, 50) == Duties(40, 50));
+            CHECK(getDuties(50, 50) == Duties(50, 50));
+            CHECK(getDuties(30, 60) == Duties(30, 60));
+
+            // with random internal up to 100ms
+            CHECK(getDuties(40, 50, 100) == Duties(40, 50, 1));
+            CHECK(getDuties(50, 50, 100) == Duties(50, 50, 1));
+            CHECK(getDuties(30, 60, 100) == Duties(30, 60, 1));
         }
 
         THEN("Achieved duty cycle is scaled proportionally if total is over 100")
         {
-            CHECK(checkDuties(100, 100, 50, 50));
-            CHECK(checkDuties(75, 50, 60, 40));
-            CHECK(checkDuties(80, 30, 80.0 / 1.1, 30.0 / 1.1));
-            CHECK(checkDuties(90, 20, 90.0 / 1.1, 20.0 / 1.1));
-            CHECK(checkDuties(95, 10, 95.0 / 1.05, 10.0 / 1.05));
-            CHECK(checkDuties(85, 25, 85.0 / 1.1, 25.0 / 1.1));
+            CHECK(getDuties(100, 100) == Duties(50, 50));
+            CHECK(pwm1.value() == Approx(50).margin(1));
+            CHECK(pwm2.value() == Approx(50).margin(1));
+            CHECK(getDuties(75, 50) == Duties(60, 40));
+            CHECK(getDuties(80, 30) == Duties(80.0 / 1.1, 30.0 / 1.1));
+            CHECK(getDuties(90, 20) == Duties(90.0 / 1.1, 20.0 / 1.1));
+            CHECK(getDuties(95, 10) == Duties(95.0 / 1.05, 10.0 / 1.05));
+            CHECK(getDuties(85, 25) == Duties(85.0 / 1.1, 25.0 / 1.1));
+
+            // with random internal up to 100ms
+            CHECK(getDuties(100, 100, 100) == Duties(50, 50, 1));
+            CHECK(pwm1.value() == Approx(50).margin(1));
+            CHECK(pwm2.value() == Approx(50).margin(1));
+            CHECK(getDuties(75, 50, 100) == Duties(60, 40, 1));
+            CHECK(getDuties(80, 30, 100) == Duties(80.0 / 1.1, 30.0 / 1.1, 1));
+            CHECK(getDuties(90, 20, 100) == Duties(90.0 / 1.1, 20.0 / 1.1, 1));
+            CHECK(getDuties(95, 10, 100) == Duties(95.0 / 1.05, 10.0 / 1.05, 1));
+            CHECK(getDuties(85, 25, 100) == Duties(85.0 / 1.1, 25.0 / 1.1, 1));
         }
 
         AND_WHEN("A PWM is set to invalid, its requested value is zero in the balancer")
