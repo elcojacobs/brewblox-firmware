@@ -1,4 +1,4 @@
-set(srcs "ethernet_example_main.cpp" "AppTicks.cpp")
+set(srcs "ethernet_example_main.cpp" "AppTicks.cpp" "BrewBlox.cpp")
 
 file(GLOB cbox_srcs ../../../controlbox/src/*.cpp)
 set(cbox_inc "../../../controlbox/src/")
@@ -6,8 +6,12 @@ set(cbox_inc "../../../controlbox/src/")
 file(GLOB esp_srcs ../../../platform/esp/*.cpp)
 set(esp_inc "../../../platform/esp/")
 
-idf_component_register(SRCS "${srcs}" "${cbox_srcs}" "${esp_srcs}"
-                       INCLUDE_DIRS "." "../../../lib/inc/" "../../brewblox/proto/cpp" "../../../platform/nanopb" "${cbox_inc}" "${esp_inc}"
+file(GLOB nanopb_srcs platform/spark/device-os/third_party/nanopb/nanopb/*.c)
+set(nanopb_inc "../../../platform/spark/device-os/third_party/nanopb/nanopb")
+
+
+idf_component_register(SRCS "${srcs}" "${cbox_srcs}" "${esp_srcs}" "${nanopb_srcs}"
+                       INCLUDE_DIRS "." "../../../lib/inc/" "../../brewblox/proto/cpp" "../../brewblox" "${nanopb_inc}" "${cbox_inc}" "${esp_inc}"
                        )
 
 component_compile_options(-std=c++14)
