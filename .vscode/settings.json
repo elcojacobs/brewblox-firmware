@@ -110,7 +110,6 @@
     "lib/test/build": true,
     "**/*.o.d": true
   },
-  "ccls.cache.hierarchicalPath": true,
   "ccls.codeLens.localVariables": true,
   "ccls.completion.detailedLabel": true,
   "ccls.completion.enableSnippetInsertion": true,
@@ -137,5 +136,11 @@
     {
       "pattern": "controlbox/build/cbox_test_runner"
     }
-  ]
+  ],
+  "cmake.sourceDirectory": "${workspaceFolder}/app/brewblox-esp",
+  "idf.espIdfPath": "/home/elco/repos/esp-idf",
+  "idf.toolsPath": "/home/elco/.espressif",
+  "idf.pythonBinPath": "/home/elco/.espressif/python_env/idf4.2_py2.7_env/bin/python",
+  "idf.customExtraPaths": "/home/elco/.espressif/python_env/idf4.2_py2.7_env/bin:/usr/bin:/home/elco/.espressif/tools/xtensa-esp32-elf/esp-2020r2-8.2.0/xtensa-esp32-elf/bin:/home/elco/.espressif/tools/xtensa-esp32s2-elf/esp-2020r2-8.2.0/xtensa-esp32s2-elf/bin:/home/elco/.espressif/tools/esp32ulp-elf/2.28.51-esp-20191205/esp32ulp-elf-binutils/bin:/home/elco/.espressif/tools/esp32s2ulp-elf/2.28.51-esp-20191205/esp32s2ulp-elf-binutils/bin:/home/elco/.espressif/tools/openocd-esp32/v0.10.0-esp32-20200420/openocd-esp32/bin",
+  "idf.customExtraVars": "{\"OPENOCD_SCRIPTS\":\"/home/elco/.espressif/tools/openocd-esp32/v0.10.0-esp32-20200420/openocd-esp32/share/openocd/scripts\"}"
 }
