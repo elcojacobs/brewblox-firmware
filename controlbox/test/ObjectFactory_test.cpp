@@ -31,7 +31,9 @@ SCENARIO("An object can be created by an ObjectFactory by resolving the type id"
     ObjectFactory factory = {
         {LongIntObject::staticTypeId(), std::make_shared<LongIntObject>},
         {LongIntVectorObject::staticTypeId(), std::make_shared<LongIntVectorObject>},
-    };
+        {
+            1234, []() { return std::shared_ptr<LongIntVectorObject>(); } // to test running out of memory
+        }};
 
     const obj_type_t longIntType = LongIntObject::staticTypeId();
     const obj_type_t longIntVectorType = LongIntVectorObject::staticTypeId();
@@ -58,6 +60,15 @@ SCENARIO("An object can be created by an ObjectFactory by resolving the type id"
         CboxError status;
         std::tie(status, obj) = factory.make(9999);
         CHECK(status == CboxError::OBJECT_NOT_CREATABLE);
+        CHECK(obj == nullptr);
+    }
+
+    WHEN("Object creation for a valid object type fails, error INSUFFICIENT_HEAP is returned")
+    {
+        std::shared_ptr<Object> obj;
+        CboxError status;
+        std::tie(status, obj) = factory.make(1234);
+        CHECK(status == CboxError::INSUFFICIENT_HEAP);
         CHECK(obj == nullptr);
     }
 }

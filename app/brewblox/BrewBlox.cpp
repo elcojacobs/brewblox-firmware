@@ -412,6 +412,7 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
         out.endMessage();
         ticks.delayMillis(10);
         if (status == CboxError::OK) {
+            cbox::tracing::add(AppTrace::FIRMWARE_UPDATE_STARTED);
             changeLedColor();
             brewbloxBox().disconnect();
             ticks.delayMillis(10);

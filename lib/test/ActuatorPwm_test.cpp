@@ -42,13 +42,12 @@
 #include <iomanip>
 #include <iostream>
 
-#define PRINT_TOGGLE_TIMES 0
+bool printToggleTimes = false;
+bool printSummary = false;
+auto output = &std::cout;
 
 using value_t = ActuatorAnalog::value_t;
 using State = ActuatorDigitalBase::State;
-
-const auto output = decltype(&std::cout)(nullptr);
-// auto output = &std::cout; // uncomment for stdout output
 
 double
 randomIntervalTest(
@@ -67,7 +66,7 @@ randomIntervalTest(
     ticks_millis_t totalLowTime = 0;
     ticks_millis_t nextUpdate = now;
     ticks_millis_t lastOneSecondUpdate = now;
-    if (output) {
+    if (printSummary) {
         *output << std::endl
                 << std::endl
                 << "*** Results running 100 periods and random 1-"
@@ -75,13 +74,13 @@ randomIntervalTest(
                 << " with duty cycle " << duty
                 << " and period " << pwm.period()
                 << " ***" << std::endl;
-
-#if PRINT_TOGGLE_TIMES
+    }
+    if (printToggleTimes) {
         *output << std::endl
                 << std::endl
-                << "l->h time        h->l time       high time       low time    value   period"
+                << "\t"
+                << " l->h time\t h->l time\t high time\t  low time\t  value\t    period"
                 << std::endl;
-#endif
     }
 
     for (int i = 0; i < numPeriods + 4; i++) {
@@ -100,15 +99,6 @@ randomIntervalTest(
         if (i >= 4) {
             totalHighTime += highTime;
         }
-#if PRINT_TOGGLE_TIMES
-        if (output) {
-            *output << std::setw(10) << lowToHighTime
-                    << "\t"
-                    << std::setw(10) << highToLowTime
-                    << "\t"
-                    << std::setw(10) << highTime;
-        }
-#endif
         do {
             now += 1 + std::rand() % delayMax;
             if (now >= nextUpdate) {
@@ -124,19 +114,26 @@ randomIntervalTest(
         if (i >= 4) {
             totalLowTime += lowTime;
         }
-#if PRINT_TOGGLE_TIMES
-        if (output) {
+        if (printToggleTimes) {
+
             *output << "\t"
+                    << std::setw(10) << lowToHighTime
+                    << "\t"
+                    << std::setw(10) << highToLowTime
+                    << "\t"
+                    << std::setw(10) << highTime
+                    << "\t"
                     << std::setw(10) << lowTime
-                    << std::setw(10) << pwm.value()
+                    << "\t"
+                    << std::setprecision(5) << double(pwm.value())
+                    << "\t"
                     << std::setw(10) << lowTime + highTime
                     << std::endl;
         }
-#endif
     }
     double totalTime = totalHighTime + totalLowTime;
     double avgDuty = double(totalHighTime) / (totalHighTime + totalLowTime) * double(100);
-    if (output) {
+    if (printSummary) {
         *output << "total high time: " << totalHighTime << "\n"
                 << "total low time: " << totalLowTime << "\n"
                 << "avg duty: " << avgDuty << "/100\n"
@@ -214,7 +211,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         ticks_millis_t timeHigh = highToLowTime1 - lowToHighTime1;
         ticks_millis_t timeLow = lowToHighTime2 - highToLowTime1;
         double actualDuty = (timeHigh * 100.0) / (timeHigh + timeLow);
-        if (output) {
+        if (printToggleTimes) {
             *output << "*** Timestamps testing one period with duty cycle " << duty << " and period " << pwm.period() << "***\n";
             *output << "lowToHigh1: " << lowToHighTime1 << "\t"
                     << "highToLow1: " << highToLowTime1 << " \t lowToHigh2: " << lowToHighTime2 << "\n"
@@ -501,6 +498,68 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         CHECK(lowTime == pwm.period() * 0.6 * 1.5);
     }
 
+    WHEN("the PWM runs at 0% for an hour, then 100% for an hour, then 0% for an hour and then goes to 99%")
+    {
+        pwm.setting(0);
+        while (now < 1000 * 3600) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(100);
+        while (now < 2000 * 3600) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(0);
+        while (now < 3000 * 3600) {
+            now = pwm.update(now);
+        }
+
+        THEN("The reported achieved duty is 99% within 1 period")
+        {
+            pwm.setting(99);
+            auto start = now;
+            while (now < start + 10000) {
+                now = pwm.update(now);
+                if (pwm.value() == Approx(99).margin(1)) {
+                    break;
+                }
+            }
+            CHECK(now - start < pwm.period());
+        }
+    }
+
+    WHEN("the PWM runs at 100% for an hour, then 0% for an hour, then 100% for an hour and then goes to 1%")
+    {
+        pwm.setting(100);
+        while (now < 1000 * 3600) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(0);
+        while (now < 2000 * 3600) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(100);
+        while (now < 3000 * 3600) {
+            now = pwm.update(now);
+        }
+
+        THEN("The reported achieved duty is 1% within 1 period")
+        {
+            pwm.setting(1);
+            auto start = now;
+            while (now < start + 10000) {
+                now = pwm.update(now);
+                if (pwm.value() == Approx(1).margin(1)) {
+                    break;
+                }
+            }
+            CHECK(now - start < pwm.period());
+        }
+    }
+
     WHEN("the PWM actuator is set from 0 to 50, it goes high immediately")
     {
         pwm.setting(0);
@@ -522,28 +581,24 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         pwm.update(now + 1);
         CHECK(mock.state() == State::Inactive);
     }
-    WHEN("the PWM actuator is set to 40% at startup, the duty cycle it reports doesn't overshoot more than 10%")
+    WHEN("the PWM actuator is set to 40% at startup")
     {
-        // some overshoot is acceptable, because we only know of the high time after startup, so the history is a bit higher actually
         pwm.setting(40);
-        bool reached = false;
         auto previous = pwm.value();
-        while (now < 5 * pwm.period()) {
+        while (now < 10 * pwm.period()) {
             now = pwm.update(now);
-            if (pwm.value() >= 40.0) {
-                reached = true;
-            }
-            if (reached) {
-                CHECK(pwm.value() == Approx(40.0).epsilon(0.1));
+            auto current = pwm.value();
+            if (current < 35) {
+                REQUIRE(current >= previous); // strictly rising
             } else {
-                auto current = pwm.value();
-                CHECK(current >= previous); // strictly rising
-                previous = current;
+                REQUIRE(current < 45);
             }
+            previous = current;
         }
+        REQUIRE(previous == Approx(40.0).margin(0.1));
     }
 
-    WHEN("the PWM actuator is set to 40% after being 10%, the achieved value slowly transitions")
+    WHEN("the PWM actuator is set to 40% after being 10%")
     {
         pwm.setting(10.0);
         auto changeSettingAt = 5 * pwm.period();
@@ -552,88 +607,125 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         }
 
         pwm.setting(40.0);
-        while (now < 7 * pwm.period()) {
-            auto nextUpdate = pwm.update(now);
-            if (now <= changeSettingAt + 2 * pwm.period()) {
-                // approach is not completely linear, use 15 points margin
-                // main point is that it gradually increases
-                auto interpolated = 10.0 + (40.0 - 10.0) / (2 * pwm.period()) * (now - changeSettingAt);
-                CHECK(pwm.value() == Approx(interpolated).margin(15));
-                CHECK(pwm.value() <= 40.0);
-            } else {
-                CHECK(pwm.value() == Approx(40.0).margin(0.01));
+        auto previous = pwm.value();
+        while (now < 10 * pwm.period()) {
+            now = pwm.update(now);
+            auto current = pwm.value();
+            if (current != Approx(40.0).margin(0.1)) {
+                REQUIRE(current >= previous); // strictly rising
             }
-            now = nextUpdate;
+            previous = current;
         }
+        REQUIRE(previous == Approx(40.0).margin(0.1));
     }
 
-    WHEN("the PWM actuator is set to 100% after being 10%, the achieved value slowly transitions")
+    WHEN("the PWM actuator is set to 100% after being 10%")
     {
         pwm.setting(10.0);
         auto changeSettingAt = 5 * pwm.period();
-        while (now < changeSettingAt) {
+        while (now < changeSettingAt || mock.state() == State::Inactive) {
             now = pwm.update(now);
         }
 
         pwm.setting(100.0);
-        now = pwm.update(now);
-        now = pwm.update(now);
-        auto approxStart = 40.0; // 2 periods in the past at 10%, 1 period ahead at 100%
-        CHECK(pwm.value() == Approx(approxStart).margin(10));
+        auto previous = pwm.value();
         while (now < 10 * pwm.period()) {
-            auto nextUpdate = pwm.update(now);
-            if (now <= changeSettingAt + 2 * pwm.period()) {
-                // approach is not completely linear, use 20 points margin
-                // main point is that it gradually increases
-                auto interpolated = approxStart + (100.0 - approxStart) / (2 * pwm.period()) * (now - changeSettingAt);
-                CHECK(pwm.value() == Approx(interpolated).margin(20));
-
-            } else {
-                CHECK(pwm.value() == Approx(100.0).margin(1));
+            now = pwm.update(now);
+            auto current = pwm.value();
+            if (current != 100) {
+                CHECK(current >= previous); // strictly rising
             }
-            now = nextUpdate;
+            previous = current;
         }
+        REQUIRE(previous == 100);
     }
 
-    WHEN("the PWM actuator is set to 0% after being 100%, the achieved value slowly transitions")
+    WHEN("the PWM actuator is set to 90% after being 10%")
     {
-        pwm.setting(100);
+        pwm.setting(10.0);
         auto changeSettingAt = 5 * pwm.period();
+        while (now < changeSettingAt || mock.state() == State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(90.0);
+        auto previous = pwm.value();
+        while (now < 20 * pwm.period()) {
+            now = pwm.update(now);
+            auto current = pwm.value();
+            if (current < 85) {
+                CHECK(current >= previous); // strictly rising until close
+            }
+            previous = current;
+        }
+        REQUIRE(previous == Approx(90).margin(0.1));
+    }
+
+    WHEN("the PWM actuator is set to 0% after being 100%")
+    {
+        // run at 50% for a while first to have some cycle history, end on a high output
+        pwm.setting(50.0);
+        auto changeSettingAt = 5 * pwm.period();
+        while (now < changeSettingAt || mock.state() != State::Active) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(100);
+        changeSettingAt = 10 * pwm.period();
         while (now < changeSettingAt) {
             now = pwm.update(now);
         }
 
         pwm.setting(0.0);
-        now = pwm.update(now);
-        now = pwm.update(now);   // 2 updates needed to update achieved value with lookahead
-        auto approxStart = 66.6; // 2 periods in the past at 100%, 1 period ahead at 0%
-        CHECK(pwm.value() == Approx(approxStart).epsilon(0.1));
-        while (now < 10 * pwm.period()) {
-            auto nextUpdate = pwm.update(now);
-            if (now <= changeSettingAt + 2 * pwm.period()) {
-
-                // approach is not completely linear, use 20% margin
-                // main point is that it gradually increases
-                auto interpolated = approxStart - approxStart / (2 * pwm.period()) * (now - changeSettingAt);
-
-                if (interpolated > 5.0) {
-                    CHECK(pwm.value() == Approx(interpolated).epsilon(0.2));
-                }
-            } else {
-                CHECK(pwm.value() == Approx(0).margin(0.01));
+        auto changedSettingAt = now;
+        THEN("The pin goes low immediately")
+        {
+            while (mock.state() != State::Inactive) {
+                now = pwm.update(now);
             }
-            now = nextUpdate;
+            CHECK(now - changedSettingAt <= 1);
+
+            AND_THEN("It starts at a value of 50% (due to lookahead)")
+            {
+                now = pwm.update(now);
+                CHECK(pwm.value() == Approx(50).margin(0.01));
+            }
+
+            AND_THEN("It reports a value of 0% in under 2 periods and only decreases")
+            {
+                auto previous = pwm.value();
+                while (pwm.value() > 0 && now - changeSettingAt < 100000) {
+                    now = pwm.update(now);
+                    auto value = pwm.value();
+                    CHECK(value <= previous);
+                    previous = value;
+                }
+                CHECK(now - changedSettingAt < 2 * pwm.period());
+            }
         }
     }
 
-    WHEN("the PWM actuator is set to 50% after being 100%, with a period of 4s")
+    WHEN("the PWM actuator is set to 50% after being 0% and 100% for a while")
     {
-        pwm.setting(100.0);
-        pwm.period(4000);
-        auto changeSettingAt = 10 * pwm.period() + 1000;
+        // run at 50% for a while first to have some cycle history, end on a high output
+        pwm.setting(50.0);
+        auto changeSettingAt = 5 * pwm.period();
+        while (now < changeSettingAt || mock.state() != State::Active) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(0);
+        changeSettingAt = 10 * pwm.period();
         while (now < changeSettingAt) {
             now = pwm.update(now);
         }
+
+        pwm.setting(100);
+        changeSettingAt = 15 * pwm.period();
+        while (now < changeSettingAt) {
+            now = pwm.update(now);
+        }
+
         auto changedSettingAt = now;
         pwm.setting(50.0);
         THEN("The pin goes low immediately")
@@ -643,22 +735,36 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
             }
             CHECK(now - changedSettingAt <= 1);
 
-            AND_THEN("The pin goes high again after 2000ms")
+            AND_THEN("The first low times are longer, to compensate for the long high time")
             {
-                auto lowAt = now;
-                while (mock.state() == State::Inactive) {
-                    now = pwm.update(now);
+                std::vector<ticks_millis_t> stateDurations;
+                auto previousState = mock.state();
+                while (stateDurations.size() < 10) {
+                    auto stateStart = now;
+                    while (mock.state() == previousState) {
+                        now = pwm.update(now);
+                    }
+                    stateDurations.push_back(now - stateStart);
+                    previousState = mock.state();
                 }
-                CHECK(now - lowAt == 2000);
+                // first cycles have longer low times
+                std::vector<ticks_millis_t> expected = {3132, 2000, 2868, 2000, 1500, 2000, 2000, 2000, 2000, 2000};
+                CHECK(stateDurations == expected);
             }
         }
     }
 
     WHEN("the PWM actuator is set to 100% after being 0%, with a period of 4s")
     {
-        pwm.setting(0.0);
-        pwm.period(4000);
-        auto changeSettingAt = 10 * pwm.period() + 1000;
+        // run at 50% for a while first to have some cycle history, end on a low output
+        pwm.setting(50.0);
+        auto changeSettingAt = 5 * pwm.period();
+        while (now < changeSettingAt | mock.state() != State::Inactive) {
+            now = pwm.update(now);
+        }
+
+        pwm.setting(0);
+        changeSettingAt = 10 * pwm.period();
         while (now < changeSettingAt) {
             now = pwm.update(now);
         }
@@ -671,16 +777,22 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
             }
             CHECK(now - changedSettingAt <= 1);
 
-            AND_THEN("It reports a value of 100 in under 2.5 periods")
+            AND_THEN("It starts at a value of 50% (due to lookahead)")
             {
-                while (pwm.value() < 100) {
+                now = pwm.update(now);
+                CHECK(pwm.value() == Approx(50).margin(0.01));
+            }
+
+            AND_THEN("It reports a value of 100 in under 2 periods and only increases")
+            {
+                auto previous = pwm.value();
+                while (pwm.value() < 100 && now - changeSettingAt < 100000) {
                     now = pwm.update(now);
-                    CAPTURE(pwm.value());
-                    REQUIRE(now - changeSettingAt < 100000); // timeout
+                    auto value = pwm.value();
+                    CHECK(value >= previous);
+                    previous = value;
                 }
-                {
-                    CHECK(now - changedSettingAt < 10000);
-                }
+                CHECK(now - changedSettingAt < 2 * pwm.period());
             }
         }
     }
@@ -699,7 +811,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
 
         // we don't use 2% and 98% here, because with the maximum history taken into account it is not achievable under the constraints
         CHECK(randomIntervalTest(10, pwm, mock, 4.0, 5000, now) == Approx(4.0).margin(0.5));
-        CHECK(randomIntervalTest(10, pwm, mock, 96.0, 5000, now) == Approx(96.0).margin(0.5));
+        CHECK(randomIntervalTest(10, pwm, mock, 92.0, 5000, now) == Approx(92.0).margin(0.5));
     }
 
     WHEN("The actuator has been set to 30% duty and switches to 20% with minimum ON time at 40% duty")
@@ -793,7 +905,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
                 if (now >= nextUpdate) {
                     nextUpdate = pwm.update(now);
                     if (now > 60000) {
-                        CHECK(pwm.value() == Approx(10).margin(2));
+                        REQUIRE(pwm.value() == Approx(10).margin(2));
                     }
                 }
             }
@@ -821,6 +933,33 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
 
         CHECK(pwm.valueValid() == false);
     }
+}
+
+// small helper class to compare 2 duty values
+class Duties {
+public:
+    double first;
+    double second;
+    double margin;
+
+    Duties(double f, double s, double m = 0.5)
+        : first(f)
+        , second(s)
+        , margin(m)
+    {
+    }
+
+    bool operator==(const Duties& rhs) const
+    {
+        return first == Approx(rhs.first).margin(rhs.margin) && first == Approx(rhs.first).margin(rhs.margin);
+    }
+};
+
+std::ostream&
+operator<<(std::ostream& os, Duties const& v)
+{
+    os << std::setprecision(4) << v.first << ", " << v.second;
+    return os;
 }
 
 SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
@@ -855,57 +994,90 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         0,
         true));
 
-    auto checkDuties = [&](value_t duty1, value_t duty2, double expected1, double expected2) {
+    auto getDuties = [&](value_t duty1, value_t duty2, duration_millis_t randomDelay = 0) {
         auto timeHigh1 = duration_millis_t(0);
         auto timeHigh2 = duration_millis_t(0);
         auto timeIdle = duration_millis_t(0);
 
         auto nextUpdate1 = ticks_millis_t(now);
         auto nextUpdate2 = ticks_millis_t(now);
+        auto nextUpdate3 = ticks_millis_t(now);
+
+        // start unbalanced to try to trigger effects that throw off the balancing
+        auto start = now;
+        constrainedPwm1.setting(100);
+        constrainedPwm2.setting(0);
+        while (now - start <= 5 * period) {
+            if (now >= nextUpdate1) {
+                nextUpdate1 = pwm1.update(now);
+                constrainedPwm1.update();
+            }
+            if (now >= nextUpdate2) {
+                nextUpdate2 = pwm2.update(now);
+                constrainedPwm2.update();
+            }
+            if (now >= nextUpdate3 + 1000) {
+                nextUpdate3 = now;
+                balancer->update();
+            }
+            now += 100;
+        }
 
         constrainedPwm1.setting(duty1);
         constrainedPwm2.setting(duty2);
+        balancer->update();
+        pwm1.update(now);
+        pwm2.update(now);
 
-        auto start = now;
-        while (++now - start <= 100 * period) {
+        start = now;
+        while (now - start <= 50 * period) {
             if (now >= nextUpdate1) {
                 nextUpdate1 = pwm1.update(now);
+                constrainedPwm1.update();
                 REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
             if (now >= nextUpdate2) {
                 nextUpdate2 = pwm2.update(now);
+                constrainedPwm2.update();
                 REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
-            if (now % 1000 == 0) {
-                // keep setting the value to the constrained PWM, this is when the balancer gets its values. TODO: change that this is necessary ?
+            if (now >= nextUpdate3 + 1000) {
+                nextUpdate3 = now;
                 balancer->update();
-                constrainedPwm1.setting(duty1);
-                constrainedPwm2.setting(duty2);
+                // check that the reported value is close enough at all times
+                //CHECK(pwm1.value() == Approx(duty1).margin(1));
+                //CHECK(pwm2.value() == Approx(duty2).margin(1));
             }
-            if (mock1.state() == State::Active) {
-                timeHigh1++;
-            } else if (mock2.state() == State::Active) {
-                timeHigh2++;
-            } else {
-                timeIdle++;
+            duration_millis_t interval = randomDelay ? 1 + std::rand() % randomDelay : 1;
+            now += interval;
+            if (now > start + 10 * period) { // give some time to adjust first
+                if (mock1.state() == State::Active) {
+                    timeHigh1 += interval;
+                } else if (mock2.state() == State::Active) {
+                    timeHigh2 += interval;
+                } else {
+                    timeIdle += interval;
+                }
             }
         }
+
         auto timeTotal = timeHigh1 + timeHigh2 + timeIdle;
         // INFO(std::to_string(timeHigh1) + ", " + std::to_string(timeHigh2) + ", " + std::to_string(timeIdle));
         auto avgDuty1 = double(timeHigh1) * 100 / timeTotal;
         auto avgDuty2 = double(timeHigh2) * 100 / timeTotal;
-        CHECK(avgDuty1 == Approx(double(expected1)).margin(0.5));
-        CHECK(avgDuty2 == Approx(double(expected2)).margin(0.5));
-        bool duty2_correct = avgDuty1 == Approx(double(expected1)).margin(0.5);
-        bool duty1_correct = avgDuty2 == Approx(double(expected2)).margin(0.5);
-        return duty1_correct && duty2_correct; // also return result to find which call triggered the fail
+
+        return Duties(avgDuty1, avgDuty2); // also return result to find which call triggered the fail
     };
 
     WHEN("The sum of duty cycles is under 100, they can both reach their target by alternating")
     {
-        CHECK(checkDuties(40, 50, 40, 50));
-        CHECK(checkDuties(50, 50, 50, 50));
-        CHECK(checkDuties(30, 60, 30, 60));
+        CHECK(getDuties(40, 50) == Duties(40, 50));
+        CHECK(getDuties(50, 50) == Duties(50, 50));
+        CHECK(getDuties(30, 60) == Duties(30, 60));
+
+        CHECK(getDuties(40, 50, 100) == Duties(40, 50));
+        CHECK(getDuties(50, 50, 100) == Duties(50, 50));
+        CHECK(getDuties(30, 60, 100) == Duties(30, 60));
     }
 
     WHEN("A balancing constraint is added")
@@ -915,19 +1087,36 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
 
         THEN("Achieved duty cycle matches the setting if the total is under 100")
         {
-            CHECK(checkDuties(40, 50, 40, 50));
-            CHECK(checkDuties(50, 50, 50, 50));
-            CHECK(checkDuties(30, 60, 30, 60));
+            CHECK(getDuties(40, 50) == Duties(40, 50));
+            CHECK(getDuties(50, 50) == Duties(50, 50));
+            CHECK(getDuties(30, 60) == Duties(30, 60));
+
+            // with random internal up to 100ms
+            CHECK(getDuties(40, 50, 100) == Duties(40, 50, 1));
+            CHECK(getDuties(50, 50, 100) == Duties(50, 50, 1));
+            CHECK(getDuties(30, 60, 100) == Duties(30, 60, 1));
         }
 
         THEN("Achieved duty cycle is scaled proportionally if total is over 100")
         {
-            CHECK(checkDuties(100, 100, 50, 50));
-            CHECK(checkDuties(75, 50, 60, 40));
-            CHECK(checkDuties(80, 30, 80.0 / 1.1, 30.0 / 1.1));
-            CHECK(checkDuties(90, 20, 90.0 / 1.1, 20.0 / 1.1));
-            CHECK(checkDuties(95, 10, 95.0 / 1.05, 10.0 / 1.05));
-            CHECK(checkDuties(85, 25, 85.0 / 1.1, 25.0 / 1.1));
+            CHECK(getDuties(100, 100) == Duties(50, 50));
+            CHECK(pwm1.value() == Approx(50).margin(1));
+            CHECK(pwm2.value() == Approx(50).margin(1));
+            CHECK(getDuties(75, 50) == Duties(60, 40));
+            CHECK(getDuties(80, 30) == Duties(80.0 / 1.1, 30.0 / 1.1));
+            CHECK(getDuties(90, 20) == Duties(90.0 / 1.1, 20.0 / 1.1));
+            CHECK(getDuties(95, 10) == Duties(95.0 / 1.05, 10.0 / 1.05));
+            CHECK(getDuties(85, 25) == Duties(85.0 / 1.1, 25.0 / 1.1));
+
+            // with random internal up to 100ms
+            CHECK(getDuties(100, 100, 100) == Duties(50, 50, 1));
+            CHECK(pwm1.value() == Approx(50).margin(1));
+            CHECK(pwm2.value() == Approx(50).margin(1));
+            CHECK(getDuties(75, 50, 100) == Duties(60, 40, 1));
+            CHECK(getDuties(80, 30, 100) == Duties(80.0 / 1.1, 30.0 / 1.1, 1));
+            CHECK(getDuties(90, 20, 100) == Duties(90.0 / 1.1, 20.0 / 1.1, 1));
+            CHECK(getDuties(95, 10, 100) == Duties(95.0 / 1.05, 10.0 / 1.05, 1));
+            CHECK(getDuties(85, 25, 100) == Duties(85.0 / 1.1, 25.0 / 1.1, 1));
         }
 
         AND_WHEN("A PWM is set to invalid, its requested value is zero in the balancer")
@@ -1079,7 +1268,7 @@ SCENARIO("A PWM actuator driving a target with delayed ON and OFF time", "[pwm]"
         0,
         true));
 
-    WHEN("A PWM actuator is held back by constraints that delay toggling ON and off, the period doesn't stretched more 3x this delay")
+    WHEN("A PWM actuator is held back by constraints that delay toggling ON and off, the period doesn't stretch more than 3x this delay")
     {
         // explanation:
         // Delayed OFF streteched the high period by 1000
@@ -1106,7 +1295,7 @@ SCENARIO("A PWM actuator driving a target with delayed ON and OFF time", "[pwm]"
         while (now <= end) {
             now = pwm1.update(now);
             auto durations = constrainedMock1->activeDurations(now);
-            CHECK(durations.previousPeriod <= period + 3000);
+            REQUIRE(durations.previousPeriod <= period + 3000);
         }
     }
 }

@@ -99,6 +99,7 @@ public:
     void update(const update_t& now)
     {
         lastUpdateTime = now;
+        tracing::add(cbox::tracing::Action::UPDATE_OBJECTS);
         objects.update(now);
     }
 

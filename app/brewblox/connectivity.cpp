@@ -21,6 +21,7 @@
 #include "Board.h"
 #include "BrewBlox.h"
 #include "MDNS.h"
+#include "cbox/Tracing.h"
 #include "deviceid_hal.h"
 #include "reset.h"
 #include "spark_wiring_tcpclient.h"
@@ -133,22 +134,27 @@ manageConnections(uint32_t now)
 {
     static uint32_t lastConnect = 0;
     static uint32_t lastAnnounce = 0;
+    cbox::tracing::add(AppTrace::MANAGE_CONNECTIVITY);
     if (spark::WiFi.ready()) {
         if ((!mdns_started) || ((now - lastAnnounce) > 300000)) {
+            cbox::tracing::add(AppTrace::MDNS_START);
             // explicit announce every 5 minutes
             mdns_started = theMdns().begin(true);
             lastAnnounce = now;
         }
         if (!http_started) {
+            cbox::tracing::add(AppTrace::HTTP_START);
             http_started = httpserver.begin();
         }
 
         if (mdns_started) {
+            cbox::tracing::add(AppTrace::MDNS_PROCESS);
             theMdns().processQueries();
         }
         if (http_started) {
             TCPClient client = httpserver.available();
             if (client) {
+                cbox::tracing::add(AppTrace::HTTP_RESPONSE);
                 client.setTimeout(100);
                 while (client.read() != -1) {
                 }
@@ -176,6 +182,7 @@ manageConnections(uint32_t now)
             return;
         }
     } else {
+        cbox::tracing::add(AppTrace::HTTP_STOP);
         httpserver.stop();
         // mdns.stop();
         mdns_started = false;
@@ -184,6 +191,7 @@ manageConnections(uint32_t now)
     if (now - lastConnect > 60000) {
         // after 60 seconds without WiFi, trigger reconnect
         // wifi is expected to reconnect automatically. This is a failsafe in case it does not
+        cbox::tracing::add(AppTrace::WIFI_CONNECT);
         if (!spark::WiFi.connecting()) {
             spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
         }

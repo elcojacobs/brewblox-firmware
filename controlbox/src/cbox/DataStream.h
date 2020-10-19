@@ -1,7 +1,8 @@
 /*
- * Copyright 2014-2015 Matthew McGowan.
+ * Copyright 2014-2020 BrewPi B.V. / Elco Jacobs
+ * based on earlier work of Matthew McGowan.
  *
- * This file is part of Nice Firmware.
+ * This file is part of BrewBlox.
  *
  * Controlbox is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -311,10 +312,10 @@ public:
  * A DataIn that provides no data.
  */
 class EmptyDataIn : public DataIn {
+public:
     EmptyDataIn() = default;
     virtual ~EmptyDataIn() = default;
 
-public:
     virtual bool hasNext() override { return false; }
     virtual uint8_t next() override { return 0; }
     virtual uint8_t peek() override { return 0; }

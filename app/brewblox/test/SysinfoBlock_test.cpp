@@ -84,6 +84,8 @@ SCENARIO("SysInfo Block")
             return decoded;
         };
 
+        testBox.update(0);
+
         WHEN("A READ_AND_SYS_CMD_TRACE_RESUME command is sent")
         {
             auto decoded = sendCmd(blox::SysInfo_SysInfoCommand_SYS_CMD_TRACE_READ_RESUME);
@@ -106,14 +108,14 @@ SCENARIO("SysInfo Block")
                 CHECK(decoded.ShortDebugString() == replyWithoutTrace +
                                                         " trace { }"
                                                         " trace { }"
-                                                        " trace { action: UPDATE_BLOCK id: 1 type: 65534 }"
-                                                        " trace { action: UPDATE_BLOCK id: 2 type: 256 }"
-                                                        " trace { action: UPDATE_BLOCK id: 3 type: 257 }"
-                                                        " trace { action: UPDATE_BLOCK id: 4 type: 258 }"
-                                                        " trace { action: UPDATE_BLOCK id: 7 type: 314 }"
-                                                        " trace { action: UPDATE_BLOCK id: 19 type: 319 }"
-                                                        " trace { action: WRITE_BLOCK id: 2 type: 256 }"
-                                                        " trace { action: PERSIST_BLOCK id: 2 type: 256 }");
+                                                        " trace { action: UPDATE_OBJECTS }"
+                                                        " trace { action: UPDATE_CONNECTIONS }"
+                                                        " trace { action: CLEAR_OBJECTS }"
+                                                        " trace { action: UPDATE_OBJECTS }"
+                                                        " trace { action: UPDATE_CONNECTIONS }"
+                                                        " trace { action: WRITE_OBJECT }"
+                                                        " trace { action: STREAM_FROM_OBJECT id: 2 type: 256 }"
+                                                        " trace { action: PERSIST_OBJECT id: 2 type: 256 }");
             }
 
             AND_WHEN("A SYS_CMD_TRACE_RESUME command is sent")
@@ -130,16 +132,16 @@ SCENARIO("SysInfo Block")
 
                     CHECK(testBox.lastReplyHasStatusOk());
                     CHECK(decoded.ShortDebugString() == replyWithoutTrace +
-                                                            " trace { action: WRITE_BLOCK id: 2 type: 256 }"
-                                                            " trace { action: PERSIST_BLOCK id: 2 type: 256 }"
-                                                            " trace { action: UPDATE_BLOCK id: 1 type: 65534 }"
-                                                            " trace { action: UPDATE_BLOCK id: 2 type: 256 }"
-                                                            " trace { action: UPDATE_BLOCK id: 3 type: 257 }"
-                                                            " trace { action: UPDATE_BLOCK id: 4 type: 258 }"
-                                                            " trace { action: UPDATE_BLOCK id: 7 type: 314 }"
-                                                            " trace { action: UPDATE_BLOCK id: 19 type: 319 }"
-                                                            " trace { action: WRITE_BLOCK id: 2 type: 256 }"
-                                                            " trace { action: PERSIST_BLOCK id: 2 type: 256 }");
+                                                            " trace { action: WRITE_OBJECT }"
+                                                            " trace { action: STREAM_FROM_OBJECT id: 2 type: 256 }"
+                                                            " trace { action: PERSIST_OBJECT id: 2 type: 256 }"
+                                                            " trace { action: UPDATE_CONNECTIONS }"
+                                                            " trace { action: CLEAR_OBJECTS }"
+                                                            " trace { action: UPDATE_OBJECTS }"
+                                                            " trace { action: UPDATE_CONNECTIONS }"
+                                                            " trace { action: WRITE_OBJECT }"
+                                                            " trace { action: STREAM_FROM_OBJECT id: 2 type: 256 }"
+                                                            " trace { action: PERSIST_OBJECT id: 2 type: 256 }");
                 }
             }
         }

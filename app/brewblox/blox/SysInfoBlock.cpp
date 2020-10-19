@@ -42,7 +42,6 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
     message.platform = blox_SysInfo_Platform(PLATFORM_ID);
 
     if (command == Command::SYS_CMD_TRACE_READ || command == Command::READ_AND_SYS_CMD_TRACE_RESUME) {
-        // circular buffer, idx - 1 has most recent action
         auto history = cbox::tracing::history();
         auto it = history.cbegin();
         auto end = history.cend();
@@ -76,5 +75,5 @@ SysInfoBlock::streamFrom(cbox::DataIn& in)
 cbox::CboxError
 SysInfoBlock::streamPersistedTo(cbox::DataOut&) const
 {
-    return cbox::CboxError::OK;
+    return cbox::CboxError::PERSISTING_NOT_NEEDED;
 }

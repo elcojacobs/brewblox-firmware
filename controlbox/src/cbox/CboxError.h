@@ -44,6 +44,7 @@ enum class CboxError : uint8_t {
     PERSISTED_BLOCK_STREAM_ERROR = 20,
     PERSISTED_STORAGE_WRITE_ERROR = 21,
     CRC_ERROR_IN_STORED_OBJECT = 22,
+    PERSISTING_NOT_NEEDED = 23,
 
     // invalid actions
     OBJECT_NOT_WRITABLE = 32,
@@ -58,6 +59,8 @@ enum class CboxError : uint8_t {
     INVALID_OBJECT_GROUPS = 66,
     CRC_ERROR_IN_COMMAND = 67,
     OBJECT_DATA_NOT_ACCEPTED = 68,
+
+    INVALID_OBJECT_PTR = 69,
 
     // freak events that should not be possible
     PERSISTING_TO_INACTIVE_OBJECT = 200,

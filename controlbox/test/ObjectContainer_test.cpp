@@ -140,6 +140,37 @@ SCENARIO("A container to hold objects")
         CHECK(count == 6);
         CHECK(lastId == 24); // new randomly assigned ID is always highest ID in the system
     }
+
+    WHEN("Objects with an invalid object pointer are added")
+    {
+        container.add(std::unique_ptr<LongIntObject>(), 0xFF, 20);
+        BlackholeDataOut out;
+        EmptyDataIn in;
+        THEN("They generate the INVALID_OBJECT_PTR error on streaming functions")
+        {
+            auto cobj = container.fetchContained(20);
+            auto res = cobj->streamFrom(in);
+            CHECK(res == CboxError::INVALID_OBJECT_PTR);
+            res = cobj->streamTo(out);
+            CHECK(res == CboxError::INVALID_OBJECT_PTR);
+            res = cobj->streamPersistedTo(out);
+            CHECK(res == CboxError::INVALID_OBJECT_PTR);
+        }
+
+        THEN("The object is skipped in an update")
+        {
+            for (update_t now = 0; now < 5500; now += 100) {
+                container.update(now);
+            }
+            int updates = 0;
+            for (auto& item : cbox::tracing::history()) {
+                if (item.action == cbox::tracing::UPDATE_OBJECT && item.id == 20) {
+                    updates++;
+                }
+            }
+            CHECK(updates == 0);
+        }
+    }
 }
 
 SCENARIO("A container with system objects passed in the initializer list")
