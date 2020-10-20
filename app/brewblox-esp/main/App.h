@@ -17,27 +17,30 @@ limitations under the License.
 
 #pragma once
 
-#include "StreamingClient.h"
-#include "StreamingProtocol.h"
-#include "smooth/core/Application.h"
-#include "smooth/core/ipc/IEventListener.h"
-#include "smooth/core/ipc/TaskEventQueue.h"
-#include "smooth/core/network/Ethernet.h"
-#include "smooth/core/network/SecureSocket.h"
-#include "smooth/core/network/ServerSocket.h"
-#include "smooth/core/network/Socket.h"
+// #include "StreamingClient.h"
+// #include "StreamingProtocol.h"
+// #include "smooth/core/Application.h"
+// #include "smooth/core/ipc/IEventListener.h"
+// #include "smooth/core/ipc/TaskEventQueue.h"
+// #include "smooth/core/network/Ethernet.h"
+// #include "smooth/core/network/SecureSocket.h"
+// #include "smooth/core/network/ServerSocket.h"
+// #include "smooth/core/network/Socket.h"
 #include <functional>
 
-class App : public smooth::core::EarlyInit {
+class App {
+    // : public smooth::core::EarlyInit {
 public:
     App();
 
-    void init() override;
+    void
+    init();
+    void start() {}
 
 private:
-    std::shared_ptr<smooth::core::network::ServerSocket<StreamingClient,
-                                                        StreamingProtocol, void>>
-        server{};
+    // std::shared_ptr<smooth::core::network::ServerSocket<StreamingClient,
+    //                                                     StreamingProtocol, void>>
+    //     server{};
 
-    smooth::core::network::Ethernet ethernet;
+    // smooth::core::network::Ethernet ethernet;
 };

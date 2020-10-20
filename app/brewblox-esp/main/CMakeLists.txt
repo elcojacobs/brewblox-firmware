@@ -33,6 +33,6 @@ idf_component_register(
     ${nanopb_inc}
     ${cbox_inc}
     ${esp_inc}
-  REQUIRES
-    smooth_component
+  # REQUIRES
+  #   smooth_component
 )
