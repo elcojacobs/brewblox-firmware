@@ -1,6 +1,7 @@
 #pragma once
 
 #include <asio.hpp>
+#include <functional>
 using namespace std::placeholders;
 
 class session : public std::enable_shared_from_this<session> {

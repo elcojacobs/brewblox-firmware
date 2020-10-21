@@ -1,20 +1,3 @@
-/*
-Smooth - A C++ framework for embedded programming on top of Espressif's ESP-IDF
-Copyright 2019 Per Malmberg (https://gitbub.com/PerMalmberg)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 #include "Ethernet.h"
 #include <cstring>
 #pragma GCC diagnostic push
@@ -23,15 +6,8 @@ limitations under the License.
 #include <esp_eth.h>
 #include <esp_eth_netif_glue.h>
 #include <esp_event.h>
-#include <esp_log.h>
 #include <esp_netif.h>
 #pragma GCC diagnostic pop
-
-#ifdef ESP_PLATFORM
-#include "sdkconfig.h"
-static_assert(CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE >= 3072,
-              "Need enough stack to be able to log in the event loop callback.");
-#endif
 
 Ethernet::Ethernet(std::string&& name)
     : NetworkInterface(std::move(name))
@@ -54,65 +30,15 @@ Ethernet::Ethernet(std::string&& name)
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
-    phy_config.phy_addr = CONFIG_SMOOTH_ETH_PHY_ADDR;
-    phy_config.reset_gpio_num = CONFIG_SMOOTH_ETH_PHY_RST_GPIO;
-#if CONFIG_SMOOTH_USE_INTERNAL_ETHERNET
-    mac_config.smi_mdc_gpio_num = CONFIG_SMOOTH_ETH_MDC_GPIO;
-    mac_config.smi_mdio_gpio_num = CONFIG_SMOOTH_ETH_MDIO_GPIO;
+    phy_config.phy_addr = 0;
+    phy_config.reset_gpio_num = 5;
+    mac_config.smi_mdc_gpio_num = 23;
+    mac_config.smi_mdio_gpio_num = 18;
     mac = esp_eth_mac_new_esp32(&mac_config);
 #if CONFIG_SMOOTH_ETH_PHY_MOCK
     phy = esp_eth_phy_new_mock(&phy_config);
-#elif CONFIG_SMOOTH_ETH_PHY_IP101
-    phy = esp_eth_phy_new_ip101(&phy_config);
-#elif CONFIG_SMOOTH_ETH_PHY_RTL8201
-    phy = esp_eth_phy_new_rtl8201(&phy_config);
-#elif CONFIG_SMOOTH_ETH_PHY_LAN8720
-    phy = esp_eth_phy_new_lan8720(&phy_config);
-#elif CONFIG_SMOOTH_ETH_PHY_LAN8742
+#else
     phy = esp_eth_phy_new_lan8742(&phy_config);
-#elif CONFIG_SMOOTH_ETH_PHY_DP83848
-    phy = esp_eth_phy_new_dp83848(&phy_config);
-#elif CONFIG_SMOOTH_ETH_PHY_KSZ8041
-    phy = esp_eth_phy_new_ksz8041(&phy_config);
-#else
-#error CONFIG_SMOOTH_ETH_PHY_type not set
-#endif
-#elif CONFIG_SMOOTH_USE_DM9051
-    gpio_install_isr_service(0);
-    spi_device_handle_t spi_handle = NULL;
-    spi_bus_config_t buscfg = {
-        .miso_io_num = CONFIG_SMOOTH_DM9051_MISO_GPIO,
-        .mosi_io_num = CONFIG_SMOOTH_DM9051_MOSI_GPIO,
-        .sclk_io_num = CONFIG_SMOOTH_DM9051_SCLK_GPIO,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-    };
-    spi_bus_initialize(CONFIG_SMOOTH_DM9051_SPI_HOST, &buscfg, 1);
-
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    spi_device_interface_config_t = devcfg = {
-        .command_bits = 1,
-        .address_bits = 7,
-        .mode = 0,
-        .clock_speed_hz = CONFIG_SMOOTH_DM9051_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_SMOOTH_DM9051_CS_GPIO,
-        .queue_size = 20};
-    spi_bus_add_device(CONFIG_SMOOTH_DM9051_SPI_HOST, &devcfg, &spi_handle);
-
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    /* dm9051 ethernet driver is based on spi driver */
-    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
-    dm9051_config.int_gpio_num = CONFIG_SMOOTH_DM9051_INT_GPIO;
-    mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
-    phy = esp_eth_phy_new_dm9051(&phy_config);
-#else
-#error CONFIG_SMOOTH_USE_INTERNAL_ETHERNET or CONFIG_SMOOTH_USE_DM9051 should be set
 #endif
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_driver_install(&config, &eth_handle);
@@ -128,7 +54,7 @@ Ethernet::~Ethernet()
     }
 }
 
-void
+esp_err_t
 Ethernet::start()
 {
     apply_host_name();
@@ -138,13 +64,11 @@ Ethernet::start()
         /* start Ethernet driver state machine */
         err = esp_eth_start(eth_handle);
     }
-
-    if (err != ESP_OK) {
-        ESP_LOGE(interface_name.c_str(), "start, %s", esp_err_to_name(err));
-    }
+    return err;
 }
 
 bool
+
 Ethernet::is_connected() const
 {
     return connected;
@@ -179,10 +103,18 @@ Ethernet::eth_event_callback(void* event_handler_arg,
         if (event_id == IP_EVENT_STA_GOT_IP
             || event_id == IP_EVENT_GOT_IP6
             || event_id == IP_EVENT_ETH_GOT_IP) {
-            auto ip_changed = event_id == IP_EVENT_STA_GOT_IP ? reinterpret_cast<ip_event_got_ip_t*>(event_data)->ip_changed : true;
+            // auto ip_changed = event_id == IP_EVENT_STA_GOT_IP ? reinterpret_cast<ip_event_got_ip_t*>(event_data)->ip_changed : true;
             eth->ip.addr = reinterpret_cast<ip_event_got_ip_t*>(event_data)->ip_info.ip.addr;
         } else if (event_id == IP_EVENT_STA_LOST_IP) {
             eth->ip.addr = 0;
         }
     }
+}
+
+Ethernet&
+get_ethernet()
+{
+    static Ethernet* eth = new Ethernet();
+
+    return *eth;
 }

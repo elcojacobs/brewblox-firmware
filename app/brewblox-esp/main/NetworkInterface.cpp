@@ -7,22 +7,11 @@
 uint8_t NetworkInterface::interface_count = 0;
 
 NetworkInterface::NetworkInterface(std::string&& name)
-    : interface_name(name)
 {
-    if (interface_count == 0) {
-        esp_netif_init();
-    }
-
-    ++interface_count;
 }
 
 NetworkInterface::~NetworkInterface()
 {
-    --interface_count;
-
-    if (interface_count == 0) {
-        esp_netif_deinit();
-    }
 }
 
 void
@@ -50,33 +39,26 @@ NetworkInterface::get_local_ip() const
     return ip.addr;
 }
 
-bool
-NetworkInterface::get_local_mac_address(std::array<uint8_t, 6>& m) const
+esp_err_t
+NetworkInterface::get_mac_address(std::array<uint8_t, 6>& m) const
 {
+    esp_err_t err = ESP_FAIL;
     if (interface) {
-        esp_err_t err = esp_netif_get_mac(interface, m.data());
-
-        if (err != ESP_OK) {
-            ESP_LOGE(interface_name.c_str(), "get_local_mac_address(): %s", esp_err_to_name(err));
-
-            return false;
-        }
-
-        return true;
+        err = esp_netif_get_mac(interface, m.data());
     }
 
-    return false;
+    return err;
 }
 
 std::string
-NetworkInterface::get_mac_address() const
+NetworkInterface::get_mac_address_string() const
 {
     std::stringstream mac;
 
     std::array<uint8_t, 6> m;
-    bool ret = get_local_mac_address(m);
+    esp_err_t err = get_mac_address(m);
 
-    if (ret) {
+    if (err == ESP_OK) {
         for (const auto& v : m) {
             if (mac.tellp() > 0) {
                 mac << "_";

@@ -85,5 +85,4 @@ private:
     esp_event_handler_instance_t instance_ip_event{};
 };
 
-Wifi&
-get_wifi();
+Wifi& get_wifi();
