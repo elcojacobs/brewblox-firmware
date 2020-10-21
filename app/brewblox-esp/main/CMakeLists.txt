@@ -7,6 +7,9 @@ set(srcs
   App.cpp
   AppTicks.cpp
   BrewBlox.cpp
+  Ethernet.cpp
+  Wifi.cpp
+  NetworkInterface.cpp
  )
 
 file(GLOB cbox_srcs ../../../controlbox/src/*.cpp)
