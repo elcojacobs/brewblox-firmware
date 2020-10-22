@@ -4,9 +4,7 @@
 #include <esp_netif.h>
 #include <sstream>
 
-uint8_t NetworkInterface::interface_count = 0;
-
-NetworkInterface::NetworkInterface(std::string&& name)
+NetworkInterface::NetworkInterface()
 {
 }
 
@@ -14,8 +12,7 @@ NetworkInterface::~NetworkInterface()
 {
 }
 
-void
-NetworkInterface::set_host_name(const std::string& name)
+void NetworkInterface::set_host_name(const std::string& name)
 {
     // this only sets the host name string.
     // before network interface is started in subclass, it should call apply_host_name
@@ -23,8 +20,7 @@ NetworkInterface::set_host_name(const std::string& name)
     host_name[copied] = 0; // null terminate
 }
 
-void
-NetworkInterface::apply_host_name()
+void NetworkInterface::apply_host_name()
 {
     if (interface) {
         esp_netif_set_hostname(interface, host_name);
@@ -33,14 +29,12 @@ NetworkInterface::apply_host_name()
 
 // attention: access to this function might have a threading issue.
 // It should be called from the main thread only!
-uint32_t
-NetworkInterface::get_local_ip() const
+uint32_t NetworkInterface::get_local_ip() const
 {
     return ip.addr;
 }
 
-esp_err_t
-NetworkInterface::get_mac_address(std::array<uint8_t, 6>& m) const
+esp_err_t NetworkInterface::get_mac_address(std::array<uint8_t, 6>& m) const
 {
     esp_err_t err = ESP_FAIL;
     if (interface) {
@@ -50,8 +44,7 @@ NetworkInterface::get_mac_address(std::array<uint8_t, 6>& m) const
     return err;
 }
 
-std::string
-NetworkInterface::get_mac_address_string() const
+std::string NetworkInterface::get_mac_address_string() const
 {
     std::stringstream mac;
 

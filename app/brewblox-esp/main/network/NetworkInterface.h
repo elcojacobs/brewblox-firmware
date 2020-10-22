@@ -9,7 +9,7 @@
 
 class NetworkInterface {
 public:
-    NetworkInterface(std::string&& name);
+    NetworkInterface();
 
     NetworkInterface(const NetworkInterface&) = delete;
 
@@ -37,7 +37,6 @@ protected:
     esp_ip4_addr ip = {0};
     bool connected = false;
     esp_netif_t* interface{nullptr};
-    static uint8_t interface_count;
 
     // esp_netif_set_hostname only copies a const char* pointer, so we need to keep this allocated here
     // max 32 characters

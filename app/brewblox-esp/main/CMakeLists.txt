@@ -7,10 +7,9 @@ set(srcs
   App.cpp
   AppTicks.cpp
   BrewBlox.cpp
-  Ethernet.cpp
-  Wifi.cpp
-  NetworkInterface.cpp
  )
+
+file(GLOB network_srcs ./network/*.cpp)
 
 file(GLOB cbox_srcs ../../../controlbox/src/*.cpp)
 set(cbox_inc "../../../controlbox/src/")
@@ -28,6 +27,7 @@ idf_component_register(
     ${cbox_srcs}
     ${esp_srcs}
     ${nanopb_srcs}
+    ${network_srcs}
   INCLUDE_DIRS 
     .
     ../../../lib/inc/

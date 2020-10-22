@@ -12,7 +12,7 @@
 
 class Ethernet : public NetworkInterface {
 public:
-    Ethernet(std::string&& string = "Ethernet");
+    Ethernet();
 
     Ethernet(const Ethernet&) = delete;
 
@@ -25,8 +25,6 @@ public:
     ~Ethernet();
 
     esp_err_t start();
-
-    [[nodiscard]] bool is_connected() const;
 
     static void eth_event_callback(void* event_handler_arg,
                                    esp_event_base_t event_base,

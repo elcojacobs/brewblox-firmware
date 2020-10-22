@@ -27,7 +27,7 @@ limitations under the License.
 /// Wifi management class
 class Wifi : public NetworkInterface {
 public:
-    Wifi(std::string&& name = "WiFi");
+    Wifi();
 
     Wifi(const Wifi&) = delete;
 
@@ -50,10 +50,6 @@ public:
 
     /// Initiates the connection to the AP.
     void connect_to_ap();
-
-    /// Returns a value indicating of currently connected to the access point.
-    /// \return
-    [[nodiscard]] bool is_connected_to_ap() const;
 
     /// Returns a value indicating if the required settings are set.
     /// \return true or false.

@@ -9,8 +9,7 @@
 #include <esp_netif.h>
 #pragma GCC diagnostic pop
 
-Ethernet::Ethernet(std::string&& name)
-    : NetworkInterface(std::move(name))
+Ethernet::Ethernet()
 {
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
     interface = esp_netif_new(&cfg);
@@ -54,8 +53,7 @@ Ethernet::~Ethernet()
     }
 }
 
-esp_err_t
-Ethernet::start()
+esp_err_t Ethernet::start()
 {
     apply_host_name();
     auto err = esp_netif_attach(interface, esp_eth_new_netif_glue(eth_handle));
@@ -67,18 +65,10 @@ Ethernet::start()
     return err;
 }
 
-bool
-
-Ethernet::is_connected() const
-{
-    return connected;
-}
-
-void
-Ethernet::eth_event_callback(void* event_handler_arg,
-                             esp_event_base_t event_base,
-                             int32_t event_id,
-                             void* event_data)
+void Ethernet::eth_event_callback(void* event_handler_arg,
+                                  esp_event_base_t event_base,
+                                  int32_t event_id,
+                                  void* event_data)
 {
     // Note: be very careful with what you do in this method - it runs under the event task
     // (sys_evt) with a very small default stack.
@@ -100,21 +90,14 @@ Ethernet::eth_event_callback(void* event_handler_arg,
         } break;
         }
     } else if (event_base == IP_EVENT) {
-        if (event_id == IP_EVENT_STA_GOT_IP
-            || event_id == IP_EVENT_GOT_IP6
-            || event_id == IP_EVENT_ETH_GOT_IP) {
-            // auto ip_changed = event_id == IP_EVENT_STA_GOT_IP ? reinterpret_cast<ip_event_got_ip_t*>(event_data)->ip_changed : true;
+        if (event_id == IP_EVENT_ETH_GOT_IP) {
             eth->ip.addr = reinterpret_cast<ip_event_got_ip_t*>(event_data)->ip_info.ip.addr;
-        } else if (event_id == IP_EVENT_STA_LOST_IP) {
-            eth->ip.addr = 0;
         }
     }
 }
 
-Ethernet&
-get_ethernet()
+Ethernet& get_ethernet()
 {
     static Ethernet* eth = new Ethernet();
-
     return *eth;
 }

@@ -6,8 +6,4 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-# Include Smooth as a component
-set(EXTRA_COMPONENT_DIRS
-         ../../platform/esp/externals/smooth/smooth_component)
-
 project(brewblox_esp)

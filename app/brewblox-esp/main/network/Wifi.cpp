@@ -29,8 +29,7 @@ static_assert(CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE >= 3072,
               "Need enough stack to be able to log in the event loop callback.");
 #endif
 
-Wifi::Wifi(std::string&& name)
-    : NetworkInterface(std::move(name))
+Wifi::Wifi()
 {
     esp_event_handler_instance_register(WIFI_EVENT,
                                         ESP_EVENT_ANY_ID,
@@ -54,21 +53,18 @@ Wifi::~Wifi()
     esp_wifi_deinit();
 }
 
-void
-Wifi::set_ap_credentials(const std::string& wifi_ssid, const std::string& wifi_password)
+void Wifi::set_ap_credentials(const std::string& wifi_ssid, const std::string& wifi_password)
 {
     this->ssid = wifi_ssid;
     this->password = wifi_password;
 }
 
-void
-Wifi::set_auto_connect(bool auto_connect)
+void Wifi::set_auto_connect(bool auto_connect)
 {
     auto_connect_to_ap = auto_connect;
 }
 
-void
-Wifi::connect_to_ap()
+void Wifi::connect_to_ap()
 {
     // Prepare to connect to the provided SSID and password
     wifi_init_config_t init = WIFI_INIT_CONFIG_DEFAULT();
@@ -92,8 +88,7 @@ Wifi::connect_to_ap()
     connect();
 }
 
-void
-Wifi::connect() const
+void Wifi::connect() const
 {
 #ifdef ESP_PLATFORM
     esp_wifi_start();
@@ -103,17 +98,10 @@ Wifi::connect() const
 #endif
 }
 
-bool
-Wifi::is_connected_to_ap() const
-{
-    return connected;
-}
-
-void
-Wifi::wifi_event_callback(void* event_handler_arg,
-                          esp_event_base_t event_base,
-                          int32_t event_id,
-                          void* event_data)
+void Wifi::wifi_event_callback(void* event_handler_arg,
+                               esp_event_base_t event_base,
+                               int32_t event_id,
+                               void* event_data)
 {
     // Note: be very careful with what you do in this method - it runs under the event task
     // (sys_evt) with a very small default stack.
@@ -178,8 +166,7 @@ Wifi::wifi_event_callback(void* event_handler_arg,
     }
 }
 
-void
-Wifi::close_if()
+void Wifi::close_if()
 {
     if (interface) {
         esp_netif_destroy(interface);
@@ -187,8 +174,7 @@ Wifi::close_if()
     }
 }
 
-void
-Wifi::start_softap(uint8_t max_conn)
+void Wifi::start_softap(uint8_t max_conn)
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&cfg);
@@ -217,8 +203,7 @@ Wifi::start_softap(uint8_t max_conn)
 #endif
 }
 
-Wifi&
-get_wifi()
+Wifi& get_wifi()
 {
     static Wifi* wifi = new Wifi();
 

@@ -1,8 +1,8 @@
 #include "App.h"
-#include "Ethernet.h"
-#include "Wifi.h"
-#include "server.hpp"
-#include "wifi_creds.h"
+#include "network/Ethernet.h"
+#include "network/Wifi.h"
+#include "network/server.hpp"
+#include "network/wifi_creds.h"
 #include <asio.hpp>
 
 #pragma GCC diagnostic push
