@@ -36,7 +36,7 @@ public:
     Base() = default;
     virtual ~Base() = default;
 
-    virtual duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) = 0;
+    virtual duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) = 0;
 
     virtual uint8_t id() const = 0;
 
@@ -52,7 +52,7 @@ public:
         return m_timeRemaining;
     }
 
-    duration_millis_t allowed(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act)
+    duration_millis_t allowed(State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act)
     {
         m_timeRemaining = allowedImpl(newState, now, act);
         return m_timeRemaining;
@@ -80,7 +80,7 @@ public:
     ActuatorDigitalConstrained(const ActuatorDigitalConstrained&) = delete;
     ActuatorDigitalConstrained& operator=(const ActuatorDigitalConstrained&) = delete;
     ActuatorDigitalConstrained& operator=(ActuatorDigitalConstrained&&) = delete;
-    ActuatorDigitalConstrained(ActuatorDigitalConstrained&&) = default;
+    ActuatorDigitalConstrained(ActuatorDigitalConstrained&&) = delete;
 
     virtual ~ActuatorDigitalConstrained() = default;
 
@@ -113,7 +113,7 @@ public:
         ActuatorDigitalChangeLogged::resetHistory();
     }
 
-    duration_millis_t checkConstraints(const State& val, const ticks_millis_t& now)
+    duration_millis_t checkConstraints(State& val, const ticks_millis_t& now)
     {
         for (auto& c : constraints) {
             auto remaining = c->allowed(val, now, *this);
@@ -128,9 +128,10 @@ public:
     {
         lastUpdateTime = now; // always update fallback time for state setter without time
         m_desiredState = val;
-        auto timeRemaining = checkConstraints(val, now);
+        // constraints can change the desired state (maxOn time does this)
+        auto timeRemaining = checkConstraints(m_desiredState, now);
         if (timeRemaining == 0) {
-            ActuatorDigitalChangeLogged::state(val, now);
+            ActuatorDigitalChangeLogged::state(m_desiredState, now);
         }
         return timeRemaining;
     }
@@ -215,12 +216,12 @@ public:
     {
     }
 
-    duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
+    duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {
         if (act.state() != State::Active) {
             return 0;
         }
-        if (newState == State::Active) {
+        if (desiredState == State::Active) {
             return 0;
         }
         auto times = act.getLastStartEndTime(State::Active, now);
@@ -260,13 +261,13 @@ public:
     {
     }
 
-    virtual duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
+    virtual duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {
         if (act.state() != State::Inactive) {
             return 0;
         }
 
-        if (newState == State::Inactive) {
+        if (desiredState == State::Inactive) {
             return 0;
         }
 
@@ -308,9 +309,9 @@ public:
     {
     }
 
-    duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged&) override final
+    duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged&) override final
     {
-        if (newState == State::Active) {
+        if (desiredState == State::Active) {
             if (m_time_requested == 0) {
                 m_time_requested = now != 0 ? now : -1;
             }
@@ -351,9 +352,9 @@ public:
     {
     }
 
-    duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged&) override final
+    duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged&) override final
     {
-        if (newState == State::Inactive) {
+        if (desiredState == State::Inactive) {
             if (m_time_requested == 0) {
                 m_time_requested = now != 0 ? now : -1;
             }
@@ -402,12 +403,12 @@ public:
     }
     virtual ~Mutex() = default;
 
-    virtual duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
+    virtual duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {
         if (m_lock) {
             // already owner of lock.
             auto elapsedMinimal = m_useCustomHoldDuration ? m_holdAfterTurnOff : m_lockedMutex->holdAfterTurnOff();
-            if (newState == State::Inactive) {
+            if (desiredState == State::Inactive) {
                 // Release lock if actuator has been off for minimal time
                 duration_millis_t elapsedOff = 0;
                 if (act.state() == State::Inactive) {
@@ -427,11 +428,11 @@ public:
             }
             return 0;
         }
-        if (newState == State::Inactive) {
+        if (desiredState == State::Inactive) {
             // not locked, but no lock needed
             return 0;
         }
-        if (newState == State::Active) {
+        if (desiredState == State::Active) {
             m_lockedMutex = m_mutexTarget(); // store shared pointer to target so it can't be deleted while locked
             if (m_lockedMutex) {
                 m_lock = std::unique_lock<std::mutex>(m_lockedMutex->mut, std::try_to_lock);
@@ -480,6 +481,50 @@ public:
     order() const override final
     {
         return 4;
+    }
+};
+
+template <uint8_t ID>
+class MaxOnTime : public Base {
+private:
+    duration_millis_t m_limit;
+
+public:
+    MaxOnTime(const duration_millis_t& min)
+        : m_limit(min)
+    {
+    }
+
+    duration_millis_t allowedImpl(State& desiredState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
+    {
+
+        if (act.state() != State::Active || desiredState != State::Active) {
+            return 0;
+        }
+
+        auto times = act.getLastStartEndTime(State::Active, now);
+        auto elapsedOn = times.end - times.start;
+
+        if (elapsedOn >= m_limit) {
+            desiredState = State::Inactive;
+            return 0;
+        }
+        return elapsedOn - m_limit;
+    }
+
+    virtual uint8_t id() const override final
+    {
+        return ID;
+    }
+
+    duration_millis_t limit()
+    {
+        return m_limit;
+    }
+
+    virtual uint8_t order() const override final
+    {
+        return 5;
     }
 };
 } // end namespace ADConstraints

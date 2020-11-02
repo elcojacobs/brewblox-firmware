@@ -128,6 +128,36 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
     }
+
+    WHEN("A max ON constraint is added, the actuator turns OFF after the limit has passed")
+    {
+        constrained.desiredState(State::Inactive, now);
+        now = 1;
+        constrained.addConstraint(std::make_unique<ADConstraints::MaxOnTime<6>>(1500));
+        constrained.desiredState(State::Active, now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1498;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Inactive);
+        CHECK(mock.state() == State::Inactive);
+
+        now += 1;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Inactive);
+        CHECK(mock.state() == State::Inactive);
+    }
 }
 
 SCENARIO("Mutex contraint", "[constraints]")
