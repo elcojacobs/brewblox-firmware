@@ -108,15 +108,15 @@ ActuatorPwm::timerTask()
             m_dutyAchieved = value_t{0};
         }
         m_fastPwmElapsed = 0;
-    } else {
-        if (m_fastPwmElapsed == m_dutyTime) {
-            if (auto actPtr = m_target()) {
-                actPtr->setStateUnlogged(State::Inactive);
-                m_dutyAchieved = m_dutySetting;
-            }
+    }
+    if (m_fastPwmElapsed == m_dutyTime) {
+        if (auto actPtr = m_target()) {
+            actPtr->setStateUnlogged(State::Inactive);
+            m_dutyAchieved = m_dutySetting;
         }
     }
-    m_fastPwmElapsed = m_fastPwmElapsed == 99 ? 0 : m_fastPwmElapsed + 1;
+
+    m_fastPwmElapsed = m_fastPwmElapsed >= 99 ? 0 : m_fastPwmElapsed + 1;
 }
 
 ActuatorPwm::update_t
