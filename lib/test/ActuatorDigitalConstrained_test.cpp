@@ -21,6 +21,7 @@
 
 #include "ActuatorDigital.h"
 #include "ActuatorDigitalConstrained.h"
+#include "ActuatorPwm.h"
 #include "MockIoArray.h"
 
 using State = ActuatorDigital::State;
@@ -152,6 +153,32 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
         constrained.update(now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
+
+        now += 1;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Inactive);
+        CHECK(mock.state() == State::Inactive);
+    }
+
+    WHEN("A min ON and a max ON constraint are added, the max ON constraint has higher priority")
+    {
+        constrained.desiredState(State::Inactive, now);
+        now = 1;
+        constrained.addConstraint(std::make_unique<ADConstraints::MaxOnTime<6>>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(2000));
+        constrained.desiredState(State::Active, now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1498;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
+
+        now += 1;
+        constrained.update(now);
+        CHECK(constrained.state() == State::Active);
+        CHECK(mock.state() == State::Active);
 
         now += 1;
         constrained.update(now);

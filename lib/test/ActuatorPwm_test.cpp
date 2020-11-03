@@ -1290,12 +1290,46 @@ SCENARIO("A PWM actuator driving a target with delayed ON and OFF time", "[pwm]"
         constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOff<5>>(
             1000));
 
-        auto end = now + 100 * period;
+        auto end = now + 20 * period;
 
         while (now <= end) {
             now = pwm1.update(now);
             auto durations = constrainedMock1->activeDurations(now);
             REQUIRE(durations.previousPeriod <= period + 3000);
+        }
+    }
+}
+
+SCENARIO("A PWM actuator driving a target with max ON time", "[pwm]")
+{
+    auto now = ticks_millis_t(0);
+    auto period = duration_millis_t(4000);
+
+    auto mockIo = std::make_shared<MockIoArray>();
+    ActuatorDigital mock1([mockIo]() { return mockIo; }, 1);
+
+    auto constrainedMock1 = std::make_shared<ActuatorDigitalConstrained>(mock1);
+    ActuatorPwm pwm1([constrainedMock1]() { return constrainedMock1; }, 4000);
+
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::MaxOnTime<6>>(2000));
+
+    WHEN("A PWM actuator is set to a longer duty time than the max ON time")
+    {
+        pwm1.setting(70);
+        pwm1.update(now);
+
+        auto end = now + 10 * period;
+        while (now <= end) {
+            auto nextUpdate1 = pwm1.update(now);
+            auto nextUpdate2 = constrainedMock1->update(now);
+            now = std::max(std::min(nextUpdate1, nextUpdate2), now + 1);
+        }
+
+        THEN("The high time is limited, but the low time is nominal")
+        {
+            auto durations = constrainedMock1->activeDurations(now);
+            CHECK(durations.previousActive == 2000);
+            CHECK(durations.previousPeriod == 3200);
         }
     }
 }
@@ -1348,19 +1382,19 @@ SCENARIO("ActuatorPWM driving mock DS2413 actuator", "[pwm]")
         TestLogger::clear();
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 49.0, 1, now, everySecond) == Approx(49.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 49.0, 1, now, everySecond) == Approx(49.0).margin(0.2));
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 50.0, 1, now, everySecond) == Approx(50.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 50.0, 1, now, everySecond) == Approx(50.0).margin(0.2));
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 51.0, 1, now, everySecond) == Approx(51.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 51.0, 1, now, everySecond) == Approx(51.0).margin(0.2));
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 2.0, 1, now, everySecond) == Approx(2.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 2.0, 1, now, everySecond) == Approx(2.0).margin(0.2));
         ds2413mock->flipWrittenBits(writeBitFlips);
         ds2413mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 98.0, 1, now, everySecond) == Approx(98.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 98.0, 1, now, everySecond) == Approx(98.0).margin(0.2));
 
         AND_THEN("The log contains disconnect and reconnect logs")
         {
@@ -1419,19 +1453,19 @@ SCENARIO("ActuatorPWM driving mock DS2408 motor valve", "[pwm]")
         TestLogger::clear();
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 49.0, 1, now, everySecond) == Approx(49.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 49.0, 1, now, everySecond) == Approx(49.0).margin(0.2));
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 50.0, 1, now, everySecond) == Approx(50.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 50.0, 1, now, everySecond) == Approx(50.0).margin(0.2));
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 51.0, 1, now, everySecond) == Approx(51.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 51.0, 1, now, everySecond) == Approx(51.0).margin(0.2));
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 2.0, 1, now, everySecond) == Approx(2.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 2.0, 1, now, everySecond) == Approx(2.0).margin(0.2));
         ds2408mock->flipWrittenBits(writeBitFlips);
         ds2408mock->flipReadBits(readBitFlips);
-        CHECK(randomIntervalTest(100, pwm, act, 98.0, 1, now, everySecond) == Approx(98.0).margin(0.2));
+        CHECK(randomIntervalTest(10, pwm, act, 98.0, 1, now, everySecond) == Approx(98.0).margin(0.2));
 
         AND_THEN("The log contains disconnect and reconnect logs")
         {

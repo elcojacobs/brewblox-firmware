@@ -126,14 +126,8 @@ public:
 
     duration_millis_t desiredState(const State& val, const ticks_millis_t& now)
     {
-        lastUpdateTime = now; // always update fallback time for state setter without time
         m_desiredState = val;
-        // constraints can change the desired state (maxOn time does this)
-        auto timeRemaining = checkConstraints(m_desiredState, now);
-        if (timeRemaining == 0) {
-            ActuatorDigitalChangeLogged::state(m_desiredState, now);
-        }
-        return timeRemaining;
+        return updateImpl(now);
     }
 
     duration_millis_t desiredState(const State& val)
@@ -154,10 +148,12 @@ public:
 
     ticks_millis_t update(ticks_millis_t now)
     {
-        // re-apply constraints for new update time
-        auto remaining = desiredState(m_desiredState, now);
-        // update at least once per second
-        return (remaining < 1000) ? now + remaining : now + 1000;
+        auto wait = updateImpl(now);
+        if (wait == 0 && m_desiredState == state()) {
+            wait = 1000; // no pending changes
+        }
+
+        return now + wait;
     }
 
     State
@@ -170,6 +166,22 @@ public:
     constraintsList() const
     {
         return constraints;
+    }
+
+private:
+    duration_millis_t updateImpl(ticks_millis_t now)
+    {
+        // re-apply constraints for new update time
+        // constraints can change the desired state (maxOn time does this)
+        lastUpdateTime = now; // always update fallback time for state setter without time
+        auto timeRemaining = checkConstraints(m_desiredState, now);
+        if (timeRemaining == 0) {
+            ActuatorDigitalChangeLogged::state(m_desiredState, now);
+        }
+        if (timeRemaining > 1000) {
+            return 1000;
+        }
+        return timeRemaining;
     }
 };
 
@@ -509,7 +521,7 @@ public:
             desiredState = State::Inactive;
             return 0;
         }
-        return elapsedOn - m_limit;
+        return m_limit - elapsedOn;
     }
 
     virtual uint8_t id() const override final
