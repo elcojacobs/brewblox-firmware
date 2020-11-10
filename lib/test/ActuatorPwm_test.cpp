@@ -460,7 +460,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         "the PWM actuator is set to 60% after being 1% for a long time, "
         "with a  minimum ON time constraint active, the high time is not strechted beyond 1.5x normal duration")
     {
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(1000)); // 1 second
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime>(1000)); // 1 second
         pwm.setting(1);
         while (now < 100000 || mock.state() == State::Inactive) {
             now = pwm.update(now);
@@ -481,7 +481,7 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
         "the PWM actuator is set to 40% after being 99% for a long time, "
         "with a  minimum OFF time constraint active, the low time is not strechted beyond 1.5x normal duration")
     {
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1000)); // 1 second
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOffTime>(1000)); // 1 second
         pwm.setting(99);
         while (now < 100000 || mock.state() == State::Active) {
             now = pwm.update(now);
@@ -800,9 +800,9 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
     WHEN("PWM actuator target is constrained with a minimal ON time and minimum OFF time, average is still correct")
     {
         // values typical for a fridge compressor
-        pwm.period(2400000);                                                                // 40 minutes
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(300000));  // 5 minutes
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(600000)); // 10 minutes
+        pwm.period(2400000);                                                             // 40 minutes
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime>(300000));  // 5 minutes
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOffTime>(600000)); // 10 minutes
 
         // use max delay of 5000 here to speed up tests
         CHECK(randomIntervalTest(10, pwm, mock, 50.0, 5000, now) == Approx(50.0).margin(0.5));
@@ -816,9 +816,9 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
 
     WHEN("The actuator has been set to 30% duty and switches to 20% with minimum ON time at 40% duty")
     {
-        pwm.period(10000);                                                               // 10s
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(4000)); // 4 s
-        pwm.setting(30);                                                                 // will result in 4s on, 13.3s period
+        pwm.period(10000);                                                            // 10s
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime>(4000)); // 4 s
+        pwm.setting(30);                                                              // will result in 4s on, 13.3s period
 
         auto nextUpdate = pwm.update(now);
 
@@ -895,8 +895,8 @@ SCENARIO("ActuatorPWM driving mock actuator", "[pwm]")
 
     WHEN("PWM actuator target is constrained with a minimal ON time")
     {
-        pwm.period(10000);                                                               // 10s
-        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(2000)); // 2 s
+        pwm.period(10000);                                                            // 10s
+        constrained->addConstraint(std::make_unique<ADConstraints::MinOnTime>(2000)); // 2 s
         pwm.setting(10);
         auto nextUpdate = pwm.update(now);
         THEN("the achieved value is always correct once adjusted")
@@ -962,17 +962,18 @@ operator<<(std::ostream& os, Duties const& v)
     return os;
 }
 
-SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
+SCENARIO("Two PWM actuators driving mutually exclusive digital actuators", "[mutex]")
 {
     auto now = ticks_millis_t(0);
     auto period = duration_millis_t(4000);
 
     auto mockIo = std::make_shared<MockIoArray>();
-    ActuatorDigital mock1([mockIo]() { return mockIo; }, 1);
 
+    ActuatorDigital mock1([mockIo]() { return mockIo; }, 1);
     auto constrainedMock1 = std::make_shared<ActuatorDigitalConstrained>(mock1);
     ActuatorPwm pwm1([constrainedMock1]() { return constrainedMock1; }, 4000);
     ActuatorAnalogConstrained constrainedPwm1(pwm1);
+
     ActuatorDigital mock2([mockIo]() { return mockIo; }, 2);
     auto constrainedMock2 = std::make_shared<ActuatorDigitalConstrained>(mock2);
     ActuatorPwm pwm2([constrainedMock2]() { return constrainedMock2; }, 4000);
@@ -981,18 +982,18 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
     auto mut = std::make_shared<MutexTarget>();
     auto balancer = std::make_shared<Balancer<2>>();
 
-    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex>(
         [mut]() {
             return mut;
         },
         0,
-        true));
-    constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        false));
+    constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex>(
         [mut]() {
             return mut;
         },
         0,
-        true));
+        false));
 
     auto getDuties = [&](value_t duty1, value_t duty2, duration_millis_t randomDelay = 0) {
         auto timeHigh1 = duration_millis_t(0);
@@ -1002,6 +1003,8 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         auto nextUpdate1 = ticks_millis_t(now);
         auto nextUpdate2 = ticks_millis_t(now);
         auto nextUpdate3 = ticks_millis_t(now);
+        auto nextUpdate4 = ticks_millis_t(now);
+        auto nextUpdate5 = ticks_millis_t(now);
 
         // start unbalanced to try to trigger effects that throw off the balancing
         auto start = now;
@@ -1020,6 +1023,12 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
                 nextUpdate3 = now;
                 balancer->update();
             }
+            if (now >= nextUpdate4) {
+                nextUpdate4 = constrainedMock1->update(now);
+            }
+            if (now >= nextUpdate5) {
+                nextUpdate5 = constrainedMock2->update(now);
+            }
             now += 100;
         }
 
@@ -1034,12 +1043,12 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
             if (now >= nextUpdate1) {
                 nextUpdate1 = pwm1.update(now);
                 constrainedPwm1.update();
-                REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
+                CHECK(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
             if (now >= nextUpdate2) {
                 nextUpdate2 = pwm2.update(now);
                 constrainedPwm2.update();
-                REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
+                CHECK(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
             if (now >= nextUpdate3 + 1000) {
                 nextUpdate3 = now;
@@ -1047,6 +1056,12 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
                 // check that the reported value is close enough at all times
                 //CHECK(pwm1.value() == Approx(duty1).margin(1));
                 //CHECK(pwm2.value() == Approx(duty2).margin(1));
+            }
+            if (now >= nextUpdate4) {
+                nextUpdate4 = constrainedMock1->update(now);
+            }
+            if (now >= nextUpdate5) {
+                nextUpdate5 = constrainedMock2->update(now);
             }
             duration_millis_t interval = randomDelay ? 1 + std::rand() % randomDelay : 1;
             now += interval;
@@ -1119,6 +1134,15 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
             CHECK(getDuties(85, 25, 100) == Duties(85.0 / 1.1, 25.0 / 1.1, 1));
         }
 
+        THEN("A minimum 500ms dead time on the mutex gives expected results")
+        {
+            mut->holdAfterTurnOff(500);
+            // expected 2s on 1, 0.5s off, 2s on 2, 0.5s off
+            // duty = 2/5
+
+            CHECK(getDuties(100, 100) == Duties(40, 40));
+        }
+
         AND_WHEN("A PWM is set to invalid, its requested value is zero in the balancer")
         {
             constrainedPwm1.setting(50);
@@ -1143,14 +1167,14 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         pwm2.update(now);
 
         constrainedMock1->removeAllConstraints();
-        constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex>(
             [mut]() {
                 return mut;
             },
             5 * period,
             true));
         constrainedMock2->removeAllConstraints();
-        constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex>(
             [mut]() {
                 return mut;
             },
@@ -1182,14 +1206,14 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
     WHEN("A PWM actuator that with a blocked target is set to 100%, followed by 0%, the desired state of the target goes from high to low")
     {
         constrainedMock1->removeAllConstraints();
-        constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex>(
             [mut]() {
                 return mut;
             },
             5 * period,
             true));
         constrainedMock2->removeAllConstraints();
-        constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrainedMock2->addConstraint(std::make_unique<ADConstraints::Mutex>(
             [mut]() {
                 return mut;
             },
@@ -1255,13 +1279,13 @@ SCENARIO("A PWM actuator driving a target with delayed ON and OFF time", "[pwm]"
     auto mut = std::make_shared<MutexTarget>();
     auto balancer = std::make_shared<Balancer<2>>();
 
-    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex>(
         [mut]() {
             return mut;
         },
         0,
         true));
-    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::Mutex>(
         [mut]() {
             return mut;
         },
@@ -1285,9 +1309,9 @@ SCENARIO("A PWM actuator driving a target with delayed ON and OFF time", "[pwm]"
         pwm1.update(now);
 
         constrainedMock1->removeAllConstraints();
-        constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOn<4>>(
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOn>(
             1000));
-        constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOff<5>>(
+        constrainedMock1->addConstraint(std::make_unique<ADConstraints::DelayedOff>(
             1000));
 
         auto end = now + 20 * period;
@@ -1311,7 +1335,7 @@ SCENARIO("A PWM actuator driving a target with max ON time", "[pwm]")
     auto constrainedMock1 = std::make_shared<ActuatorDigitalConstrained>(mock1);
     ActuatorPwm pwm1([constrainedMock1]() { return constrainedMock1; }, 4000);
 
-    constrainedMock1->addConstraint(std::make_unique<ADConstraints::MaxOnTime<6>>(2000));
+    constrainedMock1->addConstraint(std::make_unique<ADConstraints::MaxOnTime>(2000));
 
     WHEN("A PWM actuator is set to a longer duty time than the max ON time")
     {

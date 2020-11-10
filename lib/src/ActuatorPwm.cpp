@@ -198,7 +198,7 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
                     }
                 }
             }
-            // for the current period, do the same, but shift the discarded bit to the previous period
+            // for the current period, do the same, but shift the discarded part to the previous period
             if (currentPeriod > twoPeriods) {
                 auto limit = m_period;
                 if ((2 * m_dutyTime <= m_period)) {
@@ -244,13 +244,10 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         if (lastHistoricState == State::Active) {
             if (m_dutyTime == m_period) { // 100%
                 // ensure desired state is correct and get time from possibly blocked actuator
-                auto actWait = actPtr->desiredState(State::Active, now);
-                if (currentPeriod + 1000 <= m_period) {
-                    wait = m_period - currentPeriod;
-                } else {
+                wait = actPtr->desiredState(State::Active, now);
+                if (wait == 0) {
                     wait = 1000;
                 }
-                wait = std::max(actWait, wait);
             } else if (2 * m_dutyTime <= m_period) {
                 // high period is fixed, low period adapts
                 if (currentHighTime < m_dutyTime) {
@@ -295,14 +292,11 @@ ActuatorPwm::slowPwmUpdate(const update_t& now)
         } else if (lastHistoricState == State::Inactive) {
             auto currentLowTime = currentPeriod - currentHighTime;
             if (m_dutyTime == 0) {
-                // ensure desired state is correct and get time from possibly blocked actuator
-                auto actWait = actPtr->desiredState(State::Inactive, now);
-                if (currentPeriod + 1000 <= m_period) {
-                    wait = m_period - currentPeriod;
-                } else {
+                // 0%, ensure desired state is correct by re-applying it
+                wait = actPtr->desiredState(State::Inactive, now);
+                if (wait == 0) {
                     wait = 1000;
                 }
-                wait = std::max(actWait, wait);
             } else if (2 * m_dutyTime > m_period) {
                 // low period is fixed, high period adapts
                 if (currentLowTime < invDutyTime) {

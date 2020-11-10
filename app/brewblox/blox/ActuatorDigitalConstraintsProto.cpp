@@ -5,16 +5,54 @@
 #include "cbox/ObjectContainer.h"
 #include "proto/cpp/DigitalConstraints.pb.h"
 
-using MinOff = ADConstraints::MinOffTime<blox_DigitalConstraint_minOff_tag>;
-using MinOn = ADConstraints::MinOnTime<blox_DigitalConstraint_minOn_tag>;
-using DelayedOn = ADConstraints::DelayedOn<blox_DigitalConstraint_delayedOn_tag>;
-using DelayedOff = ADConstraints::DelayedOff<blox_DigitalConstraint_delayedOff_tag>;
-using Mutex_t = ADConstraints::Mutex<blox_DigitalConstraint_mutexed_tag>;
+namespace ADConstraints {
+template <>
+uint8_t typeId<MinOnTime>()
+{
+    return blox_DigitalConstraint_minOn_tag;
+}
+
+template <>
+uint8_t typeId<MinOffTime>()
+{
+    return blox_DigitalConstraint_minOff_tag;
+}
+
+template <>
+uint8_t typeId<DelayedOn>()
+{
+    return blox_DigitalConstraint_delayedOn_tag;
+}
+
+template <>
+uint8_t typeId<DelayedOff>()
+{
+    return blox_DigitalConstraint_delayedOff_tag;
+}
+
+template <>
+uint8_t typeId<Mutex>()
+{
+    return blox_DigitalConstraint_mutexed_tag;
+}
+
+template <>
+uint8_t typeId<MaxOnTime>()
+{
+    return blox_DigitalConstraint_maxOn_tag;
+}
+}
+
+using MinOff = ADConstraints::MinOffTime;
+using MinOn = ADConstraints::MinOnTime;
+using MaxOn = ADConstraints::MaxOnTime;
+using DelayedOn = ADConstraints::DelayedOn;
+using DelayedOff = ADConstraints::DelayedOff;
+using Mutex_t = ADConstraints::Mutex;
 using Base_t = ADConstraints::Base;
+using State = ActuatorDigitalBase::State;
 
-class CboxMutex : public ADConstraints::Base {
-    using State = ActuatorDigitalBase::State;
-
+class CboxMutex : public ADConstraints::BaseImpl<Mutex_t> {
 private:
     cbox::CboxPtr<MutexTarget> lookup;
     Mutex_t m_mutexConstraint;
@@ -26,17 +64,12 @@ public:
     {
     }
 
-    virtual uint8_t id() const override final
-    {
-        return m_mutexConstraint.id();
-    }
-
     cbox::obj_id_t mutexId()
     {
         return lookup.getId();
     }
 
-    virtual duration_millis_t allowedImpl(const State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
+    virtual duration_millis_t allowedImpl(State& newState, const ticks_millis_t& now, const ActuatorDigitalChangeLogged& act) override final
     {
         return m_mutexConstraint.allowedImpl(newState, now, act);
     }
@@ -72,8 +105,7 @@ public:
     }
 };
 
-void
-setDigitalConstraints(const blox_DigitalConstraints& msg, ActuatorDigitalConstrained& act, cbox::ObjectContainer& objects)
+void setDigitalConstraints(const blox_DigitalConstraints& msg, ActuatorDigitalConstrained& act, cbox::ObjectContainer& objects)
 {
     auto oldConstraints = act.removeAllConstraints();
     pb_size_t numConstraints = std::min(msg.constraints_count, pb_size_t(sizeof(msg.constraints) / sizeof(msg.constraints[0])));
@@ -122,12 +154,14 @@ setDigitalConstraints(const blox_DigitalConstraints& msg, ActuatorDigitalConstra
         case blox_DigitalConstraint_delayedOff_tag:
             act.addConstraint(std::make_unique<DelayedOff>(constraintDfn.constraint.delayedOff));
             break;
+        case blox_DigitalConstraint_maxOn_tag:
+            act.addConstraint(std::make_unique<MaxOn>(constraintDfn.constraint.maxOn));
+            break;
         }
     }
 }
 
-void
-getDigitalConstraints(blox_DigitalConstraints& msg, const ActuatorDigitalConstrained& act)
+void getDigitalConstraints(blox_DigitalConstraints& msg, const ActuatorDigitalConstrained& act)
 {
     auto& constraints = act.constraintsList();
     auto it = constraints.cbegin();
@@ -162,6 +196,10 @@ getDigitalConstraints(blox_DigitalConstraints& msg, const ActuatorDigitalConstra
         case blox_DigitalConstraint_delayedOff_tag: {
             auto obj = reinterpret_cast<DelayedOff*>((*it).get());
             msg.constraints[i].constraint.delayedOff = obj->limit();
+        } break;
+        case blox_DigitalConstraint_maxOn_tag: {
+            auto obj = reinterpret_cast<MaxOn*>((*it).get());
+            msg.constraints[i].constraint.maxOn = obj->limit();
         } break;
         }
         msg.constraints[i].remaining = (*it)->timeRemaining();

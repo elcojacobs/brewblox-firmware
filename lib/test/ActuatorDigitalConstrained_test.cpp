@@ -36,7 +36,7 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
 
     WHEN("A minimum ON time constrained is added, the actuator cannot turn off before it has passed")
     {
-        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime>(1500));
         constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
@@ -54,7 +54,7 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
 
     WHEN("A minimum OFF time constrained is added, the actuator cannot turn on before it has passed")
     {
-        constrained.addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::MinOffTime>(1500));
         constrained.desiredState(State::Inactive, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
@@ -73,8 +73,8 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     WHEN("A minimum ON and a minimum OFF time are added, both are honored")
     {
         constrained.desiredState(State::Inactive, now);
-        constrained.addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1000));
-        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(2000));
+        constrained.addConstraint(std::make_unique<ADConstraints::MinOffTime>(1000));
+        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime>(2000));
 
         while (constrained.state() == State::Inactive) {
             constrained.desiredState(State::Active, ++now);
@@ -94,7 +94,7 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     {
         now = 1;
         constrained.desiredState(State::Inactive, now);
-        constrained.addConstraint(std::make_unique<ADConstraints::DelayedOn<5>>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::DelayedOn>(1500));
         constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Inactive);
         CHECK(mock.state() == State::Inactive);
@@ -114,7 +114,7 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     {
         now = 1;
         constrained.desiredState(State::Active, now);
-        constrained.addConstraint(std::make_unique<ADConstraints::DelayedOff<5>>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::DelayedOff>(1500));
         constrained.desiredState(State::Inactive, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
@@ -134,7 +134,7 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     {
         constrained.desiredState(State::Inactive, now);
         now = 1;
-        constrained.addConstraint(std::make_unique<ADConstraints::MaxOnTime<6>>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::MaxOnTime>(1500));
         constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
@@ -164,8 +164,8 @@ SCENARIO("ActuatorDigitalConstrained", "[constraints]")
     {
         constrained.desiredState(State::Inactive, now);
         now = 1;
-        constrained.addConstraint(std::make_unique<ADConstraints::MaxOnTime<6>>(1500));
-        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime<2>>(2000));
+        constrained.addConstraint(std::make_unique<ADConstraints::MaxOnTime>(1500));
+        constrained.addConstraint(std::make_unique<ADConstraints::MinOnTime>(2000));
         constrained.desiredState(State::Active, now);
         CHECK(constrained.state() == State::Active);
         CHECK(mock.state() == State::Active);
@@ -197,13 +197,13 @@ SCENARIO("Mutex contraint", "[constraints]")
     ActuatorDigitalConstrained constrained2(mock2);
     auto mut = std::make_shared<MutexTarget>();
 
-    constrained1.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+    constrained1.addConstraint(std::make_unique<ADConstraints::Mutex>(
         [&mut]() {
             return mut;
         },
         0,
         true));
-    constrained2.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+    constrained2.addConstraint(std::make_unique<ADConstraints::Mutex>(
         [&mut]() {
             return mut;
         },
@@ -227,7 +227,7 @@ SCENARIO("Mutex contraint", "[constraints]")
 
     WHEN("A minimum OFF time constraint holds an actuator low, it doesn't lock the mutex")
     {
-        constrained1.addConstraint(std::make_unique<ADConstraints::MinOffTime<1>>(1000));
+        constrained1.addConstraint(std::make_unique<ADConstraints::MinOffTime>(1000));
         constrained1.desiredState(State::Active, ++now);
         CHECK(constrained1.state() == State::Inactive);
         constrained2.desiredState(State::Active, ++now);
@@ -247,12 +247,12 @@ SCENARIO("Mutex contraint", "[constraints]")
     {
         constrained1.removeAllConstraints();
         constrained2.removeAllConstraints();
-        constrained1.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrained1.addConstraint(std::make_unique<ADConstraints::Mutex>(
             [&mut]() {
                 return mut;
             },
             1000, true));
-        constrained2.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrained2.addConstraint(std::make_unique<ADConstraints::Mutex>(
             [&mut]() {
                 return mut;
             },
@@ -344,12 +344,12 @@ SCENARIO("Mutex contraint", "[constraints]")
 
         constrained1.removeAllConstraints();
         constrained2.removeAllConstraints();
-        constrained1.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrained1.addConstraint(std::make_unique<ADConstraints::Mutex>(
             [&mut]() {
                 return mut;
             },
             0, false));
-        constrained2.addConstraint(std::make_unique<ADConstraints::Mutex<3>>(
+        constrained2.addConstraint(std::make_unique<ADConstraints::Mutex>(
             [&mut]() {
                 return mut;
             },
