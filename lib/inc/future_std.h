@@ -1,9 +1,8 @@
 #pragma once
 
+#if __cplusplus < 201703L
 #include <functional>
-
 // clamp is C++17, we're on C++14. This is a copy of the std implementation
-
 namespace std {
 
 template <class T>
@@ -20,3 +19,4 @@ clamp(const T& v, const T& lo, const T& hi, Compare comp)
     return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
 }
 }
+#endif
