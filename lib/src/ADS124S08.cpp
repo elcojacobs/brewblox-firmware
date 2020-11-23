@@ -28,11 +28,8 @@
 //
 //****************************************************************************
 
-ADS124S08::ADS124S08(uint8_t spi_host, int ss_pin)
+ADS124S08::ADS124S08(const SpiConfig& spiConfig)
 {
-    spiConfig.host = spi_host;
-    spiConfig.ssPin = ss_pin;
-    spiConfig.speed = 1000000;
     spi_device_init(spiConfig);
 }
 
@@ -50,8 +47,8 @@ ADS124S08::ADS124S08(uint8_t spi_host, int ss_pin)
 
 bool ADS124S08::startup()
 {
-    RegisterMap initRegisters = {0};
-    RegStatus status;
+    //RegisterMap initRegisters = {0};
+    //RegStatus status;
 
     // // Provide additional delay time for power supply settling
     delay_ms(3);

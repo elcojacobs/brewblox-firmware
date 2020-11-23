@@ -20,15 +20,24 @@
 #pragma once
 
 #include <functional>
-#include <mutex>
+#include <memory>
+// #include <mutex>
+
+using hal_spi_err_t = int32_t;
+
+struct SpiTransaction {
+    const uint8_t* tx_data = nullptr;
+    uint8_t* rx_data = nullptr;
+    size_t tx_len = 0;
+    size_t rx_len = 0;
+    void* user_cb_data = nullptr;
+};
+
+using hal_spi_transaction_cb_t = std::function<void(SpiTransaction& t)>&;
+using hal_spi_device_handle_t = std::unique_ptr<void, std::function<void(void*)>>;
 
 class SpiConfig {
 public:
-    SpiConfig()
-    {
-    }
-    ~SpiConfig() = default;
-
     enum Mode : uint8_t {
         SPI_MODE0 = 0x00,
         SPI_MODE1 = 0x01,
@@ -41,157 +50,53 @@ public:
         MSBFIRST = 0x01,
     };
 
+    SpiConfig(uint8_t host_idx, int speed_hz, int queue_size, int ss_pin,
+              const hal_spi_transaction_cb_t pre, const hal_spi_transaction_cb_t post, Mode spi_mode = SPI_MODE0, BitOrder bit_order = MSBFIRST)
+        : host(host_idx)
+        , speed(speed_hz)
+        , queueSize(queue_size)
+        , ssPin(ss_pin)
+        , pre_cb(pre)
+        , post_cb(post)
+        , mode(spi_mode)
+        , bitOrder(bit_order)
+    {
+    }
+    ~SpiConfig() = default;
+
     uint8_t host = 0; // index to select SPI master in case of multiple masters
-    int speed = 0;
-    int queueSize = 1;
-    int ssPin = -1;
+    int speed;
+    int queueSize;
+    int ssPin;
+    hal_spi_transaction_cb_t pre_cb;
+    hal_spi_transaction_cb_t post_cb;
+    void* user_cb_data;
 
     Mode mode = SPI_MODE0;
     BitOrder bitOrder = MSBFIRST;
 };
 
-// platform dependent implementation of transfer functions
-typedef void (*spi_dma_transfercomplete_callback_t)(void);
-uint8_t transferImpl(const SpiConfig& client, uint8_t data);
-void transferDmaImpl(const SpiConfig& client, void* tx_buffer, void* rx_buffer, size_t length, spi_dma_transfercomplete_callback_t user_callback);
-void transferDmaCancelImpl(const SpiConfig& client);
-void apply(const SpiConfig& client);
-void unapply(const SpiConfig& client);
-bool spi_device_init(const SpiConfig& client);
-
-#if 0
-class SpiBus {
-    SpiConfig activeClient;
-
-    std::mutex mutex;
-
-    void unapply();
-    void apply(SpiConfig& client);
-
-public:
-    SpiBus()
-        : current_(nullptr)
+struct SpiDevice {
+    SpiDevice(const hal_spi_transaction_cb_t& pre, const hal_spi_transaction_cb_t& post)
+        : hal_pre_cb(pre)
+        , hal_post_cb(post)
     {
     }
 
-    ~SpiBus()
-    {
-    }
+    hal_spi_err_t init(const SpiConfig& cfg);
+    hal_spi_err_t queue_transfer(const SpiTransaction& transaction, uint32_t timeout = 0);
+    hal_spi_err_t transmit(const SpiTransaction& transaction, uint32_t timeout = 0);
+    void aquire_bus();
+    void release_bus();
 
-    inline bool try_begin(SpiConfig& client)
-    {
-        if (isClient(client) || mutex.try_lock()) {
-            activeClient = client;
-            apply(activeClient);
-        }
-        return isClient(client);
-    }
-
-    inline void begin(SpiConfig& client)
-    {
-        mutex.lock();
-        activeClient = client;
-        apply(activeClient);
-    }
-
-    inline void end(SpiConfig& client)
-    {
-        if (isClient(client)) {
-            unapply();
-            mutex.unlock();
-        }
-    }
-
-    inline bool isClient(SpiConfig& client)
-    {
-        return client.ssPin == activeClient.ssPin;
-    }
-
-    /*
-     * transfer assumes the SPI has already been acquired by calling begin()
-     */
-    inline uint8_t transfer(const SpiConfig& client, uint8_t data)
-    {
-        if (isClient(client)) {
-            return transferImpl(client, data);
-        }
-        return 0;
-    }
-
-    inline void transfer(const SpiConfig& client, void* tx_buffer, void* rx_buffer, size_t length, spi_dma_transfercomplete_callback_t user_callback)
-    {
-        if (isClient(client)) {
-            transferDmaImpl(client, tx_buffer, rx_buffer, length, user_callback);
-        }
-    }
-
-    inline void transferCancel(const SpiConfig& client)
-    {
-        if (isClient(client)) {
-            transferDmaCancelImpl(client);
-        }
-    }
+    // platform handle type with custom deleter
+    hal_spi_device_handle_t handle;
+    const hal_spi_transaction_cb_t hal_pre_cb;
+    const hal_spi_transaction_cb_t hal_post_cb;
 };
 
-class SPIUser : public SpiConfig {
-    SpiBus& spi_;
+// bool spi_device_transmit(spi_device_handle_t handle, spi_transaction_t* trans_desc);
 
-public:
-    SPIUser(SpiBus& spi)
-        : spi_(spi)
-    {
-    }
+hal_spi_err_t spi_queue_transfer(const SpiDevice& dev, const SpiTransaction& transaction);
 
-    inline void begin()
-    {
-        spi_.begin(*this);
-    }
-
-    inline void begin(uint16_t ss_pin)
-    {
-        this.ssPin = ss_pin;
-        spi_.begin(*this);
-    }
-
-    inline void end()
-    {
-        spi_.end(*this);
-    }
-
-    inline void setBitOrder(BitOrder v)
-    {
-        this.bitOrder = v;
-    }
-
-    inline void setDataMode(Mode v)
-    {
-        this.mode = v;
-    }
-
-    /**
-     * Sets the clock speed as a divider relative to the clock divider reference.
-     * @param divider SPI_CLOCK_DIVx where x is a power of 2 from 2 to 256.
-     */
-    inline void setClockDivider(ClockDivider divider)
-    {
-        this.clockDivider = divider;
-    }
-
-    inline uint8_t transfer(uint8_t data)
-    {
-        return spi_.transfer(*this, data);
-    }
-
-    inline void transfer(void* tx_buffer, void* rx_buffer, size_t length, wiring_spi_dma_transfercomplete_callback_t user_callback)
-    {
-        spi_.transfer(*this, tx_buffer, rx_buffer, length, user_callback);
-    }
-
-    inline void transferCancel()
-    {
-        spi_.transferCancel(*this);
-    }
-};
-
-SpiBus& SpiBus1();
-#endif
+std::unique_ptr<SpiDevice> spi_device_init(const SpiConfig& client);

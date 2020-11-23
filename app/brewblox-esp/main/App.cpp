@@ -41,7 +41,7 @@ void App::init()
 {
     hal_i2c_master_init();
     PCA9571 io_expander;
-    io_expander.write_io(0xF8);
+    io_expander.set_pins(0xFD);
 
     esp_netif_init();
 

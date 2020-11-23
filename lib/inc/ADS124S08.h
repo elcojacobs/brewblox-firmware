@@ -48,12 +48,10 @@ public:
     static constexpr uint8_t STATUS_LENGTH = 1;
     static constexpr uint8_t CRC_LENGTH = 1;
 
-    ADS124S08(uint8_t spi_host, int ss_pin);
+    ADS124S08(const SpiConfig& spiConfig);
     ~ADS124S08();
 
 private:
-    SpiConfig spiConfig;
-
     bool converting = false;
     enum DATA_MODE : uint8_t {
         NORMAL = 0x00,
