@@ -19,5 +19,7 @@
 
 #pragma once
 
-void delay_us(uint32_t v);
-void delay_ms(uint32_t v);
+#include <cstdint>
+
+void hal_delay_us(uint32_t v);
+void hal_delay_ms(uint32_t v);

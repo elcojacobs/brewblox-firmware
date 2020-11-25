@@ -20,7 +20,7 @@
 // #include <math.h>
 // #include <assert.h>
 #include "ADS124S08.h"
-// #include "inc/adchal.h"
+#include "esp_log.h"
 
 //****************************************************************************
 //
@@ -28,9 +28,18 @@
 //
 //****************************************************************************
 
-ADS124S08::ADS124S08(const SpiConfig& spiConfig)
+ADS124S08::ADS124S08(uint8_t spi_idx, int ss,
+                     std::function<void(bool isHigh)> reset,
+                     std::function<void(bool isHigh)> start,
+                     std::function<void()> on_spi_aquire,
+                     std::function<void()> on_spi_release)
+    : spi(spi_idx, 100000, 1, ss,
+          SpiDevice::Mode::SPI_MODE1, SpiDevice::BitOrder::MSBFIRST,
+          on_spi_aquire, on_spi_release)
+    , set_reset(reset)
+    , set_start(start)
 {
-    spi_device_init(spiConfig);
+    spi.init();
 }
 
 /************************************************************************************/ /**
@@ -47,21 +56,28 @@ ADS124S08::ADS124S08(const SpiConfig& spiConfig)
 
 bool ADS124S08::startup()
 {
-    //RegisterMap initRegisters = {0};
-    //RegStatus status;
+    // RegisterMap initRegisters = {0};
+    RegStatus status;
 
     // // Provide additional delay time for power supply settling
-    delay_ms(3);
+    hal_delay_ms(3);
 
     // // Toggle nRESET pin to assure default register settings.
-    // toggleRESET();
+    set_start(false);
+    set_reset(false);
+    hal_delay_ms(1);
+    set_reset(true);
     // // Must wait 4096 tCLK after reset
-    // usleep(DELAY_4096TCLK);
+    hal_delay_ms(1000);
 
-    // status = readSingleRegister(spiHdl, REG_ADDR_STATUS);
-    // if ((status & ADS_nRDY_MASK)) {
-    //     return (false); // Device not ready
-    // }
+    spi.aquire_bus();
+    hal_delay_ms(1);
+    uint8_t result = readSingleRegister(RegStatus::address);
+    ESP_LOGW("ADC", "%x", result);
+    if ((status & status.ADS_nRDY_MASK)) {
+        ESP_LOGW("ADC", "not ready");
+        return (false); // Device not ready
+    }
 
     // // Ensure internal register array is initialized
     // restoreRegisterDefaults();
@@ -86,17 +102,101 @@ bool ADS124S08::startup()
     // adcChars->pgaGain = pow(2, (adcChars->pgaReg & ADS_GAIN_MASK));
 
     // // Write to all modified registers
-    // writeMultipleRegisters(spiHdl, REG_ADDR_STATUS, REG_ADDR_SYS - REG_ADDR_STATUS + 1, initRegisterMap);
+    // writeMultipleRegisters(RegStatus::address, RegSys::address - RegStatus::address + 1, initRegisterMap);
 
-    // // Read back all registers
-    // readMultipleRegisters(spiHdl, REG_ADDR_ID, NUM_REGISTERS);
-    // for (i = REG_ADDR_STATUS; i < REG_ADDR_SYS - REG_ADDR_STATUS + 1; i++) {
-    //     if (i == REG_ADDR_STATUS)
-    //         continue;
-    //     if (initRegisterMap[i] != registerMap[i])
-    //         return (false);
-    // }
-    return (true);
+    //Read back all registers
+    readMultipleRegisters(RegId::address, 18);
+    uint8_t i = 0;
+    for (auto& r : registers) {
+
+        // if (i == REG_ADDR_STATUS)
+        //     continue;
+        // if (initRegisterMap[i] != registerMap[i])
+        //     return (false);
+        ESP_LOGI("reg ", "%d: %x", i++, r.value);
+    }
+    spi.release_bus();
+    return true;
+}
+
+uint8_t ADS124S08::readSingleRegister(uint8_t address)
+{
+    /* Initialize arrays */
+    address &= OPCODE::RWREG_MASK;
+    address |= OPCODE::RREG;
+    uint8_t tx[3] = {address, 0, 0};
+    uint8_t rx[3] = {0, 0, 0};
+
+    SpiTransaction t{
+        .tx_data = tx,
+        .rx_data = rx,
+        .tx_len = 3,
+        .rx_len = 3,
+        .user_cb_data = nullptr,
+    };
+
+    if (spi.transmit(t) == 0) {
+        /* Update register array and return read result*/
+        registers[address] = rx[2];
+        return rx[2];
+    }
+    return 0xFF;
+}
+
+uint8_t ADS124S08::readMultipleRegisters(uint8_t startAddress, uint8_t count)
+{
+    const uint8_t len = 2 + count;
+
+    uint8_t tx[20] = {0};
+    uint8_t rx[20] = {0};
+
+    SpiTransaction t{
+        .tx_data = tx,
+        .rx_data = rx,
+        .tx_len = len,
+        .rx_len = len,
+        .user_cb_data = nullptr,
+    };
+
+    tx[0] = OPCODE::RREG | (startAddress & OPCODE::RWREG_MASK);
+    tx[1] = count - 1;
+    if (spi.transmit(t) == 0) {
+        for (uint8_t i = 0; i < count; i++) {
+            // Read register data bytes
+            registers[i + startAddress] = rx[2 + i];
+        }
+        return 0;
+    }
+    return 1;
+}
+
+uint8_t ADS124S08::writeMultipleRegisters(uint8_t startAddress, uint8_t count, uint8_t data[])
+{
+    const uint8_t len = 2 + count;
+
+    uint8_t tx[20] = {0};
+    uint8_t rx[20] = {0};
+
+    tx[0] = uint8_t(OPCODE::WREG) | (startAddress & uint8_t(OPCODE::RWREG_MASK));
+    tx[1] = count - 1;
+
+    for (uint8_t i = 0; i < count; i++) {
+        tx[2 + i] = data[i];
+        registers[i] = data[i];
+    }
+
+    SpiTransaction t{
+        .tx_data = tx,
+        .rx_data = rx,
+        .tx_len = len,
+        .rx_len = len,
+        .user_cb_data = nullptr,
+    };
+
+    if (spi.transmit(t) == 0) {
+        return 0;
+    }
+    return 1;
 }
 
 #if 0
@@ -148,65 +248,6 @@ changeADCParameters(ADCchar_Set* adcChars, SPI_Handle spiHdl)
     return (true);
 }
 
-/************************************************************************************/ /**
- *
- * @brief readSingleRegister()
- *          Reads contents of a single register at the specified address
- *
- * @param[in]   spiHdl  SPI_Handle from TI Drivers
- * @param[in]	address Address of the register to be read
- *
- * @return 		8-bit register contents
- */
-uint8_t
-readSingleRegister(SPI_Handle spiHdl, uint8_t address)
-{
-    /* Initialize arrays */
-    uint8_t DataTx[COMMAND_LENGTH + 1] = {OPCODE_RREG | (address & OPCODE_RWREG_MASK), 0, 0};
-    uint8_t DataRx[COMMAND_LENGTH + 1] = {0, 0, 0};
-
-    /* Check that the register address is in range */
-    assert(address < NUM_REGISTERS);
-
-    /* Build TX array and send it */
-    spiSendReceiveArrays(spiHdl, DataTx, DataRx, COMMAND_LENGTH + 1);
-
-    /* Update register array and return read result*/
-    registerMap[address] = DataRx[COMMAND_LENGTH];
-    return DataRx[COMMAND_LENGTH];
-}
-
-/************************************************************************************/ /**
- *
- * @brief readMultipleRegisters()
- *          Reads a group of registers starting at the specified address
- *          NOTE: Use getRegisterValue() to retrieve the read values
- *
- * @param[in]   spiHdl          SPI_Handle from TI Drivers
- * @param[in]	startAddress	Register address to start reading
- * @param[in]	count 			Number of registers to read
- *
- * @return 		None
- */
-void
-readMultipleRegisters(SPI_Handle spiHdl, uint8_t startAddress, uint8_t count)
-{
-    uint8_t DataTx[COMMAND_LENGTH + NUM_REGISTERS] = {0};
-    uint8_t DataRx[COMMAND_LENGTH + NUM_REGISTERS] = {0};
-    uint8_t i;
-
-    /* Check that the register address and count are in range */
-    assert(startAddress + count <= NUM_REGISTERS);
-
-    DataTx[0] = OPCODE_RREG | (startAddress & OPCODE_RWREG_MASK);
-    DataTx[1] = count - 1;
-    spiSendReceiveArrays(spiHdl, DataTx, DataRx, COMMAND_LENGTH + count);
-
-    for (i = 0; i < count; i++) {
-        // Read register data bytes
-        registerMap[i + startAddress] = DataRx[COMMAND_LENGTH + i];
-    }
-}
 
 /************************************************************************************/ /**
  *
@@ -236,44 +277,6 @@ writeSingleRegister(SPI_Handle spiHdl, uint8_t address, uint8_t data)
     registerMap[address] = DataTx[COMMAND_LENGTH];
 }
 
-/************************************************************************************/ /**
- *
- * @brief writeMultipleRegisters()
- *          Write data to a group of registers
- *          NOTES: Use getRegisterValue() to retrieve the written values.
- *          Registers should be re-read after a write operation to ensure proper configuration.
- *
- * @param[in]   spiHdl          SPI_Handle from TI Drivers
- * @param[in]	startAddress 	Register address to start writing
- * @param[in]	count 			Number of registers to write
- * @param[in]	regData			Array that holds the data to write, where element zero 
- *      						is the data to write to the starting address.
- *
- * @return 		None
- */
-void
-writeMultipleRegisters(SPI_Handle spiHdl, uint8_t startAddress, uint8_t count, uint8_t regData[])
-{
-    uint8_t DataTx[COMMAND_LENGTH + NUM_REGISTERS] = {0};
-    uint8_t DataRx[COMMAND_LENGTH + NUM_REGISTERS] = {0};
-    uint8_t i, j = 0;
-
-    /* Check that the register address and count are in range */
-    assert(startAddress + count <= NUM_REGISTERS);
-
-    /* Check that regData is not a NULL pointer */
-    assert(regData);
-
-    DataTx[0] = OPCODE_WREG | (startAddress & OPCODE_RWREG_MASK);
-    DataTx[1] = count - 1;
-    for (i = startAddress; i < startAddress + count; i++) {
-        DataTx[2 + j++] = regData[i];
-        registerMap[i] = regData[i];
-    }
-
-    // SPI communication
-    spiSendReceiveArrays(spiHdl, DataTx, DataRx, COMMAND_LENGTH + count);
-}
 
 /************************************************************************************/ /**
  *

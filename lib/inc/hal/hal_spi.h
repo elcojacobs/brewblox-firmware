@@ -25,6 +25,8 @@
 
 using hal_spi_err_t = int32_t;
 
+class SpiDeviceHandle;
+
 struct SpiTransaction {
     const uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
@@ -33,11 +35,7 @@ struct SpiTransaction {
     void* user_cb_data = nullptr;
 };
 
-using hal_spi_transaction_cb_t = std::function<void(SpiTransaction& t)>&;
-using hal_spi_device_handle_t = std::unique_ptr<void, std::function<void(void*)>>;
-
-class SpiConfig {
-public:
+struct SpiDevice {
     enum Mode : uint8_t {
         SPI_MODE0 = 0x00,
         SPI_MODE1 = 0x01,
@@ -50,53 +48,47 @@ public:
         MSBFIRST = 0x01,
     };
 
-    SpiConfig(uint8_t host_idx, int speed_hz, int queue_size, int ss_pin,
-              const hal_spi_transaction_cb_t pre, const hal_spi_transaction_cb_t post, Mode spi_mode = SPI_MODE0, BitOrder bit_order = MSBFIRST)
-        : host(host_idx)
+    SpiDevice(uint8_t host_idx, int speed_hz, int queue_size, int ss_pin,
+              Mode spi_mode, BitOrder bit_order,
+              std::function<void()> on_aquire = {}, std::function<void()> on_release = {},
+              std::function<void(SpiTransaction& t)> pre = {}, std::function<void(SpiTransaction& t)> post = {})
+        : spi_idx(host_idx)
         , speed(speed_hz)
         , queueSize(queue_size)
         , ssPin(ss_pin)
-        , pre_cb(pre)
-        , post_cb(post)
         , mode(spi_mode)
         , bitOrder(bit_order)
-    {
-    }
-    ~SpiConfig() = default;
-
-    uint8_t host = 0; // index to select SPI master in case of multiple masters
-    int speed;
-    int queueSize;
-    int ssPin;
-    hal_spi_transaction_cb_t pre_cb;
-    hal_spi_transaction_cb_t post_cb;
-    void* user_cb_data;
-
-    Mode mode = SPI_MODE0;
-    BitOrder bitOrder = MSBFIRST;
-};
-
-struct SpiDevice {
-    SpiDevice(const hal_spi_transaction_cb_t& pre, const hal_spi_transaction_cb_t& post)
-        : hal_pre_cb(pre)
-        , hal_post_cb(post)
+        , pre_cb(pre)
+        , post_cb(post)
+        , onAquire(on_aquire)
+        , onRelease(on_release)
     {
     }
 
-    hal_spi_err_t init(const SpiConfig& cfg);
+    ~SpiDevice()
+    {
+        deinit();
+    };
+
+    const uint8_t spi_idx = 0; // index to select SPI master in case of multiple masters
+    const int speed;
+    const int queueSize;
+    const int ssPin;
+    const Mode mode = SPI_MODE0;
+    const BitOrder bitOrder = MSBFIRST;
+
+    hal_spi_err_t init();
+    void deinit();
     hal_spi_err_t queue_transfer(const SpiTransaction& transaction, uint32_t timeout = 0);
     hal_spi_err_t transmit(const SpiTransaction& transaction, uint32_t timeout = 0);
     void aquire_bus();
     void release_bus();
 
-    // platform handle type with custom deleter
-    hal_spi_device_handle_t handle;
-    const hal_spi_transaction_cb_t hal_pre_cb;
-    const hal_spi_transaction_cb_t hal_post_cb;
+    void* platform_device_ptr;
+
+    // callbacks
+    std::function<void(SpiTransaction& t)> pre_cb;
+    std::function<void(SpiTransaction& t)> post_cb;
+    std::function<void()> onAquire;
+    std::function<void()> onRelease;
 };
-
-// bool spi_device_transmit(spi_device_handle_t handle, spi_transaction_t* trans_desc);
-
-hal_spi_err_t spi_queue_transfer(const SpiDevice& dev, const SpiTransaction& transaction);
-
-std::unique_ptr<SpiDevice> spi_device_init(const SpiConfig& client);

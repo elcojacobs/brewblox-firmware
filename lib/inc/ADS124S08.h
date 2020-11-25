@@ -48,11 +48,19 @@ public:
     static constexpr uint8_t STATUS_LENGTH = 1;
     static constexpr uint8_t CRC_LENGTH = 1;
 
-    ADS124S08(const SpiConfig& spiConfig);
-    ~ADS124S08();
+    ADS124S08(uint8_t spi_idx, int ss,
+              std::function<void(bool pinIsHigh)> reset,
+              std::function<void(bool pinIsHigh)> start,
+              std::function<void()> on_spi_aquire = {},
+              std::function<void()> on_spi_release = {});
+    ~ADS124S08() = default;
 
 private:
     bool converting = false;
+    SpiDevice spi;
+    std::function<void(bool pinIsHigh)> set_reset;
+    std::function<void(bool pinIsHigh)> set_start;
+
     enum DATA_MODE : uint8_t {
         NORMAL = 0x00,
         STATUS = 0x01,
@@ -104,11 +112,20 @@ private:
         {
         }
 
-        Register(uint8_t init)
-            : value(std::move(init))
+        Register(const uint8_t& init)
+            : value(init)
         {
         }
+        operator uint8_t()
+        {
+            return value;
+        }
 
+        Register& operator=(const uint8_t& v)
+        {
+            value = v;
+            return *this;
+        }
         uint8_t value;
     };
 
@@ -627,12 +644,12 @@ private:
     //
     //*****************************************************************************
 
+public:
     bool startup();
 
     // bool adcStartupRoutine(ADCchar_Set* adcChars, SPI_Handle spiHdl);
     // bool changeADCParameters(ADCchar_Set* adcChars, SPI_Handle spiHdl);
     // int32_t readConvertedData(SPI_Handle spiHdl, uint8_t status[], readMode mode);
-    // uint8_t readSingleRegister(SPI_Handle spiHdl, uint8_t address);
     // void readMultipleRegisters(SPI_Handle spiHdl, uint8_t startAddress, uint8_t count);
     // void sendCommand(SPI_Handle spiHdl, uint8_t op_code);
     // void startConversions(SPI_Handle spiHdl);
@@ -644,6 +661,11 @@ private:
     // uint8_t getRegisterValue(uint8_t address);
 
     // Internal variable setters void restoreRegisterDefaults(void);
+
+private:
+    uint8_t readSingleRegister(uint8_t address);
+    uint8_t readMultipleRegisters(uint8_t startAddress, uint8_t count);
+    uint8_t writeMultipleRegisters(uint8_t startAddress, uint8_t count, uint8_t data[]);
 };
 
 //*****************************************************************************

@@ -12,8 +12,11 @@
 #include <nvs_flash.h>
 #pragma GCC diagnostic pop
 
+#include "ADS124S08.h"
 #include "PCA9571.hpp"
 #include "hal/hal_i2c.h"
+
+#include "esp_log.h"
 
 using namespace std::chrono;
 using tcp = asio::ip::tcp;
@@ -34,15 +37,45 @@ App::~App()
 
 void App::start()
 {
+    hal_i2c_master_init();
+    PCA9571 io_expander;
+    io_expander.set_pins(0xFF);
+    io_expander.set_pin(0, false);
+    hal_delay_ms(500);
+    io_expander.set_pin(1, false);
+    hal_delay_ms(500);
+    io_expander.set_pin(2, false);
+    hal_delay_ms(500);
+    io_expander.set_pin(0, true);
+    hal_delay_ms(500);
+    io_expander.set_pin(2, true);
+    ESP_LOGW("app", "io_expander initialized");
+
+    ADS124S08 ads(
+        0, -1,
+        [&io_expander](bool pinIsHigh) { //reset
+            io_expander.set_pin(3, pinIsHigh);
+        },
+        [](bool pinIsHigh) { //start
+            hal_gpio_write(2, pinIsHigh);
+        },
+        [&io_expander]() {
+            io_expander.set_pin(4, false);
+        },
+        [&io_expander]() {
+            io_expander.set_pin(4, true);
+        });
+
+    while (true) {
+        // ESP_LOGW("tick", "");
+        hal_delay_ms(1);
+        ads.startup();
+    }
     init();
 }
 
 void App::init()
 {
-    hal_i2c_master_init();
-    PCA9571 io_expander;
-    io_expander.set_pins(0xFD);
-
     esp_netif_init();
 
     auto& ethernet = get_ethernet();

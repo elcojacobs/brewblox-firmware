@@ -17,6 +17,7 @@ public:
         } else {
             outputs &= ~mask;
         }
+        hal_i2c_master_write(addr, &outputs, 1, true);
     }
 
 private:
