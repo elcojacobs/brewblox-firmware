@@ -105,10 +105,11 @@ private:
  */
     // ID register address
 
+    template <uint8_t init_val, uint8_t address>
     class Register {
     public:
         Register()
-            : value(0)
+            : value(init_val)
         {
         }
 
@@ -121,22 +122,33 @@ private:
             return value;
         }
 
-        Register& operator=(const uint8_t& v)
+        Register& operator=(uint8_t v)
         {
             value = v;
             return *this;
         }
+
+        Register& operator|=(uint8_t rhs)
+        {
+            value |= rhs;
+            return *this;
+        }
+
+        Register& operator&=(uint8_t rhs)
+        {
+            value &= rhs;
+            return *this;
+        }
+
         uint8_t value;
+        static constexpr uint8_t addr()
+        {
+            return address;
+        };
     };
 
-    class RegId : public Register {
+    class RegId : public Register<0x00, 0x00> {
     public:
-        RegId()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x00;
-
         // possible values
         static constexpr uint8_t ADS_124S08 = 0x00;
         static constexpr uint8_t ADS_124S06 = 0x01;
@@ -151,15 +163,8 @@ private:
  *------------------------------------------------------------------------------------------------
  */
 
-    class RegStatus : public Register {
+    class RegStatus : public Register<0x80, 0x01> {
     public:
-        RegStatus()
-            : Register(0x80)
-        {
-        }
-
-        static constexpr uint8_t address = 0x01;
-
         static constexpr uint8_t ADS_FL_POR_MASK = 0x80;
         static constexpr uint8_t ADS_nRDY_MASK = 0x40;
         static constexpr uint8_t ADS_FL_P_RAILP_MASK = 0x20;
@@ -177,15 +182,8 @@ private:
  *------------------------------------------------------------------------------------------------
  */
 
-    class RegInpMux : public Register {
+    class RegInpMux : public Register<0x01, 0x02> {
     public:
-        RegInpMux()
-            : Register(0x01)
-        {
-        }
-
-        static constexpr uint8_t address = 0x02;
-
         // Define the ADC positive input channels (MUXP)
         static constexpr uint8_t ADS_P_AIN0 = 0x00;
         static constexpr uint8_t ADS_P_AIN1 = 0x10;
@@ -224,15 +222,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegPga : public Register {
+    class RegPga : public Register<0x00, 0x03> {
     public:
-        RegPga()
-            : Register(0x00)
-        {
-        }
-
-        static constexpr uint8_t address = 0x03;
-
         // Define conversion delay in tmod clock periods
         static constexpr uint8_t ADS_DELAY_14 = 0x00;
         static constexpr uint8_t ADS_DELAY_25 = 0x20;
@@ -265,15 +256,8 @@ private:
  *|   G_CHOP  |    CLK    |    MODE   |   FILTER  | 				  DR[3:0]                   |
  *-----------------------------------------------------------------------------------------------
  */
-    class RegDataRate : public Register {
+    class RegDataRate : public Register<0x14, 0x04> {
     public:
-        RegDataRate()
-            : Register(0x14)
-        {
-        }
-
-        static constexpr uint8_t address = 0x04;
-
         static constexpr uint8_t ADS_GLOBALCHOP = 0x80;
         static constexpr uint8_t ADS_CLKSEL_EXT = 0x40;
         static constexpr uint8_t ADS_CONVMODE_SS = 0x20;
@@ -304,14 +288,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegRef : public Register {
+    class RegRef : public Register<0x10, 0x05> {
     public:
-        RegRef()
-            : Register(0x10)
-        {
-        }
-        static constexpr uint8_t address = 0x05;
-
         static constexpr uint8_t ADS_FLAG_REF_DISABLE = 0x00;
         static constexpr uint8_t ADS_FLAG_REF_EN_L0 = 0x40;
         static constexpr uint8_t ADS_FLAG_REF_EN_BOTH = 0x80;
@@ -335,14 +313,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegIdacMag : public Register {
+    class RegIdacMag : public Register<0x00, 0x06> {
     public:
-        RegIdacMag()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x06;
-
         static constexpr uint8_t ADS_FLAG_RAIL_ENABLE = 0x80;
         static constexpr uint8_t ADS_FLAG_RAIL_DISABLE = 0x00;
         static constexpr uint8_t ADS_PSW_OPEN = 0x00;
@@ -366,14 +338,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegIdacMux : public Register {
+    class RegIdacMux : public Register<0xFF, 0x07> {
     public:
-        RegIdacMux()
-            : Register(0xFF)
-        {
-        }
-        static constexpr uint8_t address = 0x07;
-
         // Define IDAC2 Output
         static constexpr uint8_t ADS_IDAC2_A0 = 0x00;
         static constexpr uint8_t ADS_IDAC2_A1 = 0x10;
@@ -414,14 +380,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegVbias : public Register {
+    class RegVbias : public Register<0x00, 0x08> {
     public:
-        RegVbias()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x08;
-
         static constexpr uint8_t ADS_VBIAS_LVL_DIV2 = 0x00;
         static constexpr uint8_t ADS_VBIAS_LVL_DIV12 = 0x80;
 
@@ -442,14 +402,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegSys : public Register {
+    class RegSys : public Register<0x10, 0x09> {
     public:
-        RegSys()
-            : Register(0x10)
-        {
-        }
-        static constexpr uint8_t address = 0x09;
-
         static constexpr uint8_t ADS_SYS_MON_OFF = 0x00;
         static constexpr uint8_t ADS_SYS_MON_SHORT = 0x20;
         static constexpr uint8_t ADS_SYS_MON_TEMP = 0x40;
@@ -479,13 +433,7 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegOfcal0 : public Register {
-    public:
-        RegOfcal0()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x0A;
+    class RegOfcal0 : public Register<0x00, 0x0A> {
     };
 
     /* ADS124S08 Register 0xB (OFCAL1) Definition
@@ -494,13 +442,7 @@ private:
  *|                                        OFC[15:8]                                            |
  *-----------------------------------------------------------------------------------------------
  */
-    class RegOfcal1 : public Register {
-    public:
-        RegOfcal1()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x0B;
+    class RegOfcal1 : public Register<0x00, 0x0B> {
     };
 
     /* ADS124S08 Register 0xC (OFCAL2) Definition
@@ -510,13 +452,7 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegOfcal2 : public Register {
-    public:
-        RegOfcal2()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x0C;
+    class RegOfcal2 : public Register<0x00, 0x0C> {
     };
 
     /* ADS124S08 Register 0xD (FSCAL0) Definition
@@ -526,13 +462,7 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegFscal0 : public Register {
-    public:
-        RegFscal0()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x0D;
+    class RegFscal0 : public Register<0x00, 0x0D> {
     };
 
     /* ADS124S08 Register 0xE (FSCAL1) Definition 
@@ -542,13 +472,7 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegFscal1 : public Register {
-    public:
-        RegFscal1()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x0E;
+    class RegFscal1 : public Register<0x00, 0x0E> {
     };
 
     /* ADS124S08 Register 0xF (FSCAL2) Definition 
@@ -558,13 +482,7 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
 
-    class RegFscal2 : public Register {
-    public:
-        RegFscal2()
-            : Register(0x40)
-        {
-        }
-        static constexpr uint8_t address = 0x0F;
+    class RegFscal2 : public Register<0x40, 0x0F> {
     };
 
     /* ADS124S08 Register 0x10 (GPIODAT) Definition
@@ -574,14 +492,8 @@ private:
  *-----------------------------------------------------------------------------------------------
  */
     // GPIODAT register address
-    class RegGpiodat : public Register {
+    class RegGpiodat : public Register<0x00, 0x10> {
     public:
-        RegGpiodat()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x10;
-
         // Define GPIO direction (0-Output; 1-Input) here
         static constexpr uint8_t ADS_GPIO0_DIR_INPUT = 0x10;
         static constexpr uint8_t ADS_GPIO1_DIR_INPUT = 0x20;
@@ -597,14 +509,8 @@ private:
  */
 
     // GPIODAT register address
-    class RegGpiocon : public Register {
+    class RegGpiocon : public Register<0x00, 0x11> {
     public:
-        RegGpiocon()
-            : Register(0x00)
-        {
-        }
-        static constexpr uint8_t address = 0x11;
-
         // Define GPIO configuration (0-Analog Input; 1-GPIO) here
         static constexpr uint8_t ADS_GPIO0_DIR_INPUT = 0x10;
         static constexpr uint8_t ADS_GPIO1_DIR_INPUT = 0x20;
@@ -612,31 +518,63 @@ private:
         static constexpr uint8_t ADS_GPIO3_DIR_INPUT = 0x80;
     };
 
-    using RegisterMap = std::array<Register, 18>;
-    RegisterMap defaultRegisters()
+    class RegisterMap {
+    public:
+        struct Registers {
+            RegId id;
+            RegStatus status;
+            RegInpMux inpMux;
+            RegPga pga;
+            RegDataRate dataRate;
+            RegRef ref;
+            RegIdacMag idacMag;
+            RegIdacMux idacMux;
+            RegVbias vbias;
+            RegSys sys;
+            RegOfcal0 ofcal0;
+            RegOfcal1 ofcal1;
+            RegOfcal2 ofcal2;
+            RegFscal0 fscal0;
+            RegFscal1 fscal1;
+            RegFscal2 fscal2;
+            RegGpiodat gpiodat;
+            RegGpiocon gpiocon;
+        };
+
+        union {
+            Registers byName;
+            std::array<uint8_t, sizeof(Registers)> byIdx;
+        };
+
+        uint8_t& operator[](int i)
+        {
+            return byIdx[i];
+        }
+
+        RegisterMap()
+            : byName(Registers{})
+        {
+            static_assert(sizeof(Registers) == 18);
+        }
+    };
+
+    RegisterMap registers;
+
+    template <uint8_t init_val, uint8_t address>
+    inline hal_spi_err_t update(Register<init_val, address>& reg)
     {
-        return {
-            RegId{},
-            RegStatus{},
-            RegInpMux{},
-            RegPga{},
-            RegDataRate{},
-            RegRef{},
-            RegIdacMag{},
-            RegIdacMux{},
-            RegVbias{},
-            RegSys{},
-            RegOfcal0{},
-            RegOfcal1{},
-            RegOfcal2{},
-            RegFscal0{},
-            RegFscal1{},
-            RegFscal2{},
-            RegGpiodat{},
-            RegGpiocon{}};
+        return readSingleRegister(reg.value, address);
     }
 
-    RegisterMap registers = {0};
+    template <uint8_t init_val1, uint8_t address1, uint8_t init_val2, uint8_t address2>
+    inline hal_spi_err_t updateRange(Register<init_val1, address1>&, Register<init_val2, address2>&)
+    {
+        return readMultipleRegisters(address1, address2);
+    }
+
+    hal_spi_err_t readSingleRegister(uint8_t& val, uint8_t address);
+    hal_spi_err_t readMultipleRegisters(uint8_t startAddress, uint8_t endAddress);
+    hal_spi_err_t writeMultipleRegisters(uint8_t startAddress, uint8_t endAddress, uint8_t data[]);
 
     //*****************************************************************************
     //
@@ -661,11 +599,6 @@ public:
     // uint8_t getRegisterValue(uint8_t address);
 
     // Internal variable setters void restoreRegisterDefaults(void);
-
-private:
-    uint8_t readSingleRegister(uint8_t address);
-    uint8_t readMultipleRegisters(uint8_t startAddress, uint8_t count);
-    uint8_t writeMultipleRegisters(uint8_t startAddress, uint8_t count, uint8_t data[]);
 };
 
 //*****************************************************************************

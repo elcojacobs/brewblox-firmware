@@ -56,9 +56,6 @@ ADS124S08::ADS124S08(uint8_t spi_idx, int ss,
 
 bool ADS124S08::startup()
 {
-    // RegisterMap initRegisters = {0};
-    RegStatus status;
-
     // // Provide additional delay time for power supply settling
     hal_delay_ms(3);
 
@@ -67,16 +64,20 @@ bool ADS124S08::startup()
     set_reset(false);
     hal_delay_ms(1);
     set_reset(true);
-    // // Must wait 4096 tCLK after reset
-    hal_delay_ms(1000);
+    // // Must wait 4096 tCLK after reset (= 1ms $ 4.096 Mhz internal oscillator)
+    hal_delay_ms(1);
 
     spi.aquire_bus();
-    hal_delay_ms(1);
-    uint8_t result = readSingleRegister(RegStatus::address);
-    ESP_LOGW("ADC", "%x", result);
-    if ((status & status.ADS_nRDY_MASK)) {
-        ESP_LOGW("ADC", "not ready");
-        return (false); // Device not ready
+    auto& status = registers.byName.status;
+    if (update(status) == 0) {
+        ESP_LOGW("ADC", "status: %2x", status.value);
+        if (status & status.ADS_nRDY_MASK) {
+            ESP_LOGW("ADC", "not ready");
+            return false;
+        }
+    } else {
+        ESP_LOGW("ADC", "SPI error");
+        return false;
     }
 
     // // Ensure internal register array is initialized
@@ -105,26 +106,25 @@ bool ADS124S08::startup()
     // writeMultipleRegisters(RegStatus::address, RegSys::address - RegStatus::address + 1, initRegisterMap);
 
     //Read back all registers
-    readMultipleRegisters(RegId::address, 18);
+    updateRange(registers.byName.id, registers.byName.gpiocon);
     uint8_t i = 0;
-    for (auto& r : registers) {
+    for (auto& r : registers.byIdx) {
 
         // if (i == REG_ADDR_STATUS)
         //     continue;
         // if (initRegisterMap[i] != registerMap[i])
         //     return (false);
-        ESP_LOGI("reg ", "%d: %x", i++, r.value);
+        ESP_LOGI("reg ", "%d: %x", i++, r);
     }
     spi.release_bus();
     return true;
 }
 
-uint8_t ADS124S08::readSingleRegister(uint8_t address)
+hal_spi_err_t ADS124S08::readSingleRegister(uint8_t& val, uint8_t address)
 {
-    /* Initialize arrays */
-    address &= OPCODE::RWREG_MASK;
-    address |= OPCODE::RREG;
-    uint8_t tx[3] = {address, 0, 0};
+    uint8_t byte1 = address;
+    byte1 |= OPCODE::RREG;
+    uint8_t tx[3] = {byte1, 0, 0};
     uint8_t rx[3] = {0, 0, 0};
 
     SpiTransaction t{
@@ -135,16 +135,17 @@ uint8_t ADS124S08::readSingleRegister(uint8_t address)
         .user_cb_data = nullptr,
     };
 
-    if (spi.transmit(t) == 0) {
+    auto err = spi.transmit(t);
+    if (err == 0) {
         /* Update register array and return read result*/
-        registers[address] = rx[2];
-        return rx[2];
+        val = rx[2];
     }
-    return 0xFF;
+    return err;
 }
 
-uint8_t ADS124S08::readMultipleRegisters(uint8_t startAddress, uint8_t count)
+hal_spi_err_t ADS124S08::readMultipleRegisters(uint8_t startAddress, uint8_t endAddress)
 {
+    const uint8_t count = endAddress - startAddress;
     const uint8_t len = 2 + count;
 
     uint8_t tx[20] = {0};
@@ -160,18 +161,19 @@ uint8_t ADS124S08::readMultipleRegisters(uint8_t startAddress, uint8_t count)
 
     tx[0] = OPCODE::RREG | (startAddress & OPCODE::RWREG_MASK);
     tx[1] = count - 1;
-    if (spi.transmit(t) == 0) {
+    const auto err = spi.transmit(t);
+    if (err == 0) {
         for (uint8_t i = 0; i < count; i++) {
             // Read register data bytes
             registers[i + startAddress] = rx[2 + i];
         }
-        return 0;
     }
-    return 1;
+    return err;
 }
 
-uint8_t ADS124S08::writeMultipleRegisters(uint8_t startAddress, uint8_t count, uint8_t data[])
+hal_spi_err_t ADS124S08::writeMultipleRegisters(uint8_t startAddress, uint8_t endAddress, uint8_t data[])
 {
+    const uint8_t count = endAddress - startAddress;
     const uint8_t len = 2 + count;
 
     uint8_t tx[20] = {0};
@@ -193,10 +195,7 @@ uint8_t ADS124S08::writeMultipleRegisters(uint8_t startAddress, uint8_t count, u
         .user_cb_data = nullptr,
     };
 
-    if (spi.transmit(t) == 0) {
-        return 0;
-    }
-    return 1;
+    return spi.transmit(t);
 }
 
 #if 0
