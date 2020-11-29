@@ -1,7 +1,7 @@
 #include "hal/hal_i2c.h"
 #include "driver/i2c.h"
 
-bool hal_i2c_master_init()
+hal_i2c_err_t hal_i2c_master_init()
 {
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
@@ -13,10 +13,10 @@ bool hal_i2c_master_init()
     i2c_param_config(I2C_NUM_0, &conf);
     esp_err_t err = i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0);
     i2c_set_data_mode(I2C_NUM_0, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST);
-    return (err != ESP_OK);
+    return err;
 }
 
-bool hal_i2c_master_write(uint8_t addr, const uint8_t* data, size_t data_len, bool ack_enable)
+hal_i2c_err_t hal_i2c_master_write(uint8_t addr, const uint8_t* data, size_t data_len, bool ack_enable)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -25,10 +25,10 @@ bool hal_i2c_master_write(uint8_t addr, const uint8_t* data, size_t data_len, bo
     i2c_master_stop(cmd);
     esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
-    return ret != ESP_OK;
+    return ret;
 }
 
-bool hal_i2c_master_read(uint8_t addr, uint8_t* data, size_t data_len, hal_i2c_ack_type_t read_ack_type, bool write_ack_enable)
+hal_i2c_err_t hal_i2c_master_read(uint8_t addr, uint8_t* data, size_t data_len, hal_i2c_ack_type_t read_ack_type, bool write_ack_enable)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -37,7 +37,7 @@ bool hal_i2c_master_read(uint8_t addr, uint8_t* data, size_t data_len, hal_i2c_a
     i2c_master_stop(cmd);
     esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
-    return ret != ESP_OK;
+    return ret;
 }
 
 void hal_i2c_master_reset_all()

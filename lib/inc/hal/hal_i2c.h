@@ -22,6 +22,8 @@
 #include <cstddef>
 #include <cstdint>
 
+using hal_i2c_err_t = int32_t;
+
 enum class hal_i2c_ack_type_t {
     I2C_MASTER_ACK = 0x0,       /*!< I2C ack for each byte read */
     I2C_MASTER_NACK = 0x1,      /*!< I2C nack for each byte read */
@@ -29,7 +31,8 @@ enum class hal_i2c_ack_type_t {
     I2C_MASTER_ACK_MAX,
 };
 
-bool hal_i2c_master_init();
-bool hal_i2c_master_write(uint8_t addr, const uint8_t* data, size_t data_len, bool ack_enable = true);
-bool hal_i2c_master_read(uint8_t addr, uint8_t* data, size_t data_len, hal_i2c_ack_type_t read_ack_type, bool write_ack_enable = true);
+// true on success
+hal_i2c_err_t hal_i2c_master_init();
+hal_i2c_err_t hal_i2c_master_write(uint8_t addr, const uint8_t* data, size_t data_len, bool ack_enable = true);
+hal_i2c_err_t hal_i2c_master_read(uint8_t addr, uint8_t* data, size_t data_len, hal_i2c_ack_type_t read_ack_type, bool write_ack_enable = true);
 void hal_i2c_master_reset_all();
