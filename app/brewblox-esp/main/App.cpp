@@ -56,14 +56,20 @@ void App::start()
     io_expander.set_output(2, true);
     ESP_LOGW("app", "io_expander initialized");
 
+    io_expander.set_output(5, false); // keep start pin low
+    io_expander.set_output(5, true);  // keep reset pin high
+
     ADS124S08 ads(
         0, -1,
-        [&io_expander](bool pinIsHigh) { //reset
-            io_expander.set_output(3, pinIsHigh);
-        },
-        [&io_expander](bool pinIsHigh) { //start
-            io_expander.set_output(5, pinIsHigh);
-        },
+        nullptr,
+        nullptr,
+        nullptr,
+        // [&io_expander](bool pinIsHigh) { //start
+        //     io_expander.set_output(5, pinIsHigh);
+        // },
+        // []() { //ready pin
+        //     return hal_gpio_read(16);
+        // },
         [&io_expander]() { // cs low
             io_expander.set_output(4, false);
         },
@@ -71,10 +77,18 @@ void App::start()
             io_expander.set_output(4, true);
         });
 
+    while (!ads.startup()) {
+        ;
+    }
+
+    ads.start();
     while (true) {
-        // ESP_LOGW("tick", "");
-        hal_delay_ms(1);
-        ads.startup();
+        auto val = ads.readLastData();
+        //if (val != ads.NOT_READY_RESULT) {
+        ESP_LOGI("adc read", "%d %d", val, ads.ready());
+        hal_delay_ms(50);
+        //}
+        // hal_delay_ms(1);
     }
     init();
 }

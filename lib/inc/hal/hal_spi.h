@@ -20,8 +20,8 @@
 #pragma once
 
 #include <functional>
+#include <hal/hal_delay.h>
 #include <memory>
-// #include <mutex>
 
 using hal_spi_err_t = int32_t;
 
@@ -68,7 +68,7 @@ struct SpiDevice {
     ~SpiDevice()
     {
         deinit();
-    };
+    }
 
     const uint8_t spi_idx = 0; // index to select SPI master in case of multiple masters
     const int speed;
@@ -80,15 +80,61 @@ struct SpiDevice {
     hal_spi_err_t init();
     void deinit();
     hal_spi_err_t queue_transfer(const SpiTransaction& transaction, uint32_t timeout = 0);
-    hal_spi_err_t transmit(const SpiTransaction& transaction, uint32_t timeout = 0);
-    void aquire_bus();
-    void release_bus();
+    hal_spi_err_t transfer(const SpiTransaction& transaction, uint32_t timeout = 0)
+    {
+        // if bus has not been already aquired, aquire and release
+        bool inTransaction = hasBus;
+        if (!inTransaction) {
+            aquire_bus();
+        }
+        auto err = transfer_impl(transaction, timeout);
+        if (!inTransaction) {
+            release_bus();
+        }
+        return err;
+    }
+
+    void aquire_bus()
+    {
+        if (hasBus) {
+            return;
+        } else {
+            aquire_bus_impl();
+            hasBus = true;
+            if (onAquire) {
+                onAquire();
+            }
+            hal_delay_us(20);
+        }
+    }
+
+    void release_bus()
+    {
+        release_bus_impl();
+        hasBus = false;
+        if (onRelease) {
+            onRelease();
+        }
+        hal_delay_us(20);
+    }
+
+    inline bool has_bus()
+    {
+        return hasBus;
+    }
+
+    bool sense_miso();
 
     void* platform_device_ptr;
 
+private:
     // callbacks
     std::function<void(SpiTransaction& t)> pre_cb;
     std::function<void(SpiTransaction& t)> post_cb;
     std::function<void()> onAquire;
     std::function<void()> onRelease;
+    bool hasBus = false;
+    void aquire_bus_impl();
+    void release_bus_impl();
+    hal_spi_err_t transfer_impl(const SpiTransaction& transaction, uint32_t timeout = 0);
 };

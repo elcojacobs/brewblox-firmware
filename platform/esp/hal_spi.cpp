@@ -1,4 +1,5 @@
 #include "hal/hal_spi.h"
+#include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_log.h"
 #include <vector>
@@ -139,24 +140,24 @@ hal_spi_err_t SpiDevice::queue_transfer(const SpiTransaction& transaction, uint3
 //     return spi_device_get_trans_result(get_platform_ptr(dev), &trans, timeout, timeout ? timeout : portMAX_DELAY);
 // }
 
-hal_spi_err_t SpiDevice::transmit(const SpiTransaction& transaction, uint32_t timeout)
+hal_spi_err_t SpiDevice::transfer_impl(const SpiTransaction& transaction, uint32_t timeout)
 {
     spi_transaction_t trans = glue_transaction(this, transaction);
     return spi_device_transmit(get_platform_ptr(this), &trans);
 }
 
-void SpiDevice::aquire_bus()
+void SpiDevice::aquire_bus_impl()
 {
     spi_device_acquire_bus(get_platform_ptr(this), portMAX_DELAY); // only port max delay is supported currently
-    if (onAquire) {
-        onAquire();
-    }
 }
 
-void SpiDevice::release_bus()
+void SpiDevice::release_bus_impl()
 {
     spi_device_release_bus(get_platform_ptr(this));
-    if (onRelease) {
-        onRelease();
-    }
+}
+
+bool SpiDevice::sense_miso()
+{
+    auto pin = gpio_num_t(spiHosts[this->spi_idx].config.miso_io_num);
+    return gpio_get_level(pin) != 0;
 }

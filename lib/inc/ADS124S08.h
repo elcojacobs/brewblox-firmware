@@ -21,10 +21,10 @@
 
 #include <array>
 //#include <cstdint>
-//#include <cstring>
 #include "hal/hal_delay.h"
 #include "hal/hal_gpio.h"
 #include "hal/hal_spi.h"
+#include <limits>
 
 // #define INT_VREF 2.5
 
@@ -51,21 +51,23 @@ public:
     ADS124S08(uint8_t spi_idx, int ss,
               std::function<void(bool pinIsHigh)> reset,
               std::function<void(bool pinIsHigh)> start,
+              std::function<bool()> ready,
               std::function<void()> on_spi_aquire = {},
               std::function<void()> on_spi_release = {});
     ~ADS124S08() = default;
+
+    /* Read mode enum */
+    enum ReadMode : uint8_t {
+        DIRECT,
+        COMMAND
+    };
 
 private:
     bool converting = false;
     SpiDevice spi;
     std::function<void(bool pinIsHigh)> set_reset;
     std::function<void(bool pinIsHigh)> set_start;
-
-    enum DATA_MODE : uint8_t {
-        NORMAL = 0x00,
-        STATUS = 0x01,
-        CRC = 0x02,
-    };
+    std::function<bool()> sense_ready;
 
     enum OPCODE : uint8_t {
         // SPI Contro; Commands
@@ -88,12 +90,6 @@ private:
         RREG = 0x20,
         WREG = 0x40,
         RWREG_MASK = 0x1F,
-    };
-
-    /* Read mode enum */
-    enum ReadMode : uint8_t {
-        DIRECT,
-        COMMAND
     };
 
     /* ADS124S08 Register 0x0 (ID) Definition
@@ -144,7 +140,7 @@ private:
         static constexpr uint8_t addr()
         {
             return address;
-        };
+        }
     };
 
     class RegId : public Register<0x00, 0x00> {
@@ -165,6 +161,11 @@ private:
 
     class RegStatus : public Register<0x80, 0x01> {
     public:
+        bool ready()
+        {
+            return (value & ADS_nRDY_MASK) == 0;
+        }
+
         static constexpr uint8_t ADS_FL_POR_MASK = 0x80;
         static constexpr uint8_t ADS_nRDY_MASK = 0x40;
         static constexpr uint8_t ADS_FL_P_RAILP_MASK = 0x20;
@@ -554,27 +555,39 @@ private:
         RegisterMap()
             : byName(Registers{})
         {
-            static_assert(sizeof(Registers) == 18);
+            static_assert(sizeof(Registers) == 18, "Register map size invalid");
+        }
+
+        void reset()
+        {
+            byName = Registers{};
         }
     };
 
     RegisterMap registers;
 
     template <uint8_t init_val, uint8_t address>
-    inline hal_spi_err_t update(Register<init_val, address>& reg)
+    inline hal_spi_err_t updateReg(Register<init_val, address>& reg)
     {
         return readSingleRegister(reg.value, address);
     }
 
     template <uint8_t init_val1, uint8_t address1, uint8_t init_val2, uint8_t address2>
-    inline hal_spi_err_t updateRange(Register<init_val1, address1>&, Register<init_val2, address2>&)
+    inline hal_spi_err_t updateRegs(Register<init_val1, address1>&, Register<init_val2, address2>&)
     {
         return readMultipleRegisters(address1, address2);
+    }
+
+    template <uint8_t init_val1, uint8_t address1, uint8_t init_val2, uint8_t address2>
+    inline hal_spi_err_t writeRegs(Register<init_val1, address1>& first, Register<init_val2, address2>&)
+    {
+        return writeMultipleRegisters(address1, address2, &(first.value));
     }
 
     hal_spi_err_t readSingleRegister(uint8_t& val, uint8_t address);
     hal_spi_err_t readMultipleRegisters(uint8_t startAddress, uint8_t endAddress);
     hal_spi_err_t writeMultipleRegisters(uint8_t startAddress, uint8_t endAddress, uint8_t data[]);
+    hal_spi_err_t sendCommand(OPCODE opcode);
 
     //*****************************************************************************
     //
@@ -584,21 +597,44 @@ private:
 
 public:
     bool startup();
+    void start();
+    void stop();
+    void reset();
+    bool ready();
 
-    // bool adcStartupRoutine(ADCchar_Set* adcChars, SPI_Handle spiHdl);
-    // bool changeADCParameters(ADCchar_Set* adcChars, SPI_Handle spiHdl);
-    // int32_t readConvertedData(SPI_Handle spiHdl, uint8_t status[], readMode mode);
-    // void readMultipleRegisters(SPI_Handle spiHdl, uint8_t startAddress, uint8_t count);
-    // void sendCommand(SPI_Handle spiHdl, uint8_t op_code);
-    // void startConversions(SPI_Handle spiHdl);
-    // void stopConversions(SPI_Handle spiHdl);
-    // void writeSingleRegister(SPI_Handle spiHdl, uint8_t address, uint8_t data);
-    // void writeMultipleRegisters(SPI_Handle spiHdl, uint8_t startAddress, uint8_t count, uint8_t regData[]);
+    int32_t waitAndReadData();
+    int32_t readLastData();
 
-    // Internal variable getters
-    // uint8_t getRegisterValue(uint8_t address);
+    static uint8_t calculateCrc(const uint8_t dataBytes[], uint8_t numBytes);
+    static constexpr int32_t SPI_ERROR_RESULT = std::numeric_limits<int32_t>::lowest() + 1;
+    static constexpr int32_t CRC_ERROR_RESULT = std::numeric_limits<int32_t>::lowest() + 2;
+    static constexpr int32_t NOT_READY_RESULT = std::numeric_limits<int32_t>::lowest() + 3;
 
-    // Internal variable setters void restoreRegisterDefaults(void);
+private:
+    int32_t readData(ReadMode mode = ReadMode::COMMAND);
+    static constexpr std::array<uint8_t, 256> crcTable()
+    {
+        std::array<uint8_t, 256> crcTable = {0};
+        uint16_t generator = 0x103; // X^8 + X^2 + X^2 + X + 1
+        // iterate over all byte values 0- 255
+        for (int dividend = 0; dividend < 256; dividend++) {
+            unsigned char currByte = dividend;
+            //calculate the CRC-8 value for current byte
+            for (unsigned char bitSec = 0; bitSec < 8; bitSec++) {
+                if ((currByte & 0x80) != 0) {
+                    currByte <<= 1;
+                    currByte ^= generator;
+                } else {
+                    currByte <<= 1;
+                }
+            }
+            //store CRC value in lookup table
+            crcTable[dividend] = currByte;
+        }
+        return crcTable;
+    }
+
+    // static constexpr std::array<uint8_t, 256> crcTable = calculateCrCtable();
 };
 
 //*****************************************************************************
