@@ -64,8 +64,17 @@ public:
     hal_i2c_err_t get_inverts(uint16_t& v)
     {
         auto err = readRegister(RegAddr::INVERT, v);
-        if (err) {
+        if (err == 0) {
             invert = v;
+        }
+        return err;
+    }
+
+    hal_i2c_err_t get_inputs(uint16_t& v)
+    {
+        auto err = readRegister(RegAddr::INPUT, v);
+        if (err == 0) {
+            inputs = v;
         }
         return err;
     }
@@ -79,6 +88,17 @@ public:
             outputs &= ~mask;
         }
         return writeRegister(RegAddr::OUTPUT, outputs);
+    }
+
+    hal_i2c_err_t get_input(uint8_t pin, bool& state)
+    {
+        uint16_t values = 0;
+        auto err = get_inputs(values);
+        if (err == 0) {
+            uint16_t mask = uint16_t(0x1) << pin;
+            state = (values & mask) != 0;
+        }
+        return err;
     }
 
 private:

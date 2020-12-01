@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <cstdint>
 
-using hal_i2c_err_t = int32_t;
+using hal_i2c_err_t = int32_t; // 0 is no error
 
 enum class hal_i2c_ack_type_t {
     I2C_MASTER_ACK = 0x0,       /*!< I2C ack for each byte read */

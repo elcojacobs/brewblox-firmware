@@ -60,24 +60,25 @@ bool ADS124S08::startup()
     hal_delay_ms(3);
 
     if (set_start) {
-        set_start(false);
+        set_start(false); // set start pin low if setter is defined
     }
-    reset();
+    reset(); // reset, uses reset pin or reset command
 
-    bool success = ready();
+    // read status register and check ready bit
+    bool success = false;
+    spi.aquire_bus();
+    if (updateReg(registers.byName.status) == 0) {
+        success = registers.byName.status.ready();
+    }
 
     if (success) {
-        spi.aquire_bus();
         RegisterMap initRegs;
         // // Configure initial device register settings here
         initRegs.byName.status.value = 0x00; // Reset POR event
         initRegs.byName.inpMux.value = RegInpMux::ADS_P_AIN0 + RegInpMux::ADS_N_AINCOM;
         initRegs.byName.pga.value = RegPga::ADS_DELAY_14 | RegPga::ADS_PGA_ENABLED | RegPga::ADS_GAIN_1;
-        initRegs.byName.dataRate.value = RegDataRate::ADS_GLOBALCHOP | RegDataRate::ADS_CONVMODE_CONT | RegDataRate::ADS_DR_20 | RegDataRate::ADS_FILTERTYPE_LL;
+        initRegs.byName.dataRate.value = RegDataRate::ADS_GLOBALCHOP | RegDataRate::ADS_CONVMODE_SS | RegDataRate::ADS_DR_20 | RegDataRate::ADS_FILTERTYPE_LL;
         initRegs.byName.ref.value = RegRef::ADS_REFSEL_INT | RegRef::ADS_REFINT_ON_ALWAYS;
-        // initRegisterMap[REG_ADDR_IDACMAG].value = adcChars->IDACmagReg;
-        // initRegisterMap[REG_ADDR_IDACMUX].value = adcChars->IDACmuxReg;
-        // initRegisterMap[REG_ADDR_VBIAS].value = adcChars->VBIASReg;
         initRegs.byName.sys.value = RegSys::ADS_CRC_ENABLE | RegSys::ADS_SENDSTATUS_ENABLE;
 
         writeRegs(initRegs.byName.status, initRegs.byName.sys);
@@ -93,15 +94,22 @@ bool ADS124S08::startup()
                 }
             }
         }
-        spi.release_bus();
     }
+    spi.release_bus();
 
     return success;
 }
 
 bool ADS124S08::ready()
 {
-    return registers.byName.status.ready();
+    if (sense_ready) {
+        return !sense_ready(); // ready pin is low when ready
+    }
+    // fall back to reading status register
+    if (updateReg(registers.byName.status) == 0) {
+        return registers.byName.status.ready();
+    }
+    return false; // SPI error
 }
 
 hal_spi_err_t ADS124S08::readSingleRegister(uint8_t& val, uint8_t address)
@@ -205,6 +213,16 @@ void ADS124S08::start()
     }
 }
 
+void ADS124S08::pulse_start()
+{
+    if (set_start) {
+        set_start(false);
+        set_start(true);
+    } else {
+        sendCommand(OPCODE::START);
+    }
+}
+
 void ADS124S08::stop()
 {
     if (set_start) {
@@ -264,18 +282,6 @@ int32_t ADS124S08::readLastData()
 int32_t ADS124S08::readData(ReadMode mode)
 {
     spi.aquire_bus();
-
-    // while (!spi.sense_miso()) {
-    //     ;
-    // }
-
-    // if (!ready) {
-    //     spi.release_bus();
-    //     return NOT_READY_RESULT;
-    // }
-
-    // spi.release_bus();
-    // return 0;
 
     uint8_t tx[6] = {0};
     uint8_t rx[6] = {0};

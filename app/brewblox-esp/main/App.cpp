@@ -40,7 +40,7 @@ void App::start()
     hal_i2c_master_init();
     PCA9555 io_expander(0x20);
 
-    auto err = io_expander.set_directions(0xFF00);
+    auto err = io_expander.set_directions(0x0700);
     if (err != 0) {
         ESP_LOGW("app", "io_expander error: %d", err);
     }
@@ -48,11 +48,11 @@ void App::start()
     //io_expander.set_output(0, false);
     hal_delay_ms(500);
     io_expander.set_output(1, false);
-    hal_delay_ms(500);
+    hal_delay_ms(200);
     io_expander.set_output(2, false);
-    hal_delay_ms(500);
+    hal_delay_ms(200);
     io_expander.set_output(0, true);
-    hal_delay_ms(500);
+    hal_delay_ms(200);
     io_expander.set_output(2, true);
     ESP_LOGW("app", "io_expander initialized");
 
@@ -60,16 +60,19 @@ void App::start()
     io_expander.set_output(5, true);  // keep reset pin high
 
     ADS124S08 ads(
-        0, -1,
-        nullptr,
-        nullptr,
-        nullptr,
-        // [&io_expander](bool pinIsHigh) { //start
-        //     io_expander.set_output(5, pinIsHigh);
-        // },
-        // []() { //ready pin
-        //     return hal_gpio_read(16);
-        // },
+        0,                               // select spi idx 0 on platform
+        -1,                              // no SS pin (io expander pin set in onAquire and onRelease)
+        [&io_expander](bool pinIsHigh) { // set reset pin
+            io_expander.set_output(3, pinIsHigh);
+        },
+        [&io_expander](bool pinIsHigh) { // set start pin
+            io_expander.set_output(5, pinIsHigh);
+        },
+        [&io_expander]() {      // read ready pin state
+            bool result = true; // default to high (not ready) in case of i2c error
+            io_expander.get_input(10, result);
+            return result;
+        },
         [&io_expander]() { // cs low
             io_expander.set_output(4, false);
         },
@@ -77,23 +80,31 @@ void App::start()
             io_expander.set_output(4, true);
         });
 
-    while (!ads.startup()) {
-        ;
+    if (!ads.startup()) {
+        ESP_LOGE("ADC", "Init failed");
+        exit(1);
     }
 
+    ads.stop();
     ads.start();
+    uint16_t ticksElapsed = 0;
     while (true) {
-        auto val = ads.readLastData();
-        //if (val != ads.NOT_READY_RESULT) {
-        ESP_LOGI("adc read", "%d %d", val, ads.ready());
-        hal_delay_ms(50);
-        //}
-        // hal_delay_ms(1);
+        if (ads.ready() || ticksElapsed > 1000) {
+            // read adc when ready, or on timeout to restart it
+            ticksElapsed = 0;
+
+            auto val = ads.readLastData();
+            ads.pulse_start();
+
+            ESP_LOGI("adc read", "%d", val);
+        }
+        ticksElapsed++;
+        hal_delay_ms(1);
     }
-    init();
+    init_asio();
 }
 
-void App::init()
+void App::init_asio()
 {
     esp_netif_init();
 

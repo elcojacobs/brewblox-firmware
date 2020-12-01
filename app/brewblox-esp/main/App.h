@@ -5,6 +5,6 @@ public:
     App();
     ~App();
 
-    void init();
+    void init_asio();
     void start();
 };

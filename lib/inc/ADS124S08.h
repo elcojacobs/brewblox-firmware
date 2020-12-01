@@ -598,6 +598,7 @@ private:
 public:
     bool startup();
     void start();
+    void pulse_start();
     void stop();
     void reset();
     bool ready();
