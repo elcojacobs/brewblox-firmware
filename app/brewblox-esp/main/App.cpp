@@ -12,7 +12,8 @@
 #include <nvs_flash.h>
 #pragma GCC diagnostic pop
 
-#include "ADS124S08.h"
+#include "ADS124S08.hpp"
+#include "ChemSense.hpp"
 #include "PCA9555.hpp"
 #include "hal/hal_i2c.h"
 
@@ -84,22 +85,18 @@ void App::start()
         ESP_LOGE("ADC", "Init failed");
         exit(1);
     }
-
-    ads.stop();
-    ads.start();
-    uint16_t ticksElapsed = 0;
+    ChemSense chemSense(ads);
     while (true) {
-        if (ads.ready() || ticksElapsed > 1000) {
-            // read adc when ready, or on timeout to restart it
-            ticksElapsed = 0;
-
-            auto val = ads.readLastData();
-            ads.pulse_start();
-
-            ESP_LOGI("adc read", "%d", val);
+        auto nextChan = chemSense.update();
+        if (nextChan == 0) {
+            ESP_LOGI("adc read", "%d, %d, %d, %d",
+                     chemSense.results[0],
+                     chemSense.results[1],
+                     chemSense.results[2],
+                     chemSense.results[3]);
         }
-        ticksElapsed++;
-        hal_delay_ms(1);
+
+        hal_delay_ms(245);
     }
     init_asio();
 }

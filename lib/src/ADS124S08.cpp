@@ -17,7 +17,7 @@
  * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ADS124S08.h"
+#include "ADS124S08.hpp"
 #include "esp_log.h"
 
 //****************************************************************************
@@ -76,8 +76,8 @@ bool ADS124S08::startup()
         // // Configure initial device register settings here
         initRegs.byName.status.value = 0x00; // Reset POR event
         initRegs.byName.inpMux.value = RegInpMux::ADS_P_AIN0 + RegInpMux::ADS_N_AINCOM;
-        initRegs.byName.pga.value = RegPga::ADS_DELAY_14 | RegPga::ADS_PGA_ENABLED | RegPga::ADS_GAIN_1;
-        initRegs.byName.dataRate.value = RegDataRate::ADS_GLOBALCHOP | RegDataRate::ADS_CONVMODE_SS | RegDataRate::ADS_DR_20 | RegDataRate::ADS_FILTERTYPE_LL;
+        initRegs.byName.pga.value = RegPga::ADS_DELAY_14 | RegPga::ADS_PGA_ENABLED | RegPga::ADS_GAIN_4;
+        initRegs.byName.dataRate.value = RegDataRate::ADS_GLOBALCHOP | RegDataRate::ADS_CONVMODE_SS | RegDataRate::ADS_DR_20;
         initRegs.byName.ref.value = RegRef::ADS_REFSEL_INT | RegRef::ADS_REFINT_ON_ALWAYS;
         initRegs.byName.sys.value = RegSys::ADS_CRC_ENABLE | RegSys::ADS_SENDSTATUS_ENABLE;
 
@@ -218,6 +218,7 @@ void ADS124S08::pulse_start()
     if (set_start) {
         set_start(false);
         set_start(true);
+        set_start(false);
     } else {
         sendCommand(OPCODE::START);
     }
