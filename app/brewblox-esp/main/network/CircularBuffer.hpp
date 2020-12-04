@@ -2,7 +2,7 @@
 #include <asio.hpp>
 
 template <std::size_t Capacity>
-class circular_buffer {
+class CircularBuffer : public std::streambuf {
 public:
     using const_buffers_type = std::vector<asio::const_buffer>;
     using mutable_buffers_type = std::vector<asio::mutable_buffer>;
@@ -11,7 +11,7 @@ public:
     {
         // Boost.Asio Dynamic buffer throws std::length_error in this case, so we'll do the same
         if (size() + n > max_size()) {
-            throw std::length_error("circular_buffer overflow");
+            throw std::length_error("CircularBuffer overflow");
         }
 
         return make_sequence<mutable_buffers_type>(buffer, tail, tail + n);

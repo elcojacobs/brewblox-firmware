@@ -1,16 +1,16 @@
 #pragma once
 
-#include "circular_buffer.hpp"
+#include "CircularBuffer.hpp"
 
-// Just a non-owning proxy for circular_buffer class instances
+// Just a non-owning proxy for CircularBuffer class instances
 template <std::size_t Capacity>
-class circular_buffer_view {
+class CircularBufferView {
 public:
-    using buffer_type = circular_buffer<Capacity>;
+    using buffer_type = CircularBuffer<Capacity>;
     using const_buffers_type = typename buffer_type::const_buffers_type;
     using mutable_buffers_type = typename buffer_type::mutable_buffers_type;
 
-    circular_buffer_view(buffer_type& buffer)
+    CircularBufferView(buffer_type& buffer)
         : buffer(buffer)
     {
     }
@@ -55,8 +55,8 @@ private:
 };
 
 template <std::size_t Capacity>
-circular_buffer_view<Capacity>
-make_view(circular_buffer<Capacity>& buffer)
+CircularBufferView<Capacity>
+make_view(CircularBuffer<Capacity>& buffer)
 {
     return buffer;
 }

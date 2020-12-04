@@ -1,3 +1,4 @@
+#pragma once
 #include "hal/hal_i2c.h"
 
 class PCA9555 {

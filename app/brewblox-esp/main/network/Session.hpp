@@ -2,13 +2,14 @@
 
 #include <asio.hpp>
 #include <functional>
+#include <ostream>
 using namespace std::placeholders;
 
-class session : public std::enable_shared_from_this<session> {
+class Session : public std::enable_shared_from_this<Session> {
     using tcp = asio::ip::tcp;
 
 public:
-    session(tcp::socket&& socket)
+    Session(tcp::socket&& socket)
         : socket(std::move(socket))
     {
     }
@@ -23,7 +24,7 @@ private:
     void read()
     {
         // Schedule asynchronous receiving of a data
-        asio::async_read(socket, make_view(buffer), asio::transfer_at_least(1), std::bind(&session::on_read, shared_from_this(), _1, _2));
+        asio::async_read_until(socket, make_view(buffer_in), '\n', std::bind(&Session::on_read, shared_from_this(), _1, _2));
     }
 
     void on_read(asio::error_code error, std::size_t bytes_transferred)
@@ -46,7 +47,7 @@ private:
     {
         writing = true;
         // Schedule asynchronous sending of the data
-        asio::async_write(socket, make_view(buffer), std::bind(&session::on_write, shared_from_this(), _1, _2));
+        asio::async_write(socket, make_view(buffer_out), std::bind(&Session::on_write, shared_from_this(), _1, _2));
     }
 
     void on_write(asio::error_code error, std::size_t bytes_transferred)
@@ -55,7 +56,7 @@ private:
 
         if (!error) {
             // Check if there is something to send it back to the client
-            if (buffer.size()) {
+            if (buffer_out.size()) {
                 write();
             }
         } else {
@@ -71,5 +72,6 @@ private:
 
     tcp::socket socket;
     bool writing = false;
-    circular_buffer<2048> buffer;
+    CircularBuffer<2048> buffer_in;
+    CircularBuffer<2048> buffer_out;
 };

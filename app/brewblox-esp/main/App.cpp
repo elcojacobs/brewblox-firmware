@@ -1,7 +1,7 @@
 #include "App.h"
 #include "network/Ethernet.h"
+#include "network/Server.hpp"
 #include "network/Wifi.h"
-#include "network/server.hpp"
 #include "network/wifi_creds.h"
 #include <asio.hpp>
 
@@ -23,6 +23,28 @@ using namespace std::chrono;
 using tcp = asio::ip::tcp;
 
 App::App()
+    : io_expander{0x20}
+    , ads{
+          0,                       // select spi idx 0 on platform
+          -1,                      // no SS pin (io expander pin set in onAquire and onRelease)
+          [this](bool pinIsHigh) { // set reset pin
+              io_expander.set_output(3, pinIsHigh);
+          },
+          [this](bool pinIsHigh) { // set start pin
+              io_expander.set_output(5, pinIsHigh);
+          },
+          [this]() {              // read ready pin state
+              bool result = true; // default to high (not ready) in case of i2c error
+              io_expander.get_input(10, result);
+              return result;
+          },
+          [this]() { // cs low
+              io_expander.set_output(4, false);
+          },
+          [this]() { // cs high
+              io_expander.set_output(4, true);
+          }}
+    , chemSense{ads}
 {
     nvs_flash_init();
     gpio_install_isr_service(0);
@@ -38,54 +60,10 @@ App::~App()
 
 void App::start()
 {
-    hal_i2c_master_init();
-    PCA9555 io_expander(0x20);
+    init_hw();
+    init_asio();
+    init_tcp81();
 
-    auto err = io_expander.set_directions(0x0700);
-    if (err != 0) {
-        ESP_LOGW("app", "io_expander error: %d", err);
-    }
-
-    //io_expander.set_output(0, false);
-    hal_delay_ms(500);
-    io_expander.set_output(1, false);
-    hal_delay_ms(200);
-    io_expander.set_output(2, false);
-    hal_delay_ms(200);
-    io_expander.set_output(0, true);
-    hal_delay_ms(200);
-    io_expander.set_output(2, true);
-    ESP_LOGW("app", "io_expander initialized");
-
-    io_expander.set_output(5, false); // keep start pin low
-    io_expander.set_output(5, true);  // keep reset pin high
-
-    ADS124S08 ads(
-        0,                               // select spi idx 0 on platform
-        -1,                              // no SS pin (io expander pin set in onAquire and onRelease)
-        [&io_expander](bool pinIsHigh) { // set reset pin
-            io_expander.set_output(3, pinIsHigh);
-        },
-        [&io_expander](bool pinIsHigh) { // set start pin
-            io_expander.set_output(5, pinIsHigh);
-        },
-        [&io_expander]() {      // read ready pin state
-            bool result = true; // default to high (not ready) in case of i2c error
-            io_expander.get_input(10, result);
-            return result;
-        },
-        [&io_expander]() { // cs low
-            io_expander.set_output(4, false);
-        },
-        [&io_expander]() { // cs high
-            io_expander.set_output(4, true);
-        });
-
-    if (!ads.startup()) {
-        ESP_LOGE("ADC", "Init failed");
-        exit(1);
-    }
-    ChemSense chemSense(ads);
     while (true) {
         auto nextChan = chemSense.update();
         if (nextChan == 0) {
@@ -98,7 +76,32 @@ void App::start()
 
         hal_delay_ms(245);
     }
-    init_asio();
+}
+
+void App::init_hw()
+{
+    hal_i2c_master_init();
+
+    auto err = io_expander.set_directions(0x0700);
+    if (err != 0) {
+        ESP_LOGW("app", "io_expander error: %d", err);
+    }
+
+    io_expander.set_output(0, true);
+    io_expander.set_output(1, false);
+    io_expander.set_output(2, true);
+    ESP_LOGW("app", "io_expander initialized");
+
+    if (!ads.startup()) {
+        ESP_LOGE("ADC", "Init failed");
+        exit(1);
+    }
+}
+
+asio::io_context& App::get_io_context()
+{
+    static asio::io_context* context = new asio::io_context;
+    return *context;
 }
 
 void App::init_asio()
@@ -115,7 +118,10 @@ void App::init_asio()
     wifi.set_ap_credentials(WIFI_SSID, WIFI_PASSWORD);
     wifi.connect_to_ap();
 
-    asio::io_context io_context;
-    server srv(io_context, tcp::endpoint(tcp::v4(), 81));
-    io_context.run();
+    Server srv(get_io_context(), tcp::endpoint(tcp::v4(), 81));
+    get_io_context().run();
+}
+
+void App::init_tcp81()
+{
 }

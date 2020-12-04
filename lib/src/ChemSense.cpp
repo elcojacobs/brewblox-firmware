@@ -22,7 +22,7 @@
 using namespace ADS124S08_detail;
 
 ChemSense::ChemSense(ADS124S08& _ads)
-    : ads(_ads)
+    : ads{_ads}
     , configs{{{RegInpMux::ADS_P_AIN0 + RegInpMux::ADS_N_AINCOM,
                 RegPga::ADS_DELAY_14 | RegPga::ADS_PGA_ENABLED | RegPga::ADS_GAIN_4,
                 /*RegDataRate::ADS_GLOBALCHOP |*/ RegDataRate::ADS_FILTERTYPE_LL | RegDataRate::ADS_CONVMODE_SS | RegDataRate::ADS_DR_5,

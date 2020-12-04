@@ -1,12 +1,13 @@
 #pragma once
-#include "circular_buffer_view.hpp"
-#include "session.hpp"
+#include "CircularBufferView.hpp"
+#include "Session.hpp"
 
-class server {
+
+class Server {
     using tcp = asio::ip::tcp;
 
 public:
-    server(asio::io_context& io_context,
+    Server(asio::io_context& io_context,
            const tcp::endpoint& endpoint)
         : acceptor(io_context, endpoint)
     {
@@ -18,7 +19,7 @@ private:
     {
         acceptor.async_accept([this](asio::error_code error, tcp::socket socket) {
             if (!error) {
-                std::make_shared<session>(std::move(socket))->start();
+                std::make_shared<Session>(std::move(socket))->start();
             }
             do_accept();
         });
