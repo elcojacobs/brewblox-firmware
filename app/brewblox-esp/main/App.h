@@ -3,6 +3,7 @@
 #include "ADS124S08.hpp"
 #include "ChemSense.hpp"
 #include "PCA9555.hpp"
+#include "network/Server.hpp"
 
 namespace asio {
 class io_context;
@@ -18,8 +19,9 @@ public:
     void start();
     void init_tcp81();
 
-    asio::io_context& get_io_context();
+    // asio::io_context& get_io_context();
     PCA9555 io_expander;
     ADS124S08 ads;
-    ChemSense chemSense;
+    ChemSense* chemSense;
+    // Server tcpServer;
 };

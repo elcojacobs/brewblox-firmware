@@ -250,7 +250,7 @@ void ADS124S08::reset()
 uint8_t ADS124S08::calculateCrc(const uint8_t dataBytes[], uint8_t numBytes)
 {
     uint64_t result = 0;
-    // polynomical X^8 + X^2 + X^2 + X + 1
+    // polynomial X^8 + X^2 + X^2 + X + 1
     uint64_t poly = uint64_t{0x107} << (8 * numBytes - 1);
     for (uint8_t i = 0; i < numBytes; i++) {
         result += uint64_t(dataBytes[i]) << (8 * (numBytes - i));

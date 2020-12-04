@@ -44,7 +44,6 @@ App::App()
           [this]() { // cs high
               io_expander.set_output(4, true);
           }}
-    , chemSense{ads}
 {
     nvs_flash_init();
     gpio_install_isr_service(0);
@@ -61,10 +60,10 @@ App::~App()
 void App::start()
 {
     init_hw();
-    //init_asio();
+    init_asio();
     //init_tcp81();
 
-    while (true) {
+    /*while (true) {
         auto nextChan = chemSense.update();
         if (nextChan == 0) {
             ESP_LOGI("adc read", "%d, %d, %d, %d",
@@ -75,7 +74,7 @@ void App::start()
         }
 
         hal_delay_ms(245);
-    }
+    }*/
 }
 
 void App::init_hw()
@@ -98,30 +97,40 @@ void App::init_hw()
     }
 }
 
-asio::io_context& App::get_io_context()
-{
-    static asio::io_context* context = new asio::io_context;
-    return *context;
-}
+// asio::io_context& App::get_io_context()
+// {
+//     static asio::io_context* context = new asio::io_context;
+//     return *context;
+// }
 
 void App::init_asio()
 {
     esp_netif_init();
 
-    auto& ethernet = get_ethernet();
-    ethernet.set_host_name("brewblox_wired");
-    ethernet.start();
+    // auto& ethernet = get_ethernet();
+    // ethernet.set_host_name("brewblox_wired");
+    // ethernet.start();
 
-    auto& wifi = get_wifi();
-    wifi.set_host_name("brewblox_wifi");
-    wifi.set_auto_connect(true);
-    wifi.set_ap_credentials(WIFI_SSID, WIFI_PASSWORD);
-    wifi.connect_to_ap();
+    // auto& wifi = get_wifi();
+    // wifi.set_host_name("brewblox_wifi");
+    // wifi.set_auto_connect(true);
+    // wifi.set_ap_credentials(WIFI_SSID, WIFI_PASSWORD);
+    // wifi.connect_to_ap();
 
-    Server srv(get_io_context(), tcp::endpoint(tcp::v4(), 81));
-    get_io_context().run();
+    asio::io_context io;
+    Server srv(io, tcp::endpoint(tcp::v4(), 81));
+    chemSense = new ChemSense{
+        ads, io, [](const std::array<int32_t, 4>& results) {
+            ESP_LOGI("adc read", "%d, %d, %d, %d",
+                     results[0],
+                     results[1],
+                     results[2],
+                     results[3]);
+        }};
+    io.run();
 }
 
 void App::init_tcp81()
 {
+    // Server srv(get_io_context(), tcp::endpoint(tcp::v4(), 81));
 }

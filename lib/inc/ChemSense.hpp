@@ -21,11 +21,13 @@
 
 #include "ADS124S08.hpp"
 #include <array>
+#include <asio.hpp>
 
 // class to interface 2 chemical potential sensors and 2 RTDs
 class ChemSense {
 public:
-    ChemSense(ADS124S08& _ads);
+    typedef std::function<void(const std::array<int32_t, 4>&)> results_handler_t;
+    ChemSense(ADS124S08& _ads, asio::io_context& io, results_handler_t onResults);
 
     ~ChemSense() = default;
 
@@ -39,4 +41,10 @@ private:
 
 public:
     std::array<int32_t, 4> results;
+
+private:
+    asio::steady_timer timer;
+
+    void onTimeout();
+    results_handler_t resultsHandler;
 };
