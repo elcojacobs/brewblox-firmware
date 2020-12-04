@@ -10,6 +10,7 @@ set(srcs
  )
 
 file(GLOB network_srcs ./network/*.cpp)
+file(GLOB http_srcs ./httpserver/*.cpp)
 
 file(GLOB cbox_srcs ../../../controlbox/src/*.cpp)
 set(cbox_inc "../../../controlbox/src/")
@@ -34,6 +35,7 @@ idf_component_register(
     ${esp_srcs}
     ${nanopb_srcs}
     ${network_srcs}
+    ${http_srcs}
   INCLUDE_DIRS 
     .
     ../../brewblox/proto/cpp

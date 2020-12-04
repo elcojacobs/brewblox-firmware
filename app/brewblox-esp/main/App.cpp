@@ -1,4 +1,5 @@
 #include "App.h"
+#include "httpserver/server.hpp"
 #include "network/Ethernet.h"
 #include "network/Server.hpp"
 #include "network/Wifi.h"
@@ -15,9 +16,9 @@
 #include "ADS124S08.hpp"
 #include "ChemSense.hpp"
 #include "PCA9555.hpp"
-#include "hal/hal_i2c.h"
-
 #include "esp_log.h"
+#include "hal/hal_i2c.h"
+#include <string>
 
 using namespace std::chrono;
 using tcp = asio::ip::tcp;
@@ -107,15 +108,15 @@ void App::init_asio()
 {
     esp_netif_init();
 
-    // auto& ethernet = get_ethernet();
-    // ethernet.set_host_name("brewblox_wired");
-    // ethernet.start();
+    auto& ethernet = get_ethernet();
+    ethernet.set_host_name("brewblox_wired");
+    ethernet.start();
 
-    // auto& wifi = get_wifi();
-    // wifi.set_host_name("brewblox_wifi");
-    // wifi.set_auto_connect(true);
-    // wifi.set_ap_credentials(WIFI_SSID, WIFI_PASSWORD);
-    // wifi.connect_to_ap();
+    auto& wifi = get_wifi();
+    wifi.set_host_name("brewblox_wifi");
+    wifi.set_auto_connect(true);
+    wifi.set_ap_credentials(WIFI_SSID, WIFI_PASSWORD);
+    wifi.connect_to_ap();
 
     asio::io_context io;
     Server srv(io, tcp::endpoint(tcp::v4(), 81));
@@ -127,6 +128,11 @@ void App::init_asio()
                      results[2],
                      results[3]);
         }};
+
+    std::string address = "brewblox-test.com";
+    std::string port = "80";
+
+    http::server::server s(io, address, port);
     io.run();
 }
 
