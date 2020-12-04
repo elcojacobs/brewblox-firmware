@@ -18,6 +18,7 @@
 #include "PCA9555.hpp"
 #include "esp_log.h"
 #include "hal/hal_i2c.h"
+#include <sstream>
 #include <string>
 
 using namespace std::chrono;
@@ -119,20 +120,47 @@ void App::init_asio()
     wifi.connect_to_ap();
 
     asio::io_context io;
-    Server srv(io, tcp::endpoint(tcp::v4(), 81));
+
+    std::array<int32_t, 4> sensor_values = {0};
+
     chemSense = new ChemSense{
-        ads, io, [](const std::array<int32_t, 4>& results) {
-            ESP_LOGI("adc read", "%d, %d, %d, %d",
-                     results[0],
-                     results[1],
-                     results[2],
-                     results[3]);
+        ads, io, [&sensor_values](const std::array<int32_t, 4>& results) {
+            // update local copy of sensor values
+            sensor_values = results;
+            // print to log
+            ESP_LOGI("Sensors", "%d, %d, %d, %d", results[0], results[1], results[2], results[3]);
         }};
 
-    std::string address = "brewblox-test.com";
-    std::string port = "80";
+    http::server::server s(io, 80);
 
-    http::server::server s(io, address, port);
+    s.add_uri_handler("/", "text/html", [](std::string& content) {
+        content.append(
+            "<!doctype html>"
+            "<html lang=en>"
+            "<head>"
+            "<meta charset=utf-8>"
+            "<title>ChemSense</title>"
+            "</head>"
+            "<body>"
+            "<p>"
+            R"(<a href="/test">Test page</a>)"
+            "<br />"
+            R"(<a href="/sensors">Sensors JSON</a>)");
+        // ending tags are implicit
+    });
+
+    s.add_uri_handler("/test", "text/html", [](std::string& content) {
+        content.append("It works!");
+    });
+
+    s.add_uri_handler("/sensors", "application/json", [&sensor_values](std::string& content) {
+        std::stringstream ss;
+        ss << R"({"ph":)" << sensor_values[0];
+        ss << R"(,"orp":)" << sensor_values[1];
+        ss << R"(,"temp1":)" << sensor_values[2];
+        ss << R"(,"temp2":)" << sensor_values[3] << "}";
+        content.append(ss.str());
+    });
     io.run();
 }
 

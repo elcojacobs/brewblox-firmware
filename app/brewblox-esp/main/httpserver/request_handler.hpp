@@ -11,7 +11,9 @@
 #ifndef HTTP_REQUEST_HANDLER_HPP
 #define HTTP_REQUEST_HANDLER_HPP
 
+#include "uri_handler.hpp"
 #include <string>
+#include <vector>
 
 namespace http {
 namespace server {
@@ -31,13 +33,13 @@ namespace server {
         /// Handle a request and produce a reply.
         void handle_request(const request& req, reply& rep);
 
-    private:
-        /// The directory containing the files to be served.
-        std::string doc_root_;
+        void add_uri_handler(std::string&& uri, std::string&& content_type, uri_content_generator_t&& content_generator);
 
+    private:
         /// Perform URL-decoding on a string. Returns false if the encoding was
         /// invalid.
         static bool url_decode(const std::string& in, std::string& out);
+        std::vector<uri_handler> uri_handlers_;
     };
 
 } // namespace server

@@ -15,7 +15,7 @@
 namespace http {
 namespace server {
 
-    server::server(asio::io_context& io, const std::string& address, const std::string& port)
+    server::server(asio::io_context& io, const uint16_t& port)
         : io_context_(io)
         ,
         //signals_(io_context_),
@@ -35,9 +35,7 @@ namespace server {
         do_await_stop();
 
         // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-        // asio::ip::tcp::resolver resolver(io_context_);
-        // asio::ip::tcp::endpoint endpoint = *resolver.resolve(address, port).begin();
-        asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), 80);
+        asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), port);
         acceptor_.open(endpoint.protocol());
         acceptor_.set_option(asio::ip::tcp::acceptor::reuse_address(true));
         acceptor_.bind(endpoint);

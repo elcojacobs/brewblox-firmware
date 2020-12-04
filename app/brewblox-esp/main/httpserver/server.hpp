@@ -26,9 +26,13 @@ namespace server {
         server(const server&) = delete;
         server& operator=(const server&) = delete;
 
-        /// Construct the server to listen on the specified TCP address and port, and
-        /// serve up files from the given directory.
-        explicit server(asio::io_context& io, const std::string& address, const std::string& port);
+        /// Construct the server to listen on the specified TCP port and hook into exsiting io service
+        explicit server(asio::io_context& io, const uint16_t& port);
+
+        inline void add_uri_handler(std::string&& uri, std::string&& content_type, uri_content_generator_t&& content_generator)
+        {
+            request_handler_.add_uri_handler(std::move(uri), std::move(content_type), std::move(content_generator));
+        };
 
     private:
         /// Perform an asynchronous accept operation.
