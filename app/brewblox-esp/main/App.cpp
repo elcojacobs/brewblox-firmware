@@ -61,8 +61,8 @@ App::~App()
 void App::start()
 {
     init_hw();
-    init_asio();
-    init_tcp81();
+    //init_asio();
+    //init_tcp81();
 
     while (true) {
         auto nextChan = chemSense.update();
