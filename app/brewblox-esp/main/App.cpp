@@ -135,17 +135,27 @@ void App::init_asio()
 
     s.add_uri_handler("/", "text/html", [](std::string& content) {
         content.append(
-            "<!doctype html>"
-            "<html lang=en>"
-            "<head>"
-            "<meta charset=utf-8>"
-            "<title>ChemSense</title>"
-            "</head>"
-            "<body>"
-            "<p>"
+            R"(<!doctype html>)"
+            R"(<html lang=en>)"
+            R"(<head>)"
+            R"(<meta charset=utf-8>)"
+            R"(<title>ChemSense</title>)"
+            R"(</head>)"
+            R"(<body>)"
+            R"(<p>)"
             R"(<a href="/test">Test page</a>)"
-            "<br />"
-            R"(<a href="/sensors">Sensors JSON</a>)");
+            R"(<br />)"
+            R"(<a href="/sensors">Sensors JSON</a>)"
+            R"(</p>)"
+            R"(<div id="sensors"/>)"
+            R"(<script>)"
+            R"(var interval = setInterval(function () {)"
+            R"(fetch('/sensors').then(function (response) {)"
+            R"(return response.json();}).then(function(data){)"
+            R"(var el = document.getElementById("sensors"); el.innerHTML = JSON.stringify(data);)"
+            R"(}).catch(function (err) { console.log('error: ' + err); });)"
+            R"(}, 1000);)"
+            R"(</script>"))");
         // ending tags are implicit
     });
 
