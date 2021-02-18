@@ -18,7 +18,7 @@
  */
 
 #include "ADS124S08.hpp"
-#include "esp_log.h"
+#include "../inc/Logger.h"
 
 //****************************************************************************
 //
@@ -88,7 +88,7 @@ bool ADS124S08::startup()
         if (success) {
             for (uint8_t i = 2; i < registers.byIdx.size(); i++) {
                 if (initRegs[i] != registers[i]) {
-                    ESP_LOGE("ADC", "Register mismatch: %d %02x %02x", i, initRegs[i], registers[i]);
+                    CL_LOG_ERROR("ADS124S08 Register mismatch " + std::to_string(i) + ": " + std::to_string(initRegs[i]) + " != " + std::to_string(registers[i]));
                     success = false;
                     break;
                 }
@@ -318,13 +318,13 @@ int32_t ADS124S08::readData(ReadMode mode)
     spi.release_bus();
 
     if (err != 0) {
-        ESP_LOGE("ADC", "SPI ERROR %d", err);
+        CL_LOG_ERROR("ADS124S08 SPI ERROR " + std::to_string(err));
         return SPI_ERROR_RESULT;
     }
     if (crcEnabled) {
         uint8_t crc = calculateCrc(&rx[rxPos], numBytes - rxPos - 1);
         if (crc != rx[numBytes - 1]) {
-            ESP_LOGE("ADC", "CRC ERROR");
+            CL_LOG_ERROR("ADS124S08 CRC ERROR");
             return CRC_ERROR_RESULT;
         }
     }

@@ -1,0 +1,6 @@
+R"(var interval = setInterval(function () {)"
+R"(fetch('/sensors').then(function (response) {)"
+R"(return response.json();}).then(function(data){)"
+R"(var el = document.getElementById("sensors"); el.innerHTML = JSON.stringify(data);)"
+R"(}).catch(function (err) { console.log('error: ' + err); });)"
+R"(}, 5000);)"

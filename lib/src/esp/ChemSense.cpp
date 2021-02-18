@@ -17,6 +17,8 @@
  * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0
+
 #include "../inc/ChemSense.hpp"
 
 using namespace ADS124S08_detail;
@@ -24,7 +26,7 @@ using namespace ADS124S08_detail;
 ChemSense::ChemSense(ADS124S08& _ads, asio::io_context& io, results_handler_t onResults)
     : ads{_ads}
     , configs{{{RegInpMux::ADS_P_AIN0 + RegInpMux::ADS_N_AINCOM,
-                RegPga::ADS_DELAY_14 | RegPga::ADS_PGA_ENABLED | RegPga::ADS_GAIN_4,
+                RegPga::ADS_DELAY_14 | RegPga::ADS_PGA_ENABLED | RegPga::ADS_GAIN_2,
                 RegDataRate::ADS_FILTERTYPE_LL | RegDataRate::ADS_CONVMODE_SS | RegDataRate::ADS_DR_5,
                 RegRef::ADS_REFSEL_INT | RegRef::ADS_REFINT_ON_ALWAYS,
                 RegIdacMag::DEFAULT_VAL,
@@ -76,3 +78,5 @@ void ChemSense::onTimeout()
     timer.expires_at(timer.expiry() + asio::chrono::milliseconds(250));
     timer.async_wait(std::bind(&ChemSense::onTimeout, this));
 }
+
+#endif

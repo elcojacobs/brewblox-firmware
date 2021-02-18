@@ -30,7 +30,7 @@ Ethernet::Ethernet()
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     phy_config.phy_addr = 0;
-    phy_config.reset_gpio_num = 5;
+    phy_config.reset_gpio_num = -1;
     mac_config.smi_mdc_gpio_num = 23;
     mac_config.smi_mdio_gpio_num = 18;
     mac = esp_eth_mac_new_esp32(&mac_config);

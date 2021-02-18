@@ -19,11 +19,9 @@
  */
 
 #include "../inc/DS2413.h"
-#include "../inc/Logger.h"
 #include "../inc/OneWire.h"
 
-bool
-DS2413::update()
+bool DS2413::update()
 {
 
     bool success = false;
@@ -62,14 +60,12 @@ DS2413::update()
     return success;
 }
 
-bool
-DS2413::writeNeeded()
+bool DS2413::writeNeeded()
 {
     return !connected() || (desiredState & 0b1010) != (actualState & 0b1010);
 }
 
-bool
-DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
+bool DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
 {
     bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
     uint8_t bitmask;
@@ -97,8 +93,7 @@ DS2413::writeChannelImpl(uint8_t channel, ChannelConfig config)
     return true;
 }
 
-bool
-DS2413::senseChannelImpl(uint8_t channel, State& result) const
+bool DS2413::senseChannelImpl(uint8_t channel, State& result) const
 {
     if (connected()) {
         // to reduce onewire communication, we assume the last read value in update() is correct
@@ -115,8 +110,7 @@ DS2413::senseChannelImpl(uint8_t channel, State& result) const
     return false;
 }
 
-bool
-DS2413::processStatus(uint8_t data)
+bool DS2413::processStatus(uint8_t data)
 {
     uint8_t newState = data & 0x0F;
     uint8_t verification = ((~data) >> 4) & 0xF;

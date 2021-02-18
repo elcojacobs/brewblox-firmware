@@ -18,7 +18,6 @@
 #include "PCA9555.hpp"
 #include "esp_log.h"
 #include "hal/hal_i2c.h"
-#include <sstream>
 #include <string>
 
 using namespace std::chrono;
@@ -122,13 +121,25 @@ void App::init_asio()
     asio::io_context io;
 
     std::array<int32_t, 4> sensor_values = {0};
+    std::array<std::string, 4> sensor_values_str; // in mv and ohm, 3 decimals
 
     chemSense = new ChemSense{
-        ads, io, [&sensor_values](const std::array<int32_t, 4>& results) {
+        ads, io, [&sensor_values, &sensor_values_str](const std::array<int32_t, 4>& results) {
             // update local copy of sensor values
             sensor_values = results;
             // print to log
+            //ESP_LOGI("Sensors", "%d, %d, %d, %d", results[0], results[1], results[2], results[3]);
+            auto mvResults = ChemSense::convertToMilliVolt(results);
             ESP_LOGI("Sensors", "%d, %d, %d, %d", results[0], results[1], results[2], results[3]);
+            auto resultStr = sensor_values_str.begin();
+            for (auto& v : mvResults) {
+                *resultStr++ = to_string_dec(v, 3);
+            }
+            ESP_LOGI("Sensors", "%s, %s, %s, %s",
+                     sensor_values_str[0].c_str(),
+                     sensor_values_str[1].c_str(),
+                     sensor_values_str[2].c_str(),
+                     sensor_values_str[3].c_str());
         }};
 
     http::server::server s(io, 80);
@@ -163,13 +174,17 @@ void App::init_asio()
         content.append("It works!");
     });
 
-    s.add_uri_handler("/sensors", "application/json", [&sensor_values](std::string& content) {
-        std::stringstream ss;
-        ss << R"({"ph":)" << sensor_values[0];
-        ss << R"(,"orp":)" << sensor_values[1];
-        ss << R"(,"temp1":)" << sensor_values[2];
-        ss << R"(,"temp2":)" << sensor_values[3] << "}";
-        content.append(ss.str());
+    s.add_uri_handler("/sensors", "application/json", [&sensor_values_str](std::string& content) {
+        content.reserve(80);
+        content.append(R"({"ph[mV]":)");
+        content.append(sensor_values_str[0]);
+        content.append(R"(,"orp[mV]":)");
+        content.append(sensor_values_str[1]);
+        content.append(R"(,"rt1[Ohm]":)");
+        content.append(sensor_values_str[2]);
+        content.append(R"(,"rtd2[Ohm]":)");
+        content.append(sensor_values_str[3]);
+        content.append("}");
     });
     io.run();
 }

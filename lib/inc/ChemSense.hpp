@@ -20,6 +20,7 @@
 #pragma once
 
 #include "ADS124S08.hpp"
+#include "FixedPoint.h"
 #include <array>
 #include <asio.hpp>
 
@@ -33,18 +34,32 @@ public:
 
     uint8_t update();
 
+    static inline std::array<fp12_t, 4> convertToMilliVolt(const std::array<int32_t, 4>& results)
+    {
+        return {
+            cnl::wrap<safe_elastic_fixed_point<10, 22>>(results[0]) * 625,
+            cnl::wrap<safe_elastic_fixed_point<10, 22>>(results[1]) * 625,
+            cnl::wrap<safe_elastic_fixed_point<6, 26>>(results[2]) * 1875,
+            cnl::wrap<safe_elastic_fixed_point<6, 26>>(results[3]) * 1875,
+        };
+    }
+
 private:
     ADS124S08& ads;
 
     std::array<ADS124S08_detail::ChannelConfig, 4> configs;
     uint8_t current = 0;
 
-public:
-    std::array<int32_t, 4> results;
-
-private:
     asio::steady_timer timer;
+    std::array<int32_t, 4> results;
 
     void onTimeout();
     results_handler_t resultsHandler;
 };
+
+// calibration dec 7 2020 (19.5 deg C):
+// PH 4.0: 166.6 mV
+// PH 7.0: -5.6 mV
+// PH 10.0: -171.5 mV
+// RTD1: 107.632
+// RTD2: 107.585
