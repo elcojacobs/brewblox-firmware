@@ -3,7 +3,6 @@ set -e
 
 pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
 
-bash ./enable-experimental.sh
 bash ./prepare-buildx.sh
 bash ./start-compiler.sh
 

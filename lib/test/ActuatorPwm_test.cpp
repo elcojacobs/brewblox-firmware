@@ -1016,8 +1016,8 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
                 nextUpdate2 = pwm2.update(now);
                 constrainedPwm2.update();
             }
-            if (now >= nextUpdate3 + 1000) {
-                nextUpdate3 = now;
+            if (now >= nextUpdate3) {
+                nextUpdate3 = now + 1000;
                 balancer->update();
             }
             now += 100;
@@ -1029,20 +1029,48 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         pwm1.update(now);
         pwm2.update(now);
 
-        start = now;
-        while (now - start <= 50 * period) {
+        int periods = 0;
+        // let adjust for 10 full periods of actuator 1
+        while (periods < 10) {
             if (now >= nextUpdate1) {
+                auto previousState = mock1.state();
+                nextUpdate1 = pwm1.update(now);
+                constrainedPwm1.update();
+                if (previousState == State::Inactive && mock1.state() == State::Active) {
+                    periods++;
+                }
+            }
+            if (now >= nextUpdate2) {
+                nextUpdate2 = pwm2.update(now);
+                constrainedPwm2.update();
+            }
+            if (now >= nextUpdate3) {
+                nextUpdate3 = now + 1000;
+                balancer->update();
+            }
+            now++;
+        }
+
+        start = now;
+        periods = 0;
+        // run 50 full periods of pwm 1
+        while (periods < 50) {
+            if (now >= nextUpdate1) {
+                auto previousState = mock1.state();
                 nextUpdate1 = pwm1.update(now);
                 constrainedPwm1.update();
                 REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
+                if (previousState == State::Inactive && mock1.state() == State::Active) {
+                    periods++;
+                }
             }
             if (now >= nextUpdate2) {
                 nextUpdate2 = pwm2.update(now);
                 constrainedPwm2.update();
                 REQUIRE(!(mock1.state() == State::Active && mock2.state() == State::Active)); // not active at the same time
             }
-            if (now >= nextUpdate3 + 1000) {
-                nextUpdate3 = now;
+            if (now >= nextUpdate3) {
+                nextUpdate3 = now + 1000;
                 balancer->update();
                 // check that the reported value is close enough at all times
                 //CHECK(pwm1.value() == Approx(duty1).margin(1));
@@ -1050,14 +1078,12 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
             }
             duration_millis_t interval = randomDelay ? 1 + std::rand() % randomDelay : 1;
             now += interval;
-            if (now > start + 10 * period) { // give some time to adjust first
-                if (mock1.state() == State::Active) {
-                    timeHigh1 += interval;
-                } else if (mock2.state() == State::Active) {
-                    timeHigh2 += interval;
-                } else {
-                    timeIdle += interval;
-                }
+            if (mock1.state() == State::Active) {
+                timeHigh1 += interval;
+            } else if (mock2.state() == State::Active) {
+                timeHigh2 += interval;
+            } else {
+                timeIdle += interval;
             }
         }
 
@@ -1076,7 +1102,7 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         CHECK(getDuties(30, 60) == Duties(30, 60));
 
         CHECK(getDuties(40, 50, 100) == Duties(40, 50));
-        CHECK(getDuties(50, 50, 100) == Duties(50, 50));
+        CHECK(getDuties(50, 50, 100) == Duties(49, 49));
         CHECK(getDuties(30, 60, 100) == Duties(30, 60));
     }
 
@@ -1100,15 +1126,15 @@ SCENARIO("Two PWM actuators driving mutually exclusive digital actuators")
         THEN("Achieved duty cycle is scaled proportionally if total is over 100")
         {
             CHECK(getDuties(100, 100) == Duties(50, 50));
-            CHECK(pwm1.value() == Approx(50).margin(1));
-            CHECK(pwm2.value() == Approx(50).margin(1));
+            CHECK(pwm1.value() == Approx(50).margin(0.1));
+            CHECK(pwm2.value() == Approx(50).margin(0.1));
             CHECK(getDuties(75, 50) == Duties(60, 40));
             CHECK(getDuties(80, 30) == Duties(80.0 / 1.1, 30.0 / 1.1));
             CHECK(getDuties(90, 20) == Duties(90.0 / 1.1, 20.0 / 1.1));
             CHECK(getDuties(95, 10) == Duties(95.0 / 1.05, 10.0 / 1.05));
             CHECK(getDuties(85, 25) == Duties(85.0 / 1.1, 25.0 / 1.1));
 
-            // with random internal up to 100ms
+            // with random update interval of 1-100ms
             CHECK(getDuties(100, 100, 100) == Duties(50, 50, 1));
             CHECK(pwm1.value() == Approx(50).margin(1));
             CHECK(pwm2.value() == Approx(50).margin(1));

@@ -92,7 +92,7 @@ public:
         if (latchB) {
             status |= 0b1000;
         }
-        status |= (~status) << 4; // upper bits are complemet for error checking
+        status |= uint8_t(~status) << 4; // upper bits are complemet for error checking
         send(status);
     }
 

@@ -3,7 +3,6 @@ set -ex
 
 pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
 
-bash ./enable-experimental.sh
 bash ./start-compiler.sh
 
 docker-compose exec -T compiler bash compile-proto.sh

@@ -6,7 +6,6 @@ set -e
 
 pushd "$(dirname "$0")" > /dev/null
 
-bash ./enable-experimental.sh
 bash ./prepare-buildx.sh
 
 # Don't forget to call with --push
