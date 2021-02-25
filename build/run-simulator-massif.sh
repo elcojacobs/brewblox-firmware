@@ -2,7 +2,7 @@
 MY_DIR=$(dirname $(readlink -f $0))
 BUILD_DIR="$MY_DIR/target/user/platform-3/firmware/brewblox"
 EXECUTABLE_DIR="$MY_DIR/target/brewblox-gcc"
-EXECUTABLE="$EXECUTABLE_DIR/brewblox"
+EXECUTABLE="$EXECUTABLE_DIR/brewblox-gcc"
 OUTPUT_DIR="$MY_DIR/coverage"
 DEVICE_KEY="$EXECUTABLE_DIR/device_key.der"
 SERVER_KEY="$EXECUTABLE_DIR/server_key.der"
@@ -34,6 +34,6 @@ valgrind --tool=massif --threshold=0.1 \
 popd || exit
 
 # open massif.out with massif-visualizer
-# massif-visualizer "$EXECUTABLE_DIR/massif.out" &
+massif-visualizer "$EXECUTABLE_DIR/massif.out" &
 # open xtmemory.kcg with kcachegrind
 kcachegrind "$EXECUTABLE_DIR/xtmemory.kcg" 
