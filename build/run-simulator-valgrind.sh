@@ -1,7 +1,7 @@
 #!/bin/bash
 MY_DIR=$(dirname $(readlink -f $0))
 EXECUTABLE_DIR="$MY_DIR/target/brewblox-gcc"
-EXECUTABLE="$EXECUTABLE_DIR/brewblox"
+EXECUTABLE="$EXECUTABLE_DIR/brewblox-gcc"
 OUTPUT_DIR="$MY_DIR/coverage"
 DEVICE_KEY="$EXECUTABLE_DIR/device_key.der"
 SERVER_KEY="$EXECUTABLE_DIR/server_key.der"

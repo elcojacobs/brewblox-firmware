@@ -103,13 +103,14 @@ onSetupModeBegin()
 void
 onSetupModeEnd()
 {
-    handleReset(true, RESET_USER_REASON::LISTENING_MODE_EXIT);
+    System.reset(RESET_USER_REASON::LISTENING_MODE_EXIT);
 }
 
 void
 onOutOfMemory(system_event_t event, int param)
 {
-    HAL_Delay_Milliseconds(1000);
+    // reboot when out of memory, beter than undefined behavior
+    System.reset(RESET_USER_REASON::OUT_OF_MEMORY);
 }
 
 void
@@ -180,7 +181,7 @@ setup()
     TimerInterrupts::init();
     System.on(setup_begin, onSetupModeBegin);
     System.on(setup_end, onSetupModeEnd);
-    // System.on(out_of_memory, onOutOfMemory); // uncomment when debugging memory leaks
+    System.on(out_of_memory, onOutOfMemory);
 #endif
 
     brewbloxBox().startConnectionSources();

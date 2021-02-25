@@ -2,7 +2,7 @@
 MY_DIR=$(dirname $(readlink -f $0))
 BUILD_DIR="$MY_DIR/target/user/platform-3/firmware/brewblox"
 EXECUTABLE_DIR="$MY_DIR/target/brewblox-gcc"
-EXECUTABLE="$EXECUTABLE_DIR/brewblox"
+EXECUTABLE="$EXECUTABLE_DIR/brewblox-gcc"
 OUTPUT_DIR="$MY_DIR/coverage"
 DEVICE_KEY="$EXECUTABLE_DIR/device_key.der"
 SERVER_KEY="$EXECUTABLE_DIR/server_key.der"
@@ -18,6 +18,9 @@ fi
 touch "$DEVICE_KEY" "$SERVER_KEY" # "$EEPROM_FILE"
 mkdir -p "$STATE_DIR"
 mkdir -p "$OUTPUT_DIR"
+
+"$EXECUTABLE" --device_id 123456789012345678901234 --device_key="$DEVICE_KEY" --server_key="$SERVER_KEY" --state="$STATE_DIR"
+exit 0
 
 echo "resetting lcov counters"
 lcov --zerocounters --directory "$BUILD_DIR"
