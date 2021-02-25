@@ -207,7 +207,7 @@ public:
 
     virtual bool isConnected() override
     {
-        return stream.connected();
+        return stream.status();
     }
 
     T& get()
@@ -246,10 +246,20 @@ public:
             connections.end());
 
         for (auto& source : connectionSources) {
-            auto con = source.get().newConnection();
-            if (con) {
-                connectionStarted(con->getDataOut());
-                connections.push_back(std::move(con));
+            while (true) {
+                auto con = source.get().newConnection();
+                if (con) {
+                    auto& out = con->getDataOut();
+                    if (connections.size() < 4) {
+                        connectionStarted(out);
+                        connections.push_back(std::move(con));
+                    } else {
+                        char message[] = "<!Connection limit reached>";
+                        out.writeBuffer(message, sizeof(message) / sizeof(message[0]));
+                    }
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -279,7 +289,7 @@ public:
 
     void disconnect()
     {
-        connections.resize(0);
+        connections.clear();
     }
 
     void stopAll()
