@@ -29,9 +29,8 @@
 #include "spark_wiring_usbserial.h"
 #include "spark_wiring_wifi.h"
 #include <cstdio>
-volatile uint32_t localIp = 0;
-volatile bool wifiIsConnected = false;
 
+volatile uint32_t localIp = 0;
 volatile bool mdns_started = false;
 volatile bool http_started = false;
 
@@ -45,20 +44,31 @@ printWiFiIp(char dest[16])
     snprintf(dest, 16, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 }
 
+int8_t wifiSignalRssi = 2;
+
+// only update signal strength periodically to reduce number of calls into wifi driver
+void
+updateWifiSignal()
+{
+    auto rssi = wlan_connected_rssi();
+    if (rssi == 0) {
+        // means caller should retry, wait until next update for retry
+        return;
+    }
+
+    wifiSignalRssi = rssi;
+}
+
 int8_t
 wifiSignal()
 {
-    if (!wifiIsConnected) {
-        return 2;
-    }
+    return wifiSignalRssi;
+}
 
-    wlan_connected_info_t info = {0};
-    info.size = sizeof(info);
-    int r = wlan_connected_info(nullptr, &info, nullptr);
-    if (r == 0) {
-        return info.rssi != std::numeric_limits<int32_t>::min() ? info.rssi / 100 : 2;
-    }
-    return 2;
+bool
+wifiConnected()
+{
+    return wifiSignalRssi < 0;
 }
 
 bool
@@ -76,17 +86,11 @@ setWifiCredentials(const char* ssid, const char* password, uint8_t security, uin
 void
 printWifiSSID(char* dest, const uint8_t& maxLen)
 {
-    if (wifiIsConnected) {
+    if (wifiConnected()) {
         strncpy(dest, spark::WiFi.SSID(), maxLen);
     } else {
         dest[0] = 0;
     }
-}
-
-bool
-wifiConnected()
-{
-    return wifiIsConnected;
 }
 
 bool
@@ -132,11 +136,22 @@ theMdns()
 void
 manageConnections(uint32_t now)
 {
-    static uint32_t lastConnect = 0;
+    static uint32_t lastConnected = 0;
+    static uint32_t lastChecked = 0;
     static uint32_t lastAnnounce = 0;
     cbox::tracing::add(AppTrace::MANAGE_CONNECTIVITY);
-    if (spark::WiFi.ready()) {
-        lastConnect = now;
+    if (now - lastChecked >= 1000) {
+        updateWifiSignal();
+        lastChecked = now;
+        if (wifiConnected()) {
+            IPAddress ip = spark::WiFi.localIP();
+            localIp = ip.raw().ipv4;
+            lastConnected = now;
+        } else {
+            localIp = 0;
+        }
+    }
+    if (wifiConnected()) {
         if ((!mdns_started) || ((now - lastAnnounce) > 300000)) {
             cbox::tracing::add(AppTrace::MDNS_START);
             // explicit announce every 5 minutes
@@ -178,20 +193,22 @@ manageConnections(uint32_t now)
             }
         }
     } else {
-        cbox::tracing::add(AppTrace::HTTP_STOP);
-        httpserver.stop();
+        if (http_started) {
+            cbox::tracing::add(AppTrace::HTTP_STOP);
+            httpserver.stop();
+        }
         // mdns.stop();
         mdns_started = false;
         http_started = false;
 
-        if (now - lastConnect > 60000) {
+        if (lastConnected - now > 60000) {
             // after 60 seconds without WiFi, trigger reconnect
             // wifi is expected to reconnect automatically. This is a failsafe in case it does not
             cbox::tracing::add(AppTrace::WIFI_CONNECT);
             if (!spark::WiFi.connecting()) {
                 spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
             }
-            lastConnect = now;
+            lastConnected = now; // retry again after 60s
         }
     }
 }
@@ -223,30 +240,10 @@ initMdns()
 }
 
 void
-handleNetworkEvent(system_event_t event, int param)
-{
-    switch (param) {
-    case network_status_connected: {
-        IPAddress ip = spark::WiFi.localIP();
-        localIp = ip.raw().ipv4;
-        wifiIsConnected = true;
-    } break;
-    case network_status_disconnected: {
-        localIp = uint32_t(0);
-        wifiIsConnected = false;
-        break;
-    }
-    default:
-        break;
-    }
-}
-
-void
 wifiInit()
 {
     System.disable(SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS);
     spark::WiFi.setListenTimeout(45);
     spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
-    System.on(network_status, handleNetworkEvent);
     initMdns();
 }
