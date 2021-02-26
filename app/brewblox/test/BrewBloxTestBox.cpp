@@ -23,17 +23,24 @@
 #include "cbox/CboxPtr.h"
 #include "cbox/ConnectionsStringStream.h"
 
+std::shared_ptr<std::stringstream> BrewBloxTestBox::in = std::make_shared<std::stringstream>();
+std::shared_ptr<std::stringstream> BrewBloxTestBox::out = std::make_shared<std::stringstream>();
+cbox::OStreamDataOut BrewBloxTestBox::inOs(*in);
+cbox::EncodedDataOut BrewBloxTestBox::toHex(inOs);
+cbox::EncodedDataOut BrewBloxTestBox::inEncoder(toHex);
+ProtoDataOut BrewBloxTestBox::inProto(inEncoder);
+
 BrewBloxTestBox::BrewBloxTestBox()
-    : in(std::make_shared<std::stringstream>())
-    , out(std::make_shared<std::stringstream>())
-    , inOs(*in)
-    , toHex(inOs)
-    , inEncoder(toHex)
-    , inProto(inEncoder)
-    , ticks(brewbloxBox().makeCboxPtr<TicksBlock<TicksClass>>(3).lock()->get())
+    : ticks(brewbloxBox().makeCboxPtr<TicksBlock<TicksClass>>(3).lock()->get())
 {
+    static bool connectionAdded = false;
     boardInit(); // simulate board init
-    testConnectionSource().add(in, out);
+    if (!connectionAdded) {
+        // only one connection is shared by all tests
+        testConnectionSource().add(in, out);
+        connectionAdded = true;
+    }
+    clearStreams();
 }
 
 void

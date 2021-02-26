@@ -35,8 +35,9 @@ calcFluctuation(const TempSensorMock::Fluctuation& f, ticks_millis_t now)
     if (!scaledPeriod) {
         scaledPeriod = 1;
     }
-    int32_t t = 512 - ((now / scaledPeriod) & 0x3FF); // value -511 to 512 // prevents overflow below
-    auto scale = safe_elastic_fixed_point<2, 28>(cnl::quotient((t << 18) - t * t * t, int32_t{209} << 18));
+    int32_t t = 512 - ((now / scaledPeriod) % 1024); // value -511 to 512 // prevents overflow below
+    // 2 ^ 18 = 262144
+    auto scale = safe_elastic_fixed_point<2, 28>(cnl::quotient((t * 262144) - t * t * t, int32_t{209 * 262144}));
 
     return temp_t(f.amplitude * scale);
 }

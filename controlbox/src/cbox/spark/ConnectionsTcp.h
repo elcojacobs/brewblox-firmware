@@ -55,7 +55,7 @@ public:
 
     std::unique_ptr<Connection> newConnection() override final
     {
-        if (spark::WiFi.ready() && !spark::WiFi.listening()) {
+        if (spark::WiFi.ready()) {
             if (server_enabled && !server_started) {
                 server_started = server.begin();
             }
@@ -66,7 +66,7 @@ public:
                 return std::make_unique<TcpConnection>(std::move(newClient));
             }
         } else {
-            server_started = false;
+            stop();
         }
         return std::unique_ptr<Connection>();
     }

@@ -31,12 +31,12 @@
 
 class BrewBloxTestBox {
 public:
-    std::shared_ptr<std::stringstream> in;
-    std::shared_ptr<std::stringstream> out;
-    cbox::OStreamDataOut inOs;
-    cbox::EncodedDataOut toHex;
-    cbox::EncodedDataOut inEncoder;
-    ProtoDataOut inProto;
+    static std::shared_ptr<std::stringstream> in;
+    static std::shared_ptr<std::stringstream> out;
+    static cbox::OStreamDataOut inOs;
+    static cbox::EncodedDataOut toHex;
+    static cbox::EncodedDataOut inEncoder;
+    static ProtoDataOut inProto;
     bool lastReplyOk = false;
     TicksClass& ticks;
 

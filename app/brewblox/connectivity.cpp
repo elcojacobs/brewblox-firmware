@@ -136,6 +136,7 @@ manageConnections(uint32_t now)
     static uint32_t lastAnnounce = 0;
     cbox::tracing::add(AppTrace::MANAGE_CONNECTIVITY);
     if (spark::WiFi.ready()) {
+        lastConnect = now;
         if ((!mdns_started) || ((now - lastAnnounce) > 300000)) {
             cbox::tracing::add(AppTrace::MDNS_START);
             // explicit announce every 5 minutes
@@ -152,34 +153,29 @@ manageConnections(uint32_t now)
             theMdns().processQueries();
         }
         if (http_started) {
-            TCPClient client = httpserver.available();
-            if (client) {
-                cbox::tracing::add(AppTrace::HTTP_RESPONSE);
-                client.setTimeout(100);
-                while (client.read() != -1) {
-                }
-                const uint8_t start[] =
-                    "HTTP/1.1 200 Ok\n\n<html><body>"
-                    "<p>Your BrewBlox Spark is online but it does not run its own web server. "
-                    "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
-                    "<p>Device ID = ";
-                const uint8_t end[] = "</p></body></html>\n\n";
+            while (true) {
+                TCPClient client = httpserver.available();
+                if (client) {
+                    cbox::tracing::add(AppTrace::HTTP_RESPONSE);
+                    const uint8_t start[] =
+                        "HTTP/1.1 200 Ok\n\n<html><body>"
+                        "<p>Your BrewBlox Spark is online but it does not run its own web server. "
+                        "Please install a BrewBlox server to connect to it using the BrewBlox protocol.</p>"
+                        "<p>Device ID = ";
+                    const uint8_t end[] = "</p></body></html>\n\n";
 
-                client.write(start, sizeof(start), 0);
-                if (!client.getWriteError()) {
-                    client.write(reinterpret_cast<const uint8_t*>(deviceIdString().data()), 24, 0);
+                    client.write(start, sizeof(start), 10);
+                    if (!client.getWriteError() && client.status()) {
+                        client.write(reinterpret_cast<const uint8_t*>(deviceIdString().data()), 24, 10);
+                    }
+                    if (!client.getWriteError() && client.status()) {
+                        client.write(end, sizeof(end), 10);
+                    }
+                    client.stop();
+                } else {
+                    break;
                 }
-                if (!client.getWriteError()) {
-                    client.write(end, sizeof(end), 0);
-                }
-
-                if (!client.getWriteError()) {
-                    client.flush();
-                }
-                HAL_Delay_Milliseconds(5);
-                client.stop();
             }
-            return;
         }
     } else {
         cbox::tracing::add(AppTrace::HTTP_STOP);
@@ -187,15 +183,16 @@ manageConnections(uint32_t now)
         // mdns.stop();
         mdns_started = false;
         http_started = false;
-    }
-    if (now - lastConnect > 60000) {
-        // after 60 seconds without WiFi, trigger reconnect
-        // wifi is expected to reconnect automatically. This is a failsafe in case it does not
-        cbox::tracing::add(AppTrace::WIFI_CONNECT);
-        if (!spark::WiFi.connecting()) {
-            spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
+
+        if (now - lastConnect > 60000) {
+            // after 60 seconds without WiFi, trigger reconnect
+            // wifi is expected to reconnect automatically. This is a failsafe in case it does not
+            cbox::tracing::add(AppTrace::WIFI_CONNECT);
+            if (!spark::WiFi.connecting()) {
+                spark::WiFi.connect(WIFI_CONNECT_SKIP_LISTEN);
+            }
+            lastConnect = now;
         }
-        lastConnect = now;
     }
 }
 
@@ -234,9 +231,12 @@ handleNetworkEvent(system_event_t event, int param)
         localIp = ip.raw().ipv4;
         wifiIsConnected = true;
     } break;
-    default:
+    case network_status_disconnected: {
         localIp = uint32_t(0);
         wifiIsConnected = false;
+        break;
+    }
+    default:
         break;
     }
 }

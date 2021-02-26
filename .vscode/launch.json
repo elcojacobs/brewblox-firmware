@@ -8,7 +8,7 @@
       "name": "brewblox app gcc",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/target/brewblox-gcc/brewblox",
+      "program": "${workspaceFolder}/build/target/brewblox-gcc/brewblox-gcc",
       "args": [
         "--device_id",
         "123456789012345678901234"
