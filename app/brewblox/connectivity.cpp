@@ -30,9 +30,9 @@
 #include "spark_wiring_wifi.h"
 #include <cstdio>
 
-volatile uint32_t localIp = 0;
-volatile bool mdns_started = false;
-volatile bool http_started = false;
+uint32_t localIp = 0;
+bool mdns_started = false;
+bool http_started = false;
 
 constexpr uint16_t webPort = PLATFORM_ID == PLATFORM_GCC ? 8380 : 80;
 static TCPServer httpserver(webPort); // Serve a simple page with instructions
