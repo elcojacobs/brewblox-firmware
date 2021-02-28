@@ -51,6 +51,11 @@ void
 updateWifiSignal()
 {
     if (spark::WiFi.ready()) {
+        // From a particle issue #1967:
+        // avtolstoy: As a workaround for now I might suggest trying to make sure that WiFi.ready() is true
+        // before any WiFi.xxx() calls that rely on wifi_config(), so localIP, macAddress, subnetMask, gatewayIP,
+        // dnsServerIP, dhcpServerIP, BSSID, SSID.
+
         auto rssi = wlan_connected_rssi();
         if (rssi == 0) {
             // means caller should retry, wait until next update for retry
@@ -74,9 +79,9 @@ wifiSignal()
 bool
 wifiConnected()
 {
-    // WiFi.ready() ensures underlying wifi driver has been initialized
+    // WiFi.ready() ensures underlying wifi driver has been initialized correctly
     // wifiSignalRssi is set above an ensures an IP address is assigned and we have signal
-    // checking ready() too ensures that a disconnected is detected immediately
+    // checking ready() too ensures that a disconnect is detected immediately
     return wifiSignalRssi < 0 && spark::WiFi.ready();
 }
 
