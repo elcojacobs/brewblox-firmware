@@ -50,13 +50,19 @@ int8_t wifiSignalRssi = 2;
 void
 updateWifiSignal()
 {
-    auto rssi = wlan_connected_rssi();
-    if (rssi == 0) {
-        // means caller should retry, wait until next update for retry
+    if (spark::WiFi.ready()) {
+        auto rssi = wlan_connected_rssi();
+        if (rssi == 0) {
+            // means caller should retry, wait until next update for retry
+            return;
+        }
+        IPAddress ip = spark::WiFi.localIP();
+        localIp = ip.raw().ipv4;
+        wifiSignalRssi = rssi;
         return;
     }
-
-    wifiSignalRssi = rssi;
+    localIp = 0;
+    wifiSignalRssi = 2;
 }
 
 int8_t
@@ -68,7 +74,10 @@ wifiSignal()
 bool
 wifiConnected()
 {
-    return wifiSignalRssi < 0;
+    // WiFi.ready() ensures underlying wifi driver has been initialized
+    // wifiSignalRssi is set above an ensures an IP address is assigned and we have signal
+    // checking ready() too ensures that a disconnected is detected immediately
+    return wifiSignalRssi < 0 && spark::WiFi.ready();
 }
 
 bool
@@ -143,15 +152,9 @@ manageConnections(uint32_t now)
     if (now - lastChecked >= 1000) {
         updateWifiSignal();
         lastChecked = now;
-        if (wifiConnected()) {
-            IPAddress ip = spark::WiFi.localIP();
-            localIp = ip.raw().ipv4;
-            lastConnected = now;
-        } else {
-            localIp = 0;
-        }
     }
     if (wifiConnected()) {
+        lastConnected = now;
         if ((!mdns_started) || ((now - lastAnnounce) > 300000)) {
             cbox::tracing::add(AppTrace::MDNS_START);
             // explicit announce every 5 minutes
@@ -193,15 +196,10 @@ manageConnections(uint32_t now)
             }
         }
     } else {
-        if (http_started) {
-            cbox::tracing::add(AppTrace::HTTP_STOP);
-            httpserver.stop();
-        }
-        // mdns.stop();
         mdns_started = false;
         http_started = false;
 
-        if (lastConnected - now > 60000) {
+        if (now - lastConnected > 60000) {
             // after 60 seconds without WiFi, trigger reconnect
             // wifi is expected to reconnect automatically. This is a failsafe in case it does not
             cbox::tracing::add(AppTrace::WIFI_CONNECT);

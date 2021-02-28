@@ -156,8 +156,6 @@ void
 WidgetsScreen::updateWiFi()
 {
     auto signal = wifiSignal();
-    printWiFiIp(wifi_ip);
-
     bool connected = true;
     if (signal >= 0) {
         wifi_icon[0] = 0x22;
@@ -170,6 +168,7 @@ WidgetsScreen::updateWiFi()
         wifi_icon[0] = 0x23;
     }
     if (connected != D4D_IsEnabled(const_cast<D4D_OBJECT*>(&scrWidgets_wifi_ip))) {
+        printWiFiIp(wifi_ip);
         D4D_InvalidateObject(&scrWidgets_wifi_ip, D4D_FALSE); // force rewriting IP to display
         D4D_EnableObject(&scrWidgets_wifi_icon, connected);
         D4D_EnableObject(&scrWidgets_wifi_ip, connected);
