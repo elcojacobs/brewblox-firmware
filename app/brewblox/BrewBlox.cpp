@@ -320,7 +320,7 @@ updateFirmwareStreamHandler(Stream* stream)
                 HAL_Core_System_Reset_Ex(RESET_REASON_UPDATE, 0, nullptr);
 #else
                 bool success = system_firmwareUpdate(stream);
-                System.reset(success ? RESET_USER_REASON::FIRMWARE_UPDATE_SUCCESS : RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+                System.reset(success ? RESET_USER_REASON::FIRMWARE_UPDATE_SUCCESS : RESET_USER_REASON::FIRMWARE_UPDATE_FAILED, RESET_NO_WAIT);
 #endif
                 break;
             } else {
@@ -419,7 +419,7 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
 #if PLATFORM_ID != PLATFORM_GCC
             updateFirmwareFromStream(in.streamType());
             // reset in case the firmware update failed
-            System.reset(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED);
+            System.reset(RESET_USER_REASON::FIRMWARE_UPDATE_FAILED, RESET_NO_WAIT);
 #endif
         }
         return true;

@@ -57,7 +57,7 @@ signal_handler(int signal)
 void
 watchdogReset()
 {
-    System.reset(RESET_USER_REASON::WATCHDOG);
+    System.reset(RESET_USER_REASON::WATCHDOG, RESET_NO_WAIT);
 }
 
 #if PLATFORM_THREADING
@@ -103,14 +103,14 @@ onSetupModeBegin()
 void
 onSetupModeEnd()
 {
-    System.reset(RESET_USER_REASON::LISTENING_MODE_EXIT);
+    System.reset(RESET_USER_REASON::LISTENING_MODE_EXIT, RESET_NO_WAIT);
 }
 
 void
 onOutOfMemory(system_event_t event, int param)
 {
     // reboot when out of memory, beter than undefined behavior
-    System.reset(RESET_USER_REASON::OUT_OF_MEMORY);
+    System.reset(RESET_USER_REASON::OUT_OF_MEMORY, RESET_NO_WAIT);
 }
 
 void
@@ -216,7 +216,7 @@ handleReset(bool exitFlag, uint8_t reason)
 #if PLATFORM_ID == PLATFORM_GCC
         exit(0);
 #else
-        System.reset(reason);
+        System.reset(reason, RESET_NO_WAIT);
 #endif
     }
 }

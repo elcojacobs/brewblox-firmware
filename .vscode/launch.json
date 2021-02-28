@@ -116,7 +116,7 @@
       "rtos": "FreeRTOS",
       "device": "STM32F205RG",
       "configFiles": [
-        "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
+        "/usr/local/share/openocd/scripts/interface/stlink.cfg",
         "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
       "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin",
@@ -140,8 +140,8 @@
         "/home/elco/opt/openocd/tcl/interface/stlink.cfg",
         "/home/elco/opt/openocd/tcl/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/source/gcc-arm-none-eabi-_3-2016q1/bin",
-      "gdbpath": "/home/elco/source/gcc-arm-none-eabi-_3-2016q1/bin/arm-none-eabi-gdb-py", // hidden setting
+      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/",
+      "gdbpath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi-gdb-py", // hidden setting
       // "showDevDebugOutput": true,
       "svdFile": "./tools/STM32F215.svd",
       "rtos": "FreeRTOS",
@@ -156,7 +156,7 @@
       "executable": "./platform/spark/device-os/build/target/user-part/platform-8-m/user-part.elf",
       "device": "STM32F205RG",
       "configFiles": [
-        "/usr/local/share/openocd/scripts/interface/stlink-v2.cfg",
+        "/usr/local/share/openocd/scripts/interface/stlink.cfg",
         "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
       "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin",
