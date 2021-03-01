@@ -2,8 +2,10 @@ resources:
   repositories:
     - repository: self
   containers:
-    - container: compiler
-      image: brewblox/firmware-compiler:amd-develop
+    - container: firmware-compiler
+      image: brewblox/firmware-compiler:latest
+    - container: simulator-compiler
+      image: brewblox/simulator-compiler:latest
 
 pool:
   vmImage: "Ubuntu-20.04"
@@ -33,15 +35,15 @@ jobs:
         displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
-        target: compiler
+        target: firmware-compiler
         displayName: Compile proto
 
       - script: bash build/build-tests.sh
-        target: compiler
+        target: firmware-compiler
         displayName: Build tests
 
       - script: bash build/run-tests-with-coverage.sh
-        target: compiler
+        target: firmware-compiler
         displayName: Run tests
 
       - task: PublishCodeCoverageResults@1
@@ -50,9 +52,9 @@ jobs:
           codeCoverageTool: 'cobertura'
 
   #########################################################
-  # Build Simulator AMD
+  # Build AMD64
   #########################################################
-  - job: SimulatorAMD
+  - job: BuildAMD64
 
     steps:
       - checkout: self
@@ -61,42 +63,66 @@ jobs:
         displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
-        target: compiler
+        target: simulator-compiler
         displayName: Compile proto
 
-      - script: bash build/build-sim-amd.sh
-        target: compiler
+      - script: bash build/build-sim-amd64.sh
+        target: simulator-compiler
         displayName: Build executable
 
       - publish: build/target/brewblox-gcc
-        artifact: SimulatorBinAMD
-
-  #########################################################
-  # Build Simulator ARM
-  #########################################################
-  # - job: SimulatorARM
-
-  #   steps:
-  #     - checkout: self
+        artifact: AMD64
   
-  #     - script: git submodule update --init --recursive --depth 1
-  #       displayName: Checkout submodules
+  #########################################################
+  # Build ARM32
+  #########################################################
+  - job: BuildARM32
+    condition: false
 
-  #     - script: bash build/ compile-proto.sh
-  #       target: compiler
-  #       displayName: Compile proto
+    steps:
+      - checkout: self
+  
+      - script: git submodule update --init --recursive --depth 1
+        displayName: Checkout submodules
 
-  #       # should not be run in compiler
-  #     - script: bash build/build-sim-arm.sh
-  #       displayName: Build executable
+      - script: bash build/compile-proto.sh
+        target: simulator-compiler
+        displayName: Compile proto
 
-  #     - publish: build/target/brewblox-gcc
-  #       artifact: SimulatorBinARM
+        # should not be run in compiler
+      - script: bash build/build-sim-arm32.sh
+        displayName: Build executable
+
+      - publish: build/target/brewblox-gcc
+        artifact: ARM32
 
   #########################################################
-  # Build Firmware P1
+  # Build ARM64
   #########################################################
-  - job: FirmwareP1
+  - job: BuildARM64
+    condition: false
+
+    steps:
+      - checkout: self
+  
+      - script: git submodule update --init --recursive --depth 1
+        displayName: Checkout submodules
+
+      - script: bash build/compile-proto.sh
+        target: simulator-compiler
+        displayName: Compile proto
+
+        # should not be run in compiler
+      - script: bash build/build-sim-arm64.sh
+        displayName: Build executable
+
+      - publish: build/target/brewblox-gcc
+        artifact: ARM64
+
+  #########################################################
+  # Build P1
+  #########################################################
+  - job: BuildP1
 
     steps:
       - checkout: self
@@ -105,21 +131,21 @@ jobs:
         displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
-        target: compiler
+        target: firmware-compiler
         displayName: Compile proto
 
       - script: make APP=brewblox PLATFORM=p1
-        target: compiler
+        target: firmware-compiler
         workingDirectory: build
         displayName: Build p1
 
       - publish: build/target/brewblox-p1
-        artifact: FirmwareBinP1
+        artifact: P1
 
   #########################################################
-  # Build Firmware Photon
+  # Build Photon
   #########################################################
-  - job: FirmwarePhoton
+  - job: BuildPhoton
 
     steps:
       - checkout: self
@@ -128,38 +154,33 @@ jobs:
         displayName: Checkout submodules
 
       - script: bash build/compile-proto.sh
-        target: compiler
+        target: firmware-compiler
         displayName: Compile proto
 
       - script: make APP=brewblox PLATFORM=photon
-        target: compiler
+        target: firmware-compiler
         workingDirectory: build
         displayName: Build photon
 
       - publish: build/target/brewblox-photon
-        artifact: FirmwareBinPhoton
+        artifact: Photon
 
   #########################################################
-  # Deployment
+  # Deploy
   #########################################################
   - job: Deploy
 
     dependsOn:
       - Tests
-      - SimulatorAMD
-      # - SimulatorARM
-      - FirmwareP1
-      - FirmwarePhoton
+      - BuildAMD64
+      - BuildP1
+      - BuildPhoton
 
     variables:
       # Variables imported from brewblox group:
       # DOCKER_USER
       # DOCKER_PASSWORD
       - group: brewblox
-      - name: SIM_REPO
-        value: brewblox/firmware-simulator
-      - name: BIN_REPO
-        value: brewblox/firmware-bin
 
     steps:
       - bash: |
@@ -169,45 +190,32 @@ jobs:
           echo "##vso[task.setvariable variable=TAG]$TAG"
         displayName: Export build variables
 
-      - bash: echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin docker.io
+      - bash: |
+          curl -fsSL https://raw.githubusercontent.com/BrewBlox/deployed-images/develop/prepare_buildx.sh | bash
+        displayName: Prepare buildx
+        condition: and(succeeded(), variables.BRANCH)
+
+      - bash: |
+          echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USER) --password-stdin
         displayName: Docker login
         condition: and(succeeded(), variables.BRANCH)
 
       # Download all published artifacts
       - download: current
 
-      # cp SimulatorBinARM/brewblox ${SRC}/brewblox-arm
       - bash: |
           set -e
-          mkdir ${SRC}
-          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox-gcc ${SRC}/brewblox-amd
-        displayName: Copy to firmware-simulator context
-        env:
-          SRC: docker/firmware-simulator/source
-
-      # cp "$(Pipeline.Workspace)"/SimulatorBinARM/brewblox ${SRC}/brewblox-arm
-      - bash: |
-          set -e
-          echo "$(Pipeline.Workspace)"/FirmwareBinPhoton/
           mkdir -p ${SRC}
-          bash docker/copy-bin.sh
-          cp "$(Pipeline.Workspace)"/SimulatorBinAMD/brewblox-gcc ${SRC}/brewblox-amd
-          cp "$(Pipeline.Workspace)"/FirmwareBinP1/brewblox-p1.bin ${SRC}/brewblox-p1.bin
-          cp "$(Pipeline.Workspace)"/FirmwareBinPhoton/brewblox-photon.bin ${SRC}/brewblox-photon.bin
-        displayName: Copy to firmware-bin context
+          cp "$(Pipeline.Workspace)"/AMD64/brewblox-gcc ${SRC}/brewblox-amd64.sim
+          cp "$(Pipeline.Workspace)"/P1/brewblox-p1.bin ${SRC}/brewblox-p1.bin
+          cp "$(Pipeline.Workspace)"/Photon/brewblox-photon.bin ${SRC}/brewblox-photon.bin
+          bash docker/firmware-bin/before_build.sh
+        displayName: Prepare firmware-bin source files
         env:
           SRC: docker/firmware-bin/source
 
       - bash: |
-          docker build --tag $(BIN_REPO):$(TAG) firmware-bin
-          docker push $(BIN_REPO):$(TAG)
-        displayName: (firmware-bin) Build Docker image
+          export TAG=$(TAG)
+          bash docker/firmware-bin/build.sh --push
+        displayName: Build firmware-bin image
         condition: and(succeeded(), variables['BRANCH'])
-        workingDirectory: docker
-
-      - bash: |
-          docker build --tag $(SIM_REPO):$TAG firmware-simulator
-          docker push $(SIM_REPO):$TAG
-        displayName: (firmware-simulator) Build Docker image
-        condition: and(succeeded(), variables['BRANCH'])
-        workingDirectory: docker
