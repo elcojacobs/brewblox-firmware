@@ -66,7 +66,7 @@ jobs:
         target: simulator-compiler
         displayName: Compile proto
 
-      - script: bash build/build-sim-amd64.sh
+      - script: bash build/build-sim-native.sh
         target: simulator-compiler
         displayName: Build executable
 
@@ -84,10 +84,6 @@ jobs:
   
       - script: git submodule update --init --recursive --depth 1
         displayName: Checkout submodules
-
-      - script: bash build/compile-proto.sh
-        target: simulator-compiler
-        displayName: Compile proto
 
         # should not be run in compiler
       - script: bash build/build-sim-arm32.sh
@@ -107,10 +103,6 @@ jobs:
   
       - script: git submodule update --init --recursive --depth 1
         displayName: Checkout submodules
-
-      - script: bash build/compile-proto.sh
-        target: simulator-compiler
-        displayName: Compile proto
 
         # should not be run in compiler
       - script: bash build/build-sim-arm64.sh
