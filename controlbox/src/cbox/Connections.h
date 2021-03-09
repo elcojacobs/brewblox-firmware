@@ -249,14 +249,16 @@ public:
             while (true) {
                 auto con = source.get().newConnection();
                 if (con) {
-                    auto& out = con->getDataOut();
-                    if (connections.size() < 4) {
-                        connectionStarted(out);
-                        connections.push_back(std::move(con));
-                    } else {
-                        char message[] = "<!Connection limit reached>";
+                    if (connections.size() >= 4) {
+                        auto oldest = connections.begin();
+                        auto& out = (*oldest)->getDataOut();
+                        const char message[] = "<!Max connections exceeded, closing oldest>";
                         out.writeBuffer(message, sizeof(message) / sizeof(message[0]));
+                        connections.erase(oldest);
                     }
+                    auto& out = con->getDataOut();
+                    connectionStarted(out);
+                    connections.push_back(std::move(con));
                 } else {
                     break;
                 }
