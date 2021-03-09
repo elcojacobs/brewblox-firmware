@@ -1,7 +1,7 @@
 version: "3.7"
 services:
     compiler:
-        image: brewblox/firmware-compiler:amd-develop
+        image: brewblox/firmware-compiler:latest
         container_name: firmware-compiler
         init: true
         privileged: true
@@ -13,35 +13,3 @@ services:
         working_dir: ${MOUNTDIR}/build
         user: ${DOCKER_UID}
         command: tail -f /dev/null
-
-    simulator:
-        image: brewblox/firmware-simulator:local
-        privileged: true
-        container_name: firmware-simulator
-        volumes:
-            - "/etc/timezone:/etc/timezone:ro"
-            - "/etc/localtime:/etc/localtime:ro"
-        ports:
-            # brewblox protocol
-            - "8332:8332"
-            # http
-            - "8380:80"
-
-    coverage-simulator:
-        image: brewblox/firmware-compiler:amd-develop
-        container_name: firmware-coverage-simulator
-        environment:
-            - MOUNTDIR=/firmware
-        volumes:
-            - ../:${MOUNTDIR}
-            - "/etc/timezone:/etc/timezone:ro"
-            - "/etc/localtime:/etc/localtime:ro"
-        working_dir: ${MOUNTDIR}/build
-        ports:
-            # brewblox protocol
-            - "8332:8332"
-            # http
-            - "8380:80"
-            # websocket display emulation
-            - "8380:7376"
-        command: bash run-simulator.sh
