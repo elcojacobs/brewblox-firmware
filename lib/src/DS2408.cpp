@@ -18,7 +18,6 @@
  */
 
 #include "DS2408.h"
-#include "Logger.h"
 #include "OneWireCrc.h"
 #include <cstring>
 
@@ -33,14 +32,12 @@ static constexpr uint8_t ADDRESS_UPPER = 0x00;
 static constexpr uint8_t ADDRESS_PIO_STATE_LOWER = 0x88;
 static constexpr uint8_t ADDRESS_LATCH_STATE_LOWER = 0x89;
 
-bool
-DS2408::writeNeeded() const
+bool DS2408::writeNeeded() const
 {
     return !connected() || desiredLatches != latches;
 }
 
-bool
-DS2408::update()
+bool DS2408::update()
 {
     selectRom();
 
@@ -89,8 +86,7 @@ DS2408::update()
     return success;
 }
 
-bool
-DS2408::senseChannelImpl(uint8_t channel, State& result) const
+bool DS2408::senseChannelImpl(uint8_t channel, State& result) const
 {
 
     // to reduce onewire communication, we assume the last read value in update() is correct
@@ -105,8 +101,7 @@ DS2408::senseChannelImpl(uint8_t channel, State& result) const
     return false;
 }
 
-bool
-DS2408::writeChannelImpl(uint8_t channel, ChannelConfig config)
+bool DS2408::writeChannelImpl(uint8_t channel, ChannelConfig config)
 {
     bool latchEnabled = config == ChannelConfig::ACTIVE_HIGH;
     uint8_t mask = uint8_t{0x01} << (channel - 1);

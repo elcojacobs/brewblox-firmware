@@ -265,8 +265,7 @@ SCENARIO("Basic test of chain of filters")
     }
 }
 
-void
-test_frequencies(
+void test_frequencies(
     FilterChain& chain,
     std::vector<double> freq,
     std::vector<double> ampl,
@@ -317,8 +316,7 @@ test_frequencies(
     CHECK(max <= max_output_max);
 }
 
-void
-countSameValueAtOutPut(FilterChain& chain, uint32_t sameSampleCount, uint32_t counterMax)
+void countSameValueAtOutPut(FilterChain& chain, uint32_t sameSampleCount, uint32_t counterMax)
 {
     std::vector<int32_t> out;
     uint32_t counterMaxSeen = 0;
@@ -345,8 +343,7 @@ countSameValueAtOutPut(FilterChain& chain, uint32_t sameSampleCount, uint32_t co
     CHECK(counterMaxSeen == counterMax);
 }
 
-bool
-isUpdatedAtCounts(FilterChain& chain, uint8_t filterIndex, std::vector<uint32_t> counts)
+bool isUpdatedAtCounts(FilterChain& chain, uint8_t filterIndex, std::vector<uint32_t> counts)
 {
     std::vector<uint32_t> ticks;
     int32_t step = 100000;
@@ -518,4 +515,81 @@ SCENARIO("A filter chain can be only initalized with short length but expanded a
             }
         }
     }
+}
+
+SCENARIO("A filter chain has large input values with noise", "[filterchain]")
+{
+    const std::vector<uint8_t> params{2, 2, 2, 2};
+    const std::vector<uint8_t> intervals{2, 3, 3, 4};
+    FilterChain chain(params, intervals);
+
+    auto signal = [](const uint32_t& t, const int32_t dc, const int32_t noise) {
+        // return dc + int64_t(std::rand()) * int64_t(2 * noise) / RAND_MAX - noise;
+        if (t == 10) {
+            return dc + 100000;
+        } else if (t == 11) {
+            return dc - 100000;
+        } else {
+            return dc;
+        }
+        // return dc + int64_t(std::rand()) * int64_t(2 * noise) / RAND_MAX - noise;
+    };
+
+    struct Result {
+        int32_t min;
+        int32_t max;
+    };
+
+    auto test_min_max = [&signal](FilterChain& c, const int32_t& dc, const int32_t noise) {
+        int32_t max = dc;
+        int32_t min = dc;
+        c.reset(dc);
+        for (uint32_t t = 0; t < 100000; ++t) {
+            int32_t input = signal(t, dc, noise);
+            c.add(input);
+            int32_t output = c.read();
+            min = std::min(output, min);
+            max = std::max(output, max);
+        }
+        return Result{
+            min,
+            max,
+        };
+    };
+
+    auto r = test_min_max(chain, 0, 100);
+    CHECK(r.min >= -10);
+    CHECK(r.max <= 10);
+
+    r = test_min_max(chain, 0, 1000);
+    CHECK(r.min >= -100);
+    CHECK(r.max <= 100);
+
+    r = test_min_max(chain, 0, 10000);
+    CHECK(r.min >= -1000);
+    CHECK(r.max <= 1000);
+
+    r = test_min_max(chain, 1000, 10000);
+    CHECK(r.min >= 0);
+    CHECK(r.max <= 2000);
+
+    r = test_min_max(chain, 10000, 10000);
+    CHECK(r.min >= 9000);
+    CHECK(r.max <= 11000);
+
+    r = test_min_max(chain, 100000, 10000);
+    CHECK(r.min >= 99000);
+    CHECK(r.max <= 101000);
+
+    r = test_min_max(chain, 1000000, 10000);
+    CHECK(r.min >= 999000);
+    CHECK(r.max <= 1001000);
+
+    r = test_min_max(chain, 10000000, 10000);
+    CHECK(r.min >= 9999000);
+    CHECK(r.max <= 10001000);
+
+    r = test_min_max(chain, 10000000, 100000);
+    CHECK(r.min >= 9990000);
+    CHECK(r.max <= 10010000);
 }

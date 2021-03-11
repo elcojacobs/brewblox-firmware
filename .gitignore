@@ -10,3 +10,7 @@ build/coverage
 *.pyc
 callgraph.dot*
 build/coverage.xml
+app/brewblox-esp/build/
+app/brewblox-esp/main/wifi_creds.h
+app/brewblox-esp/sdkconfig.old
+app/brewblox-esp/main/network/wifi_creds.h

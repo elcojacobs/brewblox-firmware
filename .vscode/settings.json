@@ -110,7 +110,6 @@
     "lib/test/build": true,
     "**/*.o.d": true
   },
-  "ccls.cache.hierarchicalPath": true,
   "ccls.codeLens.localVariables": true,
   "ccls.completion.detailedLabel": true,
   "ccls.completion.enableSnippetInsertion": true,
@@ -137,5 +136,5 @@
     {
       "pattern": "controlbox/build/cbox_test_runner"
     }
-  ]
+  ],
 }
