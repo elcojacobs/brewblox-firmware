@@ -1,22 +1,5 @@
-/*
-Smooth - A C++ framework for embedded programming on top of Espressif's ESP-IDF
-Copyright 2019 Per Malmberg (https://gitbub.com/PerMalmberg)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-#include "Wifi.h"
-#include "copy_min_to_buffer.h"
+#include "Wifi.hpp"
+#include "copy_min_to_buffer.hpp"
 #include <cstring>
 #include <esp_event.h>
 #include <esp_log.h>
@@ -70,6 +53,7 @@ void Wifi::connect_to_ap()
     wifi_init_config_t init = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&init);
     esp_wifi_set_mode(WIFI_MODE_STA);
+    esp_wifi_set_ps(WIFI_PS_NONE);
 
     wifi_config_t config;
     memset(&config, 0, sizeof(config));

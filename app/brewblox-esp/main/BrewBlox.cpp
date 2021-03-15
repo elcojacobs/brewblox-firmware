@@ -17,6 +17,7 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0
 #include "AppTicks.h"
 #include "Logger.h"
 //#include "blox/AcuatorAnalogMockBlock.h"
@@ -215,3 +216,4 @@ applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
     return false;
 }
 } // end namespace cbox
+#endif

@@ -1,4 +1,4 @@
-#include "Ethernet.h"
+#include "Ethernet.hpp"
 #include <cstring>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -31,6 +31,7 @@ Ethernet::Ethernet()
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     phy_config.phy_addr = 0;
     phy_config.reset_gpio_num = -1;
+    phy_config.reset_timeout_ms = 2000;
     mac_config.smi_mdc_gpio_num = 23;
     mac_config.smi_mdio_gpio_num = 18;
     mac = esp_eth_mac_new_esp32(&mac_config);

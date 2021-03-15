@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ADS124S08.hpp"
-#include "ChemSense.hpp"
-#include "PCA9555.hpp"
+// #include "ADS124S08.hpp"
+// #include "ChemSense.hpp"
+// #include "PCA9555.hpp"
 #include "network/Server.hpp"
 
 namespace asio {
@@ -15,13 +15,13 @@ public:
     ~App();
 
     void init_hw();
-    void init_asio();
-    void start();
-    void init_tcp81();
+    // void init_asio();
+    // void start();
+    // void init_tcp81();
 
     // asio::io_context& get_io_context();
-    PCA9555 io_expander;
-    ADS124S08 ads;
-    ChemSense* chemSense;
+    // PCA9555 io_expander;
+    // ADS124S08 ads;
+    // ChemSense* chemSense;
     // Server tcpServer;
 };

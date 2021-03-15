@@ -1,3 +1,4 @@
+#if 0
 #include "App.h"
 #include "httpserver/server.hpp"
 #include "network/Ethernet.h"
@@ -106,18 +107,6 @@ void App::init_hw()
 
 void App::init_asio()
 {
-    esp_netif_init();
-
-    auto& ethernet = get_ethernet();
-    ethernet.set_host_name("brewblox_wired");
-    ethernet.start();
-
-    auto& wifi = get_wifi();
-    wifi.set_host_name("brewblox_wifi");
-    wifi.set_auto_connect(true);
-    wifi.set_ap_credentials(WIFI_SSID, WIFI_PASSWORD);
-    wifi.connect_to_ap();
-
     asio::io_context io;
 
     std::array<int32_t, 4> sensor_values = {0};
@@ -193,3 +182,4 @@ void App::init_tcp81()
 {
     // Server srv(get_io_context(), tcp::endpoint(tcp::v4(), 81));
 }
+#endif

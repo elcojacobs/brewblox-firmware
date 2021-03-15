@@ -8,7 +8,7 @@
 #include <esp_eth.h>
 #include <esp_event_base.h>
 #pragma GCC diagnostic pop
-#include "NetworkInterface.h"
+#include "NetworkInterface.hpp"
 
 class Ethernet : public NetworkInterface {
 public:

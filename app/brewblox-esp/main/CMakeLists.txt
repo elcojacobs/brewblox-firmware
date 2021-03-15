@@ -4,9 +4,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(srcs 
   main.cpp
-  App.cpp
+  # App.cpp
   AppTicks.cpp
-  BrewBlox.cpp
+  # BrewBlox.cpp
  )
 
 file(GLOB network_srcs ./network/*.cpp)
@@ -45,6 +45,4 @@ idf_component_register(
     ${lib_inc}
     ${cnl_inc}
     ${esp_inc}
-  # REQUIRES
-  #   smooth_component
 )

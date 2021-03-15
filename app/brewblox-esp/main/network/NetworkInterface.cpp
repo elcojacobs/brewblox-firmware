@@ -1,4 +1,4 @@
-#include "NetworkInterface.h"
+#include "NetworkInterface.hpp"
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_netif.h>
