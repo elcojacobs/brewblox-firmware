@@ -1,5 +1,6 @@
 #include "Spark4.hpp"
 
+#include "SDCard.hpp"
 #include "SX1508.hpp"
 #include "hal/hal_delay.h"
 #include "hal/hal_gpio.h"
@@ -75,7 +76,9 @@ int main(int /*argc*/, char** /*argv*/)
     // Enable outputs
     expander.write_reg(SX1508::RegAddr::data, 0x00);
 
-    network_init();
+    // network_init();
+
+    // SDCard::test();
 
     asio::io_context io;
     io.run();
