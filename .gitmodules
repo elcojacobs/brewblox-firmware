@@ -12,3 +12,6 @@
 [submodule "platform/esp/externals/smooth"]
 	path = platform/esp/externals/smooth
 	url = https://github.com/PerMalmberg/Smooth.git
+[submodule "platform/esp/fusb302-esp"]
+	path = platform/esp/fusb302-esp
+	url = git@github.com:BrewBlox/fusb302-esp.git
