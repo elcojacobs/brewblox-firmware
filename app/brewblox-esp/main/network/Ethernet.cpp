@@ -9,6 +9,10 @@
 #include <esp_netif.h>
 #pragma GCC diagnostic pop
 
+extern "C" {
+esp_eth_phy_t* esp_eth_phy_new_lan8742(const eth_phy_config_t* config);
+}
+
 Ethernet::Ethernet()
 {
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();

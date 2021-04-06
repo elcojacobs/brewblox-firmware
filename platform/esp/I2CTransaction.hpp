@@ -11,7 +11,7 @@ public:
     // not copyable, transaction should be unique
     I2CTransaction(const I2CTransaction&) = delete;
 
-    hal_i2c_err_t process(bool stop = true);
+    hal_i2c_err_t process();
     void start_write();
     void start_read();
     void write(const uint8_t& data, bool ack_enable = true);
@@ -19,6 +19,7 @@ public:
     void read(uint8_t& data, hal_i2c_ack_type_t ack_type = HAL_I2C_MASTER_LAST_NACK);
     void read(uint8_t* data, size_t data_len, hal_i2c_ack_type_t ack_type = HAL_I2C_MASTER_LAST_NACK);
     void stop();
+    void reset_all_devices();
 
 private:
     i2c_cmd_handle_t cmd;

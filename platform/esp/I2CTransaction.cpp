@@ -12,7 +12,7 @@ I2CTransaction::~I2CTransaction()
     i2c_cmd_link_delete(cmd);
 }
 
-esp_err_t I2CTransaction::process(bool stop)
+esp_err_t I2CTransaction::process()
 {
     return i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
 }
@@ -52,4 +52,17 @@ void I2CTransaction::read(uint8_t* data, size_t data_len, hal_i2c_ack_type_t ack
 void I2CTransaction::stop()
 {
     i2c_master_stop(cmd);
+}
+
+void I2CTransaction::reset_all_devices()
+{
+    i2c_cmd_link_delete(cmd);
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, 0, false);
+    i2c_master_write_byte(cmd, 0x06, false);
+    i2c_master_stop(cmd);
+    process();
+    i2c_cmd_link_delete(cmd);
+    cmd = i2c_cmd_link_create();
 }

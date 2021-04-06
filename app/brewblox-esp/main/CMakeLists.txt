@@ -15,7 +15,7 @@ file(GLOB http_srcs ./httpserver/*.cpp)
 file(GLOB cbox_srcs ../../../controlbox/src/*.cpp)
 set(cbox_inc "../../../controlbox/src/")
 
-file(GLOB esp_srcs ../../../platform/esp/*.cpp)
+file(GLOB esp_srcs ../../../platform/esp/*.cpp ../../../platform/esp/*.c)
 set(esp_inc "../../../platform/esp/")
 
 file(GLOB lib_srcs ../../../lib/src/*.cpp)

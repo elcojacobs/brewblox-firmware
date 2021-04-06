@@ -32,4 +32,3 @@ enum hal_i2c_ack_type_t {
 };
 
 hal_i2c_err_t hal_i2c_master_init();
-void hal_i2c_master_reset_all();

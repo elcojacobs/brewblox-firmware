@@ -175,7 +175,7 @@ void Wifi::start_softap(uint8_t max_conn)
     interface = esp_netif_create_default_wifi_ap();
 
     esp_wifi_set_mode(WIFI_MODE_AP);
-    esp_wifi_set_config(ESP_IF_WIFI_AP, &config);
+    esp_wifi_set_config(wifi_interface_t(ESP_IF_WIFI_AP), &config);
     esp_wifi_start();
 
     ESP_LOGI("SoftAP", "SSID: %s; Auth %s", ssid.c_str(), (password.empty() ? "Open" : "WPA2/PSK"));

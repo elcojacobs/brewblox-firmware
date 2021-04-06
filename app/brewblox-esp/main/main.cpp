@@ -24,8 +24,8 @@ int main(int /*argc*/, char** /*argv*/)
 #endif
 {
     Spark4::hw_init();
-
-    // network_init();
+    hal_delay_ms(100);
+    network_init();
     // SDCard::test();
     auto oneWire1 = DS248x(0);
     auto oneWire2 = DS248x(1);
