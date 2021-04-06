@@ -25,10 +25,7 @@
 class SX1508 : public I2CDeviceBase<0x20> {
 public:
     SX1508(uint8_t lower_address)
-        : I2CDeviceBase(lower_address)
-    {
-        reset();
-    };
+        : I2CDeviceBase(lower_address){};
     ~SX1508() = default;
 
     enum class RegAddr : uint8_t {

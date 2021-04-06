@@ -1,12 +1,13 @@
 #include "Spark4.hpp"
 
-#include "SDCard.hpp"
-#include "SX1508.hpp"
-#include "hal/hal_delay.h"
-#include "hal/hal_gpio.h"
-#include "hal/hal_i2c.h"
+// #include "SDCard.hpp"
+#include "DS2482.hpp"
+#include "OneWire.h"
 #include "network/network.hpp"
 #include <asio.hpp>
+
+#include "hal/hal_delay.h"
+#include <esp_log.h>
 
 extern "C" {
 #ifdef ESP_PLATFORM
@@ -22,63 +23,46 @@ void app_main()
 int main(int /*argc*/, char** /*argv*/)
 #endif
 {
-    Spark4::init();
-    esp_event_loop_create_default();
-
-    SX1508 expander(0);
-    expander.write_reg(SX1508::RegAddr::clock, 0b01011011);
-    hal_delay_ms(200);
-    expander.write_reg(SX1508::RegAddr::clock, 0b01011010);
-    hal_delay_ms(200);
-    expander.write_reg(SX1508::RegAddr::clock, 0b01010000);
-
-    // Expander pins:
-    // 0,1,2,4 -> EX0, EX1, EX2, EX3 (interrupt inputs)
-    // 3, 6, 7 -> LED B, R, G. (B and G support breathing)
-    // 5 -> LCD backlight
-
-    // Disable input for RGB LED and TFT backlight
-    expander.write_reg(SX1508::RegAddr::inputDisable, 0b11101000);
-    // Inverse polarity for TFT backlight
-    expander.write_reg(SX1508::RegAddr::polarity, 0b00100000);
-    // Set dir
-    expander.write_reg(SX1508::RegAddr::dir, 0b00010111);
-    // Disable pullup for RGB LED and TFT backlight
-    expander.write_reg(SX1508::RegAddr::pullUp, 0b00010111);
-    // Enable open drain for RGB LED, TFT backlight is push/pull
-    expander.write_reg(SX1508::RegAddr::openDrain, 0b11001000);
-    // logarithmic fading, PWM frequendy 250 Hz, reset is POR, auto increment register, auto clean nint on read
-    expander.write_reg(SX1508::RegAddr::misc, 0b11101000);
-    // enable led driver on RGB and backlight
-    expander.write_reg(SX1508::RegAddr::ledDriverEnable, 0b11101000);
-
-    // Configure Blue and Green for breathing
-    expander.write_reg(SX1508::RegAddr::iOn3, 128);
-    expander.write_reg(SX1508::RegAddr::tRise3, 3);
-    expander.write_reg(SX1508::RegAddr::tOn3, 1);
-    expander.write_reg(SX1508::RegAddr::tFall3, 3);
-    expander.write_reg(SX1508::RegAddr::off3, 0b00001010); // 1 period off, intensity 2
-
-    expander.write_reg(SX1508::RegAddr::iOn7, 128);
-    expander.write_reg(SX1508::RegAddr::tRise7, 3);
-    expander.write_reg(SX1508::RegAddr::tOn7, 1);
-    expander.write_reg(SX1508::RegAddr::tFall7, 3);
-    expander.write_reg(SX1508::RegAddr::off7, 0b00001010); // 1 period off, intensity 2
-
-    // Configure Red for blinking, but disabled now
-    expander.write_reg(SX1508::RegAddr::iOn6, 0);
-    expander.write_reg(SX1508::RegAddr::tOn6, 15);
-    expander.write_reg(SX1508::RegAddr::off6, 0b01111000); // 1 period off, intensity 0
-
-    // Configure backlight PWM at 50%
-    expander.write_reg(SX1508::RegAddr::iOn5, 128);
-
-    // Enable outputs
-    expander.write_reg(SX1508::RegAddr::data, 0x00);
+    Spark4::hw_init();
 
     // network_init();
-
     // SDCard::test();
+    auto oneWire1 = DS248x(0);
+    auto oneWire2 = DS248x(1);
+    auto oneWire3 = DS248x(2);
+
+    if (oneWire1.init()) {
+        ESP_LOGI("OW1", "ready");
+    } else {
+        ESP_LOGE("OW1", "not ready");
+    }
+    if (oneWire2.init()) {
+        ESP_LOGI("OW2", "ready");
+    } else {
+        ESP_LOGE("OW2", "not ready");
+    }
+    if (oneWire3.init()) {
+        ESP_LOGI("OW3", "ready");
+    } else {
+        ESP_LOGE("OW3", "not ready");
+    }
+
+    OneWire ow1(oneWire1);
+    OneWire ow2(oneWire2);
+    OneWire ow3(oneWire3);
+
+    while (true) {
+        OneWireAddress a;
+        std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
+        for (auto& ow : ows) {
+            ow->reset_search();
+            if (ow->search(a)) {
+                auto s = a.toString();
+                ESP_LOGI("OW", "%s", s.c_str());
+            }
+        }
+        hal_delay_ms(1000);
+    }
 
     asio::io_context io;
     io.run();

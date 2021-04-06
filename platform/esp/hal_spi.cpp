@@ -71,9 +71,9 @@ SpiHost spiHosts[1]
     = {
         {
             SPI2_HOST,
-            {.mosi_io_num = 4,
-             .miso_io_num = 16,
-             .sclk_io_num = 17,
+            {.mosi_io_num = 13,
+             .miso_io_num = 12,
+             .sclk_io_num = 14,
              .quadwp_io_num = -1,
              .quadhd_io_num = -1,
              .max_transfer_sz = 0,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 BrewPi B.V.
+ * Copyright 2021 BrewPi B.V.
  *
  * This file is part of the BrewBlox Control Library.
  *
@@ -18,7 +18,7 @@
  */
 
 #pragma once
-#include "hal/hal_i2c.h"
+#include "I2CTransaction.hpp"
 
 class I2CDevice {
 public:
@@ -34,16 +34,6 @@ public:
     {
     }
 
-    inline hal_i2c_err_t i2c_write(const uint8_t* data, size_t data_len, bool ack_enable)
-    {
-        return hal_i2c_master_write(addr, data, data_len, ack_enable);
-    }
-
-    inline hal_i2c_err_t i2c_read(uint8_t* data, size_t data_len, hal_i2c_ack_type_t read_ack_type, bool write_ack_enable)
-    {
-        return hal_i2c_master_read(addr, data, data_len, read_ack_type, write_ack_enable);
-    }
-
     virtual uint8_t family_address() override final
     {
         return address_base;
@@ -53,6 +43,12 @@ public:
     {
         return addr;
     };
+
+protected:
+    I2CTransaction i2cTransaction()
+    {
+        return I2CTransaction(addr);
+    }
 
 private:
     uint8_t addr;

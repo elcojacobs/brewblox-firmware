@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 BrewPi B.V.
+ * Copyright 2021 BrewPi B.V.
  *
  * This file is part of the Brewblox Control Library.
  *
@@ -21,35 +21,25 @@
 
 hal_i2c_err_t SX1508::write_reg(RegAddr addr, uint8_t data)
 {
-    uint8_t bytes[2] = {static_cast<uint8_t>(addr), data};
-    return i2c_write(bytes, 2, true);
+    uint8_t address = static_cast<uint8_t>(addr);
+    auto t = i2cTransaction();
+    t.start_write();
+    t.write(address);
+    t.write(data);
+    t.stop();
+    return t.process();
 }
-
-/*
-hal_i2c_err_t SX1508::write_regs(char RegAdr, const char* data, int len)
-{
-    int i;
-
-    i2c.start();
-    i2c.write(_slaveAddress);
-    i2c.write(RegAdr);
-
-    for (i = 0; i < len; i++) {
-        i2c.write(data[i]);
-        wait_ms(1);
-    }
-
-    i2c.stop();
-}*/
 
 hal_i2c_err_t SX1508::read_reg(RegAddr addr, uint8_t& result)
 {
-    uint8_t data = static_cast<uint8_t>(addr);
-    auto err = i2c_write(&data, 1, true);
-    if (err) {
-        return err;
-    };
-    return i2c_read(&result, 1, hal_i2c_ack_type_t::I2C_MASTER_LAST_NACK, true);
+    uint8_t address = static_cast<uint8_t>(addr);
+    auto t = i2cTransaction();
+    t.start_write();
+    t.write(address);
+    t.start_read();
+    t.read(result);
+    t.stop();
+    return t.process();
 }
 
 void SX1508::reset()
