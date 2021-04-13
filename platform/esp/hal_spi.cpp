@@ -9,49 +9,6 @@ struct SpiHost {
     spi_bus_config_t config;
 };
 
-class callback_glue_t {
-public:
-    callback_glue_t(const std::function<void(SpiTransaction& t)>& cb_pre,
-                    const std::function<void(SpiTransaction& t)>& cb_post,
-                    void* cb_user_data)
-        : pre(cb_pre)
-        , post(cb_post)
-        , user(cb_user_data)
-    {
-    }
-    const std::function<void(SpiTransaction& t)>& pre;
-    const std::function<void(SpiTransaction& t)>& post;
-    void* user;
-};
-
-void callback_glue_pre(spi_transaction_t* t)
-{
-    // unpack glue
-    callback_glue_t* glue = static_cast<callback_glue_t*>(t->user);
-    SpiTransaction hal_trans = {
-        .tx_data = static_cast<const uint8_t*>(t->tx_buffer),
-        .rx_data = static_cast<uint8_t*>(t->rx_buffer),
-        .tx_len = t->length >> 3,
-        .rx_len = t->rxlength >> 3,
-        .user_cb_data = glue->user,
-    };
-    glue->pre(hal_trans);
-}
-
-void callback_glue_post(spi_transaction_t* t)
-{
-    callback_glue_t* glue = static_cast<callback_glue_t*>(t->user);
-    SpiTransaction hal_trans = {
-        .tx_data = static_cast<const uint8_t*>(t->tx_buffer),
-        .rx_data = static_cast<uint8_t*>(t->rx_buffer),
-        .tx_len = t->length >> 3,
-        .rx_len = t->rxlength >> 3,
-        .user_cb_data = glue->user,
-    };
-    glue->post(hal_trans);
-    delete glue;
-}
-
 inline spi_transaction_t glue_transaction(SpiDevice* dev, const SpiTransaction& hal_trans)
 {
     spi_transaction_t trans = {
@@ -60,7 +17,7 @@ inline spi_transaction_t glue_transaction(SpiDevice* dev, const SpiTransaction& 
         .addr = 0,
         .length = hal_trans.tx_len << 3, // esp32 driver wants length in bits
         .rxlength = hal_trans.rx_len << 3,
-        .user = nullptr, // new callback_glue_t{dev->pre_cb, dev->post_cb, hal_trans.user_cb_data},
+        .user = nullptr,
         .tx_buffer = static_cast<const void*>(hal_trans.tx_data),
         .rx_buffer = static_cast<void*>(hal_trans.rx_data),
     };
@@ -108,8 +65,8 @@ hal_spi_err_t SpiDevice::init()
         .spics_io_num = this->ssPin,
         .flags = 0,
         .queue_size = this->queueSize,
-        .pre_cb = nullptr,   //callback_glue_pre,
-        .post_cb = nullptr}; // callback_glue_post};
+        .pre_cb = nullptr,
+        .post_cb = nullptr};
 
     spi_device_t* dev_ptr = nullptr;
     err = spi_bus_add_device(spi_host.handle, &devcfg, &dev_ptr);
