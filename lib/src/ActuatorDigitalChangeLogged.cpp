@@ -53,9 +53,10 @@ ActuatorDigitalChangeLogged::state() const
 void
 ActuatorDigitalChangeLogged::update(const ticks_millis_t& now)
 {
-    if (state() != history.front().newState) {
-        std::rotate(history.rbegin(), history.rbegin() + 1, history.rend());
-        history[0] = {state(), now};
+    auto current = state();
+    if (current != history.front().newState) {
+        std::move_backward(history.begin(), history.end() - 1, history.end());
+        history[0] = {current, now};
     }
     lastUpdateTime = now;
 }
