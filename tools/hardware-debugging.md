@@ -1,7 +1,7 @@
 # Hardware debugging in vscode
 Check configuration in launch.json for correct paths of tools
 Check whehther the GDB launch has no errors by running it manually:
-`Launching GDB: "/home/elco/source/gcc-arm-none-eabi-5_3-2016q1/bin/arm-none-eabi-gdb-py" "-q" "--interpreter=mi2" "-command=./tools/system.gdbinit" "-command=./tools/arm-pretty.gdbinit"`
+`Launching GDB: "~/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi-gdb-py" "-q" "--interpreter=mi2" "-command=./tools/system.gdbinit" "-command=./tools/arm-pretty.gdbinit"`
 
 If you get this error: `error while loading shared libraries: libncurses.so.5: cannot open shared object file: No such file or directory` 
 Fix it by simlinking the newer version:
