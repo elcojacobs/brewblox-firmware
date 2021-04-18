@@ -6,9 +6,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # install various build deps
 RUN apt-get update -q \
   && apt-get install -qy --no-install-recommends build-essential autoconf automake libtool unzip pkg-config libprotobuf-dev protobuf-compiler git bash python python-pip rsync curl libboost-all-dev \
-  && pip install --upgrade pip setuptools \
+  && python -m pip install --upgrade pip setuptools \
   # and install protobuf python package (used by nanopb), and pyserial (used by program-dfu)
-  && pip install protobuf \
+  && python -m pip install protobuf \
   # crc32 is not used, build particle's makefile does a 'which crc32', this dummy avoids an error
   && touch /usr/bin/crc32 \
   && chmod +x /usr/bin/crc32 \

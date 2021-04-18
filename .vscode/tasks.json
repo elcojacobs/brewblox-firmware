@@ -195,7 +195,7 @@
       "command": "bash",
       "args": [
         "start-compiler.sh",
-        "-r"
+        "--force-recreate"
       ],
       "group": "build",
       "options": {

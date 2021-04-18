@@ -1,8 +1,11 @@
 #! /usr/bin/env bash
 set -e
+pushd "$(dirname "$0")/../.." > /dev/null # Run from repo root
 
-SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-pushd "${SCRIPT_DIR}/.." > /dev/null # Run from repo root
+SRC=docker/firmware-bin/source
+
+# This script does not build various binary/executable files.
+# They are assumed to be present in docker/firmware-bin/source already.
 
 git submodule sync
 git submodule update --init --depth 1 app/brewblox/proto
@@ -18,18 +21,15 @@ PARTICLE_TAG=$(git --git-dir "./platform/spark/device-os/.git" fetch --tags --no
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}
 PARTICLE_VERSION=${PARTICLE_TAG:1} # remove the 'v' prefix
 
+mkdir -p "${SRC}"
 
-OUT_DIR=docker/firmware-bin/source
-mkdir -p "${OUT_DIR}"
+curl -fL -o ${SRC}/bootloader-p1.bin "${PARTICLE_RELEASES}/p1-bootloader@${PARTICLE_VERSION}+lto.bin"
+curl -fL -o ${SRC}/system-part1-p1.bin "${PARTICLE_RELEASES}/p1-system-part1@${PARTICLE_VERSION}.bin"
+curl -fL -o ${SRC}/system-part2-p1.bin "${PARTICLE_RELEASES}/p1-system-part2@${PARTICLE_VERSION}.bin"
 
-
-curl -fL -o ${OUT_DIR}/bootloader-p1.bin "${PARTICLE_RELEASES}/p1-bootloader@${PARTICLE_VERSION}+lto.bin"
-curl -fL -o ${OUT_DIR}/system-part1-p1.bin "${PARTICLE_RELEASES}/p1-system-part1@${PARTICLE_VERSION}.bin"
-curl -fL -o ${OUT_DIR}/system-part2-p1.bin "${PARTICLE_RELEASES}/p1-system-part2@${PARTICLE_VERSION}.bin"
-
-curl -fL -o ${OUT_DIR}/bootloader-photon.bin "${PARTICLE_RELEASES}/photon-bootloader@${PARTICLE_VERSION}+lto.bin"
-curl -fL -o ${OUT_DIR}/system-part1-photon.bin "${PARTICLE_RELEASES}/photon-system-part1@${PARTICLE_VERSION}.bin"
-curl -fL -o ${OUT_DIR}/system-part2-photon.bin "${PARTICLE_RELEASES}/photon-system-part2@${PARTICLE_VERSION}.bin"
+curl -fL -o ${SRC}/bootloader-photon.bin "${PARTICLE_RELEASES}/photon-bootloader@${PARTICLE_VERSION}+lto.bin"
+curl -fL -o ${SRC}/system-part1-photon.bin "${PARTICLE_RELEASES}/photon-system-part1@${PARTICLE_VERSION}.bin"
+curl -fL -o ${SRC}/system-part2-photon.bin "${PARTICLE_RELEASES}/photon-system-part2@${PARTICLE_VERSION}.bin"
 
 {
     echo "[FIRMWARE]"
@@ -38,6 +38,4 @@ curl -fL -o ${OUT_DIR}/system-part2-photon.bin "${PARTICLE_RELEASES}/photon-syst
     echo "proto_version=$PROTO_VERSION"
     echo "proto_date=$PROTO_DATE"
     echo "system_version=${PARTICLE_VERSION}"
-} | tee "${OUT_DIR}/firmware.ini"
-
-popd > /dev/null
+} | tee "${SRC}/firmware.ini"

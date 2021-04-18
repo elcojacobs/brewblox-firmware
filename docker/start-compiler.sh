@@ -1,18 +1,6 @@
 #! /usr/bin/env bash
 set -e
-
-pushd "$(dirname "$(readlink -f "$0")")" > /dev/null
-
-while getopts ":r" opt; do
-  case $opt in
-    r)
-      docker-compose down # pass -r to restart, without -r will only guarantee up
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      ;;
-  esac
-done
+pushd "$(dirname "$0")" > /dev/null
 
 touch .env
 ENV_MOUNTDIR="$(grep MOUNTDIR .env || true)"
@@ -57,5 +45,5 @@ else
   echo "Using $ENV_GID"
 fi
 
-docker-compose up -d compiler
+docker-compose up -d "$@" compiler
 popd > /dev/null
