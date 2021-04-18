@@ -140,8 +140,8 @@
         "/home/elco/opt/openocd/tcl/interface/stlink.cfg",
         "/home/elco/opt/openocd/tcl/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/",
-      "gdbpath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi-gdb-py", // hidden setting
+      "armToolchainPath": "~/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/",
+      "gdbpath": "~/opt/gcc-arm-none-eabi-9-2020-q2-update/bin/arm-none-eabi-gdb-py", // hidden setting
       // "showDevDebugOutput": true,
       "svdFile": "./tools/STM32F215.svd",
       "rtos": "FreeRTOS",
@@ -159,7 +159,7 @@
         "/usr/local/share/openocd/scripts/interface/stlink.cfg",
         "/usr/local/share/openocd/scripts/target/stm32f2x.cfg"
       ],
-      "armToolchainPath": "/home/elco/opt/gcc-arm-none-eabi-9-2020-q2-update/bin",
+      "armToolchainPath": "~/opt/gcc-arm-none-eabi-9-2020-q2-update/bin",
       "showDevDebugOutput": true,
       "runToMain": true,
       "rtos": "FreeRTOS",
