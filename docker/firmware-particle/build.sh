@@ -11,6 +11,7 @@ bash ../prepare-buildx.sh
 
 # Don't forget to call with --push
 docker buildx build \
+    --pull \
     --tag brewblox/firmware-particle:"$TAG" \
     --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
     "$@" \

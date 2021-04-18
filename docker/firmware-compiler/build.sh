@@ -12,6 +12,7 @@ TAG=${TAG:-latest}
 
 # don't forget to call with --push
 docker buildx build \
+    --pull \
     --tag brewblox/firmware-compiler:"$TAG" \
     "$@" \
     .
