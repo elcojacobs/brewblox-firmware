@@ -84,8 +84,7 @@
     "controlbox/build": true,
     "docs/_build": true,
     "lib/test/build": true,
-    "**/*.o.d": true,
-    "app/brewblox-esp/build": true,
+    "**/*.o.d": true
   },
   "testMate.cpp.test.advancedExecutables": [
     {

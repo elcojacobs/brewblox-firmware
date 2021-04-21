@@ -17,7 +17,7 @@
  * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DS2482.hpp"
+#include "DS248x.hpp"
 #include "hal/hal_delay.h"
 
 constexpr const uint8_t PTR_STATUS = 0xf0;
@@ -27,27 +27,25 @@ constexpr const uint8_t PTR_PORTCONFIG = 0xb4; //DS2484 only
 
 bool DS248x::busyWait()
 {
-
-    if (!i2c_write({DS248X_SRP, PTR_STATUS})) {
-        return false;
-    }
-
-    bool ready = false;
-    for (uint8_t retries = 0; retries < 5; retries++) {
-        auto result = i2c_read(1);
-        if (result.size()) {
-            mStatus = result[0];
-            ready = (mStatus & DS248X_STATUS_BUSY) == 0;
-            if (ready) {
-                break;
+    if (i2c_write({DS248X_SRP, PTR_STATUS})) {
+        for (uint8_t retries = 0; retries < 5; retries++) {
+            auto result = i2c_read(1);
+            if (result.size()) {
+                mStatus = result[0];
+                bool ready = (mStatus & DS248X_STATUS_BUSY) == 0;
+                if (ready) {
+                    failedWaits = 0;
+                    return true;
+                }
             }
+            hal_delay_us(50);
         }
-        hal_delay_us(50);
     }
-    if (!ready) {
-        init(); // re-initialize driver, is this correct? TODO
+    if (failedWaits++ > 100) {
+        init(); // reinitialize driver
+        failedWaits = 0;
     }
-    return ready;
+    return false;
 }
 
 bool DS248x::init()
@@ -220,9 +218,10 @@ DS248x::search_triplet(bool search_direction)
     //  SS indicates byte containing search direction bit value in msbit
     if (busyWait()) {
         if (i2c_write({DS248X_1WT, search_direction ? uint8_t{0x80} : uint8_t{0x00}})) {
+            // success, TODO handle fail?
         };
     }
 
-    busyWait();
+    busyWait(); // this updates mStatus
     return mStatus;
 }

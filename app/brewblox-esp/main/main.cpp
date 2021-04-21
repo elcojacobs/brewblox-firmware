@@ -1,7 +1,7 @@
 #include "Spark4.hpp"
 
 // #include "SDCard.hpp"
-#include "DS2482.hpp"
+#include "DS248x.hpp"
 #include "OneWire.h"
 #include "network/network.hpp"
 #include <asio.hpp>
@@ -24,7 +24,7 @@ void app_main()
 int main(int /*argc*/, char** /*argv*/)
 #endif
 {
-    Spark4::hw_init();    
+    Spark4::hw_init();
     hal_delay_ms(100);
     network_init();
     // SDCard::test();

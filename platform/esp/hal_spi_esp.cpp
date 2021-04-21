@@ -1,7 +1,7 @@
-#include "hal/hal_spi.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_log.h"
+#include "hal/hal_spi.h"
 #include <vector>
 
 struct SpiHost {

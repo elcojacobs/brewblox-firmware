@@ -33,8 +33,11 @@ hal_i2c_err_t hal_i2c_write(uint8_t address, const uint8_t* data, size_t len, bo
 hal_i2c_err_t hal_i2c_read(uint8_t address, uint8_t* data, size_t len, bool stop)
 {
     auto num_bytes_received = Wire.requestFrom(address, len, stop);
-    if (num_bytes_received == 0) {
+    if (num_bytes_received != len) {
         return to_hal_err(4);
+    }
+    while (len--) {
+        *data++ = Wire.read();
     }
     return 0;
 }

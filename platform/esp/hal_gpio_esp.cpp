@@ -1,5 +1,5 @@
-#include "hal/hal_gpio.h"
 #include "driver/gpio.h"
+#include "hal/hal_gpio.h"
 
 void hal_gpio_write(hal_pin_t pin, bool isHigh)
 {

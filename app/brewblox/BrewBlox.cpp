@@ -82,7 +82,7 @@ void updateFirmwareFromStream(cbox::StreamType)
 #include "DS2413Mock.h"
 #include "OneWireMockDriver.h"
 #else
-#include "DS2482.hpp"
+#include "DS248x.hpp"
 #endif
 #include "OneWireScanningFactory.h"
 

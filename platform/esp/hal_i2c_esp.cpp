@@ -1,5 +1,5 @@
-#include "hal/hal_i2c.h"
 #include "driver/i2c.h"
+#include "hal/hal_i2c.h"
 
 hal_i2c_err_t to_hal_err(esp_err_t err)
 {

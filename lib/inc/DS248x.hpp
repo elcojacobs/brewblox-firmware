@@ -1,25 +1,25 @@
 /*
-  DS2482/DS2484 library for Arduino
-  Copyright (C) 2009 Paeae Technologies
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-  This is a modified version for BrewBlox
+ * Copyright 2021 BrewPi B.V./Elco Jacobs.
+ *
+ * This file is part of Brewblox.
+ * 
+ * Brewblox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Brewblox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
+#include "I2CDevice.hpp"
 #include "OneWireLowLevelInterface.h"
 #include <cstdint>
 
@@ -49,12 +49,11 @@ constexpr uint8_t DS248X_1WSB = 0x87; // 1-Wire Single Bit
 constexpr uint8_t DS248X_1WT = 0x78;  // 1-Wire Triplet
 constexpr uint8_t DS248X_ADJP = 0xc3; // Adjust OneWire port config (DS2484 only))
 
-class DS248x : public OneWireLowLevelInterface {
+class DS248x : public OneWireLowLevelInterface, public I2CDeviceBase<0x18> {
 public:
     //Address is 0-3
-
     DS248x(uint8_t address)
-        : mAddress(0x18 | address)
+        : I2CDeviceBase(address)
     {
     }
 
@@ -83,7 +82,7 @@ public:
 
     // DS248X specific functions below
 
-    void resetMaster();
+    bool resetMaster();
 
     //DS2482-800 only
     bool selectChannel(uint8_t channel);
@@ -99,8 +98,8 @@ public:
     virtual uint8_t search_triplet(bool search_direction) override final;
 
 private:
-    uint8_t mAddress;
     uint8_t mStatus = 0;
 
-    bool busyWait(); //blocks until ready or timeout, updates status
+    bool busyWait();         // blocks until ready or timeout, updates status
+    uint8_t failedWaits = 0; // keep track of consecutive failed waits
 };

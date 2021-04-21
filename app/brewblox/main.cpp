@@ -32,6 +32,7 @@
 #include "display/screens/listening_screen.h"
 #include "display/screens/startup_screen.h"
 #include "eeprom_hal.h"
+#include "hal/hal_i2c.h"
 #include "reset.h"
 #include "spark_wiring_startup.h"
 #include "spark_wiring_system.h"
@@ -46,16 +47,14 @@ STARTUP(
 
 #if PLATFORM_ID == PLATFORM_GCC
 #include <csignal>
-void
-signal_handler(int signal)
+void signal_handler(int signal)
 {
 
     exit(signal);
 }
 #endif
 
-void
-watchdogReset()
+void watchdogReset()
 {
     System.reset(RESET_USER_REASON::WATCHDOG, RESET_NO_WAIT);
 }
@@ -76,8 +75,7 @@ watchdogCheckin()
 }
 #endif
 
-void
-displayTick()
+void displayTick()
 {
     static ticks_millis_t lastTick = -40;
     auto now = ticks.millis();
@@ -90,8 +88,7 @@ displayTick()
     }
 }
 
-void
-onSetupModeBegin()
+void onSetupModeBegin()
 {
     ListeningScreen::activate();
     manageConnections(ticks.millis()); // stop http server
@@ -100,21 +97,18 @@ onSetupModeBegin()
     HAL_Delay_Milliseconds(100);
 }
 
-void
-onSetupModeEnd()
+void onSetupModeEnd()
 {
     System.reset(RESET_USER_REASON::LISTENING_MODE_EXIT, RESET_NO_WAIT);
 }
 
-void
-onOutOfMemory(system_event_t event, int param)
+void onOutOfMemory(system_event_t event, int param)
 {
     // reboot when out of memory, beter than undefined behavior
     System.reset(RESET_USER_REASON::OUT_OF_MEMORY, RESET_NO_WAIT);
 }
 
-void
-setup()
+void setup()
 {
 // Install a signal handler
 #if PLATFORM_ID == PLATFORM_GCC
@@ -128,7 +122,7 @@ setup()
     Buzzer.beep(2, 50);
     HAL_Delay_Milliseconds(1);
 #endif
-
+    hal_i2c_master_init();
     cbox::tracing::pause(); // ensure tracing is paused until service resumes it
 
     // init display
@@ -188,8 +182,7 @@ setup()
     WidgetsScreen::activate();
 }
 
-void
-loop()
+void loop()
 {
     ticks.switchTaskTimer(TicksClass::TaskId::DisplayUpdate);
     cbox::tracing::add(AppTrace::UPDATE_DISPLAY);
@@ -209,8 +202,7 @@ loop()
     HAL_Delay_Milliseconds(1);
 }
 
-void
-handleReset(bool exitFlag, uint8_t reason)
+void handleReset(bool exitFlag, uint8_t reason)
 {
     if (exitFlag) {
 #if PLATFORM_ID == PLATFORM_GCC

@@ -1,7 +1,7 @@
-#include "hal/hal_delay.h"
 #include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "hal/hal_delay.h"
 #include <sys/time.h>
 
 void hal_delay_us(uint32_t duration)
