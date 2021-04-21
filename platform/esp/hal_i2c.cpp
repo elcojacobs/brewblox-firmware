@@ -2,6 +2,11 @@
 #include "driver/i2c.h"
 #include "esp_log.h"
 
+hal_i2c_err_t to_hal_err(esp_err_t err)
+{
+    return err; // TODO: convert errors to platform independent enum
+}
+
 hal_i2c_err_t hal_i2c_master_init()
 {
     i2c_config_t conf = {
@@ -20,5 +25,31 @@ hal_i2c_err_t hal_i2c_master_init()
     int setup_time, hold_time;
     i2c_get_start_timing(I2C_NUM_0, &setup_time, &hold_time);
 
-    return err;
+    return to_hal_err(err);
+}
+
+hal_i2c_err_t hal_i2c_write(uint8_t address, const uint8_t* data, size_t len, bool stop)
+{
+    auto cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (address << 1U), true);
+    i2c_master_write(cmd, const_cast<uint8_t*>(data), len, true);
+    if (stop) {
+        i2c_master_stop(cmd);
+    }
+    auto err = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
+    return to_hal_err(err);
+}
+
+hal_i2c_err_t hal_i2c_read(uint8_t address, uint8_t* data, size_t len, bool stop)
+{
+    auto cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (address << 1U) | 0x01, true);
+    i2c_master_read(cmd, const_cast<uint8_t*>(data), len, I2C_MASTER_LAST_NACK);
+    if (stop) {
+        i2c_master_stop(cmd);
+    }
+    auto err = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
+    return to_hal_err(err);
 }

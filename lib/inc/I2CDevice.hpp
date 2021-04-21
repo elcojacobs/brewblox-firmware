@@ -19,6 +19,12 @@
 
 #pragma once
 #include "I2CTransaction.hpp"
+#include <initializer_list>
+#include <vector>
+
+// function prototypes to be implemented by platform dependent source files
+hal_i2c_err_t hal_i2c_write(uint8_t address, const uint8_t* data, size_t data_len, bool stop);
+hal_i2c_err_t hal_i2c_read(uint8_t address, uint8_t* data, size_t data_len, bool stop);
 
 class I2CDevice {
 public:
@@ -44,6 +50,37 @@ public:
         return addr;
     };
 
+    bool i2c_write(const std::vector<uint8_t>& values, bool stop = true)
+    {
+        lastError = hal_i2c_write(addr, values.data(), values.size(), stop);
+        return lastError == 0;
+    }
+
+    bool i2c_write(std::initializer_list<uint8_t> values, bool stop = true)
+    {
+        return i2c_write(std::vector<uint8_t>{values}, stop);
+    }
+
+    bool i2c_write(uint8_t value, bool stop = true)
+    {
+        return i2c_write(std::vector<uint8_t>{value}, stop);
+    }
+
+    std::vector<uint8_t> i2c_read(size_t n, bool stop = true)
+    {
+        std::vector<uint8_t> values(n);
+        lastError = hal_i2c_read(addr, values.data(), values.size(), stop);
+        if (lastError == 0) {
+            return values;
+        }
+        return {};
+    }
+
+    hal_i2c_err_t i2c_last_error()
+    {
+        return lastError;
+    }
+
 protected:
     I2CTransaction i2cTransaction()
     {
@@ -52,4 +89,5 @@ protected:
 
 private:
     uint8_t addr;
+    hal_i2c_err_t lastError;
 };

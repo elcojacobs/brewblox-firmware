@@ -89,7 +89,7 @@ public:
     };
 
     void reset();
-    hal_i2c_err_t write_reg(RegAddr addr, uint8_t data);
+    bool write_reg(RegAddr addr, uint8_t data);
     // void write_regs(RegAddr addr, const uint8_t* data, size_t len);
-    hal_i2c_err_t read_reg(RegAddr addr, uint8_t& result);
+    bool read_reg(RegAddr addr, uint8_t& result);
 };

@@ -19,27 +19,21 @@
 
 #include "SX1508.hpp"
 
-hal_i2c_err_t SX1508::write_reg(RegAddr addr, uint8_t data)
+bool SX1508::write_reg(RegAddr addr, uint8_t data)
 {
-    uint8_t address = static_cast<uint8_t>(addr);
-    auto t = i2cTransaction();
-    t.start_write();
-    t.write(address);
-    t.write(data);
-    t.stop();
-    return t.process();
+    return i2c_write({static_cast<uint8_t>(addr), data});
 }
 
-hal_i2c_err_t SX1508::read_reg(RegAddr addr, uint8_t& result)
+bool SX1508::read_reg(RegAddr addr, uint8_t& result)
 {
-    uint8_t address = static_cast<uint8_t>(addr);
-    auto t = i2cTransaction();
-    t.start_write();
-    t.write(address);
-    t.start_read();
-    t.read(result);
-    t.stop();
-    return t.process();
+    if (i2c_write(static_cast<uint8_t>(addr), true)) {
+        auto answer = i2c_read(1);
+        if (answer.size()) {
+            result = answer[0];
+            return true;
+        }
+    }
+    return false;
 }
 
 void SX1508::reset()
