@@ -20,10 +20,10 @@
 #include "DS2482.hpp"
 #include "hal/hal_delay.h"
 
-#define PTR_STATUS 0xf0
-#define PTR_READ 0xe1
-#define PTR_CONFIG 0xc3
-#define PTR_PORTCONFIG 0xb4 //DS2484 only
+constexpr const uint8_t PTR_STATUS = 0xf0;
+constexpr const uint8_t PTR_READ = 0xe1;
+constexpr const uint8_t PTR_CONFIG = 0xc3;
+constexpr const uint8_t PTR_PORTCONFIG = 0xb4; //DS2484 only
 
 bool DS248x::busyWait()
 {
@@ -52,8 +52,6 @@ bool DS248x::busyWait()
 
 bool DS248x::init()
 {
-    hal_i2c_master_init();
-
     if (resetMaster()) {
         return configure(DS248X_CONFIG_APU);
     }

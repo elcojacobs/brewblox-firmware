@@ -11,7 +11,7 @@ public:
     void set_outputs(uint8_t bits)
     {
         outputs = bits;
-        command(0x01, outputs);
+        i2c_write({0x01, outputs});
     }
 
     void set_output(uint8_t pin, bool state)
@@ -27,20 +27,10 @@ public:
     // 1 for input, 0 for output
     void set_config(uint8_t inputs_mask)
     {
-        command(0x03, inputs_mask);
+        i2c_write({0x03, inputs_mask});
     }
 
 private:
-    void command(uint8_t op, uint8_t data)
-    {
-        auto t = i2cTransaction();
-        t.start_write();
-        t.write(op);
-        t.write(data);
-        t.stop();
-        ESP_ERROR_CHECK_WITHOUT_ABORT(t.process());
-    }
-
     uint8_t inputs = 0xFF;
     uint8_t outputs = 0xFF;
 };

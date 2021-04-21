@@ -21,8 +21,6 @@ hal_i2c_err_t hal_i2c_master_init()
     esp_err_t err = i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0);
     i2c_set_data_mode(I2C_NUM_0, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST);
     i2c_filter_enable(I2C_NUM_0, 7);
-    int setup_time, hold_time;
-    i2c_get_start_timing(I2C_NUM_0, &setup_time, &hold_time);
 
     return to_hal_err(err);
 }
@@ -37,6 +35,7 @@ hal_i2c_err_t hal_i2c_write(uint8_t address, const uint8_t* data, size_t len, bo
         i2c_master_stop(cmd);
     }
     auto err = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
+    i2c_cmd_link_delete(cmd);
     return to_hal_err(err);
 }
 
@@ -50,5 +49,6 @@ hal_i2c_err_t hal_i2c_read(uint8_t address, uint8_t* data, size_t len, bool stop
         i2c_master_stop(cmd);
     }
     auto err = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_RATE_MS);
+    i2c_cmd_link_delete(cmd);
     return to_hal_err(err);
 }

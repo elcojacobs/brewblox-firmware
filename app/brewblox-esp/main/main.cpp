@@ -24,7 +24,7 @@ void app_main()
 int main(int /*argc*/, char** /*argv*/)
 #endif
 {
-    Spark4::hw_init();
+    Spark4::hw_init();    
     hal_delay_ms(100);
     network_init();
     // SDCard::test();
@@ -54,17 +54,17 @@ int main(int /*argc*/, char** /*argv*/)
     OneWire ow3(oneWire3);
 
     while (true) {
-        // OneWireAddress a;
-        // std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
-        // for (auto& ow : ows) {
-        //     ow->reset_search();
-        //     if (ow->search(a)) {
-        //         auto s = a.toString();
-        //         ESP_LOGI("OW", "%s", s.c_str());
-        //     }
-        // }
-        exp1.gpio_status();
-        exp1.gpio_test();
+        OneWireAddress a;
+        std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
+        for (auto& ow : ows) {
+            ow->reset_search();
+            if (ow->search(a)) {
+                auto s = a.toString();
+                ESP_LOGI("OW", "%s", s.c_str());
+            }
+        }
+        // exp1.gpio_status();
+        // exp1.gpio_test();
         hal_delay_ms(10);
     }
 
