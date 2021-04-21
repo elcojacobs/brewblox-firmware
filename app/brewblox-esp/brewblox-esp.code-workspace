@@ -1,9 +1,9 @@
 {
 	"folders": [
 		{
-			"name": "firmware",
-			"path": ".."
-		},
+			"name": "brewblox-esp",
+			"path": "../app/brewblox-esp"
+		}
 	],
 	"settings": {
 		"files.associations": {
@@ -79,6 +79,7 @@
 			"font04b03.h": "c",
 			"tewi.h": "c"
 		},
+		"C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
 		"editor.formatOnSave": true,
 		"search.exclude": {
 			"**/.git": true,

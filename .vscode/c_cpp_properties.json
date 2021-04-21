@@ -24,7 +24,8 @@
                 "${workspaceFolder}/platform/spark/device-os/platform/shared/inc",
                 "${workspaceFolder}/platform/spark/device-os/hal/src/newhal",
                 "${workspaceFolder}/platform/spark/device-os/communication/src"
-            ]
+            ],
+            "compileCommands": "${workspaceFolder}/app/brewblox-esp/build/compile_commands.json"
         }
     ],
     "version": 4
