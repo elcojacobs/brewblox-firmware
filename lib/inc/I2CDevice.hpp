@@ -18,7 +18,7 @@
  */
 
 #pragma once
-#include "I2CTransaction.hpp"
+#include "hal/hal_i2c.h"
 #include <initializer_list>
 #include <vector>
 
@@ -66,6 +66,8 @@ public:
         return i2c_write(std::vector<uint8_t>{value}, stop);
     }
 
+    bool i2c_write(uint8_t value, uint8_t value2) = delete;
+
     std::vector<uint8_t> i2c_read(size_t n, bool stop = true)
     {
         std::vector<uint8_t> values(n);
@@ -79,12 +81,6 @@ public:
     hal_i2c_err_t i2c_last_error()
     {
         return lastError;
-    }
-
-protected:
-    I2CTransaction i2cTransaction()
-    {
-        return I2CTransaction(addr);
     }
 
 private:

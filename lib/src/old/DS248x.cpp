@@ -35,8 +35,7 @@ Updates:
 #define PTR_CONFIG 0xc3
 #define PTR_PORTCONFIG 0xb4 //DS2484 only
 
-bool
-DS248x::busyWait()
+bool DS248x::busyWait()
 {
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_SRP);
@@ -58,8 +57,7 @@ DS248x::busyWait()
     return false;
 }
 
-bool
-DS248x::init()
+bool DS248x::init()
 {
     Wire.reset();
     Wire.setTimeout(1);
@@ -69,16 +67,14 @@ DS248x::init()
     return configure(DS248X_CONFIG_APU);
 }
 
-void
-DS248x::resetMaster()
+void DS248x::resetMaster()
 {
     Wire.beginTransmission(mAddress);
     Wire.write(DS248X_DRST);
     Wire.endTransmission();
 }
 
-bool
-DS248x::configure(uint8_t config)
+bool DS248x::configure(uint8_t config)
 {
     busyWait(); // continue even if busy
     Wire.beginTransmission(mAddress);
@@ -93,8 +89,7 @@ DS248x::configure(uint8_t config)
     return false;
 }
 
-bool
-DS248x::selectChannel(uint8_t channel)
+bool DS248x::selectChannel(uint8_t channel)
 {
     uint8_t ch, ch_read;
 
@@ -149,8 +144,7 @@ DS248x::selectChannel(uint8_t channel)
     return false;
 }
 
-bool
-DS248x::reset()
+bool DS248x::reset()
 {
     if (busyWait()) {
         Wire.beginTransmission(mAddress);
@@ -164,8 +158,7 @@ DS248x::reset()
     return false;
 }
 
-bool
-DS248x::write(uint8_t b)
+bool DS248x::write(uint8_t b)
 {
     if (busyWait()) {
         Wire.beginTransmission(mAddress);
@@ -176,8 +169,7 @@ DS248x::write(uint8_t b)
     return false;
 }
 
-bool
-DS248x::read(uint8_t& b)
+bool DS248x::read(uint8_t& b)
 {
     if (busyWait()) {
         Wire.beginTransmission(mAddress);
@@ -202,8 +194,7 @@ DS248x::read(uint8_t& b)
     return false;
 }
 
-bool
-DS248x::write_bit(bool bit)
+bool DS248x::write_bit(bool bit)
 {
     if (busyWait()) {
         Wire.beginTransmission(mAddress);
@@ -214,8 +205,7 @@ DS248x::write_bit(bool bit)
     return false;
 }
 
-bool
-DS248x::read_bit(bool& bit)
+bool DS248x::read_bit(bool& bit)
 {
     if (write_bit(1)) {
         bit = (mStatus & DS248X_STATUS_SBR) > 0;

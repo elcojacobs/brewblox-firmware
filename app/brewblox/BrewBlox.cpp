@@ -60,16 +60,14 @@ using EepromAccessImpl = cbox::SparkEepromAccess;
 
 #if defined(SPARK)
 #include "rgbled.h"
-void
-changeLedColor()
+void changeLedColor()
 {
     LED_SetRGBColor(RGB_COLOR_MAGENTA);
 }
 extern void
 updateFirmwareFromStream(cbox::StreamType streamType);
 #else
-void
-changeLedColor()
+void changeLedColor()
 {
 }
 void updateFirmwareFromStream(cbox::StreamType)
@@ -84,7 +82,7 @@ void updateFirmwareFromStream(cbox::StreamType)
 #include "DS2413Mock.h"
 #include "OneWireMockDriver.h"
 #else
-#include "DS248x.h"
+#include "DS2482.hpp"
 #endif
 #include "OneWireScanningFactory.h"
 
@@ -246,8 +244,7 @@ logger()
     return logger;
 }
 
-void
-logEvent(const std::string& event)
+void logEvent(const std::string& event)
 {
     cbox::DataOut& out = theConnectionPool().logDataOut();
     out.write('<');
@@ -258,8 +255,7 @@ logEvent(const std::string& event)
     out.write('>');
 }
 
-void
-updateBrewbloxBox()
+void updateBrewbloxBox()
 {
     brewbloxBox().update(ticks.millis());
 #if PLATFORM_ID == 3
@@ -285,8 +281,7 @@ versionCsv()
 }
 
 #if PLATFORM_ID != PLATFORM_GCC
-void
-updateFirmwareStreamHandler(Stream* stream)
+void updateFirmwareStreamHandler(Stream* stream)
 {
     enum class DCMD : uint8_t {
         None,
@@ -342,8 +337,7 @@ updateFirmwareStreamHandler(Stream* stream)
     }
 }
 
-void
-updateFirmwareFromStream(cbox::StreamType streamType)
+void updateFirmwareFromStream(cbox::StreamType streamType)
 {
     theConnectionPool().stopAll();
     if (streamType == cbox::StreamType::Usb) {
@@ -364,8 +358,7 @@ updateFirmwareFromStream(cbox::StreamType streamType)
 #endif
 
 namespace cbox {
-void
-connectionStarted(DataOut& out)
+void connectionStarted(DataOut& out)
 {
     char header[] = "<!BREWBLOX,";
 
@@ -396,8 +389,7 @@ connectionStarted(DataOut& out)
 }
 
 // handler for custom commands outside of controlbox
-bool
-applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
+bool applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
 {
     switch (cmdId) {
     case 100: // firmware update

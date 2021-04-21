@@ -18,8 +18,6 @@
  */
 
 #include "DS2482.hpp"
-#include "esp_err.h"
-#include "esp_log.h"
 #include "hal/hal_delay.h"
 
 #define PTR_STATUS 0xf0
@@ -29,38 +27,33 @@
 
 bool DS248x::busyWait()
 {
-    {
-        auto t = i2cTransaction();
-        t.start_write();
-        t.write(DS248X_SRP);
-        t.write(PTR_STATUS);
-        t.stop();
-        if (t.process() != 0) {
-            return false;
-        }
+
+    if (!i2c_write({DS248X_SRP, PTR_STATUS})) {
+        return false;
     }
 
     bool ready = false;
     for (uint8_t retries = 0; retries < 5; retries++) {
-        auto t = i2cTransaction();
-        t.start_read();
-        t.read(mStatus);
-        t.stop();
-        t.process();
-        ready = (mStatus & DS248X_STATUS_BUSY) == 0;
-        if (ready) {
-            break;
+        auto result = i2c_read(1);
+        if (result.size()) {
+            mStatus = result[0];
+            ready = (mStatus & DS248X_STATUS_BUSY) == 0;
+            if (ready) {
+                break;
+            }
         }
         hal_delay_us(50);
     }
     if (!ready) {
-        init();
+        init(); // re-initialize driver, is this correct? TODO
     }
     return ready;
 }
 
 bool DS248x::init()
 {
+    hal_i2c_master_init();
+
     if (resetMaster()) {
         return configure(DS248X_CONFIG_APU);
     }
@@ -69,12 +62,7 @@ bool DS248x::init()
 
 bool DS248x::resetMaster()
 {
-    auto t = i2cTransaction();
-    t.start_write();
-    t.write(DS248X_DRST);
-    t.stop();
-    bool success = t.process() == 0;
-    return success;
+    return i2c_write(DS248X_DRST);
 }
 
 bool DS248x::configure(uint8_t config)
@@ -82,22 +70,11 @@ bool DS248x::configure(uint8_t config)
     // when writing, upper bits should be inverse of lower bits
     // when reading, upper bits read as zero
     uint8_t config_byte = config + (~config << 4U);
-
-    esp_err_t err = 0;
-
-    uint8_t result = 0;
-    auto t = i2cTransaction();
-    t.start_write();
-    t.write(DS248X_WCFG);
-    t.write(config_byte);
-    t.start_read();
-    t.read(result);
-    t.stop();
-    err = t.process();
-    if (!err) {
-        return result == config;
+    i2c_write({DS248X_WCFG, config_byte});
+    auto result = i2c_read(1);
+    if (result.size()) {
+        return result[0] == config;
     }
-    ESP_ERROR_CHECK_WITHOUT_ABORT(err);
     return false;
 }
 
@@ -142,18 +119,11 @@ bool DS248x::selectChannel(uint8_t channel)
     };
 
     if (busyWait()) {
-
-        uint8_t result = 0;
-        auto t = i2cTransaction();
-        t.start_write();
-        t.write(DS248X_CHSL);
-        t.write(ch);
-        t.start_read();
-        t.read(result);
-        t.stop();
-
-        if (t.process() == 0) {
-            return ch_read == result;
+        if (i2c_write({DS248X_CHSL, ch})) {
+            auto result = i2c_read(1);
+            if (result.size()) {
+                return ch_read == result[0];
+            }
         }
     }
 
@@ -164,33 +134,24 @@ bool DS248x::reset()
 {
     bool ready = false;
     for (uint8_t retries = 0; retries < 10; retries++) {
-        esp_err_t err = ESP_FAIL;
-        {
-            auto t = i2cTransaction();
-            t.start_write();
-            t.write(DS248X_1WRS);
-            t.stop();
-            err = t.process();
-        }
-        if (err == ESP_FAIL) {
+
+        if (!i2c_write(DS248X_1WRS)) {
             // No ack received, onewire is busy
             hal_delay_ms(1);
-        } else {
-            // read status until ready
-            // todo: use repeated start condition ?
-            while (!ready) {
-                uint8_t result = 0xFF;
-                auto t = i2cTransaction();
-                t.start_read();
-                t.read(result);
-                t.stop();
-                if (t.process() != 0) {
-                    return false;
-                }
-                ready = (result & DS248X_STATUS_BUSY) == 0;
-            }
-            return true;
+            continue;
         }
+
+        // read status until ready
+        // todo: use repeated start condition ?
+        while (!ready) {
+            auto result = i2c_read(1);
+            if (result.size() == 0) {
+                // i2c error
+                return false;
+            }
+            ready = (result[0] & DS248X_STATUS_BUSY) == 0;
+        }
+        return true;
     }
     return false;
 }
@@ -198,12 +159,7 @@ bool DS248x::reset()
 bool DS248x::write(uint8_t b)
 {
     if (busyWait()) {
-        auto t = i2cTransaction();
-        t.start_write();
-        t.write(DS248X_1WWB);
-        t.write(b);
-        t.stop();
-        return t.process() == 0;
+        return i2c_write({{DS248X_1WWB, b}});
     }
     return false;
 }
@@ -211,33 +167,26 @@ bool DS248x::write(uint8_t b)
 bool DS248x::read(uint8_t& b)
 {
     if (busyWait()) {
-        {
-            auto t = i2cTransaction();
-            t.start_write();
-            t.write(DS248X_1WRB);
-            t.stop();
-            if (t.process() != 0) {
-                return false;
-            };
+
+        if (!i2c_write(DS248X_1WRB)) {
+            return false;
         }
+
         for (uint8_t retries = 0; retries < 5; retries++) {
-            auto t = i2cTransaction();
-            t.start_read();
-            t.read(mStatus);
-            t.stop();
-            t.process();
+            auto result = i2c_read(1);
+            if (result.size() == 0) {
+                // i2c error
+                return false;
+            }
             bool ready = (mStatus & DS248X_STATUS_BUSY) == 0;
             if (ready) {
-                auto t = i2cTransaction();
-                t.start_write();
-                t.write(DS248X_SRP);
-                t.write(PTR_READ);
-                t.start_read();
-                t.read(b);
-                t.stop();
-                auto err = t.process();
-                ESP_ERROR_CHECK_WITHOUT_ABORT(err);
-                return err == 0;
+                if (i2c_write({DS248X_SRP, PTR_READ})) {
+                    auto result = i2c_read(1);
+                    if (result.size()) {
+                        b = result[0];
+                        return true;
+                    }
+                }
             }
             hal_delay_us(50);
         }
@@ -248,12 +197,7 @@ bool DS248x::read(uint8_t& b)
 bool DS248x::write_bit(bool bit)
 {
     if (busyWait()) {
-        auto t = i2cTransaction();
-        t.start_write();
-        t.write(DS248X_1WSB);
-        t.write(bit ? 0x80 : 0);
-        t.stop();
-        return t.process() == 0;
+        return i2c_write({DS248X_1WSB, bit ? uint8_t{0x80} : uint8_t{0}});
     }
     return false;
 }
@@ -277,12 +221,8 @@ DS248x::search_triplet(bool search_direction)
     //  [] indicates from slave
     //  SS indicates byte containing search direction bit value in msbit
     if (busyWait()) {
-        auto t = i2cTransaction();
-        t.start_write();
-        t.write(DS248X_1WT);
-        t.write(search_direction ? 0x80 : 0x00);
-        t.stop();
-        t.process();
+        if (i2c_write({DS248X_1WT, search_direction ? uint8_t{0x80} : uint8_t{0x00}})) {
+        };
     }
 
     busyWait();
