@@ -28,7 +28,7 @@ popd > /dev/null
 
 
 echo "Running BrewBlox unit tests"
-pushd "$MY_DIR/../app/brewblox/test/build" > /dev/null
+pushd "$MY_DIR/../app/brewblox-particle/test/build" > /dev/null
 ./brewblox_test_runner --durations yes;
 (( result = $? ))
 status $result

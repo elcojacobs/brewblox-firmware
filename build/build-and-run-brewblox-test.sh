@@ -11,7 +11,7 @@ else
 fi
 }
 
-pushd "$MY_DIR/../app/brewblox/test" > /dev/null
+pushd "$MY_DIR/../app/brewblox-particle/test" > /dev/null
 echo "Building BrewBlox app unit tests"
 make -j $MAKE_ARGS -s runner
 (( result = $? ))

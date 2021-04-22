@@ -273,7 +273,7 @@
         "bash",
         "../wrapped_make.sh",
         "-C",
-        "../app/brewblox/test"
+        "../app/brewblox-particle/test"
       ],
       "group": "build",
       "options": {
@@ -422,7 +422,7 @@
       "args": [
         "../wrapped_make.sh",
         "-C",
-        "../app/brewblox/test"
+        "../app/brewblox-particle/test"
       ],
       "group": "build",
       "options": {

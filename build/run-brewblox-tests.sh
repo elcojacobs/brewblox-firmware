@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MY_DIR=$(dirname "$(readlink -f "$0")")
-pushd "$MY_DIR/../app/brewblox/test/obj" > /dev/null
+pushd "$MY_DIR/../app/brewblox-particle/test/obj" > /dev/null
 
 mkdir -p test
 mkdir -p coverage

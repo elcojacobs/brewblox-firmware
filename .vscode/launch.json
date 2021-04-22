@@ -50,7 +50,7 @@
       "name": "gdb brewblox app test",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/app/brewblox/test/build/brewblox_test_runner",
+      "program": "${workspaceFolder}/app/brewblox-particle/test/build/brewblox_test_runner",
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [

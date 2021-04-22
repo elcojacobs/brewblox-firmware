@@ -7,7 +7,7 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "intelliSenseMode": "clang-x64",
+            "intelliSenseMode": "linux-gcc-arm",
             "includePath": [
                 ".",
                 "${workspaceFolder}/**",
@@ -21,7 +21,6 @@
                 "${workspaceFolder}/platform/spark/device-os/hal/shared",
                 "${workspaceFolder}/platform/spark/device-os/hal/src/gcc",
                 "${workspaceFolder}/platform/spark/device-os/services/inc",
-                "${workspaceFolder}/platform/spark/device-os/platform/shared/inc",
                 "${workspaceFolder}/platform/spark/device-os/hal/src/newhal",
                 "${workspaceFolder}/platform/spark/device-os/communication/src"
             ],

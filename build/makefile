@@ -5,15 +5,23 @@ $(MAKECMDGOALS) : run_make
 current_dir := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SPARKDIR :=  $(realpath $(current_dir)/../platform/spark/device-os)
 
-APP ?= brewblox
-APPDIR := $(realpath $(current_dir)/..)
-APP_MAKEFILE := app/$(APP)/build.mk
+ifndef APP
+	APP=brewblox
+endif
+
+ifeq ($(APP), brewblox)
+	APP_MAKEFILE := app/brewblox-particle/build.mk
+	APPNAME:=brewblox
+else
+	APP_MAKEFILE := app/$(APP)/build.mk
+	APPNAME:=$(APP)
+endif
+
+APPDIR := $(realpath $(current_dir)/..) # repo root
 WARNINGS_AS_ERRORS ?=n
 USE_PRINTF_FLOAT ?=n
 
-# using both APP and APPDIR causes problems in Particle's makefiles, rename to APPNAME
-APPNAME:=$(APP)
-
+# using both APP and APPDIR causes problems in Particle's makefiles
 override undefine APP
 
 run_make:

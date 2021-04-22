@@ -43,12 +43,12 @@ public:
     virtual uint8_t family_address() override final
     {
         return address_base;
-    };
+    }
 
     virtual uint8_t address() override final
     {
         return addr;
-    };
+    }
 
     bool i2c_write(const std::vector<uint8_t>& values, bool stop = true)
     {

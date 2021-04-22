@@ -38,6 +38,9 @@ CPPSRC += $(call here_files,lib/test,*.cpp)
 INCLUDE_DIRS += $(SOURCE_PATH)/lib/inc
 CPPSRC += $(call here_files,lib/src,*.cpp)
 
+# include stubs for hal
+CPPSRC += $(call here_files,platform/stub,*.cpp)
+
 # set cnl as system includes to suppress warnings
 CPPFLAGS += -isystem $(SOURCE_PATH)/lib/cnl/include
 

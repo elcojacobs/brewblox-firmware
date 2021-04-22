@@ -41,7 +41,7 @@ endif
 include $(SOURCE_PATH)/platform/spark/device-os/third_party/nanopb/import.mk
 ifeq ($(MODULAR),y)
 # include sources that are part of nanopb, but not included in shared libraries of particle
-CSRC += app/brewblox/nanopb_not_in_particle_dynalib.c
+CSRC += app/brewblox-particle/nanopb_not_in_particle_dynalib.c
 endif
 
 # define platform parameters to avoid -Wundef warnings
@@ -50,9 +50,11 @@ CFLAGS += -DBYTE_ORDER=LITTLE_ENDIAN
 
 # App
 INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox
+INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox-particle
 
 CPPSRC += $(call here_files,app/brewblox,*.cpp)
-CPPSRC += $(call here_files,app/brewblox/blox,*.cpp)
+CPPSRC += $(call here_files,app/brewblox-particle,*.cpp)
+CPPSRC += $(call here_files,app/brewblox-particle/blox,*.cpp)
 
 #wiring
 CSRC += $(call here_files,platform/wiring/,*.c)
@@ -72,9 +74,9 @@ INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/modules/Board
 CPPSRC += $(call here_files,platform/spark/modules/Board,*.cpp)
 
 # add display dependencies
-INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox/display
-CPPSRC += $(call target_files,app/brewblox/display,*.cpp)
-CSRC += $(call target_files,app/brewblox/display,*.c)
+INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox-particle/display
+CPPSRC += $(call target_files,app/brewblox-particle/display,*.cpp)
+CSRC += $(call target_files,app/brewblox-particle/display,*.c)
 
 INCLUDE_DIRS +=  $(SOURCE_PATH)/platform/spark/modules/eGUI/D4D
 CSRC +=  $(call target_files,platform/spark/modules/eGUI/D4D,*.c)

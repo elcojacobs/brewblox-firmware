@@ -18,10 +18,10 @@ popd > /dev/null
 
 pushd "$MY_DIR/../app/brewblox/proto" > /dev/null
 echo -e "Compiling proto files using nanopb for brewblox firmware"
-bash generate_proto_cpp.sh;
+. generate_proto_cpp.sh
 
 echo -e "Compiling proto files using google protobuf for unit tests"
-bash generate_proto_test_cpp.sh;
+. generate_proto_test_cpp.sh
 popd > /dev/null
 
 echo "Done"
