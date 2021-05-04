@@ -52,6 +52,15 @@ CPPSRC += $(call here_files,controlbox/src/cbox/,*.cpp)
 INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox
 CPPSRC += $(call here_files,app/brewblox/,*.cpp)
 
+# add blox
+INCLUDE_DIRS += $(SOURCE_PATH) # include with blox/ prefix
+CPPSRC += $(call here_files,blox,*.cpp)
+CPPSRC += $(call here_files,blox/particle,*.cpp)
+
+# exclude touch and wifi from test build
+CPPEXCLUDES += blox/particle/TouchSettingsBlock.cpp
+CPPEXCLUDES += blox/particle/WiFiSettingsBlock.cpp
+
 # include stubs for hal
 CPPSRC += $(call here_files,platform/stub,*.cpp)
 
@@ -166,10 +175,6 @@ CFLAGS += -DPROTO_VERSION="$(PROTO_VERSION)"
 PROTO_DATE = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git log -1 --format=%cd --date=short)
 $(info using $(GIT_DATE) as protocol date)
 CFLAGS += -DPROTO_DATE="$(PROTO_DATE)"
-
-
-CPPEXCLUDES += app/brewblox-particle/blox/TouchSettingsBlock.cpp
-CPPEXCLUDES += app/brewblox-particle/blox/WiFiSettingsBlock.cpp
 
 CSRC := $(filter-out $(CEXCLUDES),$(CSRC))
 CPPSRC := $(filter-out $(CPPEXCLUDES),$(CPPSRC)) 

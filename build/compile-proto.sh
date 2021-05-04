@@ -16,7 +16,7 @@ fi
 make
 popd > /dev/null
 
-pushd "$MY_DIR/../app/brewblox/proto" > /dev/null
+pushd "$MY_DIR/../blox/proto" > /dev/null
 echo -e "Compiling proto files using nanopb for brewblox firmware"
 . generate_proto_cpp.sh
 

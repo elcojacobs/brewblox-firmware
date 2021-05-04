@@ -42,8 +42,8 @@
 #include "blox/TempSensorCombiBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "blox/TempSensorOneWireBlock.h"
-#include "blox/TouchSettingsBlock.h"
-#include "blox/WiFiSettingsBlock.h"
+#include "blox/particle/TouchSettingsBlock.h"
+#include "blox/particle/WiFiSettingsBlock.h"
 #include "blox/stringify.h"
 #include "cbox/Box.h"
 #include "cbox/Connections.h"
@@ -107,7 +107,7 @@ testConnectionSource()
 #include "blox/Spark2PinsBlock.h"
 using PinsBlock = Spark2PinsBlock;
 #else
-#include "blox/Spark3PinsBlock.h"
+#include "blox/particle/Spark3PinsBlock.h"
 using PinsBlock = Spark3PinsBlock;
 #endif
 

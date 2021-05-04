@@ -22,6 +22,10 @@ INCLUDE_DIRS += $(SOURCE_PATH)/controlbox/src/
 CPPSRC += $(call here_files,controlbox/src/cbox/,*.cpp)
 CPPSRC += $(call here_files,controlbox/src/cbox/spark/,*.cpp)
 
+# add blox
+INCLUDE_DIRS += $(SOURCE_PATH)/blox
+CPPSRC += $(call here_files,blox,*.cpp)
+
 # add auto-generated protobuf includes
 INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox/proto/cpp
 CSRC += $(call here_files,app/brewblox/proto/cpp,*.c)

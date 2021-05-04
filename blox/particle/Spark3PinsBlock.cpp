@@ -19,9 +19,9 @@
 
 #if PLATFORM_ID == 8 || PLATFORM_ID == 3
 
-#include "blox/Spark3PinsBlock.h"
+#include "blox/particle/Spark3PinsBlock.h"
 #include "Board.h"
-#include "IoArrayHelpers.h"
+#include "blox/IoArrayHelpers.h"
 #include "proto/cpp/Spark3Pins.pb.h"
 
 #if PLATFORM_ID != 3
@@ -29,8 +29,7 @@
 extern BrewPiTouch touch;
 #endif
 
-pin_t
-Spark3PinsBlock::channelToPin(uint8_t channel) const
+pin_t Spark3PinsBlock::channelToPin(uint8_t channel) const
 {
     auto pins = std::array<pin_t, numPins>{
 #ifdef PIN_V3_TOP1
@@ -120,8 +119,7 @@ Spark3PinsBlock::streamPersistedTo(cbox::DataOut& out) const
     return streamProtoTo(out, &message, blox_Spark3Pins_fields, blox_Spark3Pins_size);
 }
 
-void*
-Spark3PinsBlock::implements(const cbox::obj_type_t& iface)
+void* Spark3PinsBlock::implements(const cbox::obj_type_t& iface)
 {
     if (iface == BrewBloxTypes_BlockType_Spark3Pins) {
         return this; // me!
