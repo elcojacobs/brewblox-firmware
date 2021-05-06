@@ -1,6 +1,7 @@
 #include "ActuatorPwmBlock.h"
 #include "ActuatorAnalogConstraintsProto.h"
 #include "blox/FieldTags.h"
+#include "brewblox_particle.hpp" // TODO refactor to avoid needing global box instance to store output
 #include "proto/cpp/ActuatorPwm.pb.h"
 #include "proto/cpp/AnalogConstraints.pb.h"
 
@@ -85,8 +86,7 @@ ActuatorPwmBlock::update(const cbox::update_t& now)
     return nextUpdate;
 }
 
-void*
-ActuatorPwmBlock::implements(const cbox::obj_type_t& iface)
+void* ActuatorPwmBlock::implements(const cbox::obj_type_t& iface)
 {
     if (iface == BrewBloxTypes_BlockType_ActuatorPwm) {
         return this; // me!

@@ -20,11 +20,11 @@
 #include "WidgetsScreen.h"
 #include "ActuatorAnalogWidget.h"
 #include "Board.h"
-#include "BrewBlox.h"
 #include "PidWidget.h"
 #include "SetpointSensorWidget.h"
 #include "TempSensorWidget.h"
 #include "blox/DisplaySettingsBlock.h"
+#include "brewblox_particle.hpp"
 #include "connectivity.h"
 #include "memory_info.h"
 #include <algorithm>
@@ -89,8 +89,7 @@ WidgetSettings WidgetsScreen::widgetSettings = {
     TempUnit::Celsius,
 };
 
-void
-WidgetsScreen::loadSettings()
+void WidgetsScreen::loadSettings()
 {
     auto& settings = DisplaySettingsBlock::settings();
     if (settings.name[0] != 0) {
@@ -137,23 +136,20 @@ WidgetsScreen::loadSettings()
     D4D_InvalidateScreen(&widgets_screen, D4D_TRUE);
 }
 
-void
-WidgetsScreen::activate()
+void WidgetsScreen::activate()
 {
     D4D_ActivateScreen(&widgets_screen, D4D_TRUE);
     loadSettings();
 }
 
-void
-WidgetsScreen::updateUsb()
+void WidgetsScreen::updateUsb()
 {
     bool connected = serialConnected();
     D4D_EnableObject(&scrWidgets_usb_icon, connected);
     D4D_EnableObject(&scrWidgets_usb_text, connected);
 }
 
-void
-WidgetsScreen::updateWiFi()
+void WidgetsScreen::updateWiFi()
 {
     auto signal = wifiSignal();
     bool connected = true;
@@ -175,8 +171,7 @@ WidgetsScreen::updateWiFi()
     }
 }
 
-void
-WidgetsScreen::updateWidgets()
+void WidgetsScreen::updateWidgets()
 {
     for (auto& w : widgets) {
         if (w) {
@@ -185,19 +180,16 @@ WidgetsScreen::updateWidgets()
     }
 }
 
-void
-WidgetsScreen::unload()
+void WidgetsScreen::unload()
 {
     widgets.resize(0); // clear dynamically allocated memory.
 }
 
-void
-scrWidgets_OnInit()
+void scrWidgets_OnInit()
 {
 }
 
-void
-scrWidgets_OnMain()
+void scrWidgets_OnMain()
 {
     if (DisplaySettingsBlock::newSettingsReceived()) {
         WidgetsScreen::loadSettings();
@@ -208,13 +200,11 @@ scrWidgets_OnMain()
     WidgetsScreen::updateWidgets();
 }
 
-void
-scrWidgets_OnActivate()
+void scrWidgets_OnActivate()
 {
 }
 
-void
-scrWidgets_OnDeactivate()
+void scrWidgets_OnDeactivate()
 {
     WidgetsScreen::unload();
 }

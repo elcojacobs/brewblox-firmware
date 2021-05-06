@@ -20,8 +20,8 @@
 #pragma once
 
 #include "blox/Block.h"
+#include "blox/proto/cpp/WiFiSettings.pb.h"
 #include "cbox/DataStream.h"
-#include "proto/cpp/WiFiSettings.pb.h"
 
 // provides a protobuf interface to the read only system info
 class WiFiSettingsBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_WiFiSettings> {

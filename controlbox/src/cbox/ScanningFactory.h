@@ -31,23 +31,21 @@ namespace cbox {
  * It has a reference to the object container to check if the new object already exists
  */
 class ScanningFactory {
-protected:
-    ObjectContainer& objectsRef;
-
 public:
-    ScanningFactory(ObjectContainer& objects)
-        : objectsRef(objects)
+    ScanningFactory()
     {
     }
     virtual ~ScanningFactory() = default;
 
     virtual void reset() = 0;
-    virtual std::shared_ptr<Object> scan() = 0;
 
-    obj_id_t scanAndAdd()
+    // scan takes the existing object container to be able to check if the object already exists
+    virtual std::shared_ptr<Object> scan(ObjectContainer& objects) = 0;
+
+    obj_id_t scanAndAdd(ObjectContainer& objects)
     {
-        if (auto newObj = scan()) {
-            return objectsRef.add(std::move(newObj), uint8_t(0x01)); // default to first profile
+        if (auto newObj = scan(objects)) {
+            return objects.add(std::move(newObj), uint8_t(0x01)); // default to first profile
         }
         return 0;
     }

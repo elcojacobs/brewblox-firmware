@@ -7,5 +7,5 @@
 	url = https://github.com/particle-iot/device-os.git
 	branch = brewblox
 [submodule "blox/proto"]
-	path = blox/proto
+	path = brewblox/blox/proto
 	url = https://github.com/BrewBlox/brewblox-proto.git

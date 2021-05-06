@@ -19,8 +19,8 @@
 
 #include "connectivity.h"
 #include "Board.h"
-#include "BrewBlox.h"
 #include "MDNS.h"
+#include "brewblox_particle.hpp"
 #include "cbox/Tracing.h"
 #include "deviceid_hal.h"
 #include "reset.h"
@@ -37,8 +37,7 @@ bool http_started = false;
 constexpr uint16_t webPort = PLATFORM_ID == PLATFORM_GCC ? 8380 : 80;
 static TCPServer httpserver(webPort); // Serve a simple page with instructions
 
-void
-printWiFiIp(char dest[16])
+void printWiFiIp(char dest[16])
 {
     IPAddress ip = localIp;
     snprintf(dest, 16, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
@@ -47,8 +46,7 @@ printWiFiIp(char dest[16])
 int8_t wifiSignalRssi = 2;
 
 // only update signal strength periodically to reduce number of calls into wifi driver
-void
-updateWifiSignal()
+void updateWifiSignal()
 {
     if (spark::WiFi.ready()) {
         // From a particle issue #1967:
@@ -76,8 +74,7 @@ wifiSignal()
     return wifiSignalRssi;
 }
 
-bool
-wifiConnected()
+bool wifiConnected()
 {
     // WiFi.ready() ensures underlying wifi driver has been initialized correctly
     // wifiSignalRssi is set above an ensures an IP address is assigned and we have signal
@@ -85,20 +82,17 @@ wifiConnected()
     return wifiSignalRssi < 0 && spark::WiFi.ready();
 }
 
-bool
-serialConnected()
+bool serialConnected()
 {
     return HAL_USB_USART_Is_Connected(HAL_USB_USART_SERIAL);
 }
 
-bool
-setWifiCredentials(const char* ssid, const char* password, uint8_t security, uint8_t cipher)
+bool setWifiCredentials(const char* ssid, const char* password, uint8_t security, uint8_t cipher)
 {
     return spark::WiFi.setCredentials(ssid, password, security, cipher);
 };
 
-void
-printWifiSSID(char* dest, const uint8_t& maxLen)
+void printWifiSSID(char* dest, const uint8_t& maxLen)
 {
     if (wifiConnected()) {
         strncpy(dest, spark::WiFi.SSID(), maxLen);
@@ -107,8 +101,7 @@ printWifiSSID(char* dest, const uint8_t& maxLen)
     }
 }
 
-bool
-listeningModeEnabled()
+bool listeningModeEnabled()
 {
     return spark::WiFi.listening();
 }
@@ -140,15 +133,13 @@ deviceIdString()
     return hexId;
 }
 
-MDNS&
-theMdns()
+MDNS& theMdns()
 {
     static MDNS* theStaticMDNS = new MDNS(deviceIdString());
     return *theStaticMDNS;
 }
 
-void
-manageConnections(uint32_t now)
+void manageConnections(uint32_t now)
 {
     static uint32_t lastConnected = 0;
     static uint32_t lastChecked = 0;
@@ -216,8 +207,7 @@ manageConnections(uint32_t now)
     }
 }
 
-void
-initMdns()
+void initMdns()
 {
     MDNS& mdns = theMdns();
     mdns.addService(MDNS::Protocol::TCP, "_http", deviceIdString(), 80);
@@ -242,8 +232,7 @@ initMdns()
                      hwEntry});
 }
 
-void
-wifiInit()
+void wifiInit()
 {
     System.disable(SYSTEM_FLAG_RESET_NETWORK_ON_CLOUD_ERRORS);
     spark::WiFi.setListenTimeout(45);

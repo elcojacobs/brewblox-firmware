@@ -19,10 +19,10 @@
 
 #include "AppTicks.h"
 #include "Board.h"
-#include "BrewBlox.h"
 #include "Buzzer.h"
 #include "TimerInterrupts.h"
 #include "blox/stringify.h"
+#include "brewblox_particle.hpp"
 #include "cbox/Box.h"
 #include "cbox/Object.h"
 #include "connectivity.h"

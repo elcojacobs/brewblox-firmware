@@ -24,16 +24,15 @@
 #include <iomanip>
 #include <iostream>
 
-#include "BrewBlox.h"
 #include "blox/Block.h"
+#include "brewblox_particle.hpp"
 #include "cbox/Box.h"
 #include "cbox/DataStream.h"
 #include "cbox/Object.h"
 
 using namespace cbox;
 
-void
-streamHex(std::stringstream& ss, uint8_t* buf, size_t len)
+void streamHex(std::stringstream& ss, uint8_t* buf, size_t len)
 {
     ss << "0x" << std::setfill('0') << std::hex;
     for (size_t i = 0; i < len; i++) {

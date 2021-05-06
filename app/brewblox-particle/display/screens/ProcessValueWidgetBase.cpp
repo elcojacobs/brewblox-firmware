@@ -18,7 +18,7 @@
  */
 
 #include "ProcessValueWidgetBase.h"
-#include "BrewBlox.h"
+#include "brewblox_particle.hpp"
 #include "d4d.hpp"
 
 ProcessValueWidgetBase::ProcessValueWidgetBase(WidgetWrapper& myWrapper)

@@ -148,6 +148,18 @@ public:
         return newId;
     }
 
+    // add multiple already contained objects, used to add initial system objects
+    void add_contained_objects(std::vector<ContainedObject>&& src)
+    {
+        if (objects.empty()) {
+            objects = std::move(src);
+        } else {
+            objects.insert(std::end(objects),
+                           std::make_move_iterator(std::begin(src)),
+                           std::make_move_iterator(std::end(src)));
+        }
+    };
+
     CboxError remove(obj_id_t id)
     {
         if (id < startId) {

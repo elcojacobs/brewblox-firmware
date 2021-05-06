@@ -48,6 +48,11 @@ public:
     {
     }
 
+    ObjectFactory(std::vector<ObjectFactoryEntry>&& _objTypes)
+        : objTypes(std::move(_objTypes))
+    {
+    }
+
     std::tuple<CboxError, std::shared_ptr<Object>> make(const obj_type_t& t) const
     {
         auto factoryEntry = std::find_if(objTypes.begin(), objTypes.end(), [&t](const ObjectFactoryEntry& entry) { return entry.typeId == t; });

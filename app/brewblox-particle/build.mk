@@ -22,13 +22,13 @@ INCLUDE_DIRS += $(SOURCE_PATH)/controlbox/src/
 CPPSRC += $(call here_files,controlbox/src/cbox/,*.cpp)
 CPPSRC += $(call here_files,controlbox/src/cbox/spark/,*.cpp)
 
-# add blox
-INCLUDE_DIRS += $(SOURCE_PATH)/blox
-CPPSRC += $(call here_files,blox,*.cpp)
+# add brewblox files
+INCLUDE_DIRS += $(SOURCE_PATH)/brewblox
+CPPSRC += $(call here_files,brewblox,*.cpp)
 
 # add auto-generated protobuf includes
-INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox/proto/cpp
-CSRC += $(call here_files,app/brewblox/proto/cpp,*.c)
+INCLUDE_DIRS += $(SOURCE_PATH)/brewblox/blox/proto/cpp
+CSRC += $(call here_files,brewblox/blox/proto/cpp,*.c)
 
 
 ifeq ($(PLATFORM_ID),6)
@@ -56,9 +56,11 @@ CFLAGS += -DBYTE_ORDER=LITTLE_ENDIAN
 INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox
 INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox-particle
 
-CPPSRC += $(call here_files,app/brewblox,*.cpp)
+CPPSRC += $(call here_files,brewblox,*.cpp)
+CPPSRC += $(call here_files,brewblox/blox,*.cpp)
+CPPSRC += $(call here_files,brewblox/blox/particle,*.cpp)
+
 CPPSRC += $(call here_files,app/brewblox-particle,*.cpp)
-CPPSRC += $(call here_files,app/brewblox-particle/blox,*.cpp)
 
 #wiring
 CSRC += $(call here_files,platform/wiring/,*.c)
@@ -140,11 +142,11 @@ GIT_DATE = $(shell cd $(SOURCE_PATH); git log -1 --format=%cd --date=short)
 $(info using $(GIT_DATE) as release date)
 CFLAGS += -DGIT_DATE="$(GIT_DATE)"
 
-PROTO_VERSION = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git rev-parse --short=8 HEAD)
+PROTO_VERSION = $(shell cd $(SOURCE_PATH)/brewblox/blox/proto; git rev-parse --short=8 HEAD)
 $(info using $(PROTO_VERSION) as protocol version)
 CFLAGS += -DPROTO_VERSION="$(PROTO_VERSION)"
 
-PROTO_DATE = $(shell cd $(SOURCE_PATH)/app/brewblox/proto; git log -1 --format=%cd --date=short)
+PROTO_DATE = $(shell cd $(SOURCE_PATH)/brewblox/blox/proto; git log -1 --format=%cd --date=short)
 $(info using $(GIT_DATE) as protocol date)
 CFLAGS += -DPROTO_DATE="$(PROTO_DATE)"
 

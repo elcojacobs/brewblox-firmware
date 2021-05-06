@@ -9,14 +9,14 @@ handle_error() {
 trap handle_error ERR
 
 # rebuild generator, particle doesn't keep the compiled version up to date
-pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" > /dev/null
+pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" || exit 1
 if [ -f nanopb_pb2.py ]; then
   rm nanopb_pb2.py 
 fi
 make
 popd > /dev/null
 
-pushd "$MY_DIR/../blox/proto" > /dev/null
+pushd "$MY_DIR/../brewblox/blox/proto" || exit 1
 echo -e "Compiling proto files using nanopb for brewblox firmware"
 . generate_proto_cpp.sh
 
@@ -26,6 +26,6 @@ popd > /dev/null
 
 echo "Done"
 
-pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" > /dev/null
+pushd "$MY_DIR/../platform/spark/device-os/third_party/nanopb/nanopb/generator/proto" || exit 1
 git checkout nanopb_pb2.py # revert submodule changes
 exit

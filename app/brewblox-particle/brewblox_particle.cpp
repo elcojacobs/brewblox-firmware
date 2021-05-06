@@ -17,36 +17,19 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "brewblox_particle.hpp"
 #include "./reset.h"
 #include "AppTicks.h"
 #include "Board.h"
-#include "Logger.h"
 #include "OneWireScanningFactory.h"
-#include "blox/ActuatorAnalogMockBlock.h"
-#include "blox/ActuatorLogicBlock.h"
-#include "blox/ActuatorOffsetBlock.h"
-#include "blox/ActuatorPwmBlock.h"
-#include "blox/BalancerBlock.h"
-#include "blox/DS2408Block.h"
-#include "blox/DS2413Block.h"
-#include "blox/DigitalActuatorBlock.h"
 #include "blox/DisplaySettingsBlock.h"
-#include "blox/MockPinsBlock.h"
-#include "blox/MotorValveBlock.h"
-#include "blox/MutexBlock.h"
 #include "blox/OneWireBusBlock.h"
-#include "blox/PidBlock.h"
-#include "blox/SetpointProfileBlock.h"
-#include "blox/SetpointSensorPairBlock.h"
 #include "blox/SysInfoBlock.h"
-#include "blox/TempSensorCombiBlock.h"
-#include "blox/TempSensorMockBlock.h"
-#include "blox/TempSensorOneWireBlock.h"
 #include "blox/particle/TouchSettingsBlock.h"
 #include "blox/particle/WiFiSettingsBlock.h"
 #include "blox/stringify.h"
+#include "brewblox.hpp"
 #include "cbox/Box.h"
-#include "cbox/Connections.h"
 #include "cbox/EepromObjectStorage.h"
 #include "cbox/ObjectContainer.h"
 #include "cbox/ObjectFactory.h"
@@ -134,7 +117,7 @@ theConnectionPool()
 cbox::Box&
 makeBrewBloxBox()
 {
-    static cbox::ObjectContainer objects({
+    cbox::ObjectContainer systemObjects({
         // groups will be at position 1
         cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>()),
             cbox::ContainedObject(3, 0x80, std::make_shared<TicksBlock<TicksClass>>(ticks)),
@@ -147,35 +130,20 @@ makeBrewBloxBox()
             cbox::ContainedObject(19, 0x80, std::make_shared<PinsBlock>()),
     });
 
-    static const cbox::ObjectFactory objectFactory{
-        {TempSensorOneWireBlock::staticTypeId(), std::make_shared<TempSensorOneWireBlock>},
-        {SetpointSensorPairBlock::staticTypeId(), []() { return std::make_shared<SetpointSensorPairBlock>(objects); }},
-        {TempSensorMockBlock::staticTypeId(), std::make_shared<TempSensorMockBlock>},
-        {ActuatorAnalogMockBlock::staticTypeId(), []() { return std::make_shared<ActuatorAnalogMockBlock>(objects); }},
-        {PidBlock::staticTypeId(), []() { return std::make_shared<PidBlock>(objects); }},
-        {ActuatorPwmBlock::staticTypeId(), []() { return std::make_shared<ActuatorPwmBlock>(objects); }},
-        {ActuatorOffsetBlock::staticTypeId(), []() { return std::make_shared<ActuatorOffsetBlock>(objects); }},
-        {BalancerBlock::staticTypeId(), std::make_shared<BalancerBlock>},
-        {MutexBlock::staticTypeId(), std::make_shared<MutexBlock>},
-        {SetpointProfileBlock::staticTypeId(), []() { return std::make_shared<SetpointProfileBlock>(objects); }},
-        {DS2413Block::staticTypeId(), std::make_shared<DS2413Block>},
-        {DigitalActuatorBlock::staticTypeId(), []() { return std::make_shared<DigitalActuatorBlock>(objects); }},
-        {DS2408Block::staticTypeId(), std::make_shared<DS2408Block>},
-        {MotorValveBlock::staticTypeId(), []() { return std::make_shared<MotorValveBlock>(objects); }},
-        {ActuatorLogicBlock::staticTypeId(), []() { return std::make_shared<ActuatorLogicBlock>(objects); }},
-        {MockPinsBlock::staticTypeId(), []() { return std::make_shared<MockPinsBlock>(); }},
-        {TempSensorCombiBlock::staticTypeId(), []() { return std::make_shared<TempSensorCombiBlock>(objects); }},
-    };
-
     static EepromAccessImpl eeprom;
     static cbox::EepromObjectStorage objectStore(eeprom);
     static cbox::ConnectionPool& connections = theConnectionPool();
 
-    std::vector<std::unique_ptr<cbox::ScanningFactory>> scanningFactories;
-    scanningFactories.reserve(1);
-    scanningFactories.push_back(std::make_unique<OneWireScanningFactory>(objects, theOneWire()));
+    auto scanners = std::vector<std::unique_ptr<cbox::ScanningFactory>>{};
+    scanners.reserve(1);
+    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(theOneWire()));
 
-    static cbox::Box box(objectFactory, objects, objectStore, connections, std::move(scanningFactories));
+    static cbox::Box& box = brewblox::make_box(
+        std::move(systemObjects),
+        {}, // platform factories
+        objectStore,
+        connections,
+        std::move(scanners));
 
     return box;
 }

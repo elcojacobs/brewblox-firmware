@@ -60,8 +60,7 @@ Box::Box(const ObjectFactory& _factory,
 /**
  * The no-op command simply echoes the response until the end of stream.
  */
-void
-Box::noop(DataIn& in, EncodedDataOut& out)
+void Box::noop(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     out.writeResponseSeparator();
@@ -71,16 +70,14 @@ Box::noop(DataIn& in, EncodedDataOut& out)
 /**
  * The no-op command simply echoes the response until the end of stream.
  */
-void
-Box::invalidCommand(DataIn& in, EncodedDataOut& out)
+void Box::invalidCommand(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     out.writeResponseSeparator();
     out.write(asUint8(CboxError::INVALID_COMMAND));
 }
 
-void
-Box::readObject(DataIn& in, EncodedDataOut& out)
+void Box::readObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id = 0;
@@ -110,8 +107,7 @@ Box::readObject(DataIn& in, EncodedDataOut& out)
     }
 }
 
-void
-Box::writeObject(DataIn& in, EncodedDataOut& out)
+void Box::writeObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id = 0;
@@ -217,8 +213,7 @@ Box::createObjectFromStream(DataIn& in)
 /**
  * Creates a new object and adds it to the container
  */
-void
-Box::createObject(DataIn& in, EncodedDataOut& out)
+void Box::createObject(DataIn& in, EncodedDataOut& out)
 {
     obj_id_t id;
     obj_type_t typeId;
@@ -278,8 +273,7 @@ Box::createObject(DataIn& in, EncodedDataOut& out)
  * Handles the delete object command.
  *
  */
-void
-Box::deleteObject(DataIn& in, EncodedDataOut& out)
+void Box::deleteObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id;
@@ -313,8 +307,7 @@ Box::deleteObject(DataIn& in, EncodedDataOut& out)
 /**
  * Walks the object container and lists all objects.
  */
-void
-Box::listActiveObjects(DataIn& in, EncodedDataOut& out)
+void Box::listActiveObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -336,8 +329,7 @@ Box::listActiveObjects(DataIn& in, EncodedDataOut& out)
 /**
  * Walks the object container and lists all objects that implement a certain interface
  */
-void
-Box::listCompatibleObjects(DataIn& in, EncodedDataOut& out)
+void Box::listCompatibleObjects(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_type_t interfaceType = 0;
@@ -363,8 +355,7 @@ Box::listCompatibleObjects(DataIn& in, EncodedDataOut& out)
     }
 }
 
-void
-Box::readStoredObject(DataIn& in, EncodedDataOut& out)
+void Box::readStoredObject(DataIn& in, EncodedDataOut& out)
 {
     CboxError status = CboxError::OK;
     obj_id_t id = 0;
@@ -406,8 +397,7 @@ Box::readStoredObject(DataIn& in, EncodedDataOut& out)
     }
 }
 
-void
-Box::listStoredObjects(DataIn& in, EncodedDataOut& out)
+void Box::listStoredObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -432,8 +422,7 @@ Box::listStoredObjects(DataIn& in, EncodedDataOut& out)
 }
 
 // load all objects from storage
-void
-Box::loadObjectsFromStorage()
+void Box::loadObjectsFromStorage()
 {
     // keep a list of deprecated objects so we can add them after all other objects
     // they get a new ID, if use the next free ID before all other objects are processed
@@ -494,8 +483,7 @@ Box::loadObjectsFromStorage()
     setActiveGroupsAndUpdateObjects(activeGroups);
 }
 
-void
-Box::reboot(DataIn& in, EncodedDataOut& out)
+void Box::reboot(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -512,8 +500,7 @@ Box::reboot(DataIn& in, EncodedDataOut& out)
     ::handleReset(true, 2);
 }
 
-void
-Box::factoryReset(DataIn& in, EncodedDataOut& out)
+void Box::factoryReset(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -535,8 +522,7 @@ Box::factoryReset(DataIn& in, EncodedDataOut& out)
  *
  */
 
-void
-Box::clearObjects(DataIn& in, EncodedDataOut& out)
+void Box::clearObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -568,8 +554,7 @@ Box::clearObjects(DataIn& in, EncodedDataOut& out)
  *
  */
 
-void
-Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
+void Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
 {
     in.spool();
     auto crc = out.crc();
@@ -587,7 +572,7 @@ Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
         scanner->reset();
         auto newId = obj_id_t(0);
         do {
-            newId = scanner->scanAndAdd();
+            newId = scanner->scanAndAdd(objects);
             if (newId) {
                 auto cobj = objects.fetchContained(newId);
 
@@ -610,8 +595,7 @@ Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
  * @param dataIn The request data. The first byte is the command id. The stream is assumed to contain at least
  *   this data.
  */
-void
-Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
+void Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
 {
     HexTextToBinaryIn hexIn(dataIn);
     EncodedDataOut out(dataOut); // hex encodes and adds CRC after response, supports protocol special characters
@@ -679,8 +663,7 @@ Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
     out.endMessage();
 }
 
-void
-Box::hexCommunicate()
+void Box::hexCommunicate()
 {
     connections.process([this](DataIn& in, DataOut& out) {
         while (in.hasNext()) {
@@ -689,8 +672,7 @@ Box::hexCommunicate()
     });
 }
 
-void
-Box::setActiveGroupsAndUpdateObjects(const uint8_t newGroups)
+void Box::setActiveGroupsAndUpdateObjects(const uint8_t newGroups)
 {
     activeGroups = newGroups | 0x80; // system group cannot be disabled
     for (auto cit = objects.userbegin(); cit != objects.cend(); cit++) {

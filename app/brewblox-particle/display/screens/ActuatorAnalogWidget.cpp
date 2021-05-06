@@ -18,8 +18,8 @@
  */
 
 #include "ActuatorAnalogWidget.h"
-#include "BrewBlox.h"
 #include "FixedPoint.h"
+#include "brewblox_particle.hpp"
 
 ActuatorAnalogWidget::ActuatorAnalogWidget(WidgetWrapper& myWrapper, const cbox::obj_id_t& id)
     : ProcessValueWidgetBase(myWrapper)
@@ -28,8 +28,7 @@ ActuatorAnalogWidget::ActuatorAnalogWidget(WidgetWrapper& myWrapper, const cbox:
     setClickHandler(this, onClickStatic);
 }
 
-void
-ActuatorAnalogWidget::update(const WidgetSettings& settings)
+void ActuatorAnalogWidget::update(const WidgetSettings& settings)
 {
     if (auto pAct = lookup.const_lock()) {
         setConnected();

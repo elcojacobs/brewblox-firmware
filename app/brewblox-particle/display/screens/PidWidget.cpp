@@ -18,9 +18,9 @@
  */
 
 #include "PidWidget.h"
-#include "BrewBlox.h"
 #include "Temperature.h"
 #include "blox/ActuatorPwmBlock.h"
+#include "brewblox_particle.hpp"
 #include "d4d.hpp"
 #include "future_std.h"
 #include <algorithm>
@@ -104,8 +104,7 @@ PidWidget::PidWidget(WidgetWrapper& myWrapper, const cbox::obj_id_t& id)
     wrapper.setEnabled(D4D_FALSE); // start widget disabled
 }
 
-void
-PidWidget::drawPidRect(const fp12_t& v, D4D_COOR yPos)
+void PidWidget::drawPidRect(const fp12_t& v, D4D_COOR yPos)
 {
     D4D_COOR middle = wrapper.x + wrapper.cx / 2;
 
@@ -122,16 +121,14 @@ PidWidget::drawPidRect(const fp12_t& v, D4D_COOR yPos)
     }
 }
 
-void
-PidWidget::drawPidRects(const Pid& pid)
+void PidWidget::drawPidRects(const Pid& pid)
 {
     drawPidRect(pid.p(), 54);
     drawPidRect(pid.i(), 58);
     drawPidRect(pid.d(), 62);
 }
 
-void
-PidWidget::update(const WidgetSettings& settings)
+void PidWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
         auto& pid = ptr->get();

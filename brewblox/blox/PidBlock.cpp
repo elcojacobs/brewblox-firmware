@@ -18,9 +18,9 @@
  */
 
 #include "PidBlock.h"
-#include "BrewBlox.h"
 #include "ProcessValue.h"
 #include "blox/FieldTags.h"
+#include "brewblox_particle.hpp" // TODO refactor to avoid needing global box instance to store output
 #include "proto/cpp/Pid.pb.h"
 
 PidBlock::PidBlock(cbox::ObjectContainer& objects)
@@ -162,8 +162,7 @@ PidBlock::update(const cbox::update_t& now)
     return nextUpdate;
 }
 
-void*
-PidBlock::implements(const cbox::obj_type_t& iface)
+void* PidBlock::implements(const cbox::obj_type_t& iface)
 {
     if (iface == BrewBloxTypes_BlockType_Pid) {
         return this; // me!

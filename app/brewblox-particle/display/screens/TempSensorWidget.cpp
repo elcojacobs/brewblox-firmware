@@ -18,7 +18,7 @@
  */
 
 #include "TempSensorWidget.h"
-#include "BrewBlox.h"
+#include "brewblox_particle.hpp"
 
 TempSensorWidget::TempSensorWidget(WidgetWrapper& myWrapper, const cbox::obj_id_t& id)
     : ProcessValueWidgetBase(myWrapper)
@@ -26,8 +26,7 @@ TempSensorWidget::TempSensorWidget(WidgetWrapper& myWrapper, const cbox::obj_id_
 {
 }
 
-void
-TempSensorWidget::update(const WidgetSettings& settings)
+void TempSensorWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
         setConnected();

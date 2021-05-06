@@ -18,7 +18,7 @@
  */
 
 #include "SetpointSensorWidget.h"
-#include "BrewBlox.h"
+#include "brewblox_particle.hpp"
 
 SetpointSensorWidget::SetpointSensorWidget(WidgetWrapper& myWrapper, const cbox::obj_id_t& id)
     : ProcessValueWidgetBase(myWrapper)
@@ -27,8 +27,7 @@ SetpointSensorWidget::SetpointSensorWidget(WidgetWrapper& myWrapper, const cbox:
     setClickHandler(this, onClickStatic);
 }
 
-void
-SetpointSensorWidget::update(const WidgetSettings& settings)
+void SetpointSensorWidget::update(const WidgetSettings& settings)
 {
     if (auto ptr = lookup.const_lock()) {
         setConnected();

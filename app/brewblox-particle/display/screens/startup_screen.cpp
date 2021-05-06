@@ -20,8 +20,8 @@
 #include "startup_screen.h"
 #include "../fonts/fonts.h"
 #include "../logo/brewblox_logo.h"
-#include "BrewBlox.h"
 #include "blox/stringify.h"
+#include "brewblox_particle.hpp"
 #include "d4d.hpp"
 #include "memory_info.h"
 #include "spark_wiring_ticks.h"
@@ -56,15 +56,13 @@ D4D_DECLARE_SCREEN_BEGIN(screen_startup, ScrStartup_, 0, 0, (D4D_COOR)(D4D_SCREE
     &scrStartup_step,
     D4D_DECLARE_SCREEN_END();
 
-void
-StartupScreen::activate()
+void StartupScreen::activate()
 {
     D4D_EnableObject(&scrStartup_version, D4D_FALSE); // disable for darker color
     D4D_ActivateScreen(&screen_startup, D4D_TRUE);
 }
 
-void
-StartupScreen::calibrateTouchIfNeeded()
+void StartupScreen::calibrateTouchIfNeeded()
 {
     auto calib = D4D_GetTouchScreenCalibration();
     if (calib.ScreenCalibrated != 1) {
@@ -72,23 +70,20 @@ StartupScreen::calibrateTouchIfNeeded()
     }
 }
 
-void
-StartupScreen::setProgress(uint8_t v)
+void StartupScreen::setProgress(uint8_t v)
 {
     D4D_PrgrsBarSetValue(&scrStartup_progress, v);
     D4D_Poll();
 }
 
-void
-StartupScreen::setStep(std::string&& txt)
+void StartupScreen::setStep(std::string&& txt)
 {
     auto s = txt;
     D4D_LabelSetText(&scrStartup_step, txt.c_str());
     D4D_Poll();
 }
 
-void
-StartupScreen::calibrateTouch()
+void StartupScreen::calibrateTouch()
 {
 #if PLATFORM_ID != 3
     static auto timeoutTimer = Timer(20000, D4D_InterruptCalibrationScreen, true);
@@ -101,25 +96,21 @@ StartupScreen::calibrateTouch()
     }
 }
 
-void
-ScrStartup_OnInit()
+void ScrStartup_OnInit()
 {
     D4D_PrgrsBarSetValue(&scrStartup_progress, 0);
 }
 
-void
-ScrStartup_OnMain()
+void ScrStartup_OnMain()
 {
     updateRamDisplay();
 }
 
-void
-ScrStartup_OnActivate()
+void ScrStartup_OnActivate()
 {
 }
 
-void
-ScrStartup_OnDeactivate()
+void ScrStartup_OnDeactivate()
 {
 }
 

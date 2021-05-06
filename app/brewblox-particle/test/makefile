@@ -54,12 +54,12 @@ CPPSRC += $(call here_files,app/brewblox/,*.cpp)
 
 # add blox
 INCLUDE_DIRS += $(SOURCE_PATH) # include with blox/ prefix
-CPPSRC += $(call here_files,blox,*.cpp)
-CPPSRC += $(call here_files,blox/particle,*.cpp)
+CPPSRC += $(call here_files,brewblox/blox,*.cpp)
+CPPSRC += $(call here_files,brewblox/blox/particle,*.cpp)
 
 # exclude touch and wifi from test build
-CPPEXCLUDES += blox/particle/TouchSettingsBlock.cpp
-CPPEXCLUDES += blox/particle/WiFiSettingsBlock.cpp
+CPPEXCLUDES += brewblox/blox/particle/TouchSettingsBlock.cpp
+CPPEXCLUDES += brewblox/blox/particle/WiFiSettingsBlock.cpp
 
 # include stubs for hal
 CPPSRC += $(call here_files,platform/stub,*.cpp)

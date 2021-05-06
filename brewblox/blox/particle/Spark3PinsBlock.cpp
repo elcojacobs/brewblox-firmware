@@ -22,7 +22,7 @@
 #include "blox/particle/Spark3PinsBlock.h"
 #include "Board.h"
 #include "blox/IoArrayHelpers.h"
-#include "proto/cpp/Spark3Pins.pb.h"
+#include "blox/proto/cpp/Spark3Pins.pb.h"
 
 #if PLATFORM_ID != 3
 #include "BrewPiTouch.h"

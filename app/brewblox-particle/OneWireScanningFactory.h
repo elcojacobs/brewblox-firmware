@@ -40,9 +40,8 @@ private:
     OneWire& bus;
 
 public:
-    OneWireScanningFactory(cbox::ObjectContainer& objects, OneWire& ow)
-        : cbox::ScanningFactory(objects)
-        , bus(ow)
+    OneWireScanningFactory(OneWire& ow)
+        : bus(ow)
     {
         reset();
     }
@@ -63,12 +62,12 @@ public:
         return 0;
     }
 
-    virtual std::shared_ptr<cbox::Object> scan() override final
+    virtual std::shared_ptr<cbox::Object> scan(cbox::ObjectContainer& objects) override final
     {
         while (true) {
             if (auto newAddr = next()) {
                 bool found = false;
-                for (auto existing = objectsRef.cbegin(); existing != objectsRef.cend(); ++existing) {
+                for (auto existing = objects.cbegin(); existing != objects.cend(); ++existing) {
                     OneWireDevice* ptrIfCorrectType = reinterpret_cast<OneWireDevice*>(existing->object()->implements(cbox::interfaceId<OneWireDevice>()));
                     if (ptrIfCorrectType == nullptr) {
                         continue; // not the right type, no match

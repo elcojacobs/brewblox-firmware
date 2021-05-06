@@ -27,11 +27,6 @@ class StringStreamConnectionSource;
 }
 class OneWire;
 
-#if !defined(SPARK)
-cbox::StringStreamConnectionSource&
-testConnectionSource();
-#endif
-
 // create a static Box object on first use and return a reference to it
 cbox::Box&
 brewbloxBox();
@@ -40,14 +35,12 @@ brewbloxBox();
 OneWire&
 theOneWire();
 
-void
-updateBrewbloxBox();
+void updateBrewbloxBox();
 
 const char*
 versionCsv();
 
-void
-logEvent(const std::string& event);
+void logEvent(const std::string& event);
 
 enum AppTrace : uint8_t {
     UPDATE_DISPLAY = 101,

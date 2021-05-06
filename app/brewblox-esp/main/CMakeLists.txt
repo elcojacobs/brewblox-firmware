@@ -38,7 +38,7 @@ idf_component_register(
     ${http_srcs}
   INCLUDE_DIRS 
     .
-    ../../../blox/proto/cpp
+    ../../../brewblox/blox/proto/cpp
     ../../brewblox
     ${nanopb_inc}
     ${cbox_inc}
