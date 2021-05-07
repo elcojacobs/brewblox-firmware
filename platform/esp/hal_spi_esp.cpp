@@ -15,8 +15,8 @@ inline spi_transaction_t glue_transaction(SpiDevice* dev, const SpiTransaction& 
         .flags = 0,
         .cmd = 0,
         .addr = 0,
-        .length = hal_trans.tx_len << 3, // esp32 driver wants length in bits
-        .rxlength = hal_trans.rx_len << 3,
+        .length = hal_trans.tx_len *8, // esp32 driver wants length in bits
+        .rxlength = hal_trans.rx_len *8,
         .user = nullptr,
         .tx_buffer = static_cast<const void*>(hal_trans.tx_data),
         .rx_buffer = static_cast<void*>(hal_trans.rx_data),

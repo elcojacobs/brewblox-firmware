@@ -94,6 +94,29 @@ struct SpiDevice {
         return err;
     }
 
+    hal_spi_err_t write(const std::vector<uint8_t>& values, uint32_t timeout = 0)
+    {
+        SpiTransaction t{
+            .tx_data = values.data(),
+            .rx_data = nullptr,
+            .tx_len = values.size(),
+            .rx_len = 0,
+            .user_cb_data = nullptr,
+        };
+        return transfer(t, timeout);
+    }
+    hal_spi_err_t write(uint8_t value, uint32_t timeout = 0)
+    {
+        uint8_t tx[1] = {value};
+        SpiTransaction t{
+            .tx_data = tx,
+            .rx_data = nullptr,
+            .tx_len = 1,
+            .rx_len = 0,
+            .user_cb_data = nullptr,
+        };
+        return transfer(t, timeout);
+    }
     void aquire_bus()
     {
         if (hasBus) {
