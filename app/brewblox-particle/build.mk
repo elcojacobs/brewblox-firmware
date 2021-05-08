@@ -58,8 +58,6 @@ INCLUDE_DIRS += $(SOURCE_PATH)/app/brewblox-particle
 
 CPPSRC += $(call here_files,brewblox,*.cpp)
 CPPSRC += $(call here_files,brewblox/blox,*.cpp)
-CPPSRC += $(call here_files,brewblox/blox/particle,*.cpp)
-
 CPPSRC += $(call here_files,app/brewblox-particle,*.cpp)
 
 #wiring

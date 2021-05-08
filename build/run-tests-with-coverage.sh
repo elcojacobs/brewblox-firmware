@@ -25,7 +25,7 @@ gcovr --root "$ROOT_DIR" \
   -e '.*/boost/.*' \
   -e '^/usr/.*' \
   -e "$ROOT_DIR/platform/spark/device-os/.*" \
-  -e "$ROOT_DIR/app/brewblox/proto/.*" \
+  -e "$ROOT_DIR/brewblox/blox/proto/.*" \
   -e "$ROOT_DIR/lib/cnl/.*" \
   -e "$ROOT_DIR/controlbox/test/.*" \
   -e "$ROOT_DIR/lib/test/" \

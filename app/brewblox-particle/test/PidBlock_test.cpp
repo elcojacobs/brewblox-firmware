@@ -25,10 +25,10 @@
 #include "blox/PidBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
 #include "blox/TempSensorMockBlock.h"
-#include "proto/test/cpp/ActuatorAnalogMock_test.pb.h"
-#include "proto/test/cpp/Pid_test.pb.h"
-#include "proto/test/cpp/SetpointSensorPair_test.pb.h"
-#include "proto/test/cpp/TempSensorMock_test.pb.h"
+#include "blox/proto/test/cpp/ActuatorAnalogMock_test.pb.h"
+#include "blox/proto/test/cpp/Pid_test.pb.h"
+#include "blox/proto/test/cpp/SetpointSensorPair_test.pb.h"
+#include "blox/proto/test/cpp/TempSensorMock_test.pb.h"
 
 extern cbox::Box&
 makeBrewBloxBox();

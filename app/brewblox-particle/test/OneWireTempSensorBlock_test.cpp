@@ -21,9 +21,9 @@
 
 #include "BrewBloxTestBox.h"
 #include "blox/TempSensorOneWireBlock.h"
+#include "blox/proto/test/cpp/TempSensorOneWire_test.pb.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/TempSensorOneWire_test.pb.h"
 #include <sstream>
 
 SCENARIO("A TempSensorOneWireBlock")
@@ -64,9 +64,10 @@ SCENARIO("A TempSensorOneWireBlock")
 
             // When the sensor is not yet updated the value is invalid and therefore
             // added to stripped fields to distinguish from value zero
-            CHECK(decoded.ShortDebugString() == "offset: 2048 "
-                                                "address: 9084060688381448488 "
-                                                "strippedFields: 1");
+            CHECK(decoded.ShortDebugString() ==
+                  "offset: 2048 "
+                  "address: 9084060688381448488 "
+                  "strippedFields: 1");
 
             testBox.put(uint16_t(1)); // msg id
             testBox.put(commands::READ_OBJECT);
@@ -78,9 +79,10 @@ SCENARIO("A TempSensorOneWireBlock")
             testBox.processInputToProto(decoded);
 
             // After an update, the sensor returns a valid temperature
-            CHECK(decoded.ShortDebugString() == "value: 83968 " // 20*4096 + 2048
-                                                "offset: 2048 "
-                                                "address: 9084060688381448488");
+            CHECK(decoded.ShortDebugString() ==
+                  "value: 83968 " // 20*4096 + 2048
+                  "offset: 2048 "
+                  "address: 9084060688381448488");
 
             AND_THEN("The writable settings match what was sent")
             {

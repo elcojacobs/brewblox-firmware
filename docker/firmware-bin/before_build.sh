@@ -8,14 +8,14 @@ SRC=docker/firmware-bin/source
 # They are assumed to be present in docker/firmware-bin/source already.
 
 git submodule sync
-git submodule update --init --depth 1 app/brewblox/proto
+git submodule update --init --depth 1 brewblox/blox/proto
 git submodule update --init --depth 1 platform/spark/device-os
 
 FIRMWARE_VERSION=$(git rev-parse --short=8 HEAD)
 FIRMWARE_DATE=$(git show -s --format=%ci)
 
-PROTO_VERSION=$(git --git-dir ./app/brewblox/proto/.git rev-parse --short=8 HEAD)
-PROTO_DATE=$(git --git-dir ./app/brewblox/proto/.git show -s --format=%ci)
+PROTO_VERSION=$(git --git-dir ./brewblox/blox/proto/.git rev-parse --short=8 HEAD)
+PROTO_DATE=$(git --git-dir ./brewblox/blox/proto/.git show -s --format=%ci)
 
 PARTICLE_TAG=$(git --git-dir "./platform/spark/device-os/.git" fetch --tags --no-recurse-submodules && git --git-dir "./platform/spark/device-os/.git" describe --tags)
 PARTICLE_RELEASES=https://github.com/particle-iot/device-os/releases/download/${PARTICLE_TAG}

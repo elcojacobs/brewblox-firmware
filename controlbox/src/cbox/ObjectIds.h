@@ -69,11 +69,11 @@ public:
         : id(0)
     {
     }
-    obj_id_t(const uint16_t& rhs)
+    obj_id_t(uint16_t rhs)
         : id(rhs)
     {
     }
-    obj_id_t& operator=(const uint16_t& rhs)
+    obj_id_t& operator=(uint16_t rhs)
     {
         id = rhs;
         return *this;

@@ -24,11 +24,11 @@
 #include "blox/DigitalActuatorBlock.h"
 #include "blox/SetpointSensorPairBlock.h"
 #include "blox/TempSensorMockBlock.h"
+#include "blox/proto/test/cpp/ActuatorLogic_test.pb.h"
+#include "blox/proto/test/cpp/DigitalActuator_test.pb.h"
+#include "blox/proto/test/cpp/SetpointSensorPair_test.pb.h"
+#include "blox/proto/test/cpp/TempSensorMock_test.pb.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/ActuatorLogic_test.pb.h"
-#include "proto/test/cpp/DigitalActuator_test.pb.h"
-#include "proto/test/cpp/SetpointSensorPair_test.pb.h"
-#include "proto/test/cpp/TempSensorMock_test.pb.h"
 #include <sstream>
 
 SCENARIO("Test", "[maklogicblock]")

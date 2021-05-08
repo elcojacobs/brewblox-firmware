@@ -20,7 +20,6 @@
 #include "PidBlock.h"
 #include "ProcessValue.h"
 #include "blox/FieldTags.h"
-#include "brewblox_particle.hpp" // TODO refactor to avoid needing global box instance to store output
 #include "proto/cpp/Pid.pb.h"
 
 PidBlock::PidBlock(cbox::ObjectContainer& objects)
@@ -153,7 +152,7 @@ PidBlock::update(const cbox::update_t& now)
             // in which the output is still active
             if (auto ptr = output.lock()) {
                 ptr->setting(0);
-                brewbloxBox().storeUpdatedObject(output.getId());
+                output.store();
                 previousActive = pidActive;
             }
             return now;

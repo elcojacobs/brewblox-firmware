@@ -22,8 +22,8 @@
 #include "BrewBloxTestBox.h"
 #include "blox/ActuatorPwmBlock.h"
 #include "blox/DigitalActuatorBlock.h"
-#include "proto/test/cpp/ActuatorPwm_test.pb.h"
-#include "proto/test/cpp/DigitalActuator_test.pb.h"
+#include "blox/proto/test/cpp/ActuatorPwm_test.pb.h"
+#include "blox/proto/test/cpp/DigitalActuator_test.pb.h"
 
 SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
 {
@@ -82,10 +82,11 @@ SCENARIO("A Blox ActuatorPwm object can be created from streamed protobuf data")
     testBox.processInputToProto(decoded);
 
     CHECK(testBox.lastReplyHasStatusOk());
-    CHECK(decoded.ShortDebugString() == "actuatorId: 100 "
-                                        "period: 4000 setting: 81920 "
-                                        "constrainedBy { constraints { min: 40960 } } "
-                                        "drivenActuatorId: 100 "
-                                        "enabled: true "
-                                        "desiredSetting: 81920");
+    CHECK(decoded.ShortDebugString() ==
+          "actuatorId: 100 "
+          "period: 4000 setting: 81920 "
+          "constrainedBy { constraints { min: 40960 } } "
+          "drivenActuatorId: 100 "
+          "enabled: true "
+          "desiredSetting: 81920");
 }

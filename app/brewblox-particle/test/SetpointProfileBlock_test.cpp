@@ -23,11 +23,11 @@
 #include "blox/SetpointSensorPairBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "blox/TicksBlock.h"
+#include "blox/proto/test/cpp/SetpointProfile_test.pb.h"
+#include "blox/proto/test/cpp/SetpointSensorPair_test.pb.h"
+#include "blox/proto/test/cpp/TempSensorMock_test.pb.h"
+#include "blox/proto/test/cpp/Ticks_test.pb.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/SetpointProfile_test.pb.h"
-#include "proto/test/cpp/SetpointSensorPair_test.pb.h"
-#include "proto/test/cpp/TempSensorMock_test.pb.h"
-#include "proto/test/cpp/Ticks_test.pb.h"
 #include <catch.hpp>
 #include <sstream>
 
@@ -168,12 +168,13 @@ SCENARIO("A SetpointProfile block")
                 testBox.processInputToProto(decoded);
                 CHECK(testBox.lastReplyHasStatusOk());
                 // 20.5 * 4096 = 83968
-                CHECK(decoded.ShortDebugString() == "points { time: 10 temperature: 81920 } "
-                                                    "points { time: 20 temperature: 86016 } "
-                                                    "enabled: true "
-                                                    "targetId: 101 "
-                                                    "drivenTargetId: 101 "
-                                                    "start: 20000");
+                CHECK(decoded.ShortDebugString() ==
+                      "points { time: 10 temperature: 81920 } "
+                      "points { time: 20 temperature: 86016 } "
+                      "enabled: true "
+                      "targetId: 101 "
+                      "drivenTargetId: 101 "
+                      "start: 20000");
             }
         }
 
@@ -210,12 +211,13 @@ SCENARIO("A SetpointProfile block")
             CHECK(testBox.lastReplyHasStatusOk());
             // 20.5 * 4096 = 83968
 
-            CHECK(decoded.ShortDebugString() == "points { temperature: 0 } "
-                                                "points { time: 20 temperature: 86016 } "
-                                                "enabled: true "
-                                                "targetId: 101 "
-                                                "drivenTargetId: 101 "
-                                                "start: 20000");
+            CHECK(decoded.ShortDebugString() ==
+                  "points { temperature: 0 } "
+                  "points { time: 20 temperature: 86016 } "
+                  "enabled: true "
+                  "targetId: 101 "
+                  "drivenTargetId: 101 "
+                  "start: 20000");
         }
     }
 }

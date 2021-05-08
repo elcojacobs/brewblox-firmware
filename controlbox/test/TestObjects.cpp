@@ -1,5 +1,4 @@
 #include "TestObjects.h"
-#include "ObjectBase.h"
 
 namespace cbox {
 template <>

@@ -24,11 +24,11 @@
 #include "blox/DS2413Block.h"
 #include "blox/DigitalActuatorBlock.h"
 #include "blox/MockPinsBlock.h"
+#include "blox/proto/test/cpp/DS2413_test.pb.h"
+#include "blox/proto/test/cpp/DigitalActuator_test.pb.h"
+#include "blox/proto/test/cpp/MockPins_test.pb.h"
 #include "cbox/CboxPtr.h"
 #include "cbox/DataStreamIo.h"
-#include "proto/test/cpp/DS2413_test.pb.h"
-#include "proto/test/cpp/DigitalActuator_test.pb.h"
-#include "proto/test/cpp/MockPins_test.pb.h"
 #include <sstream>
 
 namespace Catch {

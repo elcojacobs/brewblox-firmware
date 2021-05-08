@@ -24,6 +24,7 @@
 
 #include "DataStreamConverters.h"
 #include "Object.h"
+#include "ObjectStorage.h"
 #include "TestMatchers.hpp"
 #include "TestObjects.h"
 
@@ -31,7 +32,8 @@ using namespace cbox;
 
 SCENARIO("A container to hold objects")
 {
-    ObjectContainer container;
+    ObjectStorageStub storage;
+    ObjectContainer container(storage);
 
     WHEN("Some objects are added to the container")
     {
@@ -175,9 +177,11 @@ SCENARIO("A container to hold objects")
 
 SCENARIO("A container with system objects passed in the initializer list")
 {
-    ObjectContainer objects = {
-        ContainedObject(1, 0xFF, std::make_shared<LongIntObject>(0x11111111)),
-        ContainedObject(2, 0xFF, std::make_shared<LongIntObject>(0x22222222))};
+    ObjectStorageStub storage;
+
+    ObjectContainer objects{{ContainedObject(1, 0xFF, std::make_shared<LongIntObject>(0x11111111)),
+                             ContainedObject(2, 0xFF, std::make_shared<LongIntObject>(0x22222222))},
+                            storage};
 
     objects.setObjectsStartId(3); // this locks the system objects
 

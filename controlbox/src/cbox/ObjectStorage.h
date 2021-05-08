@@ -47,4 +47,39 @@ public:
     virtual void clear() = 0;
 };
 
+class ObjectStorageStub : public ObjectStorage {
+public:
+    ObjectStorageStub() = default;
+    virtual ~ObjectStorageStub() = default;
+
+    virtual CboxError retrieveObject(
+        const storage_id_t& /*id*/,
+        const std::function<CboxError(RegionDataIn&)>& /*handler*/) override final
+    {
+        return CboxError::PERSISTED_OBJECT_NOT_FOUND;
+    }
+
+    virtual CboxError storeObject(
+        const storage_id_t& /*id*/,
+        const std::function<CboxError(DataOut&)>& /*handler*/) override final
+    {
+        return CboxError::PERSISTED_STORAGE_WRITE_ERROR;
+    }
+
+    virtual CboxError retrieveObjects(
+        const std::function<CboxError(const storage_id_t& /*id*/, RegionDataIn&)>& /*handler*/) override final
+    {
+        return CboxError::PERSISTED_OBJECT_NOT_FOUND;
+    }
+
+    virtual bool disposeObject(const storage_id_t& /*id*/, bool /*mergeDisposed = true*/) override final
+    {
+        return false;
+    }
+
+    virtual void clear() override final
+    {
+    }
+};
+
 } // end namespace cbox

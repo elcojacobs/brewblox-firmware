@@ -25,8 +25,8 @@
 #include "blox/DisplaySettingsBlock.h"
 #include "blox/OneWireBusBlock.h"
 #include "blox/SysInfoBlock.h"
-#include "blox/particle/TouchSettingsBlock.h"
-#include "blox/particle/WiFiSettingsBlock.h"
+#include "blox/TouchSettingsBlock.h"
+#include "blox/WiFiSettingsBlock.h"
 #include "blox/stringify.h"
 #include "brewblox.hpp"
 #include "cbox/Box.h"
@@ -90,7 +90,7 @@ testConnectionSource()
 #include "blox/Spark2PinsBlock.h"
 using PinsBlock = Spark2PinsBlock;
 #else
-#include "blox/particle/Spark3PinsBlock.h"
+#include "blox/Spark3PinsBlock.h"
 using PinsBlock = Spark3PinsBlock;
 #endif
 
@@ -117,21 +117,23 @@ theConnectionPool()
 cbox::Box&
 makeBrewBloxBox()
 {
-    cbox::ObjectContainer systemObjects({
-        // groups will be at position 1
-        cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>()),
-            cbox::ContainedObject(3, 0x80, std::make_shared<TicksBlock<TicksClass>>(ticks)),
-            cbox::ContainedObject(4, 0x80, std::make_shared<OneWireBusBlock>(theOneWire())),
-#if defined(SPARK)
-            cbox::ContainedObject(5, 0x80, std::make_shared<WiFiSettingsBlock>()),
-            cbox::ContainedObject(6, 0x80, std::make_shared<TouchSettingsBlock>()),
-#endif
-            cbox::ContainedObject(7, 0x80, std::make_shared<DisplaySettingsBlock>()),
-            cbox::ContainedObject(19, 0x80, std::make_shared<PinsBlock>()),
-    });
-
     static EepromAccessImpl eeprom;
     static cbox::EepromObjectStorage objectStore(eeprom);
+
+    cbox::ObjectContainer systemObjects{{
+                                            // groups will be at position 1
+                                            cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>()),
+                                            cbox::ContainedObject(3, 0x80, std::make_shared<TicksBlock<TicksClass>>(ticks)),
+                                            cbox::ContainedObject(4, 0x80, std::make_shared<OneWireBusBlock>(theOneWire())),
+#if defined(SPARK)
+                                            cbox::ContainedObject(5, 0x80, std::make_shared<WiFiSettingsBlock>()),
+                                            cbox::ContainedObject(6, 0x80, std::make_shared<TouchSettingsBlock>()),
+#endif
+                                            cbox::ContainedObject(7, 0x80, std::make_shared<DisplaySettingsBlock>()),
+                                            cbox::ContainedObject(19, 0x80, std::make_shared<PinsBlock>()),
+                                        },
+                                        objectStore};
+
     static cbox::ConnectionPool& connections = theConnectionPool();
 
     auto scanners = std::vector<std::unique_ptr<cbox::ScanningFactory>>{};

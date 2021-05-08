@@ -19,7 +19,7 @@
 
 #if PLATFORM_ID == 8 || PLATFORM_ID == 3
 
-#include "blox/particle/Spark3PinsBlock.h"
+#include "blox/Spark3PinsBlock.h"
 #include "Board.h"
 #include "blox/IoArrayHelpers.h"
 #include "blox/proto/cpp/Spark3Pins.pb.h"

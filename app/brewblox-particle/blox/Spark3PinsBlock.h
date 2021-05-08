@@ -20,7 +20,7 @@
 #pragma once
 
 #include "blox/Block.h"
-#include "blox/particle/SparkIoBase.h"
+#include "blox/SparkIoBase.h"
 
 class Spark3PinsBlock : public SparkIoBase, public Block<BrewBloxTypes_BlockType_Spark3Pins> {
 private:

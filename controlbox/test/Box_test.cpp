@@ -1,4 +1,4 @@
-#include "Box.h"
+#include "cbox/Box.h"
 
 #include "testinfo.h"
 #include <catch.hpp>
@@ -22,14 +22,14 @@ using namespace cbox;
 
 SCENARIO("A controlbox Box")
 {
+    ArrayEepromAccess<2048> eeprom;
+    EepromObjectStorage storage(eeprom);
     ObjectContainer container{
         // groups object will have id 1
         // add 2 system objects
-        ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
-        ContainedObject(3, 0x80, std::make_shared<LongIntObject>(0x22222222))};
-
-    ArrayEepromAccess<2048> eeprom;
-    EepromObjectStorage storage(eeprom);
+        {ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
+         ContainedObject(3, 0x80, std::make_shared<LongIntObject>(0x22222222))},
+        storage};
 
     ObjectFactory factory = {
         {LongIntObject::staticTypeId(), std::make_shared<LongIntObject>},
@@ -45,7 +45,7 @@ SCENARIO("A controlbox Box")
     StringStreamConnectionSource connSource;
     ConnectionPool connPool = {connSource};
 
-    auto longIntScanner = std::unique_ptr<ScanningFactory>(new LongIntScanningFactory(container));
+    auto longIntScanner = std::unique_ptr<ScanningFactory>(new LongIntScanningFactory());
     std::vector<std::unique_ptr<ScanningFactory>> scanningFactories;
     scanningFactories.push_back(std::move(longIntScanner));
 
@@ -641,12 +641,15 @@ SCENARIO("A controlbox Box")
                 AND_WHEN("A new box is created from existing storage (for example after a reboot)")
                 {
                     // note that only eeprom is not newly created here
-                    ObjectContainer container2 = {
-                        // groups obj is id 1
-                        ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
-                        ContainedObject(3, 0x80, std::make_shared<LongIntObject>(0x22222222))};
-
                     EepromObjectStorage storage2(eeprom);
+
+                    ObjectContainer container2{
+                        // groups obj is id 1
+                        {
+                            ContainedObject(2, 0x80, std::make_shared<LongIntObject>(0x11111111)),
+                            ContainedObject(3, 0x80, std::make_shared<LongIntObject>(0x22222222))},
+                        storage2};
+
                     ObjectFactory factory2 = {
                         {LongIntObject::staticTypeId(), std::make_shared<LongIntObject>},
                         {LongIntVectorObject::staticTypeId(), std::make_shared<LongIntVectorObject>},

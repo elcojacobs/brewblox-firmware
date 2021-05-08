@@ -1,7 +1,6 @@
 #include "ActuatorPwmBlock.h"
 #include "ActuatorAnalogConstraintsProto.h"
 #include "blox/FieldTags.h"
-#include "brewblox_particle.hpp" // TODO refactor to avoid needing global box instance to store output
 #include "proto/cpp/ActuatorPwm.pb.h"
 #include "proto/cpp/AnalogConstraints.pb.h"
 
@@ -77,7 +76,7 @@ ActuatorPwmBlock::update(const cbox::update_t& now)
         // in which the output is still active
         if (auto ptr = actuator.lock()) {
             ptr->desiredState(ActuatorDigitalBase::State::Inactive);
-            brewbloxBox().storeUpdatedObject(actuator.getId());
+            actuator.store();
         }
         previousSettingValid = settingValid;
 

@@ -129,6 +129,11 @@ public:
     {
         return !ptr.expired();
     }
+
+    CboxError store()
+    {
+        return objects.store(id);
+    }
 };
 
 } // end namespace cbox

@@ -37,6 +37,9 @@ theOneWire();
 
 void updateBrewbloxBox();
 
+cbox::StringStreamConnectionSource&
+testConnectionSource();
+
 const char*
 versionCsv();
 

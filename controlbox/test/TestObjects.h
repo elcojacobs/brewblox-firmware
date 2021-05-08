@@ -1,7 +1,7 @@
 #pragma once
 
-#include "CboxPtr.h"
-#include "ObjectBase.h"
+#include "cbox/CboxPtr.h"
+#include "cbox/ObjectBase.h"
 #include <vector>
 
 /**
@@ -44,9 +44,13 @@ private:
 
 public:
     LongIntObject()
-        : obj(0){};
+        : obj(0)
+    {
+    }
     LongIntObject(uint32_t rhs)
-        : obj(std::move(rhs)){};
+        : obj(std::move(rhs))
+    {
+    }
     virtual ~LongIntObject() = default;
 
     bool operator==(const LongIntObject& rhs) const
@@ -64,7 +68,7 @@ public:
 
     virtual cbox::CboxError streamFrom(cbox::DataIn& in) override final
     {
-        uint32_t newValue;
+        uint32_t newValue = 0;
         if (in.get(newValue)) {
             obj = newValue;
             return cbox::CboxError::OK;
@@ -143,7 +147,7 @@ public:
             }
         }
         return res;
-    };
+    }
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
@@ -218,7 +222,7 @@ public:
         _interval = newInterval;
 
         return cbox::CboxError::OK;
-    };
+    }
 
     virtual cbox::CboxError streamPersistedTo(cbox::DataOut& out) const override final
     {
@@ -347,9 +351,9 @@ public:
     MockStreamObject() = default;
     virtual ~MockStreamObject() = default;
 
-    std::function<cbox::CboxError(cbox::DataOut&)> streamToFunc = [](cbox::DataOut& out) { return cbox::CboxError::OK; };
-    std::function<cbox::CboxError(cbox::DataIn&)> streamFromFunc = [](cbox::DataIn& in) { return cbox::CboxError::OK; };
-    std::function<cbox::CboxError(cbox::DataOut&)> streamPersistedToFunc = [](cbox::DataOut& out) { return cbox::CboxError::OK; };
+    std::function<cbox::CboxError(cbox::DataOut&)> streamToFunc = [](cbox::DataOut& /*out*/) { return cbox::CboxError::OK; };
+    std::function<cbox::CboxError(cbox::DataIn&)> streamFromFunc = [](cbox::DataIn& /*in*/) { return cbox::CboxError::OK; };
+    std::function<cbox::CboxError(cbox::DataOut&)> streamPersistedToFunc = [](cbox::DataOut& /*out*/) { return cbox::CboxError::OK; };
 
     virtual cbox::CboxError streamTo(cbox::DataOut& out) const override final
     {

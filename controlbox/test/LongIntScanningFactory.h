@@ -18,8 +18,7 @@ private:
     std::vector<uint32_t>::const_iterator it;
 
 public:
-    LongIntScanningFactory(ObjectContainer& objects)
-        : ScanningFactory(objects)
+    LongIntScanningFactory()
     {
         reset();
     }
@@ -30,13 +29,14 @@ public:
     {
         it = candidates.cbegin();
     };
-    virtual std::shared_ptr<Object> scan() override final
+
+    virtual std::shared_ptr<Object> scan(ObjectContainer& objects) override final
     {
         while (it != candidates.cend()) {
             bool found = false;
             uint32_t value = *it;
             ++it;
-            for (auto existing = objectsRef.cbegin(); existing != objectsRef.cend(); ++existing) {
+            for (auto existing = objects.cbegin(); existing != objects.cend(); ++existing) {
                 LongIntObject* ptrIfCorrectType = reinterpret_cast<LongIntObject*>(existing->object()->implements(LongIntObject::staticTypeId()));
                 if (ptrIfCorrectType == nullptr) {
                     continue; // not the right type, no match

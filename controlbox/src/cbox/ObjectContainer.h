@@ -21,6 +21,7 @@
 
 #include "ContainedObject.h"
 #include "Object.h"
+#include "ObjectStorage.h"
 #include <cstdint>
 #include <functional>
 #include <vector>
@@ -31,18 +32,21 @@ class ObjectContainer {
 private:
     std::vector<ContainedObject> objects;
     obj_id_t startId = obj_id_t::start();
+    ObjectStorage& storage;
 
 public:
     using Iterator = decltype(objects)::iterator;
     using CIterator = decltype(objects)::const_iterator;
 
-    ObjectContainer()
-        : objects()
+    ObjectContainer(ObjectStorage& storage_)
+        : objects{}
+        , storage(storage_)
     {
     }
 
-    ObjectContainer(std::initializer_list<ContainedObject> systemObjects)
-        : objects(systemObjects)
+    ObjectContainer(std::initializer_list<ContainedObject> systemObjects, ObjectStorage& storage_)
+        : objects{systemObjects}
+        , storage(storage_)
     {
     }
 
@@ -148,18 +152,6 @@ public:
         return newId;
     }
 
-    // add multiple already contained objects, used to add initial system objects
-    void add_contained_objects(std::vector<ContainedObject>&& src)
-    {
-        if (objects.empty()) {
-            objects = std::move(src);
-        } else {
-            objects.insert(std::end(objects),
-                           std::make_move_iterator(std::begin(src)),
-                           std::make_move_iterator(std::end(src)));
-        }
-    };
-
     CboxError remove(obj_id_t id)
     {
         if (id < startId) {
@@ -228,6 +220,56 @@ public:
         for (auto& cobj : objects) {
             cobj.forcedUpdate(now);
         }
+    }
+
+    CboxError store(const obj_id_t& id)
+    {
+
+        auto cobj = fetchContained(id);
+        if (cobj == nullptr) {
+            return CboxError::INVALID_OBJECT_ID;
+        }
+
+        auto storeContained = [&cobj](DataOut& storage) -> CboxError {
+            return cobj->streamPersistedTo(storage);
+        };
+        return storage.storeObject(id, storeContained);
+    }
+
+    CboxError reloadStored(const obj_id_t& id)
+    {
+
+        ContainedObject* cobj = fetchContained(id);
+        if (cobj == nullptr) {
+            return CboxError::INVALID_OBJECT_ID;
+        }
+
+        bool handlerCalled = false;
+        auto streamHandler = [&cobj, &handlerCalled](RegionDataIn& objInStorage) -> CboxError {
+            handlerCalled = true;
+            RegionDataIn objWithoutCrc(objInStorage, objInStorage.available() - 1);
+
+            obj_type_t typeId;
+            uint8_t groups; // discarded
+
+            if (!objWithoutCrc.get(groups)) {
+                return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
+            }
+            if (!objWithoutCrc.get(typeId)) {
+                return CboxError::INPUT_STREAM_READ_ERROR; // LCOV_EXCL_LINE
+            }
+            if (typeId != cobj->object()->typeId()) {
+                return CboxError::INVALID_OBJECT_TYPE;
+            }
+
+            return cobj->object()->streamFrom(objWithoutCrc);
+        };
+        CboxError status = storage.retrieveObject(storage_id_t(id), streamHandler);
+        if (!handlerCalled) {
+            return CboxError::INVALID_OBJECT_ID; // write status if handler has not written it
+        }
+
+        return status;
     }
 };
 
