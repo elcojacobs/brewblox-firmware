@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "DataStream.h"
 #include "Object.h"
 #include <functional>
 #include <memory>
@@ -53,19 +52,7 @@ public:
     {
     }
 
-    std::tuple<CboxError, std::shared_ptr<Object>> make(const obj_type_t& t) const
-    {
-        auto factoryEntry = std::find_if(objTypes.begin(), objTypes.end(), [&t](const ObjectFactoryEntry& entry) { return entry.typeId == t; });
-        if (factoryEntry == objTypes.end()) {
-            return std::make_tuple(CboxError::OBJECT_NOT_CREATABLE, std::shared_ptr<Object>());
-        }
-        auto obj = (*factoryEntry).createFn();
-        if (!obj) {
-            return std::make_tuple(CboxError::INSUFFICIENT_HEAP, std::shared_ptr<Object>());
-        }
-
-        return std::make_tuple(CboxError::OK, std::move(obj));
-    }
+    std::tuple<CboxError, std::shared_ptr<Object>> make(const obj_type_t& t) const;
 };
 
 } // end namespace cbox

@@ -21,7 +21,6 @@
 
 #include "ActuatorDigitalChangeLogged.h"
 #include "TicksTypes.h"
-#include <algorithm>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -91,49 +90,19 @@ public:
     using ActuatorDigitalChangeLogged::setStateUnlogged;
     using ActuatorDigitalChangeLogged::supportsFastIo;
 
-    void addConstraint(std::unique_ptr<Constraint>&& newConstraint)
-    {
-        if (constraints.size() < 8) {
-            constraints.push_back(std::move(newConstraint));
-        }
-        std::sort(constraints.begin(), constraints.end(),
-                  [](const std::unique_ptr<Constraint>& a, const std::unique_ptr<Constraint>& b) { return a->order() < b->order(); });
-    }
+    void addConstraint(std::unique_ptr<Constraint>&& newConstraint);
 
     // remove all constraints and return vector of removed constraints
-    auto removeAllConstraints()
-    {
-        auto oldConstraints = std::move(constraints);
-        constraints = std::vector<std::unique_ptr<Constraint>>();
-        return oldConstraints;
-    }
+    std::vector<std::unique_ptr<ActuatorDigitalConstrained::Constraint>> removeAllConstraints();
 
     void resetHistory()
     {
         ActuatorDigitalChangeLogged::resetHistory();
     }
 
-    duration_millis_t checkConstraints(const State& val, const ticks_millis_t& now)
-    {
-        for (auto& c : constraints) {
-            auto remaining = c->allowed(val, now, *this);
-            if (remaining > 0) {
-                return remaining;
-            }
-        }
-        return 0;
-    }
+    duration_millis_t checkConstraints(const State& val, const ticks_millis_t& now);
 
-    duration_millis_t desiredState(const State& val, const ticks_millis_t& now)
-    {
-        lastUpdateTime = now; // always update fallback time for state setter without time
-        m_desiredState = val;
-        auto timeRemaining = checkConstraints(val, now);
-        if (timeRemaining == 0) {
-            ActuatorDigitalChangeLogged::state(val, now);
-        }
-        return timeRemaining;
-    }
+    duration_millis_t desiredState(const State& val, const ticks_millis_t& now);
 
     duration_millis_t desiredState(const State& val)
     {

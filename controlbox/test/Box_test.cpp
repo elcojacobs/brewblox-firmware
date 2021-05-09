@@ -1,4 +1,4 @@
-#include "cbox/Box.h"
+#include "Box.h"
 
 #include "testinfo.h"
 #include <catch.hpp>
@@ -8,6 +8,7 @@
 #include "ArrayEepromAccess.h"
 #include "Connections.h"
 #include "ConnectionsStringStream.h"
+#include "Crc.h"
 #include "DataStreamConverters.h"
 #include "EepromObjectStorage.h"
 #include "GroupsObject.h"
@@ -15,6 +16,7 @@
 #include "Object.h"
 #include "ObjectContainer.h"
 #include "ObjectFactory.h"
+#include "TestHelpers.h"
 #include "TestObjects.h"
 #include "Tracing.h"
 

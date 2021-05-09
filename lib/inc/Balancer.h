@@ -21,7 +21,6 @@
 
 #include "ActuatorAnalog.h"
 #include "ActuatorAnalogConstrained.h"
-#include <algorithm>
 #include <functional>
 #include <vector>
 

@@ -21,11 +21,10 @@
 
 #include "blox/Spark2PinsBlock.h"
 #include "Board.h"
-#include "proto/cpp/Spark2Pins.pb.h"
-#include "IoArrayHelpers.h"
+#include "blox/IoArrayHelpers.h"
+#include "blox/proto/cpp/Spark2Pins.pb.h"
 
-pin_t
-Spark2PinsBlock::channelToPin(uint8_t channel) const
+pin_t Spark2PinsBlock::channelToPin(uint8_t channel) const
 {
     auto pins = std::array<pin_t, numPins>{
         PIN_ACTUATOR1,
@@ -104,8 +103,7 @@ Spark2PinsBlock::streamPersistedTo(cbox::DataOut& out) const
     return streamProtoTo(out, &message, blox_Spark2Pins_fields, blox_Spark2Pins_size);
 }
 
-void*
-Spark2PinsBlock::implements(const cbox::obj_type_t& iface)
+void* Spark2PinsBlock::implements(const cbox::obj_type_t& iface)
 {
     if (iface == BrewBloxTypes_BlockType_Spark2Pins) {
         return this; // me!

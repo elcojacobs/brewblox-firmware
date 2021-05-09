@@ -106,12 +106,6 @@ bool listeningModeEnabled()
     return spark::WiFi.listening();
 }
 
-inline uint8_t
-d2h(uint8_t bin)
-{
-    return uint8_t(bin + (bin > 9 ? 'A' - 10 : '0'));
-}
-
 std::string
 deviceIdStringInit()
 {
@@ -120,8 +114,8 @@ deviceIdStringInit()
     uint8_t id[12];
     HAL_device_ID(id, 12);
     for (uint8_t i = 0; i < 12; i++) {
-        hex.push_back(d2h(uint8_t(id[i] & 0xF0) >> 4));
-        hex.push_back(d2h(uint8_t(id[i] & 0xF)));
+        hex.push_back(cbox::d2h(uint8_t(id[i] & 0xF0) >> 4));
+        hex.push_back(cbox::d2h(uint8_t(id[i] & 0xF)));
     }
     return hex;
 }

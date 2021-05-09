@@ -18,6 +18,7 @@
  */
 
 #include "Balancer.h"
+#include <algorithm>
 
 using value_t = ActuatorAnalog::value_t;
 
@@ -38,8 +39,7 @@ BalancerImpl::registerEntry()
     return 0;
 }
 
-void
-BalancerImpl::unregisterEntry(const uint8_t& requester_id)
+void BalancerImpl::unregisterEntry(const uint8_t& requester_id)
 {
     requesters.erase(std::remove_if(requesters.begin(), requesters.end(), [&requester_id](const Request& r) { return r.id == requester_id; }),
                      requesters.end());
@@ -77,8 +77,7 @@ BalancerImpl::granted(const uint8_t& requester_id) const
     return match->granted;
 }
 
-void
-BalancerImpl::update()
+void BalancerImpl::update()
 {
     int8_t numActuators = requesters.size(); // signed, because value_t is signed too
     if (numActuators == 0) {

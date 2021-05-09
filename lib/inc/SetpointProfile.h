@@ -22,7 +22,6 @@
 #include "SetpointSensorPair.h"
 #include "Temperature.h"
 #include "TicksTypes.h"
-#include <algorithm>
 #include <vector>
 
 class SetpointProfile {

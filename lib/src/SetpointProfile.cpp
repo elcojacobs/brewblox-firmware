@@ -18,9 +18,9 @@
  */
 
 #include "../inc/SetpointProfile.h"
+#include <algorithm>
 
-void
-SetpointProfile::update(const utc_seconds_t& time)
+void SetpointProfile::update(const utc_seconds_t& time)
 {
     struct TimeStampLessEqual {
         bool operator()(const Point& p, const utc_seconds_t& time) const { return p.time <= time; }

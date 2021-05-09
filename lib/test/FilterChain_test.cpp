@@ -523,7 +523,7 @@ SCENARIO("A filter chain has large input values with noise", "[filterchain]")
     const std::vector<uint8_t> intervals{2, 3, 3, 4};
     FilterChain chain(params, intervals);
 
-    auto signal = [](const uint32_t& t, const int32_t dc, const int32_t noise) {
+    auto signal = [](const uint32_t& t, const int32_t dc, const int32_t /*noise*/) {
         // return dc + int64_t(std::rand()) * int64_t(2 * noise) / RAND_MAX - noise;
         if (t == 10) {
             return dc + 100000;

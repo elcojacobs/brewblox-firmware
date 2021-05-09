@@ -21,6 +21,7 @@
 
 #include "CboxError.h"
 #include "CboxPtr.h"
+#include "ConnectionPool.h"
 #include "Connections.h"
 #include "DataStream.h"
 #include "DataStreamConverters.h"
@@ -166,7 +167,6 @@ public:
     }
 };
 
-bool
-applicationCommand(uint8_t cmdId, DataIn& in, EncodedDataOut& out); // command handler specified by application to add additional commands
+bool applicationCommand(uint8_t cmdId, DataIn& in, EncodedDataOut& out); // command handler specified by application to add additional commands
 
 } // end namespace cbox

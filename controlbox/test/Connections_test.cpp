@@ -17,8 +17,8 @@
  * along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ConnectionPool.h"
 #include "Connections.h"
-
 #include "ConnectionsStringStream.h"
 #include "DataStream.h"
 #include <catch.hpp>
@@ -28,8 +28,7 @@
 using namespace cbox;
 
 // echo test function, copies input to output
-void
-echo(DataIn& in, DataOut& out)
+void echo(DataIn& in, DataOut& out)
 {
     in.push(out);
 }

@@ -21,6 +21,7 @@
 #pragma once
 
 #include "DataStream.h"
+#include "hex_utility.h"
 #include <string>
 
 namespace cbox {
@@ -152,11 +153,5 @@ public:
         return textIn.streamType();
     }
 };
-
-// helper function for testing. Appends the CRC to a hex string, the same way CrcDataOut would do
-std::string
-addCrc(const std::string& in);
-std::string
-crc(const std::string& in);
 
 } // end namespace cbox
