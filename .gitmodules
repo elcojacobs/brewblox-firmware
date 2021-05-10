@@ -9,3 +9,9 @@
 [submodule "app/brewblox/proto"]
 	path = app/brewblox/proto
 	url = https://github.com/BrewBlox/brewblox-proto.git
+[submodule "lib/lvgl"]
+	path = lib/lvgl
+	url = git@github.com:lvgl/lvgl.git
+[submodule "app/brewblox-esp/components/lvgl"]
+	path = app/brewblox-esp/components/lvgl
+	url = git@github.com:lvgl/lvgl.git

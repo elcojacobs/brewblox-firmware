@@ -6,15 +6,13 @@
 #include <esp_log.h>
 #include <sys/time.h>
 
-TFT035::TFT035(uint8_t spi_idx, int ss, hal_pin_t dc,
-               std::function<void()> on_spi_aquire,
-               std::function<void()> on_spi_release)
-    : spi(spi_idx, 10000000, 1, ss,
-          SpiDevice::Mode::SPI_MODE0, SpiDevice::BitOrder::MSBFIRST,
-          on_spi_aquire, on_spi_release)
-    , dc(dc)
+TFT035::TFT035()
+    : spi(
+        0, 10000000, 1, 4,
+        SpiDevice::Mode::SPI_MODE0, SpiDevice::BitOrder::MSBFIRST,
+        []() {}, []() {})
+    , dc(2)
 {
-    spi.init();
 }
 void TFT035::ClearScreen(unsigned int bColor)
 {
@@ -55,6 +53,7 @@ hal_spi_err_t TFT035::write(uint8_t cmd)
 
 void TFT035::init()
 {
+    spi.init();
     writeCmd(PGAMCTRL);
     write({0x00,
            0x03,
@@ -132,9 +131,9 @@ void TFT035::init()
     hal_delay_ms(120);
     writeCmd(DISON);
 
-    writeCmd(0x23);
+    // writeCmd(0x23);
 
-    DispRGBGray();
+    // DispRGBGray();
     // writeCmd(0x00);
 }
 void TFT035::Write_Data(unsigned char DH, unsigned char DL)
@@ -153,19 +152,7 @@ void TFT035::Write_Data(unsigned char DH, unsigned char DL)
     B1 = (0x1f & LD) * 2;
     B1 <<= 2;
 
-    write(R1);
-    hal_gpio_write(dc, false);
-    hal_delay_us(15);
-    hal_gpio_write(dc, true);
-    write(G1);
-    hal_gpio_write(dc, false);
-    hal_delay_us(15);
-    hal_gpio_write(dc, true);
-    write(B1);
-    hal_gpio_write(dc, false);
-    hal_delay_us(15);
-    hal_gpio_write(dc, true);
-    hal_delay_ms(1);
+    write({R1, G1, B1});
 }
 void TFT035::DispRGBGray(void)
 {

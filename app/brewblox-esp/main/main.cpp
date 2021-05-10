@@ -9,8 +9,54 @@
 
 #include "ExpOwGpio.hpp"
 #include "hal/hal_delay.h"
+#include "lvgl.h"
+#include <algorithm>
+#include <esp_heap_caps.h>
 #include <esp_log.h>
+auto display = TFT035();
 
+void monitor_flush(lv_disp_drv_t* disp_drv, const lv_area_t* area, lv_color_t* color_p)
+{
+    auto a = heap_caps_malloc(480 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+
+    auto size = area->x2 - area->x1 + area->y2 - area->y2;
+
+    display.setPos(area->x1, area->x2, area->y1, area->y2);
+
+    std::for_each(color_p, color_p + size, [](lv_color_t& color) {
+        display.Write_Data_U16(lv_color_to16(color));
+    });
+
+    lv_disp_flush_ready(disp_drv);
+
+    hal_delay_ms(1);
+}
+void displayTest()
+{
+    lv_init();
+    static lv_disp_draw_buf_t disp_buf1;
+    static lv_color_t buf1_1[480];
+    lv_disp_draw_buf_init(&disp_buf1, buf1_1, NULL, 480);
+
+    static lv_disp_drv_t disp_drv;
+    lv_disp_drv_init(&disp_drv);
+    disp_drv.draw_buf = &disp_buf1;
+    disp_drv.flush_cb = monitor_flush;
+    disp_drv.hor_res = 320;
+    disp_drv.ver_res = 480;
+
+    static lv_disp_t* disp;
+    disp = lv_disp_drv_register(&disp_drv);
+
+    lv_obj_t* btn = lv_btn_create(lv_scr_act()); /*Add a button the current screen*/
+    // lv_obj_set_pos(btn, 10, 10);                            /*Set its position*/
+    lv_obj_set_size(btn, 240, 100); /*Set its size*/
+    lv_obj_align(btn, LV_ALIGN_CENTER, 0, -40);
+
+    lv_obj_t* label = lv_label_create(btn); /*Add a label to the button*/
+    lv_label_set_text(label, "HET WERKT");  /*Set the labels text*/
+    lv_obj_center(label);
+}
 extern "C" {
 #ifdef ESP_PLATFORM
 void app_main();
@@ -26,6 +72,7 @@ int main(int /*argc*/, char** /*argv*/)
 #endif
 {
     Spark4::hw_init();
+
     hal_delay_ms(100);
     network_init();
     // SDCard::test();
@@ -33,11 +80,10 @@ int main(int /*argc*/, char** /*argv*/)
     // auto oneWire2 = DS248x(1);
     // auto oneWire3 = DS248x(2);
     // auto exp1 = ExpOwGpio(0);
-    ESP_LOGI("Display", "constructing");
-    auto display = TFT035(
-        0, 4, 2, []() {}, []() {});
+
     ESP_LOGI("Display", "initing");
     display.init();
+    displayTest();
     ESP_LOGI("Display", "Image written");
     // if (oneWire1.init()) {
     //     ESP_LOGI("OW1", "ready");
@@ -60,6 +106,8 @@ int main(int /*argc*/, char** /*argv*/)
     // OneWire ow3(oneWire3);
 
     while (true) {
+        lv_tick_inc(1); // This must be set to the time it took!
+        lv_task_handler();
         //     OneWireAddress a;
         //     std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
         //     for (auto& ow : ows) {
@@ -71,7 +119,7 @@ int main(int /*argc*/, char** /*argv*/)
         //     }
         //     // exp1.gpio_status();
         //     // exp1.gpio_test();
-        hal_delay_ms(10);
+        hal_delay_ms(1);
     }
 
     asio::io_context io;

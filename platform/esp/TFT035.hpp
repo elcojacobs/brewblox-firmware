@@ -6,9 +6,7 @@
 class TFT035 {
 public:
     // al deze parameters hardcoded in de klasse
-    TFT035(uint8_t spi_idx, int ss, hal_pin_t dc,
-           std::function<void()> on_spi_aquire,
-           std::function<void()> on_spi_release);
+    TFT035();
     ~TFT035() = default;
 
     hal_spi_err_t writeCmd(const std::vector<uint8_t>& cmd);
@@ -49,6 +47,6 @@ public:
 
 private:
     SpiDevice spi;
-    hal_pin_t dc;
+    const hal_pin_t dc;
     uint8_t _status;
 };

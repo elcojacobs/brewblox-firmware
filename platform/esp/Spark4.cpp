@@ -29,6 +29,7 @@ void Spark4::hw_init()
 
     gpio_set_direction(PIN_NUM_SD_CS, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_TFT_CS, GPIO_MODE_OUTPUT);
+    gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
 
     gpio_set_level(PIN_NUM_SD_CS, 1);
     gpio_set_level(PIN_NUM_TFT_CS, 1);
