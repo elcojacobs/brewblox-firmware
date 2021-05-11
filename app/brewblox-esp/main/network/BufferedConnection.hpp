@@ -26,7 +26,7 @@ private:
     void read()
     {
         // Schedule asynchronous receiving of a data
-        asio::async_some(socket, make_view(buffer_in), std::bind(&BufferedConnection::on_read, shared_from_this(), _1, _2));
+        asio::async_read_until(socket, make_view(buffer_in), '\n', std::bind(&BufferedConnection::on_read, shared_from_this(), _1, _2));
     }
 
     void on_read(asio::error_code error, std::size_t bytes_transferred)
@@ -34,11 +34,11 @@ private:
         // Check if an error has occurred
         if (error) {
             close();
-        } else if (bytes_transfered == 0) {
+        } else if (bytes_transferred == 0) {
             // circular buffer is full
             // any action needed here? TODO
         }
-        // Read the next portion of the data
+        // Read next message
         read();
     }
 
