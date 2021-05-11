@@ -8,6 +8,9 @@
 
 #include "ExpOwGpio.hpp"
 #include "hal/hal_delay.h"
+#include "network/BufferedConnection.hpp"
+#include "network/CboxConnection.hpp"
+#include "network/CboxConnectionSource.hpp"
 #include <esp_log.h>
 
 extern "C" {

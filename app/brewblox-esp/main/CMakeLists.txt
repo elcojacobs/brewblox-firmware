@@ -39,7 +39,7 @@ idf_component_register(
   INCLUDE_DIRS 
     .
     ../../../brewblox/blox/proto/cpp
-    ../../brewblox
+    ../../../brewblox
     ${nanopb_inc}
     ${cbox_inc}
     ${lib_inc}
