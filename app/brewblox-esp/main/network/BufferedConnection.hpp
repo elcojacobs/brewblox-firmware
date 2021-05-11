@@ -18,7 +18,7 @@ public:
 
     void start()
     {
-        // To start an echo BufferedConnection we should start to receive incoming data
+        // Start to receive incoming data
         read();
     }
 
@@ -26,23 +26,20 @@ private:
     void read()
     {
         // Schedule asynchronous receiving of a data
-        asio::async_read_until(socket, make_view(buffer_in), '\n', std::bind(&BufferedConnection::on_read, shared_from_this(), _1, _2));
+        asio::async_some(socket, make_view(buffer_in), std::bind(&BufferedConnection::on_read, shared_from_this(), _1, _2));
     }
 
     void on_read(asio::error_code error, std::size_t bytes_transferred)
     {
-        // Check if an error has occurred or circular buffer is full
-        if (!error && bytes_transferred) {
-            // Check if the BufferedConnection isn't currently writing data
-            if (!writing) {
-                write();
-            }
-
-            // Read the next portion of the data
-            read();
-        } else {
+        // Check if an error has occurred
+        if (error) {
             close();
+        } else if (bytes_transfered == 0) {
+            // circular buffer is full
+            // any action needed here? TODO
         }
+        // Read the next portion of the data
+        read();
     }
 
     void write()
@@ -57,7 +54,7 @@ private:
         writing = false;
 
         if (!error) {
-            // Check if there is something to send it back to the client
+            // Check if there is something to send
             if (buffer_out.size()) {
                 write();
             }
