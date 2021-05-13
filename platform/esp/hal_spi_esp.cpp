@@ -9,20 +9,33 @@ struct SpiHost {
     spi_bus_config_t config;
 };
 
-inline spi_transaction_t glue_transaction(SpiDevice* dev, const SpiTransaction& hal_trans)
-{
-    spi_transaction_t trans = {
-        .flags = 0,
-        .cmd = 0,
-        .addr = 0,
-        .length = hal_trans.tx_len *8, // esp32 driver wants length in bits
-        .rxlength = hal_trans.rx_len *8,
-        .user = nullptr,
-        .tx_buffer = static_cast<const void*>(hal_trans.tx_data),
-        .rx_buffer = static_cast<void*>(hal_trans.rx_data),
-    };
-    return trans;
+struct CallBackArg {
+    SpiDevice* dev;
+    SpiTransaction t;
+    void* user = nullptr;
+};
+void IRAM_ATTR pre_callback(spi_transaction_t* trans) {
+    // Get the real transaction and the spidevice from the user data.
+    auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
+
+    // Run the pre callback with the real transaction.
+    cbarg->dev->do_pre_cb(cbarg->t);
+
+    // Transform the real transaction into the hal transaction to be send.
+    trans->length=cbarg->t.tx_len*8;
+    trans->rxlength=cbarg->t.rx_len*8;
+    trans->tx_buffer=reinterpret_cast<const void*>(cbarg->t.tx_data);
+    trans->rx_buffer=reinterpret_cast<void*>(cbarg->t.rx_data);
+   
 }
+void IRAM_ATTR post_callback(spi_transaction_t* trans) {
+    auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
+    cbarg->dev->do_post_cb(cbarg->t);
+    free((void*)cbarg->t.tx_data);
+    delete cbarg;
+
+}
+
 
 SpiHost spiHosts[1]
     = {
@@ -65,10 +78,13 @@ hal_spi_err_t SpiDevice::init()
         .spics_io_num = this->ssPin,
         .flags = 0,
         .queue_size = this->queueSize,
-        .pre_cb = nullptr,
-        .post_cb = nullptr};
+        .pre_cb = pre_callback,
 
-    spi_device_t* dev_ptr = nullptr;
+        .post_cb = post_callback
+        };
+
+    spi_device_t* dev_ptr
+        = nullptr;
     err = spi_bus_add_device(spi_host.handle, &devcfg, &dev_ptr);
     if (err == ESP_OK) {
         this->platform_device_ptr = dev_ptr;
@@ -85,22 +101,35 @@ void SpiDevice::deinit()
     }
 }
 
-hal_spi_err_t SpiDevice::queue_transfer(const SpiTransaction& transaction, uint32_t timeout)
+hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, uint32_t timeout, bool dmaEnabled)
 {
-    spi_transaction_t trans = glue_transaction(this, transaction);
-    return spi_device_queue_trans(get_platform_ptr(this), &trans, timeout ? timeout : portMAX_DELAY);
-}
+    CallBackArg* cbarg = new(heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA)) CallBackArg{
+        .dev = this,
+        .t = transaction,
+    };
 
-// hal_spi_err_t spi_get_trans_result(const SpiDevice& dev, SpiTransaction* transaction, uint32_t timeout)
-// {
-//     spi_transaction_t *trans = glue_transaction(dev, transaction);
-//     return spi_device_get_trans_result(get_platform_ptr(dev), &trans, timeout, timeout ? timeout : portMAX_DELAY);
-// }
 
-hal_spi_err_t SpiDevice::transfer_impl(const SpiTransaction& transaction, uint32_t timeout)
-{
-    spi_transaction_t trans = glue_transaction(this, transaction);
-    return spi_device_transmit(get_platform_ptr(this), &trans);
+   auto  transToBe = spi_transaction_t {
+        .flags = 0,
+        .cmd = 0,
+        .addr = 0,
+        .length = transaction.tx_len*8, 
+        .rxlength = 0,
+        .user = cbarg,
+        .tx_buffer = reinterpret_cast<const void*>(transaction.tx_data),
+        .rx_buffer = nullptr,
+    };
+    spi_transaction_t* trans = new(heap_caps_malloc(sizeof(spi_transaction_t), MALLOC_CAP_DMA)) spi_transaction_t(transToBe);
+    
+
+
+   
+    if (dmaEnabled) {
+        auto a = spi_device_queue_trans(get_platform_ptr(this), trans,timeout);
+        return a; 
+    }
+    return spi_device_transmit(get_platform_ptr(this), trans);
+    return 0;
 }
 
 void SpiDevice::aquire_bus_impl()

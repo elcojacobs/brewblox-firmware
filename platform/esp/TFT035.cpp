@@ -8,9 +8,18 @@
 
 TFT035::TFT035()
     : spi(
-        0, 10000000, 1, 4,
+        0, 20'000'000UL, 100, 4,
         SpiDevice::Mode::SPI_MODE0, SpiDevice::BitOrder::MSBFIRST,
-        []() {}, []() {})
+        []() {}, []() {},
+        [&](SpiTransaction& t){ // PRE
+                hal_gpio_write(dc, *reinterpret_cast<bool*>(t.user_cb_data));
+                // hal_gpio_write(dc, true);
+
+
+        },
+        [](SpiTransaction& t){ // POST
+             delete reinterpret_cast<bool*>(t.user_cb_data);
+        })
     , dc(2)
 {
 }
@@ -29,26 +38,30 @@ void TFT035::ClearScreen(unsigned int bColor)
 
 hal_spi_err_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
 {
-    hal_gpio_write(dc, false);
-    auto err = spi.write(cmd);
-    hal_gpio_write(dc, true);
+    void* user = new(heap_caps_malloc(sizeof(bool), MALLOC_CAP_DMA)) bool (false);
+    // hal_gpio_write(dc, false);
+    auto err = spi.write(cmd,user); 
     return err;
 }
 hal_spi_err_t TFT035::write(const std::vector<uint8_t>& cmd)
 {
-    return spi.write(cmd);
+    // hal_gpio_write(dc, true);
+    void* user = new(heap_caps_malloc(sizeof(bool), MALLOC_CAP_DMA)) bool (true);
+    return spi.write(cmd,user);
 }
 
 hal_spi_err_t TFT035::writeCmd(uint8_t cmd)
 {
-    hal_gpio_write(dc, false);
-    auto err = spi.write(cmd);
-    hal_gpio_write(dc, true);
+    // hal_gpio_write(dc, false);
+    void* user = new(heap_caps_malloc(sizeof(bool), MALLOC_CAP_DMA)) bool (false);
+    auto err = spi.write(cmd,user);
     return err;
 }
 hal_spi_err_t TFT035::write(uint8_t cmd)
 {
-    return spi.write(cmd);
+    // hal_gpio_write(dc, true);
+    void* user = new(heap_caps_malloc(sizeof(bool), MALLOC_CAP_DMA)) bool (true);
+    return spi.write(cmd,user);
 }
 
 void TFT035::init()
@@ -193,7 +206,7 @@ void TFT035::DispRGBGray(void)
     // balck -> green
     for (k = 0; k < 80; k++) {
 
-        for (i = 0; i < 64; i += 2) {
+        for (i =0; i < 64; i += 2) {
             for (j = 0; j < 10; j++) {
                 dbh = i >> 3;
                 dbl = i << 5;
@@ -254,16 +267,38 @@ void TFT035::Write_Data_U16(unsigned int y)
 }
 void TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
 {
-    writeCmd(0x2A);
-    write(xs >> 8);
-    write(xs & 0xff);
-    write(xe >> 8);
-    write(xe & 0xff);
-    writeCmd(0x2B);
-    write(ys >> 8);
-    write(ys & 0xff);
-    write(ye >> 8);
-    write(ye & 0xff);
 
-    writeCmd(0x2C);
+    dmaWrite(0x2A,false);
+
+    dmaWrite(xs >> 8,true);
+    dmaWrite(xs & 0xff,true);
+    dmaWrite(xe >> 8,true);
+    dmaWrite(xe & 0xff,true);
+
+
+    dmaWrite(0x2B,false);
+
+    dmaWrite(ys >> 8,true);
+    dmaWrite(ys & 0xff,true);
+    dmaWrite(ye >> 8,true);
+    dmaWrite(ye & 0xff,true);
+
+
+    dmaWrite(0x2C,false);
+}
+
+bool TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
+{
+    void* user = new(heap_caps_malloc(sizeof(bool), MALLOC_CAP_DMA)) bool (dc);
+    spi.write(tx_data,tx_len, true,user);
+
+    return true;
+}
+bool TFT035::dmaWrite(uint8_t tx_data, bool dc)
+{
+    uint8_t* data = new(heap_caps_malloc(sizeof(uint8_t), MALLOC_CAP_DMA)) uint8_t (tx_data);
+    void* user = new(heap_caps_malloc(sizeof(bool), MALLOC_CAP_DMA)) bool (dc);
+    spi.write(data,1, true,user);
+
+    return true;
 }

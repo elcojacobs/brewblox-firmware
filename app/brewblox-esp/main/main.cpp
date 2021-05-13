@@ -17,19 +17,27 @@ auto display = TFT035();
 
 void monitor_flush(lv_disp_drv_t* disp_drv, const lv_area_t* area, lv_color_t* color_p)
 {
-    auto a = heap_caps_malloc(480 * sizeof(lv_color_t), MALLOC_CAP_DMA);
 
     auto size = area->x2 - area->x1 + area->y2 - area->y2;
 
     display.setPos(area->x1, area->x2, area->y1, area->y2);
-
-    std::for_each(color_p, color_p + size, [](lv_color_t& color) {
-        display.Write_Data_U16(lv_color_to16(color));
+    uint8_t * buffer =  static_cast<uint8_t*>(heap_caps_malloc(size * 3 * sizeof(uint8_t), MALLOC_CAP_DMA));
+    // uint8_t *buffer  = new uint8_t[size*3];
+    // buffer = new (heap_caps_malloc(size * 3 * sizeof(uint8_t), MALLOC_CAP_DMA)) uint8_t [size * 3];
+    // uint8_t* buffer[size * 3] = new(heap_caps_malloc(size * 3 * sizeof(uint8_t), MALLOC_CAP_DMA)) uint8_t[size * 3]{};
+    auto iterator = buffer;
+ 
+    std::for_each(color_p, color_p + size, [&](lv_color_t& color) {
+        *iterator = color.ch.red << 3;
+        iterator++;
+        *iterator = color.ch.green << 2;
+        iterator++;
+        *iterator = color.ch.blue << 3;
+        iterator++;
     });
-
+    display.dmaWrite(buffer,size*3,true);
     lv_disp_flush_ready(disp_drv);
-
-    hal_delay_ms(1);
+    ESP_LOGI("Display", "row written");
 }
 void displayTest()
 {
@@ -65,6 +73,7 @@ void app_main();
 int main(int /*argc*/, char** /*argv*/);
 #endif
 
+
 #ifdef ESP_PLATFORM
 void app_main()
 #else
@@ -75,12 +84,12 @@ int main(int /*argc*/, char** /*argv*/)
 
     hal_delay_ms(100);
     network_init();
+
     // SDCard::test();
     // auto oneWire1 = DS248x(0);
     // auto oneWire2 = DS248x(1);
     // auto oneWire3 = DS248x(2);
     // auto exp1 = ExpOwGpio(0);
-
     ESP_LOGI("Display", "initing");
     display.init();
     displayTest();

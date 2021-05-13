@@ -20,6 +20,8 @@ public:
     void Write_Data(unsigned char DH, unsigned char DL);
     void ClearScreen(unsigned int bColor);
     void Write_Data_U16(unsigned int y);
+    bool dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
+    bool dmaWrite(uint8_t tx_data, bool dc);
     uint8_t status()
     {
         return _status;
