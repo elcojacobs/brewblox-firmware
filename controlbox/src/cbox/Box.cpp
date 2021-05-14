@@ -672,6 +672,11 @@ void Box::hexCommunicate()
     });
 }
 
+void Box::parseMessage(DataIn& in, DataOut& out)
+{
+    handleCommand(in, out);
+}
+
 void Box::setActiveGroupsAndUpdateObjects(const uint8_t newGroups)
 {
     activeGroups = newGroups | 0x80; // system group cannot be disabled

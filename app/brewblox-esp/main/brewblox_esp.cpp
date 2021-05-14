@@ -27,11 +27,14 @@
 #include "cbox/ObjectFactory.h"
 #include "cbox/ObjectStorage.h"
 #include "cbox/Tracing.h"
+#include "esp_log.h"
+#include <asio.hpp>
 #include <esp_wifi.h>
 #include <esp_wifi_types.h>
+#include <functional>
 #include <memory>
 
-#include "network/CboxConnectionSource.hpp"
+using namespace std::placeholders;
 
 void get_device_id(uint8_t* dest, size_t len)
 {
@@ -60,7 +63,6 @@ void boxUpdate(const asio::error_code& e, std::shared_ptr<asio::steady_timer> t,
     }
     const auto now = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
     uint32_t millisSinceBoot = now - start;
-    box->hexCommunicate();
     box->update(millisSinceBoot);
     t->expires_from_now(asio::chrono::milliseconds(1));
     t->async_wait(std::bind(boxUpdate, _1, std::move(t), box));
@@ -81,8 +83,7 @@ makeBrewBloxBox(asio::io_context& io)
         },
         objectStore};
 
-    static CboxConnectionSource tcpSource(io, 8332);
-    static cbox::ConnectionPool connections{{tcpSource}};
+    static cbox::ConnectionPool connections{{}}; // managed externally
 
     static cbox::Box& box = brewblox::make_box(
         std::move(systemObjects),

@@ -8,6 +8,8 @@ set(srcs
   AppTicks.cpp
   brewblox_esp.cpp
   TimerInterrupts.cpp
+  network/CboxConnection.cpp
+  network/CboxConnectionManager.cpp
  )
 
 file(GLOB network_srcs ./network/*.cpp)

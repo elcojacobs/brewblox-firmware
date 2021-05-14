@@ -1,3 +1,5 @@
+#if 0
+
 #pragma once
 
 #include "CircularBuffer.hpp"
@@ -15,6 +17,7 @@ public:
     BufferedConnection(asio::ip::tcp::socket&& socket_)
         : socket(std::move(socket_))
         , timeout_timer(socket.get_executor())
+        , onMessage(onMessage)
     {
         ESP_LOGI("BC", "constructed");
     }
@@ -72,6 +75,11 @@ private:
             ESP_LOGW("BC", "read %u %u %u", bytes_transferred, buffer_in.size(), buffer_in.in_avail());
         }
 
+        if (onMessage) {
+            onMessage(buffer_in, buffer_out);
+        }
+        // send reply
+        start_write();
         // Read next message
         start_read();
     }
@@ -122,12 +130,20 @@ private:
         return socket.is_open();
     }
 
+    void set_handler(std::function<void(std::streambuf& in, std::streambuf& out)> onMessage_)
+    {
+        onMessage = onMessage_;
+    }
+
     bool stopped = true;
     bool writing = false;
     tcp::socket socket;
     asio::steady_timer timeout_timer;
     CircularBuffer<4096> buffer_in;
     CircularBuffer<4096> buffer_out;
+    std::function<void(std::istream& in, std::ostream& out)> onMessage;
 
     friend class CboxTcpConnection;
 };
+
+#endif

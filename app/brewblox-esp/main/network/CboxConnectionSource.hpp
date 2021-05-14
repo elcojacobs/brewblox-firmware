@@ -1,3 +1,5 @@
+#if 0
+
 #pragma once
 #include "CboxConnection.hpp"
 #include "esp_log.h"
@@ -68,3 +70,5 @@ private:
     tcp::endpoint endpoint;
     tcp::acceptor acceptor;
 };
+
+#endif

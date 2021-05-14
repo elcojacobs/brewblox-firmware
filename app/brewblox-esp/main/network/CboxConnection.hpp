@@ -1,8 +1,8 @@
 #pragma once
 
-#include "BufferedConnection.hpp"
-#include "cbox/Connections.h"
+#include "CircularBufferView.hpp"
 #include "cbox/DataStreamIo.h"
+#include <asio.hpp>
 
 namespace cbox {
 
@@ -71,41 +71,42 @@ public:
 
 } // end namespace cbox
 
-class CboxTcpConnection : public cbox::Connection {
+class CboxConnectionManager;
+namespace cbox {
+class Box;
+}
+
+class CboxTcpConnection : public std::enable_shared_from_this<CboxTcpConnection> {
 public:
-    explicit CboxTcpConnection(asio::ip::tcp::socket&& socket)
-        : conn(std::make_shared<BufferedConnection>(std::move(socket)))
-        , in_buf(conn->buffer_in)
-        , out_buf(conn->buffer_out)
-        , in_cbox(in_buf)
-        , out_cbox(out_buf)
-    {
-        conn->start();
-        std::ostream(&out_buf) << "welcome" << std::endl;
-    }
+    CboxTcpConnection(const CboxTcpConnection&) = delete;
+    CboxTcpConnection& operator=(const CboxTcpConnection&) = delete;
+
+    explicit CboxTcpConnection(
+        asio::ip::tcp::socket socket_,
+        CboxConnectionManager& connection_manager_,
+        cbox::Box& box_);
     ~CboxTcpConnection() = default;
 
-    virtual cbox::DataOut& getDataOut() override final
+    void start()
     {
-        return out_cbox;
-    };
-    virtual cbox::DataIn& getDataIn() override final
-    {
-        return in_cbox;
-    };
-    virtual bool isConnected() override final
-    {
-        return conn->is_connected();
-    };
-    virtual void stop() override final
-    {
-        conn->stop();
+        do_read();
     }
 
+    void stop()
+    {
+        socket.close();
+    }
+
+    void do_read();
+    void do_write();
+
 private:
-    std::shared_ptr<BufferedConnection> conn;
-    std::streambuf& in_buf;
-    std::streambuf& out_buf;
-    cbox::StreamBufDataIn in_cbox;
-    cbox::StreamBufDataOut out_cbox;
+    asio::ip::tcp::socket socket;
+    CircularBuffer<4096> buffer_in;
+    CircularBuffer<4096> buffer_out;
+    CboxConnectionManager& connection_manager;
+
+    cbox::Box& box;
 };
+
+using CboxConnectionPtr = std::shared_ptr<CboxTcpConnection>;

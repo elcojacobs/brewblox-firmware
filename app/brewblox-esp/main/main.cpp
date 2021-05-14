@@ -12,6 +12,7 @@
 #include "network/BufferedConnection.hpp"
 #include "network/CboxConnection.hpp"
 #include "network/CboxConnectionSource.hpp"
+#include "network/CboxServer.hpp"
 #include <esp_log.h>
 
 extern "C" {
@@ -74,6 +75,8 @@ int main(int /*argc*/, char** /*argv*/)
 
     asio::io_context io;
     static auto& box = makeBrewBloxBox(io);
+
+    static CboxServer server(io, 8332, box);
 
     io.run();
 

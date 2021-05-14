@@ -85,6 +85,8 @@ public:
     // process all incoming messages assuming they are hex encoded
     void hexCommunicate();
 
+    void parseMessage(DataIn& in, DataOut& out);
+
     auto getObject(const obj_id_t& id)
     {
         return objects.fetch(id);
