@@ -28,11 +28,15 @@ using hal_spi_err_t = int32_t;
 class SpiDeviceHandle;
 
 struct SpiTransaction {
-    const uint8_t* tx_data = nullptr;
+    uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
     size_t tx_len = 0;
     size_t rx_len = 0;
     void* user_cb_data = nullptr;
+    bool needsDelete = false;
+    ~SpiTransaction()
+    {
+    }
 };
 
 struct SpiDevice {
@@ -80,40 +84,40 @@ struct SpiDevice {
     hal_spi_err_t init();
     void deinit();
 
-    hal_spi_err_t write(const std::vector<uint8_t>& values, void* userData=nullptr, uint32_t timeout = 0xffffffff)
+    hal_spi_err_t write(const std::vector<uint8_t>& values, void* userData = nullptr, uint32_t timeout = 0xffffffff)
     {
-        SpiTransaction t
-        {
-            .tx_data = values.data(),
+        SpiTransaction t{
+            .tx_data = const_cast<uint8_t*>(values.data()),
             .rx_data = nullptr,
             .tx_len = values.size(),
             .rx_len = 0,
             .user_cb_data = userData,
+            .needsDelete = false,
         };
         return transfer_impl(t, timeout, false);
     }
-    hal_spi_err_t write(const uint8_t* data,size_t size, bool dma=false, void* userData=nullptr, uint32_t timeout = 0xffffffff)
+    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, void* userData = nullptr, uint32_t timeout = 0xffffffff)
     {
-        SpiTransaction t 
-        {
-            .tx_data = data,
+        SpiTransaction t{
+            .tx_data = const_cast<uint8_t*>(data),
             .rx_data = nullptr,
             .tx_len = size,
             .rx_len = 0,
             .user_cb_data = userData,
+            .needsDelete = true,
         };
         return transfer_impl(t, timeout, dma);
     }
-    hal_spi_err_t write(uint8_t value, void* userData=nullptr, uint32_t timeout = 0xffffffff)
+    hal_spi_err_t write(uint8_t value, void* userData = nullptr, uint32_t timeout = 0xffffffff)
     {
         uint8_t tx[1] = {value};
-        SpiTransaction t 
-        {
+        SpiTransaction t{
             .tx_data = tx,
             .rx_data = nullptr,
             .tx_len = 1,
             .rx_len = 0,
             .user_cb_data = userData,
+            .needsDelete = false,
         };
         return transfer_impl(t, timeout, false);
     }
@@ -150,12 +154,15 @@ struct SpiDevice {
 
     void* platform_device_ptr;
 
-    void do_pre_cb(SpiTransaction& t){
+    void do_pre_cb(SpiTransaction& t)
+    {
         this->pre_cb(t);
     }
-    void do_post_cb(SpiTransaction& t){
+    void do_post_cb(SpiTransaction& t)
+    {
         this->post_cb(t);
     }
+
 private:
     // callbacks
     std::function<void(SpiTransaction&)> pre_cb;
@@ -165,5 +172,5 @@ private:
     bool hasBus = false;
     void aquire_bus_impl();
     void release_bus_impl();
-    hal_spi_err_t transfer_impl(SpiTransaction transaction, uint32_t timeout = 0,bool dmaEnabled=false);
+    hal_spi_err_t transfer_impl(SpiTransaction transaction, uint32_t timeout = 0, bool dmaEnabled = false);
 };

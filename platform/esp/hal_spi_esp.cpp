@@ -12,9 +12,15 @@ struct SpiHost {
 struct CallBackArg {
     SpiDevice* dev;
     SpiTransaction t;
-    void* user = nullptr;
+    ~CallBackArg()
+    {
+        if (t.needsDelete) {
+            free((void*)this->t.tx_data);
+        }
+    }
 };
-void IRAM_ATTR pre_callback(spi_transaction_t* trans) {
+void IRAM_ATTR pre_callback(spi_transaction_t* trans)
+{
     // Get the real transaction and the spidevice from the user data.
     auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
 
@@ -22,20 +28,18 @@ void IRAM_ATTR pre_callback(spi_transaction_t* trans) {
     cbarg->dev->do_pre_cb(cbarg->t);
 
     // Transform the real transaction into the hal transaction to be send.
-    trans->length=cbarg->t.tx_len*8;
-    trans->rxlength=cbarg->t.rx_len*8;
-    trans->tx_buffer=reinterpret_cast<const void*>(cbarg->t.tx_data);
-    trans->rx_buffer=reinterpret_cast<void*>(cbarg->t.rx_data);
-   
+    trans->length = cbarg->t.tx_len * 8;
+    trans->rxlength = cbarg->t.rx_len * 8;
+    trans->tx_buffer = reinterpret_cast<const void*>(cbarg->t.tx_data);
+    trans->rx_buffer = reinterpret_cast<void*>(cbarg->t.rx_data);
 }
-void IRAM_ATTR post_callback(spi_transaction_t* trans) {
+void IRAM_ATTR post_callback(spi_transaction_t* trans)
+{
     auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
     cbarg->dev->do_post_cb(cbarg->t);
-    free((void*)cbarg->t.tx_data);
     delete cbarg;
-
+    // free(trans); // Check this
 }
-
 
 SpiHost spiHosts[1]
     = {
@@ -80,8 +84,7 @@ hal_spi_err_t SpiDevice::init()
         .queue_size = this->queueSize,
         .pre_cb = pre_callback,
 
-        .post_cb = post_callback
-        };
+        .post_cb = post_callback};
 
     spi_device_t* dev_ptr
         = nullptr;
@@ -103,33 +106,28 @@ void SpiDevice::deinit()
 
 hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, uint32_t timeout, bool dmaEnabled)
 {
-    CallBackArg* cbarg = new(heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA)) CallBackArg{
+    CallBackArg* cbarg = new (heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA)) CallBackArg{
         .dev = this,
         .t = transaction,
     };
 
-
-   auto  transToBe = spi_transaction_t {
+    auto transToBe = spi_transaction_t{
         .flags = 0,
         .cmd = 0,
         .addr = 0,
-        .length = transaction.tx_len*8, 
+        .length = transaction.tx_len * 8,
         .rxlength = 0,
         .user = cbarg,
-        .tx_buffer = reinterpret_cast<const void*>(transaction.tx_data),
+        .tx_buffer = static_cast<const void*>(transaction.tx_data),
         .rx_buffer = nullptr,
     };
-    spi_transaction_t* trans = new(heap_caps_malloc(sizeof(spi_transaction_t), MALLOC_CAP_DMA)) spi_transaction_t(transToBe);
-    
+    spi_transaction_t* trans = new (heap_caps_malloc(sizeof(spi_transaction_t), MALLOC_CAP_DMA)) spi_transaction_t(transToBe);
 
-
-   
     if (dmaEnabled) {
-        auto a = spi_device_queue_trans(get_platform_ptr(this), trans,timeout);
-        return a; 
+        auto a = spi_device_queue_trans(get_platform_ptr(this), trans, timeout);
+        return a;
     }
     return spi_device_transmit(get_platform_ptr(this), trans);
-    return 0;
 }
 
 void SpiDevice::aquire_bus_impl()

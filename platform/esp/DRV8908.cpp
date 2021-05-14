@@ -12,40 +12,42 @@ DRV8908::DRV8908(uint8_t spi_idx, int ss,
 
 hal_spi_err_t DRV8908::readRegister(RegAddr address, uint8_t& val)
 {
-    uint8_t tx[2] = {uint8_t(static_cast<uint8_t>(address) + uint8_t(0x40)), 0};
-    uint8_t rx[2] = {0};
+    // uint8_t tx[2] = {uint8_t(static_cast<uint8_t>(address) + uint8_t(0x40)), 0};
+    // uint8_t rx[2] = {0};
 
-    SpiTransaction t{
-        .tx_data = tx,
-        .rx_data = rx,
-        .tx_len = 2,
-        .rx_len = 2,
-        .user_cb_data = nullptr,
-    };
-    auto err = spi.transfer(t);
-    if (err == 0) {
-        _status = rx[0];
-        val = rx[1];
-    }
-    return err;
+    // SpiTransaction t{
+    //     .tx_data = tx,
+    //     .rx_data = rx,
+    //     .tx_len = 2,
+    //     .rx_len = 2,
+    //     .user_cb_data = nullptr,
+    // };
+    // auto err = spi.transfer(t);
+    // if (err == 0) {
+    //     _status = rx[0];
+    //     val = rx[1];
+    // }
+    // return err;
+    return 0;
 }
 
 hal_spi_err_t DRV8908::writeRegister(RegAddr address, uint8_t val)
 {
-    uint8_t tx[2] = {static_cast<uint8_t>(address), val};
-    uint8_t rx[2] = {0};
+    // uint8_t tx[2] = {static_cast<uint8_t>(address), val};
+    // uint8_t rx[2] = {0};
 
-    SpiTransaction t{
-        .tx_data = tx,
-        .rx_data = rx,
-        .tx_len = 2,
-        .rx_len = 2,
-        .user_cb_data = nullptr,
-    };
-    auto err = spi.transfer(t);
-    if (err == 0) {
-        _status = rx[0];
-        // second byte returned is old value
-    }
-    return err;
+    // SpiTransaction t{
+    //     .tx_data = tx,
+    //     .rx_data = rx,
+    //     .tx_len = 2,
+    //     .rx_len = 2,
+    //     .user_cb_data = nullptr,
+    // };
+    // auto err = spi.transfer(t);
+    // if (err == 0) {
+    //     _status = rx[0];
+    //     // second byte returned is old value
+    // }
+    // return err;
+    return 0;
 }
