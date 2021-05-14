@@ -31,3 +31,5 @@ cbox::Box& make_box(cbox::ObjectContainer&& systemObjects,
                     std::vector<std::unique_ptr<cbox::ScanningFactory>>&& scanners);
 
 }
+
+const std::string& versionCsv();

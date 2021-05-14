@@ -35,6 +35,7 @@
 #include "blox/TempSensorCombiBlock.h"
 #include "blox/TempSensorMockBlock.h"
 #include "blox/TempSensorOneWireBlock.h"
+#include "blox/stringify.h"
 #include <memory>
 
 namespace brewblox {
@@ -85,3 +86,21 @@ cbox::Box& make_box(cbox::ObjectContainer&& systemObjects,
 }
 
 } // end namespace brewlbox
+
+const std::string&
+versionCsv()
+{
+#if PLATFORM_ID == 3
+#define PLATFORM_STRING "gcc"
+#elif PLATFORM_ID == 6
+#define PLATFORM_STRING "photon"
+#elif PLATFORM_ID == 8
+#define PLATFORM_STRING "p1"
+#else
+#define PLATFORM_STRING "unkown"
+#define SYSTEM_VERSION_STRING "sys_unknown"
+#endif
+
+    static const std::string version = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," PLATFORM_STRING;
+    return version;
+}

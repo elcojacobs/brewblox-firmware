@@ -87,23 +87,15 @@ public:
         cbox::Box& box_);
     ~CboxTcpConnection() = default;
 
-    void start()
-    {
-        do_read();
-    }
-
-    void stop()
-    {
-        socket.close();
-    }
-
+    void start();
+    void stop();
     void do_read();
     void do_write();
 
 private:
     asio::ip::tcp::socket socket;
-    CircularBuffer<4096> buffer_in;
-    CircularBuffer<4096> buffer_out;
+    asio::streambuf buffer_in;
+    asio::streambuf buffer_out;
     CboxConnectionManager& connection_manager;
 
     cbox::Box& box;

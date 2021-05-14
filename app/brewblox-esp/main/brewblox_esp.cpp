@@ -150,44 +150,7 @@ void logEvent(const std::string& event)
     // out.write('>');
 }
 
-const char*
-versionCsv()
-{
-    static const char version[] = "esp32";
-    return version;
-}
-
 namespace cbox {
-void connectionStarted(DataOut& out)
-{
-    char header[] = "<!BREWBLOX,";
-
-    out.writeBuffer(header, strlen(header));
-    out.writeBuffer(versionCsv(), strlen(versionCsv()));
-    out.write(',');
-    cbox::EncodedDataOut hexOut(out);
-
-#if PLATFORM_ID == 3
-    int resetReason = 0;
-#else
-    auto resetReason = uint8_t(0);
-#endif
-    hexOut.write(resetReason);
-    out.write(',');
-#if PLATFORM_ID == 3
-    int resetData = 0;
-#else
-    auto resetData = uint8_t(0);
-#endif
-    hexOut.write(resetData);
-    out.write(',');
-
-    uint8_t deviceId[12] = {0};
-    hexOut.writeBuffer(deviceId, 12);
-    out.write('>');
-    out.write('\n');
-}
-
 // handler for custom commands outside of controlbox
 bool applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& out)
 {
@@ -199,4 +162,5 @@ bool applicationCommand(uint8_t cmdId, cbox::DataIn& in, cbox::EncodedDataOut& o
     }
     return false;
 }
+
 } // end namespace cbox
