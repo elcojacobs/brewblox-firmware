@@ -58,41 +58,4 @@ TextIn::fetchNextData(bool optional)
 }
 #endif
 
-uint8_t
-blockingRead(DataIn& in, uint8_t closed)
-{
-    uint8_t result = closed;
-    while (in.hasNext()) {
-        if (in.available()) {
-            result = in.next();
-            break;
-        }
-    }
-    return result;
-}
-
-/**
- * Fetches the next byte from the stream.
- */
-void HexTextToBinaryIn::fetchNextByte()
-{
-    if (char2) { // already have data
-        return;
-    }
-    if (!textIn.hasNext()) {
-        return;
-    }
-
-    if (!char1) {
-        char1 = blockingRead(textIn, 0xFF);
-    }
-
-    if (!textIn.hasNext())
-        return;
-
-    if (!char2) {
-        char2 = blockingRead(textIn, 0xFF);
-    }
-}
-
 } // end namespace cbox

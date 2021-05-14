@@ -23,8 +23,7 @@
 #include "blox/Block.h"
 #include "proto/cpp/DS2408.pb.h"
 
-OneWire&
-theOneWire();
+class OneWire;
 
 class DS2408Block : public Block<BrewBloxTypes_BlockType_DS2408> {
 private:
@@ -32,8 +31,8 @@ private:
     blox_DS2408_PinConnectMode connectMode = blox_DS2408_PinConnectMode_CONNECT_VALVE;
 
 public:
-    DS2408Block()
-        : device(theOneWire())
+    DS2408Block(OneWire& ow)
+        : device(ow)
     {
     }
 

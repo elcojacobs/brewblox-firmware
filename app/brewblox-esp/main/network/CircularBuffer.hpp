@@ -1,4 +1,5 @@
 #pragma once
+#include "esp_log.h"
 #include <asio.hpp>
 
 template <std::size_t Capacity>
@@ -9,10 +10,13 @@ public:
 
     auto prepare(std::size_t n)
     {
-        // Boost.Asio Dynamic buffer throws std::length_error in this case, so we'll do the same
         if (size() + n > max_size()) {
-            throw std::length_error("CircularBuffer overflow");
+            ESP_LOGE("CB", "CircularBuffer overflow");
+            // return buffer of available free space instead of requested amount
+            make_sequence<mutable_buffers_type>(buffer, tail, tail + free_space());
         }
+
+        ESP_LOGI("CB", "prepare size %u buf size %u in_avail %u", n, size(), in_avail());
 
         return make_sequence<mutable_buffers_type>(buffer, tail, tail + n);
     }
@@ -39,13 +43,62 @@ public:
 
     constexpr std::size_t max_size() const
     {
-        return Capacity;
+        return Capacity - 1; // prevent head/tail collision with -1
     }
 
     constexpr std::size_t capacity() const
     {
         return max_size();
     }
+
+    auto free_space() const
+    {
+        return max_size() - size();
+    }
+
+    virtual int sync() override
+    {
+        if (on_sync) {
+            return on_sync();
+        }
+        return 0;
+    }
+
+    void set_sync_func(std::function<int()>&& func)
+    {
+        on_sync = func;
+    }
+
+    int peek()
+    {
+        if (size()) {
+            return buffer[head];
+        }
+        return -1;
+    }
+
+    virtual int showmanyc() override
+    {
+        return size();
+    }
+
+    // int get()
+    // {
+    //     if (size()) {
+    //         auto v = buffer[head];
+    //         consume(1);
+    //         return v;
+    //     }
+    //     return -1;
+    // }
+
+    // void put(char v)
+    // {
+    //     if (free_space()) {
+    //         buffer[tail] = v;
+    //         commit(1);
+    //     }
+    // }
 
 private:
     // Static template function is a trick to cover both const and non-const variants using the same function
@@ -73,4 +126,5 @@ private:
     std::array<char, Capacity> buffer;
     std::size_t head = 0;
     std::size_t tail = 0;
+    std::function<int()> on_sync;
 };

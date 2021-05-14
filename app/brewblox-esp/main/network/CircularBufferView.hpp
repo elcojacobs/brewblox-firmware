@@ -40,6 +40,11 @@ public:
         return buffer.size();
     }
 
+    auto free_space() const
+    {
+        return buffer.free_space();
+    }
+
     constexpr auto max_size() const
     {
         return buffer.max_size();

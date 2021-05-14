@@ -7,6 +7,7 @@
 #include <asio.hpp>
 
 #include "ExpOwGpio.hpp"
+#include "brewblox_esp.hpp"
 #include "hal/hal_delay.h"
 #include "network/BufferedConnection.hpp"
 #include "network/CboxConnection.hpp"
@@ -52,26 +53,28 @@ int main(int /*argc*/, char** /*argv*/)
         ESP_LOGE("OW3", "not ready");
     }
 
-    OneWire ow1(oneWire1);
-    OneWire ow2(oneWire2);
-    OneWire ow3(oneWire3);
+    // OneWire ow1(oneWire1);
+    // OneWire ow2(oneWire2);
+    // OneWire ow3(oneWire3);
 
-    while (true) {
-        OneWireAddress a;
-        std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
-        for (auto& ow : ows) {
-            ow->reset_search();
-            if (ow->search(a)) {
-                auto s = a.toString();
-                ESP_LOGI("OW", "%s", s.c_str());
-            }
-        }
-        // exp1.gpio_status();
-        // exp1.gpio_test();
-        hal_delay_ms(10);
-    }
+    // while (true) {
+    //     OneWireAddress a;
+    //     std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
+    //     for (auto& ow : ows) {
+    //         ow->reset_search();
+    //         if (ow->search(a)) {
+    //             auto s = a.toString();
+    //             ESP_LOGI("OW", "%s", s.c_str());
+    //         }
+    //     }
+    //     // exp1.gpio_status();
+    //     // exp1.gpio_test();
+    //     hal_delay_ms(10);
+    // }
 
     asio::io_context io;
+    static auto& box = makeBrewBloxBox(io);
+
     io.run();
 
 #ifndef ESP_PLATFORM

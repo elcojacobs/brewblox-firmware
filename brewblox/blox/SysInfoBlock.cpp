@@ -19,7 +19,6 @@
 
 #include "SysInfoBlock.h"
 #include "cbox/Tracing.h"
-#include "deviceid_hal.h"
 #include "stringify.h"
 #include <cstring>
 
@@ -32,7 +31,7 @@ SysInfoBlock::streamTo(cbox::DataOut& out) const
 {
     blox_SysInfo message = blox_SysInfo_init_zero;
 
-    HAL_device_ID(static_cast<uint8_t*>(&message.deviceId[0]), 12);
+    device_id_func(static_cast<uint8_t*>(&message.deviceId[0]), 12);
 
     strncpy(message.version, stringify(GIT_VERSION), 12);
     strncpy(message.protocolVersion, stringify(PROTO_VERSION), 12);

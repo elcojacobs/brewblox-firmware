@@ -6,16 +6,15 @@
 #include "blox/FieldTags.h"
 #include "proto/cpp/TempSensorOneWire.pb.h"
 
-OneWire&
-theOneWire();
+class OneWire;
 
 class TempSensorOneWireBlock : public Block<BrewBloxTypes_BlockType_TempSensorOneWire> {
 private:
     DS18B20 sensor;
 
 public:
-    TempSensorOneWireBlock()
-        : sensor(theOneWire())
+    TempSensorOneWireBlock(OneWire& ow)
+        : sensor(ow)
     {
     }
 

@@ -93,12 +93,7 @@ public:
  */
 class HexTextToBinaryIn : public DataIn {
     DataIn& textIn;
-    uint8_t char1; // Text character for upper nibble
-    uint8_t char2; // Text character for lower nibble
-
-    void fetchNextByte();
-
-    bool hasData() { return char2; }
+    int nextByte = -1;
 
     bool peekEndline()
     {
@@ -109,36 +104,44 @@ class HexTextToBinaryIn : public DataIn {
 public:
     HexTextToBinaryIn(DataIn& _textIn)
         : textIn(_textIn)
-        , char1(0)
-        , char2(0)
     {
     }
 
     bool hasNext() override
     {
-        return hasData() || (textIn.hasNext() && !peekEndline());
+        return available() > 0;
+    }
+
+    void fetch()
+    {
+        if (nextByte < 0) {
+            if (textIn.available() > 1) {
+                nextByte = (h2d(textIn.next()) << 4) | h2d(textIn.next());
+            }
+        }
     }
 
     uint8_t peek() override
     {
-        while (!hasData() && textIn.hasNext()) {
-            fetchNextByte();
+        fetch();
+
+        if (nextByte > 0) {
+            return nextByte;
         }
-        return uint8_t((h2d(char1) << 4) | h2d(char2));
+
+        return 0;
     }
 
     uint8_t next() override
     {
         uint8_t r = peek();
-        char1 = 0;
-        char2 = 0;
+        nextByte = -1;
         return r;
     }
 
     stream_size_t available() override
     {
-        fetchNextByte();
-        return hasData() ? 1 : 0;
+        return textIn.available() / 2;
     }
 
     void unBlock()
