@@ -9,6 +9,7 @@ public:
     static void hw_init();
     static void hw_deinit();
     static void startup_beep();
+    static void display_brightness(uint8_t b);
 
     static SX1508 expander;
 };

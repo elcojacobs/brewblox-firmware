@@ -28,11 +28,15 @@ using hal_spi_err_t = int32_t;
 class SpiDeviceHandle;
 
 struct SpiTransaction {
-    const uint8_t* tx_data = nullptr;
+    uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
     size_t tx_len = 0;
     size_t rx_len = 0;
     void* user_cb_data = nullptr;
+    bool needsDelete = false;
+    ~SpiTransaction()
+    {
+    }
 };
 
 struct SpiDevice {
@@ -51,7 +55,7 @@ struct SpiDevice {
     SpiDevice(uint8_t host_idx, int speed_hz, int queue_size, int ss_pin,
               Mode spi_mode, BitOrder bit_order,
               std::function<void()> on_aquire = {}, std::function<void()> on_release = {},
-              std::function<void(SpiTransaction& t)> pre = {}, std::function<void(SpiTransaction& t)> post = {})
+              std::function<void(SpiTransaction&)> pre = {}, std::function<void(SpiTransaction&)> post = {})
         : spi_idx(host_idx)
         , speed(speed_hz)
         , queueSize(queue_size)
@@ -79,21 +83,44 @@ struct SpiDevice {
 
     hal_spi_err_t init();
     void deinit();
-    hal_spi_err_t queue_transfer(const SpiTransaction& transaction, uint32_t timeout = 0);
-    hal_spi_err_t transfer(const SpiTransaction& transaction, uint32_t timeout = 0)
-    {
-        // if bus has not been already aquired, aquire and release
-        bool inTransaction = hasBus;
-        if (!inTransaction) {
-            aquire_bus();
-        }
-        auto err = transfer_impl(transaction, timeout);
-        if (!inTransaction) {
-            release_bus();
-        }
-        return err;
-    }
 
+    hal_spi_err_t write(const std::vector<uint8_t>& values, void* userData = nullptr, uint32_t timeout = 0xffffffff)
+    {
+        SpiTransaction t{
+            .tx_data = const_cast<uint8_t*>(values.data()),
+            .rx_data = nullptr,
+            .tx_len = values.size(),
+            .rx_len = 0,
+            .user_cb_data = userData,
+            .needsDelete = false,
+        };
+        return transfer_impl(t, timeout, false);
+    }
+    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, void* userData = nullptr, uint32_t timeout = 0xffffffff)
+    {
+        SpiTransaction t{
+            .tx_data = const_cast<uint8_t*>(data),
+            .rx_data = nullptr,
+            .tx_len = size,
+            .rx_len = 0,
+            .user_cb_data = userData,
+            .needsDelete = true,
+        };
+        return transfer_impl(t, timeout, dma);
+    }
+    hal_spi_err_t write(uint8_t value, void* userData = nullptr, uint32_t timeout = 0xffffffff)
+    {
+        uint8_t tx[1] = {value};
+        SpiTransaction t{
+            .tx_data = tx,
+            .rx_data = nullptr,
+            .tx_len = 1,
+            .rx_len = 0,
+            .user_cb_data = userData,
+            .needsDelete = false,
+        };
+        return transfer_impl(t, timeout, false);
+    }
     void aquire_bus()
     {
         if (hasBus) {
@@ -127,14 +154,23 @@ struct SpiDevice {
 
     void* platform_device_ptr;
 
+    void do_pre_cb(SpiTransaction& t)
+    {
+        this->pre_cb(t);
+    }
+    void do_post_cb(SpiTransaction& t)
+    {
+        this->post_cb(t);
+    }
+
 private:
     // callbacks
-    std::function<void(SpiTransaction& t)> pre_cb;
-    std::function<void(SpiTransaction& t)> post_cb;
+    std::function<void(SpiTransaction&)> pre_cb;
+    std::function<void(SpiTransaction&)> post_cb;
     std::function<void()> onAquire;
     std::function<void()> onRelease;
     bool hasBus = false;
     void aquire_bus_impl();
     void release_bus_impl();
-    hal_spi_err_t transfer_impl(const SpiTransaction& transaction, uint32_t timeout = 0);
+    hal_spi_err_t transfer_impl(SpiTransaction transaction, uint32_t timeout = 0, bool dmaEnabled = false);
 };

@@ -29,6 +29,7 @@ void Spark4::hw_init()
 
     gpio_set_direction(PIN_NUM_SD_CS, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_TFT_CS, GPIO_MODE_OUTPUT);
+    gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
 
     gpio_set_level(PIN_NUM_SD_CS, 1);
     gpio_set_level(PIN_NUM_TFT_CS, 1);
@@ -40,15 +41,13 @@ void Spark4::hw_init()
 
     // Disable input for RGB LED and TFT backlight
     expander.write_reg(SX1508::RegAddr::inputDisable, 0b11101000);
-    // Inverse polarity for TFT backlight
-    expander.write_reg(SX1508::RegAddr::polarity, 0b00100000);
-    // Set dir
-    expander.write_reg(SX1508::RegAddr::dir, 0b00010111);
     // Disable pullup for RGB LED and TFT backlight
     expander.write_reg(SX1508::RegAddr::pullUp, 0b00010111);
+    // Set direction
+    expander.write_reg(SX1508::RegAddr::dir, 0b00010111);
     // Enable open drain for RGB LED, TFT backlight is push/pull
     expander.write_reg(SX1508::RegAddr::openDrain, 0b11001000);
-    // logarithmic fading, PWM frequendy 250 Hz, reset is POR, auto increment register, auto clean nint on read
+    // logarithmic fading for RGB, PWM frequendy 250 Hz, reset is POR, auto increment register, auto clean nint on read
     expander.write_reg(SX1508::RegAddr::misc, 0b11101000);
     // enable led driver on RGB and backlight
     expander.write_reg(SX1508::RegAddr::ledDriverEnable, 0b11101000);
@@ -72,11 +71,12 @@ void Spark4::hw_init()
     expander.write_reg(SX1508::RegAddr::off6, 0b01111000); // 1 period off, intensity 0
 
     // Configure backlight PWM at 50%
-    expander.write_reg(SX1508::RegAddr::iOn5, 128);
+    display_brightness(128);
 
     // Enable outputs
     expander.write_reg(SX1508::RegAddr::data, 0x00);
 
+    // beep also configures clock, which is on the same register
     startup_beep();
 }
 
@@ -84,6 +84,12 @@ void Spark4::hw_deinit()
 {
     gpio_uninstall_isr_service();
     nvs_flash_deinit();
+}
+
+void Spark4::display_brightness(uint8_t b)
+{
+    // enable signal should be inverted
+    expander.write_reg(SX1508::RegAddr::iOn5, uint8_t{255} - b);
 }
 
 void Spark4::startup_beep()
