@@ -96,9 +96,10 @@ versionCsv()
 #define PLATFORM_STRING "photon"
 #elif PLATFORM_ID == 8
 #define PLATFORM_STRING "p1"
+#elif PLATFORM_ID == 100
+#define PLATFORM_STRING "esp32"
 #else
 #define PLATFORM_STRING "unkown"
-#define SYSTEM_VERSION_STRING "sys_unknown"
 #endif
 
     static const std::string version = stringify(GIT_VERSION) "," stringify(PROTO_VERSION) "," stringify(GIT_DATE) "," stringify(PROTO_DATE) "," stringify(SYSTEM_VERSION_STRING) "," PLATFORM_STRING;

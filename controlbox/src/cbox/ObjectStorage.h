@@ -63,7 +63,7 @@ public:
         const storage_id_t& /*id*/,
         const std::function<CboxError(DataOut&)>& /*handler*/) override final
     {
-        return CboxError::PERSISTED_STORAGE_WRITE_ERROR;
+        return CboxError::OK;
     }
 
     virtual CboxError retrieveObjects(

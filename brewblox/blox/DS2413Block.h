@@ -22,16 +22,15 @@
 #include "DS2413.h"
 #include "blox/Block.h"
 
-OneWire&
-theOneWire();
+class OneWire;
 
 class DS2413Block : public Block<BrewBloxTypes_BlockType_DS2413> {
 private:
     DS2413 device;
 
 public:
-    DS2413Block()
-        : device(theOneWire())
+    DS2413Block(OneWire& ow)
+        : device(ow)
     {
     }
 

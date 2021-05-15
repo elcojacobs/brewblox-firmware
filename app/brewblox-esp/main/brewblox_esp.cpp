@@ -18,9 +18,14 @@
  */
 
 #include "AppTicks.h"
+#include "DS248x.hpp"
 #include "Logger.h"
+#include "OneWireScanningFactory.h"
 #include "RecurringTask.hpp"
+#include "blox/DisplaySettingsBlock.h"
+#include "blox/OneWireBusBlock.h"
 #include "blox/SysInfoBlock.h"
+#include "blox/TicksBlock.h"
 #include "blox/stringify.h"
 #include "brewblox.hpp"
 #include "cbox/Box.h"
@@ -29,6 +34,7 @@
 #include "cbox/ObjectStorage.h"
 #include "cbox/Tracing.h"
 #include "esp_log.h"
+#include <MockTicks.h>
 #include <asio.hpp>
 #include <esp_wifi.h>
 #include <esp_wifi_types.h>
@@ -78,20 +84,44 @@ makeBrewBloxBox(asio::io_context& io)
 {
     static cbox::ObjectStorageStub objectStore;
 
+    static auto owDriver1 = DS248x(0x00);
+    static auto ow1 = OneWire(owDriver1);
+    static auto owDriver2 = DS248x(0x02);
+    static auto ow2 = OneWire(owDriver2);
+    static auto owDriver3 = DS248x(0x03);
+    static auto ow3 = OneWire(owDriver3);
+    static auto owDriver4 = DS248x(0x04);
+    static auto ow4 = OneWire(owDriver4);
+
+    static Ticks<MockTicks> ticks;
+
     cbox::ObjectContainer systemObjects{
         {
             cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>(get_device_id)),
+            cbox::ContainedObject(3, 0x80, std::make_shared<TicksBlock<Ticks<MockTicks>>>(ticks)),
+            cbox::ContainedObject(4, 0x80, std::make_shared<OneWireBusBlock>(ow1)),
+            cbox::ContainedObject(7, 0x80, std::make_shared<DisplaySettingsBlock>()),
+            cbox::ContainedObject(14, 0x80, std::make_shared<OneWireBusBlock>(ow2)),
+            cbox::ContainedObject(15, 0x80, std::make_shared<OneWireBusBlock>(ow3)),
+            cbox::ContainedObject(16, 0x80, std::make_shared<OneWireBusBlock>(ow4)),
         },
         objectStore};
 
     static cbox::ConnectionPool connections{{}}; // managed externally
+
+    auto scanners = std::vector<std::unique_ptr<cbox::ScanningFactory>>{};
+    scanners.reserve(4);
+    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow1));
+    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow2));
+    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow3));
+    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow4));
 
     static cbox::Box& box = brewblox::make_box(
         std::move(systemObjects),
         {}, // platform factories
         objectStore,
         connections,
-        {});
+        std::move(scanners));
 
     static auto updater = RecurringTask(
         io, asio::chrono::milliseconds(10),
