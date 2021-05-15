@@ -55,9 +55,9 @@ private:
 
         disp_drv.buffer = &disp_buf1;
         disp_drv.flush_cb = Graphics::monitor_flush;
-        disp_drv.hor_res = 320;
-        disp_drv.ver_res = 480;
-        disp_drv.rotated = LV_DISP_ROT_90;
+        disp_drv.hor_res = 480;
+        disp_drv.ver_res = 320;
+        disp_drv.rotated = LV_DISP_ROT_NONE;
 
         static lv_disp_t* disp;
         disp = lv_disp_drv_register(&disp_drv);

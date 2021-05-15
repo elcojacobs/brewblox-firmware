@@ -111,7 +111,7 @@ void TFT035::init()
 
     writeCmd(MADCTL); //Memory Access
 
-    write(0xE8);
+    write(0b00101000);
 
     writeCmd(COLMOD); // Interface Pixel Format
     write(0x66);      //18 bit
@@ -127,7 +127,7 @@ void TFT035::init()
 
     writeCmd(DISCTRL); //Display Function Control  RGB/MCU Interface Control
     write(0x02);       //MCU
-    write(0x02);       //Source,Gate scan dieection
+    write(0x02);       //Source,Gate scan direction
 
     writeCmd(SETIMAGE); // Set Image Function
     write(0x00);        // Disable 24 bit data
