@@ -3,22 +3,20 @@
 
 // #include "SDCard.hpp"
 #include "DS248x.hpp"
-#include "OneWire.h"
-#include "network/network.hpp"
-#include <asio.hpp>
-
 #include "ExpOwGpio.hpp"
+#include "OneWire.h"
 #include "brewblox_esp.hpp"
+#include "graphics.hpp"
 #include "hal/hal_delay.h"
+#include "lvgl.h"
 #include "network/BufferedConnection.hpp"
 #include "network/CboxConnection.hpp"
 #include "network/CboxConnectionSource.hpp"
 #include "network/CboxServer.hpp"
-#include "graphics.hpp"
-#include "hal/hal_delay.h"
-#include "lvgl.h"
+#include "network/network.hpp"
 #include "widgets.hpp"
 #include <algorithm>
+#include <asio.hpp>
 #include <esp_heap_caps.h>
 #include <esp_log.h>
 
@@ -80,7 +78,8 @@ int main(int /*argc*/, char** /*argv*/)
     // OneWire ow3(oneWire3);
 
     while (true) {
-        lv_tick_inc(1); // This must be set to the time it took!
+        lv_obj_invalidate(graphics.grid); // keep writing full display for testing
+        lv_tick_inc(1);                   // This must be set to the time it took!
         lv_task_handler();
         //     OneWireAddress a;
         //     std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
@@ -93,7 +92,8 @@ int main(int /*argc*/, char** /*argv*/)
         //     }
         //     // exp1.gpio_status();
         //     // exp1.gpio_test();
-        hal_delay_ms(1);
+        hal_delay_ms(100);
+        // TODO: limit on DMA queue? Out of memory possible if display data is sent much faster than SPI can process?
     }
 
     asio::io_context io;

@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "esp_heap_caps.h" // todo: move to platform cpp
+#include <cstring>
 #include <functional>
 #include <hal/hal_delay.h>
 #include <memory>
@@ -27,13 +29,20 @@ using hal_spi_err_t = int32_t;
 
 class SpiDeviceHandle;
 
+enum class SpiDataType {
+    POINTER,
+    MALLOCED_POINTER,
+    VALUE,
+};
+
 struct SpiTransaction {
     uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
     size_t tx_len = 0;
     size_t rx_len = 0;
     void* user_cb_data = nullptr;
-    bool needsDelete = false;
+    SpiDataType txDataType = SpiDataType::POINTER;
+    SpiDataType userDataType = SpiDataType::POINTER;
     ~SpiTransaction()
     {
     }
@@ -84,43 +93,105 @@ struct SpiDevice {
     hal_spi_err_t init();
     void deinit();
 
-    hal_spi_err_t write(const std::vector<uint8_t>& values, void* userData = nullptr, uint32_t timeout = 0xffffffff)
+    template <typename T>
+    void set_user(SpiTransaction& t, T&& userData)
+    {
+        if (sizeof(T) <= 4) {
+            memcpy(&t.user_cb_data, &userData, sizeof(T));
+            t.userDataType = SpiDataType::VALUE;
+        } else {
+            t.user_cb_data = heap_caps_malloc(sizeof(T), MALLOC_CAP_DMA);
+            *reinterpret_cast<T*>(t.user_cb_data) = userData;
+            t.userDataType = SpiDataType::MALLOCED_POINTER;
+        }
+    }
+
+    template <typename T>
+    hal_spi_err_t write(const std::vector<uint8_t>& values, T userData)
     {
         SpiTransaction t{
-            .tx_data = const_cast<uint8_t*>(values.data()),
+            .tx_data = nullptr,
             .rx_data = nullptr,
             .tx_len = values.size(),
             .rx_len = 0,
-            .user_cb_data = userData,
-            .needsDelete = false,
+            .user_cb_data = nullptr,
+            .txDataType = SpiDataType::POINTER,
+            .userDataType = SpiDataType::POINTER,
         };
-        return transfer_impl(t, timeout, false);
+
+        if (t.tx_len <= 4) {
+            memcpy(&t.tx_data, values.data(), t.tx_len);
+            t.txDataType = SpiDataType::VALUE;
+        } else {
+            t.tx_data = const_cast<uint8_t*>(values.data());
+        }
+
+        set_user(t, std::move(userData));
+
+        return transfer_impl(t, false);
     }
-    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, void* userData = nullptr, uint32_t timeout = 0xffffffff)
+
+    template <typename T, size_t N, std::enable_if_t<N <= 4, int> = 0>
+    hal_spi_err_t write(const std::array<uint8_t, N>& values, T userData, bool dma)
+    {
+        SpiTransaction t{
+            .tx_data = nullptr,
+            .rx_data = nullptr,
+            .tx_len = values.size(),
+            .rx_len = 0,
+            .user_cb_data = nullptr,
+            .txDataType = SpiDataType::VALUE,
+            .userDataType = SpiDataType::POINTER,
+        };
+
+        memcpy(&t.tx_data, values.data(), t.tx_len);
+
+        set_user(t, std::move(userData));
+
+        return transfer_impl(t, dma);
+    }
+
+    template <typename T>
+    hal_spi_err_t write(const uint8_t* data, size_t size, T userData, bool dma = false)
     {
         SpiTransaction t{
             .tx_data = const_cast<uint8_t*>(data),
             .rx_data = nullptr,
             .tx_len = size,
             .rx_len = 0,
-            .user_cb_data = userData,
-            .needsDelete = true,
+            .user_cb_data = nullptr,
+            .txDataType = SpiDataType::MALLOCED_POINTER,
+            .userDataType = SpiDataType::POINTER,
         };
-        return transfer_impl(t, timeout, dma);
+
+        set_user(t, std::move(userData));
+        return transfer_impl(t, dma);
     }
-    hal_spi_err_t write(uint8_t value, void* userData = nullptr, uint32_t timeout = 0xffffffff)
+
+    template <typename T>
+    hal_spi_err_t write(uint8_t value, T userData, bool dma = false)
     {
-        uint8_t tx[1] = {value};
         SpiTransaction t{
-            .tx_data = tx,
+            .tx_data = nullptr,
             .rx_data = nullptr,
             .tx_len = 1,
             .rx_len = 0,
-            .user_cb_data = userData,
-            .needsDelete = false,
+            .user_cb_data = nullptr,
+            .txDataType = SpiDataType::VALUE,
+            .userDataType = SpiDataType::POINTER,
         };
-        return transfer_impl(t, timeout, false);
+        memcpy(&t.tx_data, &value, 1);
+
+        set_user(t, std::move(userData));
+
+        return transfer_impl(t, dma);
     }
+
+    hal_spi_err_t write(const std::vector<uint8_t>& values)
+    {
+        return write(values, nullptr);
+    }
+
     void aquire_bus()
     {
         if (hasBus) {
@@ -156,11 +227,21 @@ struct SpiDevice {
 
     void do_pre_cb(SpiTransaction& t)
     {
-        this->pre_cb(t);
+        if (pre_cb) {
+            this->pre_cb(t);
+        }
     }
     void do_post_cb(SpiTransaction& t)
     {
-        this->post_cb(t);
+        if (post_cb) {
+            this->post_cb(t);
+        }
+        if (t.userDataType == SpiDataType::MALLOCED_POINTER) {
+            free(t.user_cb_data);
+        }
+        if (t.txDataType == SpiDataType::MALLOCED_POINTER) {
+            free(t.tx_data);
+        }
     }
 
 private:
@@ -172,5 +253,5 @@ private:
     bool hasBus = false;
     void aquire_bus_impl();
     void release_bus_impl();
-    hal_spi_err_t transfer_impl(SpiTransaction transaction, uint32_t timeout = 0, bool dmaEnabled = false);
+    hal_spi_err_t transfer_impl(SpiTransaction transaction, bool dmaEnabled = false);
 };

@@ -12,13 +12,8 @@ struct SpiHost {
 struct CallBackArg {
     SpiDevice* dev;
     SpiTransaction t;
-    ~CallBackArg()
-    {
-        if (t.needsDelete) {
-            free((void*)this->t.tx_data);
-        }
-    }
 };
+
 void IRAM_ATTR pre_callback(spi_transaction_t* trans)
 {
     // Get the real transaction and the spidevice from the user data.
@@ -37,8 +32,8 @@ void IRAM_ATTR post_callback(spi_transaction_t* trans)
 {
     auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
     cbarg->dev->do_post_cb(cbarg->t);
-    delete cbarg;
-    // free(trans); // Check this
+    free(trans->user);
+    free(trans);
 }
 
 SpiHost spiHosts[1]
@@ -51,7 +46,7 @@ SpiHost spiHosts[1]
              .quadwp_io_num = -1,
              .quadhd_io_num = -1,
              .max_transfer_sz = 0,
-             .flags = SPICOMMON_BUSFLAG_MASTER,
+             .flags = SPICOMMON_BUSFLAG_MASTER, // investigate ESP_INTR_FLAG_IRAM flag
              .intr_flags = 0},
         }};
 
@@ -64,7 +59,7 @@ spi_device_t* get_platform_ptr(SpiDevice* dev)
 hal_spi_err_t SpiDevice::init()
 {
     auto spi_host = spiHosts[this->spi_idx];
-    auto err = spi_bus_initialize(spi_host.handle, &spi_host.config, 1);
+    auto err = spi_bus_initialize(spi_host.handle, &spi_host.config, SPI_DMA_CH_AUTO);
     if (err != 0) {
         ESP_LOGE("SPI", "spi init error %d", err);
     }
@@ -104,27 +99,29 @@ void SpiDevice::deinit()
     }
 }
 
-hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, uint32_t timeout, bool dmaEnabled)
+hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, bool dmaEnabled)
 {
-    CallBackArg* cbarg = new (heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA)) CallBackArg{
-        .dev = this,
-        .t = transaction,
-    };
 
-    auto transToBe = spi_transaction_t{
-        .flags = 0,
+    spi_transaction_t* trans = static_cast<spi_transaction_t*>(heap_caps_malloc(sizeof(spi_transaction_t), MALLOC_CAP_DMA));
+
+    *trans = spi_transaction_t{
+        .flags = transaction.txDataType == SpiDataType::VALUE ? uint32_t{SPI_TRANS_USE_TXDATA} : uint32_t{0},
         .cmd = 0,
         .addr = 0,
         .length = transaction.tx_len * 8,
         .rxlength = 0,
-        .user = cbarg,
+        .user = heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA),
         .tx_buffer = static_cast<const void*>(transaction.tx_data),
         .rx_buffer = nullptr,
     };
-    spi_transaction_t* trans = new (heap_caps_malloc(sizeof(spi_transaction_t), MALLOC_CAP_DMA)) spi_transaction_t(transToBe);
+
+    *static_cast<CallBackArg*>(trans->user) = CallBackArg{
+        .dev = this,
+        .t = std::move(transaction),
+    };
 
     if (dmaEnabled) {
-        auto a = spi_device_queue_trans(get_platform_ptr(this), trans, timeout);
+        auto a = spi_device_queue_trans(get_platform_ptr(this), trans, portMAX_DELAY);
         return a;
     }
     return spi_device_transmit(get_platform_ptr(this), trans);

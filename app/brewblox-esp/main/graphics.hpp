@@ -1,9 +1,10 @@
 #include "TFT035.hpp"
+#include "esp_log.h"
 #include "lvgl.h"
 
 class Graphics {
 public:
-    lv_obj_t* grid;
+    lv_obj_t* grid = nullptr;
 
     static Graphics& getInstance()
     {
@@ -20,16 +21,17 @@ public:
 
         uint8_t* buffer = static_cast<uint8_t*>(malloc(size * 3 * sizeof(uint8_t)));
 
-        auto iterator = buffer;
+        if (!buffer) {
+            ESP_LOGE("Flush", "out of memory");
+        }
 
-        std::for_each(color_p, color_p + size, [&](lv_color_t& color) {
-            *iterator = color.ch.red << 3;
-            iterator++;
-            *iterator = color.ch.green << 2;
-            iterator++;
-            *iterator = color.ch.blue << 3;
-            iterator++;
-        });
+        auto p_buf = buffer;
+        for (auto c = color_p; c < color_p + size; c++) {
+            *p_buf++ = c->ch.red << 3;
+            *p_buf++ = c->ch.green << 2;
+            *p_buf++ = c->ch.blue << 3;
+        }
+
         getInstance().display.dmaWrite(buffer, size * 3, true);
         lv_disp_flush_ready(disp_drv);
     }
