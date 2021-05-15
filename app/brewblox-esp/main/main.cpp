@@ -5,6 +5,7 @@
 #include "DS248x.hpp"
 #include "ExpOwGpio.hpp"
 #include "OneWire.h"
+#include "RecurringTask.hpp"
 #include "brewblox_esp.hpp"
 #include "graphics.hpp"
 #include "hal/hal_delay.h"
@@ -19,6 +20,8 @@
 #include <asio.hpp>
 #include <esp_heap_caps.h>
 #include <esp_log.h>
+#include <iomanip>
+#include <sstream>
 
 extern "C" {
 #ifdef ESP_PLATFORM
@@ -77,29 +80,41 @@ int main(int /*argc*/, char** /*argv*/)
     // OneWire ow2(oneWire2);
     // OneWire ow3(oneWire3);
 
-    while (true) {
-        lv_obj_invalidate(graphics.grid); // keep writing full display for testing
-        lv_tick_inc(1);                   // This must be set to the time it took!
-        lv_task_handler();
-        //     OneWireAddress a;
-        //     std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
-        //     for (auto& ow : ows) {
-        //         ow->reset_search();
-        //         if (ow->search(a)) {
-        //             auto s = a.toString();
-        //             ESP_LOGI("OW", "%s", s.c_str());
-        //         }
-        //     }
-        //     // exp1.gpio_status();
-        //     // exp1.gpio_test();
-        hal_delay_ms(100);
-        // TODO: limit on DMA queue? Out of memory possible if display data is sent much faster than SPI can process?
-    }
+    // while (true) {
+    //     lv_obj_invalidate(graphics.grid); // keep writing full display for testing
+    //     lv_tick_inc(1);                   // This must be set to the time it took!
+    //     lv_task_handler();
+    //     //     OneWireAddress a;
+    //     //     std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
+    //     //     for (auto& ow : ows) {
+    //     //         ow->reset_search();
+    //     //         if (ow->search(a)) {
+    //     //             auto s = a.toString();
+    //     //             ESP_LOGI("OW", "%s", s.c_str());
+    //     //         }
+    //     //     }
+    //     //     // exp1.gpio_status();
+    //     //     // exp1.gpio_test();
+    //     hal_delay_ms(100);
+    //     // TODO: limit on DMA queue? Out of memory possible if display data is sent much faster than SPI can process?
+    // }
 
     asio::io_context io;
     static auto& box = makeBrewBloxBox(io);
 
     static CboxServer server(io, 8332, box);
+
+    static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100), RecurringTask::IntervalType::FROM_EXPIRY,
+                                              [&]() {
+                                                  //   auto tick = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
+                                                  // lv_obj_invalidate(graphics.grid); // keep writing full display for testing
+                                                  lv_tick_inc(100); // This must be set to the time it took!
+                                                  lv_task_handler();
+                                                  //   auto tock = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
+                                                  //   uint32_t duration = tock - tick;
+                                                  //   ESP_LOGE("display tick", "duration  %u", duration);
+                                              });
+    displayTicker.start();
 
     io.run();
 

@@ -19,6 +19,7 @@
 
 #include "AppTicks.h"
 #include "Logger.h"
+#include "RecurringTask.hpp"
 #include "blox/SysInfoBlock.h"
 #include "blox/stringify.h"
 #include "brewblox.hpp"
@@ -92,15 +93,16 @@ makeBrewBloxBox(asio::io_context& io)
         connections,
         {});
 
-    auto timer = std::make_shared<asio::steady_timer>(io, asio::chrono::seconds(1));
-    timer->async_wait(std::bind(everySecond, _1,
-                                timer,
-                                0));
-
-    auto update_timer = std::make_shared<asio::steady_timer>(io, asio::chrono::milliseconds(1));
-    update_timer->async_wait(std::bind(boxUpdate, _1,
-                                       update_timer,
-                                       &box));
+    static auto updater = RecurringTask(
+        io, asio::chrono::milliseconds(10),
+        RecurringTask::IntervalType::FROM_EXECUTION,
+        []() {
+            static const auto start = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
+            const auto now = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
+            uint32_t millisSinceBoot = now - start;
+            box.update(millisSinceBoot);
+        });
+    updater.start();
 
     return box;
 }
