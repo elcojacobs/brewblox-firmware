@@ -3,9 +3,10 @@
 
 // #include "SDCard.hpp"
 #include "DS248x.hpp"
-#include "ExpOwGpio.hpp"
+#include "ExpansionGpio.hpp"
 #include "OneWire.h"
 #include "RecurringTask.hpp"
+#include "TempSensor.h"
 #include "brewblox_esp.hpp"
 #include "graphics.hpp"
 #include "hal/hal_delay.h"
@@ -42,79 +43,78 @@ int main(int /*argc*/, char** /*argv*/)
     hal_delay_ms(100);
     network_init();
 
-    // SDCard::test();
-    // auto oneWire1 = DS248x(0);
-    // auto oneWire2 = DS248x(1);
-    // auto oneWire3 = DS248x(2);
-    // auto exp1 = ExpOwGpio(0);
-    ESP_LOGI("Display", "initing");
+    static auto graphics = Graphics::getInstance();
+    static std::array<NormalWidget, 5> sensorWidgets{{
+        NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),
+        NormalWidget(graphics.grid, "Widget 2", "Blond", "21.0"),
+        NormalWidget(graphics.grid, "Widget 3", "Lager", "5.1"),
+        NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
+        NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
+    }};
 
-    auto graphics = Graphics::getInstance();
-    auto widget1 = NormalWidget(graphics.grid, "Widget 1", "IPA", "10%");
-    auto widget2 = NormalWidget(graphics.grid, "Widget 2", "Blond", "20%");
-    auto widget3 = NormalWidget(graphics.grid, "Widget 3", "Lager", "30%");
-    auto widget4 = NormalWidget(graphics.grid, "Widget 4", "Stout", "40%");
-    auto widget5 = NormalWidget(graphics.grid, "Widget 5", "Wit", "50%");
-    auto widget6 = PidWidget(graphics.grid);
-
-    widget4.setValue1("Carlosbier");
+    static auto widget6 = PidWidget(graphics.grid);
 
     ESP_LOGI("Display", "Image written");
-    // if (oneWire1.init()) {
-    //     ESP_LOGI("OW1", "ready");
-    // } else {
-    //     ESP_LOGE("OW1", "not ready");
-    // }
-    // if (oneWire2.init()) {
-    //     ESP_LOGI("OW2", "ready");
-    // } else {
-    //     ESP_LOGE("OW2", "not ready");
-    // }
-    // if (oneWire3.init()) {
-    //     ESP_LOGI("OW3", "ready");
-    // } else {
-    //     ESP_LOGE("OW3", "not ready");
-    //}
-
-    // OneWire ow1(oneWire1);
-    // OneWire ow2(oneWire2);
-    // OneWire ow3(oneWire3);
-
-    // while (true) {
-    //     lv_obj_invalidate(graphics.grid); // keep writing full display for testing
-    //     lv_tick_inc(1);                   // This must be set to the time it took!
-    //     lv_task_handler();
-    //     //     OneWireAddress a;
-    //     //     std::array<OneWire*, 3> ows = {&ow1, &ow2, &ow3};
-    //     //     for (auto& ow : ows) {
-    //     //         ow->reset_search();
-    //     //         if (ow->search(a)) {
-    //     //             auto s = a.toString();
-    //     //             ESP_LOGI("OW", "%s", s.c_str());
-    //     //         }
-    //     //     }
-    //     //     // exp1.gpio_status();
-    //     //     // exp1.gpio_test();
-    //     hal_delay_ms(100);
-    //     // TODO: limit on DMA queue? Out of memory possible if display data is sent much faster than SPI can process?
-    // }
 
     asio::io_context io;
     static auto& box = makeBrewBloxBox(io);
 
+    static std::array<cbox::CboxPtr<TempSensor>, 5> sensors{{
+        box.makeCboxPtr<TempSensor>(cbox::obj_id_t(100)),
+        box.makeCboxPtr<TempSensor>(cbox::obj_id_t(101)),
+        box.makeCboxPtr<TempSensor>(cbox::obj_id_t(102)),
+        box.makeCboxPtr<TempSensor>(cbox::obj_id_t(103)),
+        box.makeCboxPtr<TempSensor>(cbox::obj_id_t(104)),
+    }};
+
     static CboxServer server(io, 8332, box);
 
-    static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100), RecurringTask::IntervalType::FROM_EXPIRY,
-                                              [&]() {
+    static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100),
+                                              RecurringTask::IntervalType::FROM_EXPIRY,
+                                              []() {
+                                                  auto w_it = sensorWidgets.begin();
+                                                  for (auto& s_lookup : sensors) {
+                                                      if (auto s = s_lookup.const_lock()) {
+                                                          if (s->valid()) {
+                                                              auto v = s->value();
+                                                              auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
+                                                              w_it->setValue2(temp_str);
+                                                          } else {
+                                                              w_it->setValue2("--.-");
+                                                          }
+                                                      } else {
+                                                          w_it->setValue2("-");
+                                                      }
+                                                      w_it++;
+                                                  }
+
                                                   //   auto tick = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
-                                                  // lv_obj_invalidate(graphics.grid); // keep writing full display for testing
-                                                  lv_tick_inc(100); // This must be set to the time it took!
+                                                  Graphics::getInstance().aquire_spi();
+                                                  lv_obj_invalidate(graphics.grid); // keep writing full display for testing
+                                                  lv_tick_inc(100);                 // This must be set to the time it took!
                                                   lv_task_handler();
+                                                  Graphics::getInstance().release_spi();
                                                   //   auto tock = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
                                                   //   uint32_t duration = tock - tick;
                                                   //   ESP_LOGE("display tick", "duration  %u", duration);
                                               });
     displayTicker.start();
+
+    static auto gpioTester = RecurringTask(io, asio::chrono::milliseconds(10000),
+                                           RecurringTask::IntervalType::FROM_EXPIRY,
+                                           []() {
+                                               static ExpansionGpio* exp1 = new ExpansionGpio(0);
+                                               static bool active = false;
+                                               exp1->test();
+                                               exp1->drv_status();
+                                               if (active) {
+                                                   exp1->writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_HIGH);
+                                               } else {
+                                                   exp1->writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_LOW);
+                                               }
+                                               active = !active;
+                                           });
+    gpioTester.start();
 
     io.run();
 

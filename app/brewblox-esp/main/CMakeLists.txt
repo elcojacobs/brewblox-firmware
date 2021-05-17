@@ -7,6 +7,7 @@ set(srcs
   # App.cpp
   AppTicks.cpp
   brewblox_esp.cpp
+  ExpansionGpio.cpp
   TimerInterrupts.cpp
   network/CboxConnection.cpp
   network/CboxConnectionManager.cpp

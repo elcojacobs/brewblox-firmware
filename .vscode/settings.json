@@ -52,6 +52,11 @@
     "future": "cpp",
     "*.ipp": "cpp",
     "esp_wifi.h": "c",
-    "netfwd": "cpp"
+    "netfwd": "cpp",
+    "spi_common_internal.h": "c",
+    "iomanip": "cpp",
+    "list": "cpp",
+    "unordered_set": "cpp",
+    "mutex": "cpp"
   }
 }

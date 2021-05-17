@@ -27,10 +27,11 @@ void Spark4::hw_init()
     esp_event_loop_create_default();
     gpio_install_isr_service(0);
     hal_i2c_master_init();
+    hal_spi_host_init(0);
 
     gpio_set_direction(PIN_NUM_SD_CS, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_TFT_CS, GPIO_MODE_OUTPUT);
-    gpio_set_direction(PIN_NUM_MISO, GPIO_MODE_OUTPUT);
+    gpio_set_direction(PIN_NUM_MISO, GPIO_MODE_INPUT);
     gpio_set_direction(PIN_NUM_MOSI, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_CLK, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);

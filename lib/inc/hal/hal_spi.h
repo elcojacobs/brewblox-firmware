@@ -20,6 +20,7 @@
 #pragma once
 
 #include "esp_heap_caps.h" // todo: move to platform cpp
+#include "esp_log.h"
 #include <cstring>
 #include <functional>
 #include <hal/hal_delay.h>
@@ -43,9 +44,6 @@ struct SpiTransaction {
     void* user_cb_data = nullptr;
     SpiDataType txDataType = SpiDataType::POINTER;
     SpiDataType userDataType = SpiDataType::POINTER;
-    ~SpiTransaction()
-    {
-    }
 };
 
 struct SpiDevice {
@@ -93,6 +91,10 @@ struct SpiDevice {
     hal_spi_err_t init();
     void deinit();
 
+    void set_user(SpiTransaction& t, nullptr_t)
+    {
+    }
+
     template <typename T>
     void set_user(SpiTransaction& t, T&& userData)
     {
@@ -106,11 +108,12 @@ struct SpiDevice {
         }
     }
 
+    // without DMA, vector will not be destructed during transfer
     template <typename T>
     hal_spi_err_t write(const std::vector<uint8_t>& values, T userData)
     {
         SpiTransaction t{
-            .tx_data = nullptr,
+            .tx_data = const_cast<uint8_t*>(values.data()),
             .rx_data = nullptr,
             .tx_len = values.size(),
             .rx_len = 0,
@@ -119,24 +122,19 @@ struct SpiDevice {
             .userDataType = SpiDataType::POINTER,
         };
 
-        if (t.tx_len <= 4) {
-            memcpy(&t.tx_data, values.data(), t.tx_len);
-            t.txDataType = SpiDataType::VALUE;
-        } else {
-            t.tx_data = const_cast<uint8_t*>(values.data());
-        }
-
         set_user(t, std::move(userData));
 
         return transfer_impl(t, false);
     }
 
+    // with of without DMA, optimized for small transfer under 4 bytes
+    // copied to point address location, so no distruction needed
     template <typename T, size_t N, std::enable_if_t<N <= 4, int> = 0>
     hal_spi_err_t write(const std::array<uint8_t, N>& values, T userData, bool dma)
     {
         SpiTransaction t{
-            .tx_data = nullptr,
-            .rx_data = nullptr,
+            .tx_data = 0x0,
+            .rx_data = 0x0,
             .tx_len = values.size(),
             .rx_len = 0,
             .user_cb_data = nullptr,
@@ -144,18 +142,46 @@ struct SpiDevice {
             .userDataType = SpiDataType::POINTER,
         };
 
-        memcpy(&t.tx_data, values.data(), t.tx_len);
+        memcpy(&(t.tx_data), values.data(), t.tx_len);
 
         set_user(t, std::move(userData));
 
         return transfer_impl(t, dma);
     }
 
-    template <typename T>
-    hal_spi_err_t write(const uint8_t* data, size_t size, T userData, bool dma = false)
+    template <size_t N, std::enable_if_t<N <= 4, int> = 0>
+    hal_spi_err_t write(const std::array<uint8_t, N>& values)
+    {
+        return write(values, nullptr, false);
+    }
+
+    // without DMA, inputs are valid during transfer
+    template <size_t N>
+    hal_spi_err_t write_and_read(
+        const std::array<uint8_t, N>& toDevice,
+        std::array<uint8_t, N>& fromDevice)
     {
         SpiTransaction t{
-            .tx_data = const_cast<uint8_t*>(data),
+            .tx_data = const_cast<uint8_t*>(toDevice.data()),
+            .rx_data = fromDevice.data(),
+            .tx_len = N,
+            .rx_len = N,
+            .user_cb_data = nullptr,
+            .txDataType = SpiDataType::POINTER,
+            .userDataType = SpiDataType::POINTER,
+        };
+
+        auto ec = transfer_impl(t, false);
+
+        return ec;
+    }
+
+    // data is pointer allocated with new that should be destruced when done
+    template <typename T>
+    hal_spi_err_t write(uint8_t* data, size_t size, T userData, bool dma = false)
+    {
+        SpiTransaction t{
+            .tx_data = data,
             .rx_data = nullptr,
             .tx_len = size,
             .rx_len = 0,
@@ -168,12 +194,31 @@ struct SpiDevice {
         return transfer_impl(t, dma);
     }
 
+    // data is pointer to data that should not be destructed
+    template <typename T>
+    hal_spi_err_t write(const uint8_t* data, size_t size, T userData, bool dma = false)
+    {
+        SpiTransaction t{
+            .tx_data = const_cast<uint8_t*>(data),
+            .rx_data = nullptr,
+            .tx_len = size,
+            .rx_len = 0,
+            .user_cb_data = nullptr,
+            .txDataType = SpiDataType::POINTER,
+            .userDataType = SpiDataType::POINTER,
+        };
+
+        set_user(t, std::move(userData));
+        return transfer_impl(t, dma);
+    }
+
+    // single byte transer, store in pointer location
     template <typename T>
     hal_spi_err_t write(uint8_t value, T userData, bool dma = false)
     {
         SpiTransaction t{
-            .tx_data = nullptr,
-            .rx_data = nullptr,
+            .tx_data = 0x0,
+            .rx_data = 0x0,
             .tx_len = 1,
             .rx_len = 0,
             .user_cb_data = nullptr,
@@ -194,32 +239,26 @@ struct SpiDevice {
 
     void aquire_bus()
     {
-        if (hasBus) {
-            return;
-        } else {
-            aquire_bus_impl();
-            hasBus = true;
-            if (onAquire) {
-                onAquire();
-            }
-            hal_delay_us(20);
+        aquire_bus_impl(); // requirement: can be called multiple times
+        if (!hasBus && onAquire) {
+            onAquire();
         }
+        hasBus = true;
     }
 
     void release_bus()
     {
-        release_bus_impl();
-        hasBus = false;
-        if (onRelease) {
+        release_bus_impl(); // requirement: waits for ongoing transactions
+        if (hasBus && onRelease) {
             onRelease();
         }
-        hal_delay_us(20);
+        hasBus = false;
     }
 
-    inline bool has_bus()
-    {
-        return hasBus;
-    }
+    // inline bool has_bus()
+    // {
+    //     return hasBus;
+    // }
 
     bool sense_miso();
 
@@ -236,6 +275,7 @@ struct SpiDevice {
         if (post_cb) {
             this->post_cb(t);
         }
+
         if (t.userDataType == SpiDataType::MALLOCED_POINTER) {
             free(t.user_cb_data);
         }
@@ -253,5 +293,7 @@ private:
     bool hasBus = false;
     void aquire_bus_impl();
     void release_bus_impl();
-    hal_spi_err_t transfer_impl(SpiTransaction transaction, bool dmaEnabled = false);
+    hal_spi_err_t transfer_impl(SpiTransaction transaction, bool dmaEnabled);
 };
+
+hal_spi_err_t hal_spi_host_init(uint8_t idx);

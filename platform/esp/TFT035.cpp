@@ -23,7 +23,9 @@ TFT035::TFT035()
         )
     , dc(2)
 {
+    spi.init();
 }
+
 void TFT035::ClearScreen(unsigned int bColor)
 {
     unsigned int i, j;
@@ -63,7 +65,6 @@ hal_spi_err_t TFT035::write(uint8_t cmd)
 
 void TFT035::init()
 {
-    spi.init();
     writeCmd(PGAMCTRL);
     write({0x00,
            0x03,
@@ -298,4 +299,14 @@ bool TFT035::dmaWrite(uint8_t tx_val, bool dc)
     spi.write(tx_val, dc, true);
 
     return true;
+}
+
+void TFT035::aquire_spi()
+{
+    spi.aquire_bus();
+}
+
+void TFT035::release_spi()
+{
+    spi.release_bus();
 }

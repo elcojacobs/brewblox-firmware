@@ -16,17 +16,11 @@ struct CallBackArg {
 
 void IRAM_ATTR pre_callback(spi_transaction_t* trans)
 {
-    // Get the real transaction and the spidevice from the user data.
+    // Get the hal transaction and the spidevice from the user data.
     auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
 
-    // Run the pre callback with the real transaction.
+    // Run the pre callback with the hal transaction.
     cbarg->dev->do_pre_cb(cbarg->t);
-
-    // Transform the real transaction into the hal transaction to be send.
-    trans->length = cbarg->t.tx_len * 8;
-    trans->rxlength = cbarg->t.rx_len * 8;
-    trans->tx_buffer = reinterpret_cast<const void*>(cbarg->t.tx_data);
-    trans->rx_buffer = reinterpret_cast<void*>(cbarg->t.rx_data);
 }
 void IRAM_ATTR post_callback(spi_transaction_t* trans)
 {
@@ -59,10 +53,6 @@ spi_device_t* get_platform_ptr(SpiDevice* dev)
 hal_spi_err_t SpiDevice::init()
 {
     auto spi_host = spiHosts[this->spi_idx];
-    auto err = spi_bus_initialize(spi_host.handle, &spi_host.config, SPI_DMA_CH_AUTO);
-    if (err != 0) {
-        ESP_LOGE("SPI", "spi init error %d", err);
-    }
 
     spi_device_interface_config_t devcfg = {
         .command_bits = 0,
@@ -78,16 +68,24 @@ hal_spi_err_t SpiDevice::init()
         .flags = 0,
         .queue_size = this->queueSize,
         .pre_cb = pre_callback,
-
         .post_cb = post_callback};
 
-    spi_device_t* dev_ptr
-        = nullptr;
-    err = spi_bus_add_device(spi_host.handle, &devcfg, &dev_ptr);
+    spi_device_t* dev_ptr = nullptr;
+    auto err = spi_bus_add_device(spi_host.handle, &devcfg, &dev_ptr);
     if (err == ESP_OK) {
         this->platform_device_ptr = dev_ptr;
     } else {
         ESP_LOGE("SPI", "spi device init error %d", err);
+    }
+    return err;
+}
+
+hal_spi_err_t hal_spi_host_init(uint8_t idx)
+{
+    auto spi_host = spiHosts[idx];
+    auto err = spi_bus_initialize(spi_host.handle, &spi_host.config, SPI_DMA_CH_AUTO);
+    if (err != 0) {
+        ESP_LOGE("SPI", "spi init error %d", err);
     }
     return err;
 }
@@ -108,11 +106,11 @@ hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, bool dmaEnabl
         .flags = transaction.txDataType == SpiDataType::VALUE ? uint32_t{SPI_TRANS_USE_TXDATA} : uint32_t{0},
         .cmd = 0,
         .addr = 0,
-        .length = transaction.tx_len * 8,
-        .rxlength = 0,
+        .length = transaction.tx_len * 8, // esp platform wants size in bits
+        .rxlength = transaction.rx_len * 8,
         .user = heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA),
-        .tx_buffer = static_cast<const void*>(transaction.tx_data),
-        .rx_buffer = nullptr,
+        .tx_buffer = const_cast<uint8_t*>(transaction.tx_data),
+        .rx_buffer = transaction.rx_data,
     };
 
     *static_cast<CallBackArg*>(trans->user) = CallBackArg{
@@ -121,8 +119,7 @@ hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, bool dmaEnabl
     };
 
     if (dmaEnabled) {
-        auto a = spi_device_queue_trans(get_platform_ptr(this), trans, portMAX_DELAY);
-        return a;
+        return spi_device_queue_trans(get_platform_ptr(this), trans, portMAX_DELAY);
     }
     return spi_device_transmit(get_platform_ptr(this), trans);
 }

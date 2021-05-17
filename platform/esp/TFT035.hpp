@@ -14,6 +14,10 @@ public:
     hal_spi_err_t writeCmd(uint8_t cmd);
     hal_spi_err_t write(uint8_t cmd);
 
+    // todo: spi should be internal
+    void aquire_spi();
+    void release_spi();
+
     void setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
     void init();
     void DispRGBGray();

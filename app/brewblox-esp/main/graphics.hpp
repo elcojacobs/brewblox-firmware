@@ -40,10 +40,22 @@ public:
     {
     }
 
+    // temporary hack
+    void aquire_spi()
+    {
+        display.aquire_spi();
+    }
+
+    void release_spi()
+    {
+        display.release_spi();
+    }
+
 private:
     Graphics()
     {
         // kijken naar https://forum.lvgl.io/t/setting-16-bit-color-value-in-set-px-cb/1029/2 voor meer speed
+        display.aquire_spi();
         display.init();
         lv_init();
         static lv_disp_buf_t disp_buf1;
@@ -62,6 +74,7 @@ private:
         static lv_disp_t* disp;
         disp = lv_disp_drv_register(&disp_drv);
         gridInit();
+        display.release_spi();
     }
 
     void gridInit()
@@ -71,5 +84,6 @@ private:
         lv_cont_set_fit(grid, LV_FIT_PARENT);
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
     }
+
     TFT035 display = TFT035();
 };

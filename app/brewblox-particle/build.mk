@@ -149,5 +149,5 @@ PROTO_DATE = $(shell cd $(SOURCE_PATH)/brewblox/blox/proto; git log -1 --format=
 $(info using $(GIT_DATE) as protocol date)
 CFLAGS += -DPROTO_DATE="$(PROTO_DATE)"
 
-COMPILER_VERSION = $(shell $(CC) --version) 
+COMPILER_VERSION = $(shell $(CC) -dumpfullversion) 
 $(info using compiler: $(COMPILER_VERSION))
