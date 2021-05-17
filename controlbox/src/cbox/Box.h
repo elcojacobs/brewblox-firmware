@@ -68,6 +68,9 @@ private:
     CboxError loadSingleObjectFromStorage(const storage_id_t& id, RegionDataIn& objInStorage);
 
 public:
+    // temporary for testing
+    void discoverNewObjects();
+
     Box(const ObjectFactory& _factory,
         ObjectContainer& _objects,
         ObjectStorage& _storage,

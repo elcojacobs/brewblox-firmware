@@ -590,6 +590,18 @@ void Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
     }
 }
 
+
+void Box::discoverNewObjects()
+{
+    for (auto& scanner : scanners) {
+        scanner->reset();
+        auto newId = obj_id_t(0);
+        do {
+            newId = scanner->scanAndAdd(objects);
+        } while (newId);
+    }
+}
+
 /*
  * Processes the command request from a data stream.
  * @param dataIn The request data. The first byte is the command id. The stream is assumed to contain at least
