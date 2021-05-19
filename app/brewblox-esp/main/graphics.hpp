@@ -15,7 +15,10 @@ public:
 
     static void monitor_flush(lv_disp_drv_t* disp_drv, const lv_area_t* area, lv_color_t* color_p)
     {
-        auto size = area->x2 - area->x1 + area->y2 - area->y2;
+        auto size = (area->x2 - area->x1 + 1) * (area->y2 - area->y1 + 1);
+        if (!size) {
+            ESP_LOGE("Flush", "Writing zero pixels");
+        }
 
         getInstance().display.setPos(area->x1, area->x2, area->y1, area->y2);
 
@@ -59,8 +62,8 @@ private:
         display.init();
         lv_init();
         static lv_disp_buf_t disp_buf1;
-        static lv_color_t buf1_1[480];
-        lv_disp_buf_init(&disp_buf1, buf1_1, NULL, 480);
+        static lv_color_t buf1_1[1200];
+        lv_disp_buf_init(&disp_buf1, buf1_1, NULL, 1200);
 
         static lv_disp_drv_t disp_drv;
         lv_disp_drv_init(&disp_drv);
