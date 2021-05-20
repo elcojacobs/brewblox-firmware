@@ -6,7 +6,7 @@
 #include <esp_log.h>
 #include <sys/time.h>
 
-TFT035::TFT035()
+TFT035::TFT035(std::function<void()> finishCallback)
     : spi(
         0, 20'000'000UL, 100, 4,
         SpiDevice::Mode::SPI_MODE0, SpiDevice::BitOrder::MSBFIRST,
@@ -19,9 +19,15 @@ TFT035::TFT035()
             // hal_gpio_write(dc, true);
 
         },
-        {} // POST
+        [&](SpiTransaction& t){
+            if (t.txDataType==SpiDataType::MALLOCED_POINTER) {
+            this->finishCallback();
+            }
+        } // POST
         )
+    , finishCallback(finishCallback)        
     , dc(2)
+
 {
     spi.init();
 }

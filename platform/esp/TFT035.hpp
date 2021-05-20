@@ -6,7 +6,7 @@
 class TFT035 {
 public:
     // al deze parameters hardcoded in de klasse
-    TFT035();
+    TFT035(std::function<void()> finishCallback);
     ~TFT035() = default;
 
     hal_spi_err_t writeCmd(const std::vector<uint8_t>& cmd);
@@ -53,6 +53,7 @@ public:
 
 private:
     SpiDevice spi;
+    std::function<void()> finishCallback;
     const hal_pin_t dc;
     uint8_t _status;
 };

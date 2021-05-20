@@ -280,7 +280,7 @@ struct SpiDevice {
             free(t.user_cb_data);
         }
         if (t.txDataType == SpiDataType::MALLOCED_POINTER) {
-            free(t.tx_data);
+            // free(t.tx_data);
         }
     }
 
