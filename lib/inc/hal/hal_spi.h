@@ -46,6 +46,7 @@ struct SpiTransaction {
     SpiDataType userDataType = SpiDataType::POINTER;
 };
 
+template<typename userType = bool>
 struct SpiDevice {
     enum Mode : uint8_t {
         SPI_MODE0 = 0x00,

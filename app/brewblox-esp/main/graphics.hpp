@@ -12,16 +12,16 @@ public:
 
         return instance;
     }
-    static void my_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa)
-    {
-        /* Write to the buffer as required for the display.
-        * Write only 1-bit for monochrome displays mapped vertically:*/
-        buf += (buf_w * y + x)*3;
-        *buf++ = color.ch.red << 3 ;
-        *buf++ = color.ch.green << 2;
-        *buf = color.ch.blue << 3;
+    // static void my_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa)
+    // {
+    //     /* Write to the buffer as required for the display.
+    //     * Write only 1-bit for monochrome displays mapped vertically:*/
+    //     buf += (buf_w * y + x)*3;
+    //     *buf++ = color.ch.red << 3 ;
+    //     *buf++ = color.ch.green << 2;
+    //     *buf = color.ch.blue << 3;
         
-    }
+    // }
 
     static void monitor_flush(lv_disp_drv_t* disp_drv, const lv_area_t* area, lv_color_t* color_p)
     {
@@ -31,24 +31,17 @@ public:
         }
 
         getInstance().display.setPos(area->x1, area->x2, area->y1, area->y2);
+        uint8_t* readPtr =  reinterpret_cast<uint8_t*>(color_p);
+        uint8_t* writePtr = reinterpret_cast<uint8_t*>(color_p);
 
-        // uint8_t* buffer = static_cast<uint8_t*>(malloc(size * 3 * sizeof(uint8_t)));
-
-        // if (!buffer) {
-        //     ESP_LOGE("Flush", "out of memory");
-        // }
-
-        // auto p_buf = buffer;
-        // for (auto c = color_p; c < color_p + size; c++) {
-        //     *p_buf++ = c->ch.red << 3;
-        //     *p_buf++ = c->ch.green << 2;
-        //     *p_buf++ = c->ch.blue << 3;
-        // }
+        for (auto index = 0; index<size; index++ ) {
+            memcpy(writePtr,readPtr,3);
+            readPtr+=4;
+            writePtr+=3;
+        }
 
         getInstance().display.dmaWrite(reinterpret_cast<uint8_t*>(color_p), size * 3, true);
-        // getInstance().display.dmaWrite(buffer, size * 3, true);
 
-        // lv_disp_flush_ready(disp_drv);
     }
 
     void handle()
@@ -74,9 +67,9 @@ private:
         display.init();
         lv_init();
         static lv_disp_buf_t disp_buf1;
-        static lv_color_t buf1_1[1200];
-        static lv_color_t buf1_2[1200];
-        lv_disp_buf_init(&disp_buf1, buf1_1, buf1_2, 800);
+        static lv_color_t buf1_1[480];
+        static lv_color_t buf1_2[480];
+        lv_disp_buf_init(&disp_buf1, buf1_1, buf1_2, 480);
 
         
         lv_disp_drv_init(&disp_drv);
@@ -86,7 +79,7 @@ private:
         disp_drv.hor_res = 320;
         disp_drv.ver_res = 480;
         disp_drv.rotated = LV_DISP_ROT_270;
-        disp_drv.set_px_cb = my_set_px_cb;
+        // disp_drv.set_px_cb = my_set_px_cb;
 
         static lv_disp_t* disp;
         disp = lv_disp_drv_register(&disp_drv);

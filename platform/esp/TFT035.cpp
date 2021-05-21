@@ -9,7 +9,7 @@
 TFT035::TFT035(std::function<void()> finishCallback)
     : spi(
         0, 20'000'000UL, 100, 4,
-        SpiDevice::Mode::SPI_MODE0, SpiDevice::BitOrder::MSBFIRST,
+        SpiDevice<>::Mode::SPI_MODE0, SpiDevice<>::BitOrder::MSBFIRST,
         []() {}, []() {},
         [&](SpiTransaction& t) { // PRE
             bool val;

@@ -89,7 +89,7 @@ int main(int /*argc*/, char** /*argv*/)
 
                                                     auto tick = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
                                                   Graphics::getInstance().aquire_spi();
-                                                //   lv_obj_invalidate(graphics.grid); // keep writing full display for testing
+                                                  lv_obj_invalidate(graphics.grid); // keep writing full display for testing
                                                   lv_tick_inc(100);                 // This must be set to the time it took!
                                                   lv_task_handler();
                                                   Graphics::getInstance().release_spi();

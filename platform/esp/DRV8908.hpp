@@ -57,6 +57,6 @@ public:
     }
 
 private:
-    SpiDevice spi;
+    SpiDevice<> spi;
     uint8_t _status;
 };

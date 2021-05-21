@@ -8,23 +8,28 @@ struct SpiHost {
     spi_host_device_t handle;
     spi_bus_config_t config;
 };
-
+namespace platform {
+namespace spi {
+template<typename T>
 struct CallBackArg {
-    SpiDevice* dev;
+    SpiDevice<T>* dev;
     SpiTransaction t;
 };
-
+// alles hierword freestanding
+template<typename T>
 void IRAM_ATTR pre_callback(spi_transaction_t* trans)
 {
     // Get the hal transaction and the spidevice from the user data.
-    auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
+    auto cbarg = reinterpret_cast<CallBackArg<T>*>(trans->user);
 
     // Run the pre callback with the hal transaction.
     cbarg->dev->do_pre_cb(cbarg->t);
 }
+
+template<typename T>
 void IRAM_ATTR post_callback(spi_transaction_t* trans)
 {
-    auto cbarg = reinterpret_cast<CallBackArg*>(trans->user);
+    auto cbarg = reinterpret_cast<CallBackArg<T>*>(trans->user);
     cbarg->dev->do_post_cb(cbarg->t);
     free(trans->user);
     free(trans);
@@ -44,13 +49,14 @@ SpiHost spiHosts[1]
              .intr_flags = 0},
         }};
 
-spi_device_t* get_platform_ptr(SpiDevice* dev)
+template <typename T>
+spi_device_t* get_platform_ptr(SpiDevice<T>* dev)
 {
     return static_cast<spi_device_t*>(dev->platform_device_ptr);
 }
 
 // platform dependent implementation of transfer functions
-hal_spi_err_t SpiDevice::init()
+hal_spi_err_t init()
 {
     auto spi_host = spiHosts[this->spi_idx];
 
@@ -90,14 +96,14 @@ hal_spi_err_t hal_spi_host_init(uint8_t idx)
     return err;
 }
 
-void SpiDevice::deinit()
+void deinit()
 {
     if (platform_device_ptr) {
         spi_bus_remove_device(get_platform_ptr(this));
     }
 }
 
-hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, bool dmaEnabled)
+hal_spi_err_t transfer_impl(SpiTransaction transaction, bool dmaEnabled)
 {
 
     spi_transaction_t* trans = static_cast<spi_transaction_t*>(heap_caps_malloc(sizeof(spi_transaction_t), MALLOC_CAP_DMA));
@@ -108,12 +114,12 @@ hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, bool dmaEnabl
         .addr = 0,
         .length = transaction.tx_len * 8, // esp platform wants size in bits
         .rxlength = transaction.rx_len * 8,
-        .user = heap_caps_malloc(sizeof(CallBackArg), MALLOC_CAP_DMA),
+        .user = heap_caps_malloc(sizeof(CallBackArg<T>), MALLOC_CAP_DMA),
         .tx_buffer = const_cast<uint8_t*>(transaction.tx_data),
         .rx_buffer = transaction.rx_data,
     };
 
-    *static_cast<CallBackArg*>(trans->user) = CallBackArg{
+    *static_cast<CallBackArg<T>*>(trans->user) = CallBackArg<T>{
         .dev = this,
         .t = std::move(transaction),
     };
@@ -124,18 +130,20 @@ hal_spi_err_t SpiDevice::transfer_impl(SpiTransaction transaction, bool dmaEnabl
     return spi_device_transmit(get_platform_ptr(this), trans);
 }
 
-void SpiDevice::aquire_bus_impl()
+void aquire_bus_impl()
 {
     spi_device_acquire_bus(get_platform_ptr(this), portMAX_DELAY); // only port max delay is supported currently
 }
 
-void SpiDevice::release_bus_impl()
+void release_bus_impl()
 {
     spi_device_release_bus(get_platform_ptr(this));
 }
 
-bool SpiDevice::sense_miso()
+bool sense_miso()
 {
     auto pin = gpio_num_t(spiHosts[this->spi_idx].config.miso_io_num);
     return gpio_get_level(pin) != 0;
+}
+}
 }
