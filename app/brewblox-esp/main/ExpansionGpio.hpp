@@ -2,6 +2,7 @@
 #include "IoArray.h"
 #include "TCA9538.hpp"
 #include "esp_err.h"
+#include "esp_log.h"
 #include "hal/hal_delay.h"
 #include <array>
 
@@ -36,7 +37,7 @@ public:
 
     void drv_status();
 
-    void test();
+    void selfTest();
 
     virtual bool supportsFastIo()
     {

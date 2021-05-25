@@ -1,11 +1,12 @@
 #include "DRV8908.hpp"
+#include "esp_err.h"
 #include <array>
 
 DRV8908::DRV8908(uint8_t spi_idx, int ss,
                  std::function<void()> on_spi_aquire,
                  std::function<void()> on_spi_release)
     : spi(spi_idx, 100000, 1, ss,
-          SpiDevice<>::Mode::SPI_MODE1, SpiDevice<>::BitOrder::MSBFIRST,
+          spi::Settings::Mode::SPI_MODE1, spi::Settings::BitOrder::MSBFIRST,
           on_spi_aquire, on_spi_release)
 {
     spi.init();

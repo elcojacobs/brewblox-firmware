@@ -136,7 +136,7 @@ void ExpansionGpio::drv_status()
     ESP_LOGI("drv status", "%x", drv.status());
 }
 
-void ExpansionGpio::test()
+void ExpansionGpio::selfTest()
 {
     ChanBits pins;
     ChanBits whenActive;

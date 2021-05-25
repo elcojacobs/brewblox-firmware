@@ -52,7 +52,7 @@ public:
     };
 
 private:
-    SpiDevice<> spi;
+    SpiDevice<bool> spi;
     std::function<void()> finishCallback;
     const hal_pin_t dc;
     uint8_t _status;

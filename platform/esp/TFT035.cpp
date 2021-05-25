@@ -3,15 +3,16 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/hal_delay.h"
+#include <cstring>
 #include <esp_log.h>
 #include <sys/time.h>
 
 TFT035::TFT035(std::function<void()> finishCallback)
     : spi(
         0, 20'000'000UL, 100, 4,
-        SpiDevice<>::Mode::SPI_MODE0, SpiDevice<>::BitOrder::MSBFIRST,
+        Settings::Mode::SPI_MODE0, Settings::BitOrder::MSBFIRST,
         []() {}, []() {},
-        [&](SpiTransaction& t) { // PRE
+        [&](Transaction& t) { // PRE
             bool val;
             // get bool that was stored in pointer address
             memcpy(&val, &t.user_cb_data, sizeof(bool));
@@ -19,13 +20,13 @@ TFT035::TFT035(std::function<void()> finishCallback)
             // hal_gpio_write(dc, true);
 
         },
-        [&](SpiTransaction& t){
-            if (t.txDataType==SpiDataType::MALLOCED_POINTER) {
-            this->finishCallback();
+        [&](Transaction& t) {
+            if (t.txDataType == SpiDataType::MALLOCED_POINTER) {
+                this->finishCallback();
             }
         } // POST
         )
-    , finishCallback(finishCallback)        
+    , finishCallback(finishCallback)
     , dc(2)
 
 {
