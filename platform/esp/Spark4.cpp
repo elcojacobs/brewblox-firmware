@@ -13,6 +13,7 @@
 #include "driver/gpio.h"
 #include "hal/hal_i2c.h"
 #include "hal/hal_spi.h"
+#include <esp_log.h>
 
 constexpr auto PIN_NUM_MISO = GPIO_NUM_12;
 constexpr auto PIN_NUM_MOSI = GPIO_NUM_13;
@@ -20,6 +21,7 @@ constexpr auto PIN_NUM_CLK = GPIO_NUM_14;
 constexpr auto PIN_NUM_DC = GPIO_NUM_2;
 constexpr auto PIN_NUM_SD_CS = GPIO_NUM_5;
 constexpr auto PIN_NUM_TFT_CS = GPIO_NUM_4;
+constexpr auto PIN_NUM_I2C_IRQ = GPIO_NUM_35;
 
 void Spark4::hw_init()
 {
@@ -35,13 +37,31 @@ void Spark4::hw_init()
     gpio_set_direction(PIN_NUM_MOSI, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_CLK, GPIO_MODE_OUTPUT);
     gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);
+    gpio_set_direction(PIN_NUM_I2C_IRQ, GPIO_MODE_INPUT);
 
     gpio_set_level(PIN_NUM_SD_CS, 1);
     gpio_set_level(PIN_NUM_TFT_CS, 1);
 
     gpio_set_pull_mode(PIN_NUM_MISO, GPIO_PULLUP_ONLY);
     gpio_pullup_en(PIN_NUM_MISO);
+    expander_init();
+}
 
+void Spark4::expander_check()
+{
+    uint8_t misc = 0;
+    if (expander.read_reg(SX1508::RegAddr::misc, misc)) {
+        // i2c comms succeeded
+        if (misc != 0x00) {
+            // device is not in default state
+            return;
+        }
+    }
+    expander_init(); // device has reset
+}
+
+void Spark4::expander_init()
+{
     expander.reset();
 
     // Disable input for RGB LED and TFT backlight

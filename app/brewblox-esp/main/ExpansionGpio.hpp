@@ -25,8 +25,8 @@ public:
 
     void init()
     {
-        expander.set_outputs(0b11111101); // 24V uit
-        expander.set_config(0b11111000);
+        expander.set_outputs(0b11111101); // 24V uit, OneWire powered
+        expander.set_config(0b11101000);
         // disable OLD
         ESP_ERROR_CHECK_WITHOUT_ABORT(drv.writeRegister(DRV8908::RegAddr::OLD_CTRL_2, 0b01000000));
         // set overvoltage threshold to 33V and clear all faults
@@ -41,6 +41,13 @@ public:
     virtual bool supportsFastIo()
     {
         return false;
+    }
+
+    void power_cycle_onewire()
+    {
+        expander.set_output(5, false);
+        hal_delay_ms(100);
+        expander.set_output(5, true);
     }
 
 public:

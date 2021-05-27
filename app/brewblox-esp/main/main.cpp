@@ -68,6 +68,7 @@ int main(int /*argc*/, char** /*argv*/)
     }};
 
     static CboxServer server(io, 8332, box);
+    static auto invalidReads = 0u;
 
     static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100),
                                               RecurringTask::IntervalType::FROM_EXPIRY,
@@ -79,6 +80,7 @@ int main(int /*argc*/, char** /*argv*/)
                                                               auto v = s->value();
                                                               auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
                                                               w_it->setValue2(temp_str);
+                                                              invalidReads = 0;
                                                           } else {
                                                               w_it->setValue2("--.-");
                                                           }
@@ -103,6 +105,7 @@ int main(int /*argc*/, char** /*argv*/)
     static auto gpioTester = RecurringTask(io, asio::chrono::milliseconds(5000),
                                            RecurringTask::IntervalType::FROM_EXPIRY,
                                            []() {
+                                               Spark4::expander_check();
                                                static ExpansionGpio* exp1 = new ExpansionGpio(0);
                                                static bool active = false;
                                                exp1->test();
@@ -114,6 +117,11 @@ int main(int /*argc*/, char** /*argv*/)
                                                }
                                                active = !active;
                                                box.discoverNewObjects();
+                                               if (++invalidReads > 50) {
+                                                   ESP_LOGW("Ticker", "Power cycling OneWire");
+                                                   ExpansionGpio(0);
+                                                   invalidReads = 0;
+                                               }
                                            });
     gpioTester.start();
 

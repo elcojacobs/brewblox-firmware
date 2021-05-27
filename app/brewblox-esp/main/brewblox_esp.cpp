@@ -86,11 +86,11 @@ makeBrewBloxBox(asio::io_context& io)
 
     static auto owDriver1 = DS248x(0x00);
     static auto ow1 = OneWire(owDriver1);
-    static auto owDriver2 = DS248x(0x02);
+    static auto owDriver2 = DS248x(0x01);
     static auto ow2 = OneWire(owDriver2);
-    static auto owDriver3 = DS248x(0x03);
+    static auto owDriver3 = DS248x(0x02);
     static auto ow3 = OneWire(owDriver3);
-    static auto owDriver4 = DS248x(0x04);
+    static auto owDriver4 = DS248x(0x03);
     static auto ow4 = OneWire(owDriver4);
 
     static Ticks<MockTicks> ticks;

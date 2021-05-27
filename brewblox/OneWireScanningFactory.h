@@ -74,6 +74,7 @@ public:
                     }
                     if (ptrIfCorrectType->address() == newAddr) {
                         found = true; // object with value already exists
+                        // todo detect different bus
                         break;
                     }
                 }
