@@ -62,19 +62,6 @@ void everySecond(const asio::error_code& e, std::shared_ptr<asio::steady_timer> 
     t->async_wait(std::bind(everySecond, _1, std::move(t), ++count));
 };
 
-void boxUpdate(const asio::error_code& e, std::shared_ptr<asio::steady_timer> t, cbox::Box* box)
-{
-    const auto start = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
-    if (e) {
-        ESP_LOGE("boxupdate", "%s", e.message().c_str());
-    }
-    const auto now = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
-    uint32_t millisSinceBoot = now - start;
-    box->update(millisSinceBoot);
-    t->expires_from_now(asio::chrono::milliseconds(1));
-    t->async_wait(std::bind(boxUpdate, _1, std::move(t), box));
-};
-
 void handleReset(bool, uint8_t)
 {
 }

@@ -68,7 +68,6 @@ int main(int /*argc*/, char** /*argv*/)
     }};
 
     static CboxServer server(io, 8332, box);
-    static auto invalidReads = 0u;
 
     static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100),
                                               RecurringTask::IntervalType::FROM_EXPIRY,
@@ -80,7 +79,6 @@ int main(int /*argc*/, char** /*argv*/)
                                                               auto v = s->value();
                                                               auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
                                                               w_it->setValue2(temp_str);
-                                                              invalidReads = 0;
                                                           } else {
                                                               w_it->setValue2("--.-");
                                                           }
@@ -108,6 +106,7 @@ int main(int /*argc*/, char** /*argv*/)
                                                Spark4::expander_check();
                                                static ExpansionGpio* exp1 = new ExpansionGpio(0);
                                                static bool active = false;
+                                               static uint32_t count = 0;
                                                exp1->test();
                                                exp1->drv_status();
                                                if (active) {
@@ -117,10 +116,11 @@ int main(int /*argc*/, char** /*argv*/)
                                                }
                                                active = !active;
                                                box.discoverNewObjects();
-                                               if (++invalidReads > 50) {
-                                                   ESP_LOGW("Ticker", "Power cycling OneWire");
-                                                   ExpansionGpio(0);
-                                                   invalidReads = 0;
+                                               ++count;
+                                               if (count > 12) {
+                                                   ESP_LOGE("gpio", "power cycling onewire");
+                                                   exp1->power_cycle_onewire(); // test power cycling onewire every minute
+                                                   count = 0;
                                                }
                                            });
     gpioTester.start();

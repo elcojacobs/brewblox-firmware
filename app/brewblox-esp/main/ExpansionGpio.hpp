@@ -45,9 +45,9 @@ public:
 
     void power_cycle_onewire()
     {
-        expander.set_output(5, false);
+        expander.set_output(4, false);
         hal_delay_ms(100);
-        expander.set_output(5, true);
+        expander.set_output(4, true);
     }
 
 public:
