@@ -11,7 +11,7 @@ namespace platform_spi {
 
 hal_spi_err_t init(Settings& settings);
 void deInit(Settings& settings);
-hal_spi_err_t write(const uint8_t* data, size_t size, void* userData, bool dma, SpiDataType spiDataType);
-hal_spi_err_t write(uint8_t data, size_t size, void* userData, bool dma, SpiDataType spiDataType);
+hal_spi_err_t write(const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
+hal_spi_err_t write(uint8_t data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
 
 }

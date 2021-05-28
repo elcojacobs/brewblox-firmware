@@ -2,13 +2,25 @@
 #include <functional>
 #include <stdint.h>
 
+
+
 namespace spi {
+
 enum class SpiDataType {
     POINTER,
     MALLOCED_POINTER,
     VALUE,
 };
 using hal_spi_err_t = int32_t;
+
+struct TransactionData {
+    const uint8_t* tx_data = nullptr;
+    uint8_t* rx_data = nullptr;
+    size_t tx_len = 0;
+    size_t rx_len = 0;
+};
+
+
 struct Transaction {
     uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
@@ -19,6 +31,19 @@ struct Transaction {
     SpiDataType userDataType = SpiDataType::POINTER;
 };
 
+
+struct CallbackArg{
+
+    std::function<void(TransactionData&)> pre_cb;
+    std::function<void(TransactionData&)> post_cb;
+
+    void pre(TransactionData& tData) {
+        pre_cb(tData);
+    }
+    void post(TransactionData& tData) {
+        post_cb(tData);
+    }
+};
 struct Settings {
     enum Mode : uint8_t {
         SPI_MODE0 = 0x00,
@@ -36,11 +61,10 @@ struct Settings {
     const int ssPin;
     const Mode mode = SPI_MODE0;
     const BitOrder bitOrder = MSBFIRST;
-    std::function<void(Transaction&)> pre_cb;
-    std::function<void(Transaction&)> post_cb;
     std::function<void()> on_Aquire;
     std::function<void()> on_Release;
     void* platform_device_ptr = nullptr;
 };
 
 }
+

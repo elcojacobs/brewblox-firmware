@@ -3,34 +3,31 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/hal_delay.h"
+#include "hal/hal_spi_types.h"
 #include <cstring>
 #include <esp_log.h>
+#include <functional>
 #include <sys/time.h>
+using namespace spi;
+
+void callbackDcPinOn(TransactionData&) {
+    hal_gpio_write(2, true);
+}
+void callbackDcPinOff(TransactionData&) {
+    hal_gpio_write(2, false);
+}
 
 TFT035::TFT035(std::function<void()> finishCallback)
-    : spi(
+    : spiDevice(
         0, 20'000'000UL, 100, 4,
         Settings::Mode::SPI_MODE0, Settings::BitOrder::MSBFIRST,
-        []() {}, []() {},
-        [&](Transaction& t) { // PRE
-            bool val;
-            // get bool that was stored in pointer address
-            memcpy(&val, &t.user_cb_data, sizeof(bool));
-            hal_gpio_write(dc, val);
-            // hal_gpio_write(dc, true);
-
-        },
-        [&](Transaction& t) {
-            if (t.txDataType == SpiDataType::MALLOCED_POINTER) {
-                this->finishCallback();
-            }
-        } // POST
+        []() {}, []() {}
         )
     , finishCallback(finishCallback)
     , dc(2)
 
 {
-    spi.init();
+    spiDevice.init();
 }
 
 void TFT035::ClearScreen(unsigned int bColor)
@@ -49,25 +46,25 @@ void TFT035::ClearScreen(unsigned int bColor)
 hal_spi_err_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
 {
     // hal_gpio_write(dc, false);
-    auto err = spi.write(cmd, false);
+    auto err = spiDevice.write(cmd, false, callbackDcPinOff);
     return err;
 }
 hal_spi_err_t TFT035::write(const std::vector<uint8_t>& cmd)
 {
     // hal_gpio_write(dc, true);
-    return spi.write(cmd, true);
+    return spiDevice.write(cmd, false, callbackDcPinOn);
 }
 
 hal_spi_err_t TFT035::writeCmd(uint8_t cmd)
 {
     // hal_gpio_write(dc, false);
-    auto err = spi.write(cmd, false);
+    auto err = spiDevice.write(cmd, false, callbackDcPinOff);
     return err;
 }
 hal_spi_err_t TFT035::write(uint8_t cmd)
 {
     // hal_gpio_write(dc, true);
-    return spi.write(cmd, true);
+    return spiDevice.write(cmd, false, callbackDcPinOn);
 }
 
 void TFT035::init()
@@ -280,7 +277,7 @@ void TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned 
                                     uint8_t(xs & 0xFF),
                                     uint8_t(xe >> 8),
                                     uint8_t(xe & 0xFF)};
-    spi.write(x, true, true);
+    spiDevice.write(x, true, callbackDcPinOn);
 
     dmaWrite(0x2B, false);
 
@@ -289,31 +286,42 @@ void TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned 
                                     uint8_t(ye >> 8),
                                     uint8_t(ye & 0xFF)};
 
-    spi.write(y, true, true);
+    spiDevice.write(y, true, callbackDcPinOn);
 
     dmaWrite(0x2C, false);
 }
 
 bool TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
 {
-    spi.write(tx_data, tx_len, dc, true);
+    if (dc) {
+        spiDevice.write(tx_data, tx_len, true, callbackDcPinOn);
+    }
+    else {
+        spiDevice.write(tx_data, tx_len, true, callbackDcPinOff);
+    }
+
 
     return true;
 }
 
 bool TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
-    spi.write(tx_val, dc, true);
+    if (dc) {
+        spiDevice.write(tx_val, true, callbackDcPinOn);
+    }
+    else {
+        spiDevice.write(tx_val, true, callbackDcPinOff);
+    }
 
     return true;
 }
 
 void TFT035::aquire_spi()
 {
-    spi.aquire_bus();
+    spiDevice.aquire_bus();
 }
 
 void TFT035::release_spi()
 {
-    spi.release_bus();
+    spiDevice.release_bus();
 }

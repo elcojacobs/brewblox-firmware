@@ -2,6 +2,8 @@
 #include "esp32/rom/ets_sys.h"
 #include "hal/hal_gpio.h"
 #include "hal/hal_spi.h"
+#include "hal/hal_spi_types.h"
+#include <functional>
 
 class TFT035 {
 public:
@@ -52,8 +54,9 @@ public:
     };
 
 private:
-    SpiDevice<bool> spi;
+    SpiDevice spiDevice;
     std::function<void()> finishCallback;
     const hal_pin_t dc;
     uint8_t _status;
+
 };

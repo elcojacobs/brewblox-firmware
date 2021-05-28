@@ -35,10 +35,39 @@ spi_device_t* get_platform_ptr(Settings& settings)
 }
 void pre_callback(spi_transaction_t* t)
 {
+    auto transactionData = TransactionData{
+        .tx_data=reinterpret_cast<const uint8_t*>(t->tx_buffer),
+        .rx_data=reinterpret_cast<uint8_t*>(t->rx_buffer),
+        .tx_len=t->length,
+        .rx_len=t->rxlength
+    };
+
+    auto callbacks = reinterpret_cast<CallbackArg*>(t->user);
+    callbacks->pre(transactionData);
+    
+    t->tx_buffer = transactionData.tx_data;
+    t->rx_buffer = transactionData.rx_data;
+    t->length = transactionData.tx_len;
+    t->rxlength = transactionData.rx_len;
 }
 
 void post_callback(spi_transaction_t* t)
 {
+    auto transactionData = TransactionData{
+        .tx_data=reinterpret_cast<const uint8_t*>(t->tx_buffer),
+        .rx_data=reinterpret_cast<uint8_t*>(t->rx_buffer),
+        .tx_len=t->length,
+        .rx_len=t->rxlength
+    };
+    
+    auto callbacks = reinterpret_cast<CallbackArg*>(t->user);
+    callbacks->post(transactionData);
+
+    t->tx_buffer = transactionData.tx_data;
+    t->rx_buffer = transactionData.rx_data;
+    t->length = transactionData.tx_len;
+    t->rxlength = transactionData.rx_len;
+    
 }
 hal_spi_err_t init(Settings& settings)
 {
@@ -77,11 +106,11 @@ void deInit(Settings& settings)
     }
 }
 
-hal_spi_err_t write(const uint8_t* data, size_t size, void* userData, bool dma, SpiDataType spiDataType)
+hal_spi_err_t write(const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType)
 {
     return 0;
 }
-hal_spi_err_t write(uint8_t data, size_t size, void* userData, bool dma, SpiDataType spiDataType)
+hal_spi_err_t write(uint8_t data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType)
 {
     return 0;
 }

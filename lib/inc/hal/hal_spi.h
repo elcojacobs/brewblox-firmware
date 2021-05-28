@@ -8,27 +8,25 @@
 #include "hal_spi_types.h"
 // using namespace platform_spi;
 using namespace spi;
-template <typename UserType = bool>
-struct SpiDevice {
 
+
+
+struct SpiDevice {
     SpiDevice(uint8_t host_idx, int speed_hz, int queue_size, int ss_pin,
               Settings::Mode spi_mode, Settings::BitOrder bit_order,
-              std::function<void()> on_aquire = {}, std::function<void()> on_release = {},
-              std::function<void(Transaction&)> pre = {}, std::function<void(Transaction&)> post = {})
+              std::function<void()> on_aquire = {}, std::function<void()> on_release = {})
         : settings{.spi_idx = host_idx,
                    .speed = speed_hz,
                    .queueSize = queue_size,
                    .ssPin = ss_pin,
                    .mode = spi_mode,
                    .bitOrder = bit_order,
-                   .pre_cb = pre,
-                   .post_cb = post,
                    .on_Aquire = on_aquire,
                    .on_Release = on_release}
 
     {
     }
-
+    
     ~SpiDevice()
     {
         deinit();
@@ -43,37 +41,25 @@ struct SpiDevice {
         platform_spi::deInit(settings);
     }
 
-    void set_user(Transaction& t, nullptr_t)
+
+    hal_spi_err_t write(const std::vector<uint8_t>& values,bool dma=false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
     {
-        // To implement
+        return platform_spi::write(values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
     }
 
-    void set_user(Transaction& t, UserType&& userData)
-    {
-        // To implement
-    }
-
-    // without DMA, vector will not be destructed during transfer
-    hal_spi_err_t write(const std::vector<uint8_t>& values, UserType userData)
-    {
-        return platform_spi::write(values.data(), values.size(), reinterpret_cast<void*>(userData), false, SpiDataType::POINTER);
-    }
-
-    // with of without DMA, optimized for small transfer under 4 bytes
-    // copied to point address location, so no distruction needed
-    template <size_t N, std::enable_if_t<N <= 4, int> = 0>
-    hal_spi_err_t write(const std::array<uint8_t, N>& values, UserType userData, bool dma)
-    {
-        return platform_spi::write(values.data(), values.size(), reinterpret_cast<void*>(userData), dma, SpiDataType::VALUE);
-    }
 
     template <size_t N, std::enable_if_t<N <= 4, int> = 0>
-    hal_spi_err_t write(const std::array<uint8_t, N>& values)
+    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma=false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
     {
-        return platform_spi::write(values.data(), values.size(), nullptr, false, SpiDataType::POINTER);
+        return platform_spi::write(values.data(), values.size(), dma, pre, post, SpiDataType::VALUE);
     }
 
-    // without DMA, inputs are valid during transfer
+    template <size_t N, std::enable_if_t<(N > 4), int> = 0>
+    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma=false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
+    {
+        return platform_spi::write(values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
+    }
+
     template <size_t N>
     hal_spi_err_t write_and_read(
         const std::array<uint8_t, N>& toDevice,
@@ -84,20 +70,20 @@ struct SpiDevice {
     }
 
     // data is pointer to data that should not be destructed
-    hal_spi_err_t write(const uint8_t* data, size_t size, UserType userData, bool dma = false)
+    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false,std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
     {
-        return platform_spi::write(data, size, reinterpret_cast<void*>(userData), dma, SpiDataType::POINTER);
+        return platform_spi::write(data, size, dma, pre, post, SpiDataType::POINTER);
     }
 
     // single byte transer, store in pointer location
-    hal_spi_err_t write(uint8_t value, UserType userData, bool dma = false)
+    hal_spi_err_t write(uint8_t value, bool dma = false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
     {
-        return platform_spi::write(value, 1, reinterpret_cast<void*>(userData), dma, SpiDataType::VALUE);
+        return platform_spi::write(value, 1, dma, pre, post, SpiDataType::VALUE);
     }
 
     hal_spi_err_t write(const std::vector<uint8_t>& values)
     {
-        return platform_spi::write(values.data(), values.size(), nullptr, false, SpiDataType::POINTER);
+        return platform_spi::write(values.data(), values.size(),false, {},{}, SpiDataType::POINTER);
     }
 
     void aquire_bus()
@@ -122,5 +108,4 @@ struct SpiDevice {
 private:
     Settings settings;
 };
-template struct SpiDevice<>;
 hal_spi_err_t hal_spi_host_init(uint8_t idx);
