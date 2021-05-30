@@ -10,10 +10,12 @@
 #include <sys/time.h>
 using namespace spi;
 
-void callbackDcPinOn(TransactionData&) {
+void callbackDcPinOn(TransactionData&)
+{
     hal_gpio_write(2, true);
 }
-void callbackDcPinOff(TransactionData&) {
+void callbackDcPinOff(TransactionData&)
+{
     hal_gpio_write(2, false);
 }
 
@@ -21,8 +23,7 @@ TFT035::TFT035(std::function<void()> finishCallback)
     : spiDevice(
         0, 20'000'000UL, 100, 4,
         Settings::Mode::SPI_MODE0, Settings::BitOrder::MSBFIRST,
-        []() {}, []() {}
-        )
+        []() {}, []() {})
     , finishCallback(finishCallback)
     , dc(2)
 
@@ -58,13 +59,13 @@ hal_spi_err_t TFT035::write(const std::vector<uint8_t>& cmd)
 hal_spi_err_t TFT035::writeCmd(uint8_t cmd)
 {
     // hal_gpio_write(dc, false);
-    auto err = spiDevice.write(cmd, false, callbackDcPinOff);
+    auto err = spiDevice.write(cmd, callbackDcPinOff);
     return err;
 }
 hal_spi_err_t TFT035::write(uint8_t cmd)
 {
     // hal_gpio_write(dc, true);
-    return spiDevice.write(cmd, false, callbackDcPinOn);
+    return spiDevice.write(cmd, callbackDcPinOn);
 }
 
 void TFT035::init()
@@ -295,11 +296,9 @@ bool TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
 {
     if (dc) {
         spiDevice.write(tx_data, tx_len, true, callbackDcPinOn);
-    }
-    else {
+    } else {
         spiDevice.write(tx_data, tx_len, true, callbackDcPinOff);
     }
-
 
     return true;
 }
@@ -308,8 +307,7 @@ bool TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
     if (dc) {
         spiDevice.write(tx_val, true, callbackDcPinOn);
-    }
-    else {
+    } else {
         spiDevice.write(tx_val, true, callbackDcPinOff);
     }
 

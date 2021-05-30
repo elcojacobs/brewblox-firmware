@@ -9,8 +9,6 @@
 // using namespace platform_spi;
 using namespace spi;
 
-
-
 struct SpiDevice {
     SpiDevice(uint8_t host_idx, int speed_hz, int queue_size, int ss_pin,
               Settings::Mode spi_mode, Settings::BitOrder bit_order,
@@ -26,7 +24,7 @@ struct SpiDevice {
 
     {
     }
-    
+
     ~SpiDevice()
     {
         deinit();
@@ -41,23 +39,21 @@ struct SpiDevice {
         platform_spi::deInit(settings);
     }
 
-
-    hal_spi_err_t write(const std::vector<uint8_t>& values,bool dma=false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
+    hal_spi_err_t write(const std::vector<uint8_t>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        return platform_spi::write(values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
+        return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
     }
 
-
     template <size_t N, std::enable_if_t<N <= 4, int> = 0>
-    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma=false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
+    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        return platform_spi::write(values.data(), values.size(), dma, pre, post, SpiDataType::VALUE);
+        return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::VALUE);
     }
 
     template <size_t N, std::enable_if_t<(N > 4), int> = 0>
-    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma=false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
+    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        return platform_spi::write(values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
+        return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
     }
 
     template <size_t N>
@@ -70,20 +66,23 @@ struct SpiDevice {
     }
 
     // data is pointer to data that should not be destructed
-    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false,std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
+    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        return platform_spi::write(data, size, dma, pre, post, SpiDataType::POINTER);
+        return platform_spi::write(settings, data, size, dma, pre, post, SpiDataType::POINTER);
     }
 
     // single byte transer, store in pointer location
-    hal_spi_err_t write(uint8_t value, bool dma = false, std::function<void(TransactionData&)> pre = {}, std::function<void(TransactionData&)> post = {})
+    hal_spi_err_t write(uint8_t value, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        return platform_spi::write(value, 1, dma, pre, post, SpiDataType::VALUE);
+        auto allocatedValue = new uint8_t(value);
+        auto result = platform_spi::write(settings, allocatedValue, 1, false, pre, post, SpiDataType::POINTER);
+        delete allocatedValue;
+        return result;
     }
 
     hal_spi_err_t write(const std::vector<uint8_t>& values)
     {
-        return platform_spi::write(values.data(), values.size(),false, {},{}, SpiDataType::POINTER);
+        return platform_spi::write(settings, values.data(), values.size(), false, nullptr, nullptr, SpiDataType::POINTER);
     }
 
     void aquire_bus()

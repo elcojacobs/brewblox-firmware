@@ -2,8 +2,6 @@
 #include <functional>
 #include <stdint.h>
 
-
-
 namespace spi {
 
 enum class SpiDataType {
@@ -20,7 +18,6 @@ struct TransactionData {
     size_t rx_len = 0;
 };
 
-
 struct Transaction {
     uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
@@ -31,18 +28,19 @@ struct Transaction {
     SpiDataType userDataType = SpiDataType::POINTER;
 };
 
+struct CallbackArg {
 
-struct CallbackArg{
+    std::function<void(TransactionData&)> pre;
+    std::function<void(TransactionData&)> post;
 
-    std::function<void(TransactionData&)> pre_cb;
-    std::function<void(TransactionData&)> post_cb;
-
-    void pre(TransactionData& tData) {
-        pre_cb(tData);
-    }
-    void post(TransactionData& tData) {
-        post_cb(tData);
-    }
+    //     void pre(TransactionData& tData)
+    //     {
+    //         pre_cb(tData);
+    //     }
+    //     void post(TransactionData& tData)
+    //     {
+    //         post_cb(tData);
+    //     }
 };
 struct Settings {
     enum Mode : uint8_t {
@@ -65,6 +63,4 @@ struct Settings {
     std::function<void()> on_Release;
     void* platform_device_ptr = nullptr;
 };
-
 }
-
