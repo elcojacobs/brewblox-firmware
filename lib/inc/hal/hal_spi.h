@@ -1,3 +1,22 @@
+/*
+ * Copyright 2020 BrewPi B.V./Elco Jacobs.
+ *
+ * This file is part of Brewblox.
+ * 
+ * Brewblox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Brewblox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <functional>
@@ -6,7 +25,6 @@
 
 #include "hal_spi_impl.hpp"
 #include "hal_spi_types.h"
-// using namespace platform_spi;
 using namespace spi;
 
 struct SpiDevice {
@@ -61,8 +79,7 @@ struct SpiDevice {
         const std::array<uint8_t, N>& toDevice,
         std::array<uint8_t, N>& fromDevice)
     {
-        // To implement
-        return 0;
+        return platform_spi::writeAndRead(settings, toDevice.data(), N, fromDevice.data(), N, nullptr, nullptr, SpiDataType::POINTER);
     }
 
     // data is pointer to data that should not be destructed
@@ -74,10 +91,8 @@ struct SpiDevice {
     // single byte transer, store in pointer location
     hal_spi_err_t write(uint8_t value, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        auto allocatedValue = new uint8_t(value);
-        auto result = platform_spi::write(settings, allocatedValue, 1, false, pre, post, SpiDataType::POINTER);
-        delete allocatedValue;
-        return result;
+        auto allocatedValue = uint8_t(value);
+        return platform_spi::write(settings, &allocatedValue, 1, false, pre, post, SpiDataType::POINTER);
     }
 
     hal_spi_err_t write(const std::vector<uint8_t>& values)
@@ -91,15 +106,6 @@ struct SpiDevice {
     }
 
     void release_bus()
-    {
-        // To implement
-    }
-
-    void do_pre_cb(Transaction& t)
-    {
-        // To implement
-    }
-    void do_post_cb(Transaction& t)
     {
         // To implement
     }

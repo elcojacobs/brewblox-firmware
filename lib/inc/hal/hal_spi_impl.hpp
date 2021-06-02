@@ -1,17 +1,76 @@
+/*
+ * Copyright 2020 BrewPi B.V./Elco Jacobs.
+ *
+ * This file is part of Brewblox.
+ * 
+ * Brewblox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Brewblox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
-// #include "driver/gpio.h"
-// #include "driver/spi_master.h"
 #include "hal_spi_types.h"
+
 using namespace spi;
 
 using hal_spi_err_t = int32_t;
 
 namespace platform_spi {
 
+/**
+ * Initialises the spi device.
+ * 
+ * @param settings The settings struct containing the configuration of the spi device.
+ * @return If any error will occur an non zero result will indicate an error has happened.
+ */
 hal_spi_err_t init(Settings& settings);
-void deInit(Settings& settings);
-hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
-// hal_spi_err_t write(Settings& settings, uint8_t data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
 
+/**
+ * Deinitialises the spi device.
+ * 
+ * @param settings The settings struct containing the configuration of the spi device.
+ * @return If any error will occur an non zero result will indicate an error has happened.
+ */
+void deInit(Settings& settings);
+
+/**
+ * Writes a n amount of bytes to the spi device
+ * 
+ * The user will be responsible for deallocating the data pointer.
+ * 
+ * @param settings The settings struct containing the configuration of the spi device.
+ * @param data A pointer to the bytes to be send.
+ * @param size The amount of bytes to be send.
+ * @param dma If true the write will be done asychronously by use of the dma. If false the call will be blocking until the bytes have been send.
+ * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
+ * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
+ * @return If any error will occur a non zero result will indicate an error has happened.
+ */
+hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
+
+/**
+ * Writes a n amount of bytes to the spi device and reads the same amount of bytes.
+ * 
+ * The user will be responsible for deallocating the data pointers.
+ * 
+ * @param settings The settings struct containing the configuration of the spi device.
+ * @param tx A pointer to the bytes to be send.
+ * @param txSize The amount of bytes to be send.
+ * @param rx A pointer to free space in memory where the received bytes will be written to.
+ * @param rxSize The amount of bytes to be received.
+ * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
+ * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
+ * @return If any error will occur a non zero result will indicate an error has happened.
+ */
+hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
 }

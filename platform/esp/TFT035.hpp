@@ -1,3 +1,22 @@
+/*
+ * Copyright 2020 BrewPi B.V./Elco Jacobs.
+ *
+ * This file is part of Brewblox.
+ * 
+ * Brewblox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Brewblox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 #include "esp32/rom/ets_sys.h"
 #include "hal/hal_gpio.h"
@@ -5,34 +24,31 @@
 #include "hal/hal_spi_types.h"
 #include <functional>
 
+/**
+ * A driver for the TFT035 display controller. 
+ */
 class TFT035 {
 public:
-    // al deze parameters hardcoded in de klasse
     TFT035(std::function<void()> finishCallback);
     ~TFT035() = default;
+
+    void init();
+
+    void aquire_spi();
+    void release_spi();
+    bool writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye, uint8_t* pixels, uint16_t nPixels);
+
+    hal_spi_err_t setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
+
+    hal_spi_err_t dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
+    hal_spi_err_t dmaWrite(uint8_t tx_data, bool dc);
 
     hal_spi_err_t writeCmd(const std::vector<uint8_t>& cmd);
     hal_spi_err_t write(const std::vector<uint8_t>& cmd);
     hal_spi_err_t writeCmd(uint8_t cmd);
     hal_spi_err_t write(uint8_t cmd);
 
-    // todo: spi should be internal
-    void aquire_spi();
-    void release_spi();
-
-    void setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
-    void init();
-    void DispRGBGray();
-    void Write_Data(unsigned char DH, unsigned char DL);
-    void ClearScreen(unsigned int bColor);
-    void Write_Data_U16(unsigned int y);
-    bool dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
-    bool dmaWrite(uint8_t tx_data, bool dc);
-    uint8_t status()
-    {
-        return _status;
-    }
-
+    /// A list of the commands of the TFT035
     enum command : uint8_t {
         PGAMCTRL = 0xE0,
         NGAMCTRL = 0xE1,
@@ -57,6 +73,4 @@ private:
     SpiDevice spiDevice;
     std::function<void()> finishCallback;
     const hal_pin_t dc;
-    uint8_t _status;
-
 };
