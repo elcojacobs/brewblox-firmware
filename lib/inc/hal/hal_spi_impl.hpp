@@ -73,4 +73,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
 hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
+
+void aquire_bus(Settings& settings);
+void release_bus(Settings& settings);
 }

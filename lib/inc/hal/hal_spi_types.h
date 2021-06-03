@@ -1,3 +1,22 @@
+/*
+ * Copyright 2020 BrewPi B.V./Elco Jacobs.
+ *
+ * This file is part of Brewblox.
+ * 
+ * Brewblox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Brewblox is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Brewblox.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 #include <cstddef>
 #include <functional>
@@ -5,12 +24,14 @@
 
 namespace spi {
 
+/// An enum to designated if the data of a spi transaction will be used as value or pointer.
 enum class SpiDataType {
     POINTER,
-    MALLOCED_POINTER,
     VALUE,
 };
+
 using hal_spi_err_t = int32_t;
+
 
 struct TransactionData {
     const uint8_t* tx_data = nullptr;
@@ -29,20 +50,13 @@ struct Transaction {
     SpiDataType userDataType = SpiDataType::POINTER;
 };
 
+/// A helper struct to combine the pre and post condition into one object.
 struct CallbackArg {
-
     std::function<void(TransactionData&)> pre;
     std::function<void(TransactionData&)> post;
-
-    //     void pre(TransactionData& tData)
-    //     {
-    //         pre_cb(tData);
-    //     }
-    //     void post(TransactionData& tData)
-    //     {
-    //         post_cb(tData);
-    //     }
 };
+
+/// A struct to transfer the settings of the spiDevice around.
 struct Settings {
     enum Mode : uint8_t {
         SPI_MODE0 = 0x00,

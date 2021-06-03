@@ -166,6 +166,12 @@ hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize,
     return spi_device_transmit(get_platform_ptr(settings), trans);
 }
 
+void aquire_bus(Settings& settings) {
+    spi_device_acquire_bus(get_platform_ptr(settings),portMAX_DELAY);
+}
+void release_bus(Settings& settings){
+    spi_device_release_bus(get_platform_ptr(settings));
+}
 }
 
 hal_spi_err_t hal_spi_host_init(uint8_t idx)
@@ -177,3 +183,4 @@ hal_spi_err_t hal_spi_host_init(uint8_t idx)
     }
     return err;
 }
+
