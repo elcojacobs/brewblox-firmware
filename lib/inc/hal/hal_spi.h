@@ -124,7 +124,7 @@ struct SpiDevice {
     * @param dma If true the transfer will take place asynchronously by use of the dma. If false the method will be blocking. 
     * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
     * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
-    * @return If any error will occur a non zero result will indicate an error has happened.
+    * @return If any error has occurred a non zero result will indicate an error has happened.
     */    
     hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
@@ -139,7 +139,7 @@ struct SpiDevice {
     * @param value The value to be written to the bus.
     * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
     * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
-    * @return If any error will occur a non zero result will indicate an error has happened.
+    * @return If any error has occurred a non zero result will indicate an error has happened.
     */
     hal_spi_err_t write(uint8_t value, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
@@ -161,12 +161,18 @@ struct SpiDevice {
     void aquire_bus()
     {
         platform_spi::aquire_bus(this->settings);
-        if (settings.on_Aquire) settings.on_Aquire();
+        if (settings.on_Aquire) 
+        {
+            settings.on_Aquire();
+        }
+    }
 
     void release_bus()
     {
         platform_spi::release_bus(this->settings);
-        if (settings.on_Release) settings.on_Release();
+        if (settings.on_Release) {
+            settings.on_Release();
+        }
     }
 
 private:

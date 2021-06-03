@@ -67,16 +67,36 @@ private:
 
         static lv_disp_t* disp;
         disp = lv_disp_drv_register(&disp_drv);
+        lv_disp_set_bg_color(disp, LV_COLOR_BLACK);
+
         gridInit();
         display.release_spi();
+
+        
+
     }
 
     void gridInit()
     {
+        static lv_style_t style;
+
+        lv_style_init(&style);
+        // lv_style_set_radius(&style, LV_STATE_DEFAULT, 10);
+        lv_style_set_bg_opa(&style, LV_STATE_DEFAULT, LV_OPA_COVER);
+        lv_style_set_bg_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
+        lv_style_set_bg_grad_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
+        lv_style_set_bg_grad_dir(&style, LV_STATE_DEFAULT, LV_GRAD_DIR_VER);
+        lv_style_set_border_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
+
+
         grid = lv_cont_create(lv_scr_act(), NULL);
         lv_obj_align_origo(grid, NULL, LV_ALIGN_CENTER, 0, 0); /*This parametrs will be sued when realigned*/
         lv_cont_set_fit(grid, LV_FIT_PARENT);
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
+        // lv_obj_reset_style_list(lv_scr_act(), LV_BTN_PART_MAIN); 
+        lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style);
+        lv_obj_add_style(lv_scr_act(), LV_CONT_PART_MAIN, &style);
+
     }
     lv_disp_drv_t disp_drv;
     TFT035 display = TFT035([&]() {
