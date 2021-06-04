@@ -4,6 +4,8 @@
 #include "hal/hal_spi_impl.hpp"
 #include "hal/hal_spi_types.h"
 #include "ringBuffer.hpp"
+#include <stdio.h>
+#include <string.h>
 
 // Making this global is not ideal but the current format of the hal functions is global.
 // Maybe the hal functions should live inside a class.
@@ -114,7 +116,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
 
     if (spiDataType == SpiDataType::VALUE) {
         *trans = spi_transaction_t{
-            .flags = uint32_t{0},
+            .flags = uint32_t{SPI_TRANS_USE_TXDATA},
             .cmd = 0,
             .addr = 0,
             .length = size * 8, // esp platform wants size in bits
@@ -122,9 +124,9 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
             .user = new (callBackArgsBuffer.take().value()) CallbackArg{
                 pre,
                 post},
-            .tx_buffer = const_cast<uint8_t*>(data),
             .rx_buffer = nullptr,
         };
+        memcpy(trans->tx_data, data, size);
     } else {
         *trans = spi_transaction_t{
             .flags = uint32_t{0},
@@ -135,7 +137,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
             .user = new (callBackArgsBuffer.take().value()) CallbackArg{
                 pre,
                 post},
-            .tx_buffer = const_cast<uint8_t*>(data),
+            .tx_buffer = data,
             .rx_buffer = nullptr,
         };
     }
@@ -166,10 +168,12 @@ hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize,
     return spi_device_transmit(get_platform_ptr(settings), trans);
 }
 
-void aquire_bus(Settings& settings) {
-    spi_device_acquire_bus(get_platform_ptr(settings),portMAX_DELAY);
+void aquire_bus(Settings& settings)
+{
+    spi_device_acquire_bus(get_platform_ptr(settings), portMAX_DELAY);
 }
-void release_bus(Settings& settings){
+void release_bus(Settings& settings)
+{
     spi_device_release_bus(get_platform_ptr(settings));
 }
 }
@@ -183,4 +187,3 @@ hal_spi_err_t hal_spi_host_init(uint8_t idx)
     }
     return err;
 }
-
