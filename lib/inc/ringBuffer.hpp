@@ -35,24 +35,28 @@ public:
     /**
      * Gives the user to a pointer to an empty T
      */
-    std::optional<T*> take()
+    T* take()
     {
-        const std::lock_guard<std::mutex> lock(mutex);
+        uint32_t oldTail;
+        uint32_t newTail;
+        T* allocatedElement;
 
-        if (isFull) {
-            return std::nullopt;
-        }
-        unsigned int toReturn = tail;
-        if (tail == n - 1) {
-            tail = 0;
-        } else {
-            tail++;
-        }
+        do {
+            oldTail = this->tail;
+            newTail = oldTail;
+            if (isFull(head, oldTail)) {
+                return nullptr;
+            }
 
-        if (head == tail)
-            isFull = true;
+            allocatedElement = &buffer[newTail];
+            if (newTail == n) {
+                newTail = 0;
+            } else {
+                newTail++;
+            }
+        } while (!tail.compare_exchange_weak(oldTail, newTail, std::memory_order_relaxed));
 
-        return &buffer[toReturn];
+        return allocatedElement;
     }
 
     /**
@@ -61,41 +65,25 @@ public:
      */
     void giveBack(T* t)
     {
-        const std::lock_guard<std::mutex> lock(mutex);
-        if (isFull)
-            isFull = false;
-
         assert(t == &buffer[head]); // The pointer given must be the head pointer.
-
-        if (head == n - 1) {
+        if (head == n) {
             head = 0;
         } else {
             head++;
         }
     }
 
-    /**
-     * Returns the amount of elements that are free for taking.
-     */
-    unsigned int getFreeSpace()
-    {
-        const std::lock_guard<std::mutex> lock(mutex);
-        if (isFull) {
-            return 0;
-        }
-        if (head == tail) {
-            return n;
-        }
-        if (tail > head) {
-            return tail - head;
-        }
-        return head - tail;
-    }
-
 private:
+    bool isFull(uint32_t head, uint32_t tail)
+    {
+        if (tail > head) {
+            return (tail - head) == (n);
+        } else {
+            return (head - tail) == 1;
+        }
+    }
     std::mutex mutex;
-    bool isFull = false;
-    std::array<T, n> buffer;
-    std::atomic<unsigned int> head = 0;
-    std::atomic<unsigned int> tail = 0;
+    std::array<T, n + 1> buffer;
+    std::atomic<uint32_t> head = 0;
+    std::atomic<uint32_t> tail = 0;
 };

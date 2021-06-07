@@ -112,7 +112,7 @@ void deInit(Settings& settings)
 
 hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType)
 {
-    spi_transaction_t* trans = transactionBuffer.take().value();
+    spi_transaction_t* trans = transactionBuffer.take();
 
     if (spiDataType == SpiDataType::VALUE) {
         *trans = spi_transaction_t{
@@ -121,7 +121,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
             .addr = 0,
             .length = size * 8, // esp platform wants size in bits
             .rxlength = 0,
-            .user = new (callBackArgsBuffer.take().value()) CallbackArg{
+            .user = new (callBackArgsBuffer.take()) CallbackArg{
                 pre,
                 post},
             .rx_buffer = nullptr,
@@ -134,7 +134,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
             .addr = 0,
             .length = size * 8, // esp platform wants size in bits
             .rxlength = 0,
-            .user = new (callBackArgsBuffer.take().value()) CallbackArg{
+            .user = new (callBackArgsBuffer.take()) CallbackArg{
                 pre,
                 post},
             .tx_buffer = data,
@@ -150,7 +150,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
 
 hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType)
 {
-    spi_transaction_t* trans = transactionBuffer.take().value();
+    spi_transaction_t* trans = transactionBuffer.take();
 
     *trans = spi_transaction_t{
         .flags = uint32_t{0},
@@ -158,7 +158,7 @@ hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize,
         .addr = 0,
         .length = txSize * 8, // esp platform wants size in bits
         .rxlength = rxSize * 8,
-        .user = new (callBackArgsBuffer.take().value()) CallbackArg{
+        .user = new (callBackArgsBuffer.take()) CallbackArg{
             pre,
             post},
         .tx_buffer = const_cast<uint8_t*>(tx),
