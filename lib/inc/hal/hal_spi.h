@@ -27,8 +27,6 @@
 #include "hal_spi_types.h"
 using namespace spi;
 
-
-
 /**
  * An abstraction for an spi device. It will call the platform spi functions.
  *
@@ -58,7 +56,6 @@ struct SpiDevice {
                    .bitOrder = bit_order,
                    .on_Aquire = on_aquire,
                    .on_Release = on_release}
-
     {
     }
 
@@ -125,7 +122,7 @@ struct SpiDevice {
     * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
     * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
     * @return If any error has occurred a non zero result will indicate an error has happened.
-    */    
+    */
     hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
         return platform_spi::write(settings, data, size, dma, pre, post, SpiDataType::POINTER);
@@ -144,7 +141,7 @@ struct SpiDevice {
     hal_spi_err_t write(uint8_t value, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
         auto allocatedValue = uint8_t(value);
-        return platform_spi::write(settings, &allocatedValue, 1, false, pre, post, SpiDataType::POINTER);
+        return platform_spi::write(settings, &allocatedValue, 1, false, pre, post, SpiDataType::VALUE);
     }
 
     /**
@@ -161,8 +158,7 @@ struct SpiDevice {
     void aquire_bus()
     {
         platform_spi::aquire_bus(this->settings);
-        if (settings.on_Aquire) 
-        {
+        if (settings.on_Aquire) {
             settings.on_Aquire();
         }
     }
