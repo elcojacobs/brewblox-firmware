@@ -1,5 +1,4 @@
 #include "TFT035.hpp"
-#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/hal_delay.h"
@@ -27,9 +26,15 @@ void callbackDcPinOff(TransactionData& t)
 
 TFT035::TFT035(std::function<void()> finishCallback)
     : spiDevice(
-        0, 20'000'000UL, 100, 4,
-        Settings::Mode::SPI_MODE0, Settings::BitOrder::MSBFIRST,
-        []() {}, []() {})
+        spi::Settings{
+            .spi_idx = 0,
+            .speed = 20'000'000UL,
+            .queueSize = 10,
+            .ssPin = 4,
+            .mode = Settings::Mode::SPI_MODE0,
+            .bitOrder = Settings::BitOrder::MSBFIRST,
+            .on_Aquire = []() {},
+            .on_Release = []() {}})
     , finishCallback(finishCallback)
     , dc(2)
 
@@ -37,23 +42,23 @@ TFT035::TFT035(std::function<void()> finishCallback)
     spiDevice.init();
 }
 
-hal_spi_err_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
+error TFT035::writeCmd(const std::vector<uint8_t>& cmd)
 {
     hal_gpio_write(2, false);
     return spiDevice.write(cmd);
 }
-hal_spi_err_t TFT035::write(const std::vector<uint8_t>& cmd)
+error TFT035::write(const std::vector<uint8_t>& cmd)
 {
     hal_gpio_write(2, true);
     return spiDevice.write(cmd);
 }
 
-hal_spi_err_t TFT035::writeCmd(uint8_t cmd)
+error TFT035::writeCmd(uint8_t cmd)
 {
     hal_gpio_write(2, false);
     return spiDevice.write(cmd);
 }
-hal_spi_err_t TFT035::write(uint8_t cmd)
+error TFT035::write(uint8_t cmd)
 {
     hal_gpio_write(2, true);
     return spiDevice.write(cmd);
@@ -140,7 +145,7 @@ void TFT035::init()
     writeCmd(DISON);
 }
 
-hal_spi_err_t TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
+error TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
 {
     if (auto error = dmaWrite(0x2A, false))
         return error;
@@ -169,7 +174,7 @@ hal_spi_err_t TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, 
     return dmaWrite(0x2C, false);
 }
 
-hal_spi_err_t TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
+error TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
 {
     if (dc) {
         return spiDevice.dmaWrite(tx_data, tx_len, callbackDcPinOn);
@@ -178,7 +183,7 @@ hal_spi_err_t TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
     }
 }
 
-hal_spi_err_t TFT035::dmaWrite(uint8_t tx_val, bool dc)
+error TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
     auto alocatedVal = new uint8_t(tx_val);
     if (dc) {

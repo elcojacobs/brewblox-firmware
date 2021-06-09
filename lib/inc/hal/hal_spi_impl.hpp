@@ -21,19 +21,15 @@
 
 #include "hal_spi_types.h"
 
-using namespace spi;
-
-using hal_spi_err_t = int32_t;
-
 namespace platform_spi {
-
+using namespace spi;
 /**
  * Initialises the spi device.
  * 
  * @param settings The settings struct containing the configuration of the spi device.
  * @return If any error will occur an non zero result will indicate an error has happened.
  */
-hal_spi_err_t init(Settings& settings);
+error init(Settings& settings);
 
 /**
  * Deinitialises the spi device.
@@ -56,9 +52,9 @@ void deInit(Settings& settings);
  * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size);
+error write(Settings& settings, const uint8_t* data, size_t size);
 
-hal_spi_err_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post);
+error dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post);
 
 /**
  * Writes a n amount of bytes to the spi device and reads the same amount of bytes.
@@ -74,7 +70,7 @@ hal_spi_err_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, std
  * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize);
+error writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize);
 
 void aquire_bus(Settings& settings);
 void release_bus(Settings& settings);

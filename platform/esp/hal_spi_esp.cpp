@@ -6,11 +6,10 @@
 #include "staticAllocator.hpp"
 #include <stdio.h>
 #include <string.h>
+using namespace spi;
 
 auto transactionBuffer = StaticAllocator<spi_transaction_t, 10>();
 auto callBackArgsBuffer = StaticAllocator<CallbackArg, 10>();
-
-using namespace spi;
 
 namespace platform_spi {
 struct SpiHost {
@@ -28,7 +27,7 @@ SpiHost spiHosts[1]
              .quadwp_io_num = -1,
              .quadhd_io_num = -1,
              .max_transfer_sz = 0,
-             .flags = SPICOMMON_BUSFLAG_MASTER, // investigate ESP_INTR_FLAG_IRAM flag
+             .flags = SPICOMMON_BUSFLAG_MASTER,
              .intr_flags = 0},
         }};
 
@@ -74,7 +73,7 @@ void post_callback(spi_transaction_t* t)
         transactionBuffer.free(t);
     }
 }
-hal_spi_err_t init(Settings& settings)
+error init(Settings& settings)
 {
     auto spi_host = spiHosts[settings.spi_idx];
 
@@ -111,7 +110,7 @@ void deInit(Settings& settings)
     }
 }
 
-hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size)
+error write(Settings& settings, const uint8_t* data, size_t size)
 {
     auto trans = spi_transaction_t{};
     if (size < 4) {
@@ -142,7 +141,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size)
     return spi_device_transmit(get_platform_ptr(settings), &trans);
 }
 
-hal_spi_err_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post)
+error dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post)
 {
     // Wait until there is space for the transaction in the static buffer.
     spi_transaction_t* trans;
@@ -170,7 +169,7 @@ hal_spi_err_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, std
     return spi_device_queue_trans(get_platform_ptr(settings), trans, portMAX_DELAY);
 }
 
-hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize)
+error writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize)
 {
     auto trans = spi_transaction_t{
         .flags = uint32_t{0},
@@ -196,7 +195,7 @@ void release_bus(Settings& settings)
 }
 }
 
-hal_spi_err_t hal_spi_host_init(uint8_t idx)
+error hal_spi_host_init(uint8_t idx)
 {
     auto spi_host = platform_spi::spiHosts[idx];
     auto err = spi_bus_initialize(spi_host.handle, &spi_host.config, SPI_DMA_CH_AUTO);

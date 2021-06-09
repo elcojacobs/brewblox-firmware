@@ -12,7 +12,7 @@
 // #include "hal/hal_gpio.h"
 #include "driver/gpio.h"
 #include "hal/hal_i2c.h"
-#include "hal/hal_spi.h"
+#include "hal/hal_spi.hpp"
 
 constexpr auto PIN_NUM_MISO = GPIO_NUM_12;
 constexpr auto PIN_NUM_MOSI = GPIO_NUM_13;

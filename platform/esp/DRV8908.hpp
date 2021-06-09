@@ -1,5 +1,5 @@
 #pragma once
-#include "hal/hal_spi.h"
+#include "hal/hal_spi.hpp"
 
 class DRV8908 {
 public:
@@ -48,8 +48,8 @@ public:
         OLD_CTRL_6 = 0x24,      // Open Load Detect 6
     };
 
-    hal_spi_err_t readRegister(RegAddr address, uint8_t& val);
-    hal_spi_err_t writeRegister(RegAddr address, uint8_t val);
+    spi::error readRegister(RegAddr address, uint8_t& val);
+    spi::error writeRegister(RegAddr address, uint8_t val);
 
     uint8_t status()
     {

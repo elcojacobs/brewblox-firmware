@@ -20,7 +20,7 @@
 #pragma once
 #include "esp32/rom/ets_sys.h"
 #include "hal/hal_gpio.h"
-#include "hal/hal_spi.h"
+#include "hal/hal_spi.hpp"
 #include "hal/hal_spi_types.h"
 #include <functional>
 
@@ -85,13 +85,13 @@ private:
     std::function<void()> finishCallback;
     const hal_pin_t dc;
 
-    hal_spi_err_t setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
+    spi::error setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
 
-    hal_spi_err_t dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
-    hal_spi_err_t dmaWrite(uint8_t tx_data, bool dc);
+    spi::error dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
+    spi::error dmaWrite(uint8_t tx_data, bool dc);
 
-    hal_spi_err_t writeCmd(const std::vector<uint8_t>& cmd);
-    hal_spi_err_t write(const std::vector<uint8_t>& cmd);
-    hal_spi_err_t writeCmd(uint8_t cmd);
-    hal_spi_err_t write(uint8_t cmd);
+    spi::error writeCmd(const std::vector<uint8_t>& cmd);
+    spi::error write(const std::vector<uint8_t>& cmd);
+    spi::error writeCmd(uint8_t cmd);
+    spi::error write(uint8_t cmd);
 };

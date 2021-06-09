@@ -30,8 +30,9 @@ enum class SpiDataType {
     VALUE,
 };
 
-using hal_spi_err_t = int32_t;
+using error = int32_t;
 
+/// An struct containing the data of a transaction.
 struct TransactionData {
     const uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
