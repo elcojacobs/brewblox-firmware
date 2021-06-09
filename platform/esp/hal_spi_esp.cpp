@@ -3,15 +3,12 @@
 #include "esp_log.h"
 #include "hal/hal_spi_impl.hpp"
 #include "hal/hal_spi_types.h"
-#include "ringBuffer.hpp"
+#include "staticAllocator.hpp"
 #include <stdio.h>
 #include <string.h>
 
-// Making this global is not ideal but the current format of the hal functions is global.
-// Maybe the hal functions should live inside a class.
-
-auto transactionBuffer = RingBuffer<spi_transaction_t, 10>();
-auto callBackArgsBuffer = RingBuffer<CallbackArg, 10>();
+auto transactionBuffer = StaticAllocator<spi_transaction_t, 10>();
+auto callBackArgsBuffer = StaticAllocator<CallbackArg, 10>();
 
 using namespace spi;
 
@@ -41,37 +38,41 @@ spi_device_t* get_platform_ptr(Settings& settings)
 }
 void pre_callback(spi_transaction_t* t)
 {
-    auto transactionData = TransactionData{
-        .tx_data = reinterpret_cast<const uint8_t*>(t->tx_buffer),
-        .rx_data = reinterpret_cast<uint8_t*>(t->rx_buffer),
-        .tx_len = t->length,
-        .rx_len = t->rxlength};
+    if (t->user) {
+        auto transactionData = TransactionData{
+            .tx_data = reinterpret_cast<const uint8_t*>(t->tx_buffer),
+            .rx_data = reinterpret_cast<uint8_t*>(t->rx_buffer),
+            .tx_len = t->length / 8,
+            .rx_len = t->rxlength / 8};
 
-    auto callbacks = reinterpret_cast<CallbackArg*>(t->user);
-    if (callbacks->pre)
-        callbacks->pre(transactionData);
+        auto callbacks = reinterpret_cast<CallbackArg*>(t->user);
+        if (callbacks->pre)
+            callbacks->pre(transactionData);
 
-    t->tx_buffer = transactionData.tx_data;
-    t->rx_buffer = transactionData.rx_data;
-    t->length = transactionData.tx_len;
-    t->rxlength = transactionData.rx_len;
+        t->tx_buffer = transactionData.tx_data;
+        t->rx_buffer = transactionData.rx_data;
+        t->length = transactionData.tx_len * 8;
+        t->rxlength = transactionData.rx_len * 8;
+    }
 }
 
 void post_callback(spi_transaction_t* t)
 {
-    auto transactionData = TransactionData{
-        .tx_data = reinterpret_cast<const uint8_t*>(t->tx_buffer),
-        .rx_data = reinterpret_cast<uint8_t*>(t->rx_buffer),
-        .tx_len = t->length,
-        .rx_len = t->rxlength};
+    if (t->user) {
+        auto transactionData = TransactionData{
+            .tx_data = reinterpret_cast<const uint8_t*>(t->tx_buffer),
+            .rx_data = reinterpret_cast<uint8_t*>(t->rx_buffer),
+            .tx_len = t->length,
+            .rx_len = t->rxlength};
 
-    auto callbacks = reinterpret_cast<CallbackArg*>(t->user);
-    if (callbacks->post) {
-        callbacks->post(transactionData);
+        auto callbacks = reinterpret_cast<CallbackArg*>(t->user);
+        if (callbacks->post) {
+            callbacks->post(transactionData);
+        }
+
+        callBackArgsBuffer.free(callbacks);
+        transactionBuffer.free(t);
     }
-
-    callBackArgsBuffer.giveBack(callbacks);
-    transactionBuffer.giveBack(t);
 }
 hal_spi_err_t init(Settings& settings)
 {
@@ -110,62 +111,79 @@ void deInit(Settings& settings)
     }
 }
 
-hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType)
+hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size)
 {
-    spi_transaction_t* trans = transactionBuffer.take();
-
-    if (spiDataType == SpiDataType::VALUE) {
-        *trans = spi_transaction_t{
+    auto trans = spi_transaction_t{};
+    if (size < 4) {
+        trans = spi_transaction_t{
             .flags = uint32_t{SPI_TRANS_USE_TXDATA},
             .cmd = 0,
             .addr = 0,
             .length = size * 8, // esp platform wants size in bits
             .rxlength = 0,
-            .user = new (callBackArgsBuffer.take()) CallbackArg{
-                pre,
-                post},
+            .user = nullptr,
+            .tx_buffer = nullptr,
             .rx_buffer = nullptr,
         };
-        memcpy(trans->tx_data, data, size);
+        memcpy(trans.tx_data, data, size);
     } else {
-        *trans = spi_transaction_t{
+        trans = spi_transaction_t{
             .flags = uint32_t{0},
             .cmd = 0,
             .addr = 0,
             .length = size * 8, // esp platform wants size in bits
             .rxlength = 0,
-            .user = new (callBackArgsBuffer.take()) CallbackArg{
-                pre,
-                post},
+            .user = nullptr,
             .tx_buffer = data,
             .rx_buffer = nullptr,
         };
     }
 
-    if (dma) {
-        return spi_device_queue_trans(get_platform_ptr(settings), trans, portMAX_DELAY);
-    }
-    return spi_device_transmit(get_platform_ptr(settings), trans);
+    return spi_device_transmit(get_platform_ptr(settings), &trans);
 }
 
-hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType)
+hal_spi_err_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post)
 {
-    spi_transaction_t* trans = transactionBuffer.take();
+    // Wait until there is space for the transaction in the static buffer.
+    spi_transaction_t* trans;
+    while (!(trans = new (transactionBuffer.get()) spi_transaction_t{})) {
+    };
+
+    // Wait until there is space for the callbackarg in the static buffer.
+    CallbackArg* callBackArg;
+    while (!(callBackArg = new (callBackArgsBuffer.get()) CallbackArg{})) {
+    };
 
     *trans = spi_transaction_t{
         .flags = uint32_t{0},
         .cmd = 0,
         .addr = 0,
-        .length = txSize * 8, // esp platform wants size in bits
-        .rxlength = rxSize * 8,
-        .user = new (callBackArgsBuffer.take()) CallbackArg{
+        .length = size * 8, // esp platform wants size in bits
+        .rxlength = 0,
+        .user = new (callBackArg) CallbackArg{
             pre,
             post},
+        .tx_buffer = data,
+        .rx_buffer = nullptr,
+    };
+
+    return spi_device_queue_trans(get_platform_ptr(settings), trans, portMAX_DELAY);
+}
+
+hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize)
+{
+    auto trans = spi_transaction_t{
+        .flags = uint32_t{0},
+        .cmd = 0,
+        .addr = 0,
+        .length = txSize * 8, // esp platform wants size in bits
+        .rxlength = rxSize * 8,
+        .user = nullptr,
         .tx_buffer = const_cast<uint8_t*>(tx),
         .rx_buffer = const_cast<uint8_t*>(rx),
     };
 
-    return spi_device_transmit(get_platform_ptr(settings), trans);
+    return spi_device_transmit(get_platform_ptr(settings), &trans);
 }
 
 void aquire_bus(Settings& settings)

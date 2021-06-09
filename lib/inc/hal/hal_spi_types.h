@@ -32,22 +32,11 @@ enum class SpiDataType {
 
 using hal_spi_err_t = int32_t;
 
-
 struct TransactionData {
     const uint8_t* tx_data = nullptr;
     uint8_t* rx_data = nullptr;
     size_t tx_len = 0;
     size_t rx_len = 0;
-};
-
-struct Transaction {
-    uint8_t* tx_data = nullptr;
-    uint8_t* rx_data = nullptr;
-    size_t tx_len = 0;
-    size_t rx_len = 0;
-    void* user_cb_data = nullptr;
-    SpiDataType txDataType = SpiDataType::POINTER;
-    SpiDataType userDataType = SpiDataType::POINTER;
 };
 
 /// A helper struct to combine the pre and post condition into one object.

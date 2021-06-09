@@ -33,35 +33,34 @@ private:
     {
         obj = lv_obj_create(grid, NULL);
         lv_obj_set_size(obj, 140, 140);
-        lv_obj_reset_style_list(obj, LV_BTN_PART_MAIN); 
+        lv_obj_reset_style_list(obj, LV_BTN_PART_MAIN);
         lv_obj_add_style(obj, LV_BTN_PART_MAIN, &style);
 
         label = lv_label_create(obj, NULL);
         lv_label_set_text(label, labelTxt);
         lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 50);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
-        lv_obj_reset_style_list(label, LV_LABEL_PART_MAIN); 
+        lv_obj_reset_style_list(label, LV_LABEL_PART_MAIN);
         lv_obj_add_style(label, LV_LABEL_PART_MAIN, &textStyle);
-
- 
 
         value1 = lv_label_create(obj, NULL);
         lv_label_set_text(value1, value1Txt);
         lv_obj_align(value1, NULL, LV_ALIGN_CENTER, 0, 0);
         lv_label_set_align(value1, LV_LABEL_ALIGN_CENTER);
-        lv_obj_reset_style_list(value1, LV_LABEL_PART_MAIN); 
+        lv_obj_reset_style_list(value1, LV_LABEL_PART_MAIN);
         lv_obj_add_style(value1, LV_LABEL_PART_MAIN, &textStyle);
 
         value2 = lv_label_create(obj, NULL);
         lv_label_set_text(value2, value2Txt);
         lv_obj_align(value2, NULL, LV_ALIGN_CENTER, 0, -40);
         lv_label_set_align(value2, LV_LABEL_ALIGN_CENTER);
-        lv_obj_reset_style_list(value2, LV_LABEL_PART_MAIN); 
+        lv_obj_reset_style_list(value2, LV_LABEL_PART_MAIN);
         lv_obj_add_style(value2, LV_LABEL_PART_MAIN, &textStyle);
     }
-    void makeStyle() {
+    void makeStyle()
+    {
         lv_style_init(&textStyle);
-        lv_style_set_value_color(&textStyle, LV_STATE_DEFAULT, LV_COLOR_BLUE);
+        lv_style_set_value_color(&textStyle, LV_STATE_DEFAULT, LV_COLOR_WHITE);
 
         lv_style_init(&style);
         lv_style_set_radius(&style, LV_STATE_DEFAULT, 10);
@@ -70,6 +69,7 @@ private:
         lv_style_set_bg_grad_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLUE);
         lv_style_set_bg_grad_dir(&style, LV_STATE_DEFAULT, LV_GRAD_DIR_VER);
         lv_style_set_border_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLUE);
+        lv_style_set_value_color(&style, LV_STATE_DEFAULT, LV_COLOR_WHITE);
     }
     lv_obj_t* obj;
     lv_obj_t* label;

@@ -56,7 +56,9 @@ void deInit(Settings& settings);
  * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool dma, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
+hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size);
+
+hal_spi_err_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post);
 
 /**
  * Writes a n amount of bytes to the spi device and reads the same amount of bytes.
@@ -72,7 +74,7 @@ hal_spi_err_t write(Settings& settings, const uint8_t* data, size_t size, bool d
  * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post, SpiDataType spiDataType);
+hal_spi_err_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize);
 
 void aquire_bus(Settings& settings);
 void release_bus(Settings& settings);

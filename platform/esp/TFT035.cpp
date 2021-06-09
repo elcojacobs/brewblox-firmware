@@ -39,20 +39,24 @@ TFT035::TFT035(std::function<void()> finishCallback)
 
 hal_spi_err_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
 {
-    return spiDevice.write(cmd, false, callbackDcPinOff);
+    hal_gpio_write(2, false);
+    return spiDevice.write(cmd);
 }
 hal_spi_err_t TFT035::write(const std::vector<uint8_t>& cmd)
 {
-    return spiDevice.write(cmd, false, callbackDcPinOn);
+    hal_gpio_write(2, true);
+    return spiDevice.write(cmd);
 }
 
 hal_spi_err_t TFT035::writeCmd(uint8_t cmd)
 {
-    return spiDevice.write(cmd, callbackDcPinOff);
+    hal_gpio_write(2, false);
+    return spiDevice.write(cmd);
 }
 hal_spi_err_t TFT035::write(uint8_t cmd)
 {
-    return spiDevice.write(cmd, callbackDcPinOn);
+    hal_gpio_write(2, true);
+    return spiDevice.write(cmd);
 }
 
 void TFT035::init()
@@ -141,22 +145,25 @@ hal_spi_err_t TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, 
     if (auto error = dmaWrite(0x2A, false))
         return error;
 
-    auto x = std::array<uint8_t, 4>{uint8_t(xs >> 8),
-                                    uint8_t(xs & 0xFF),
-                                    uint8_t(xe >> 8),
-                                    uint8_t(xe & 0xFF)};
-    if (auto error = spiDevice.write(x, true, callbackDcPinOn))
+    if (auto error = dmaWrite(uint8_t(xs >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(xs & 0xFF), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(xe >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(xe & 0xFF), true))
         return error;
 
     if (auto error = dmaWrite(0x2B, false))
         return error;
 
-    auto y = std::array<uint8_t, 4>{uint8_t(ys >> 8),
-                                    uint8_t(ys & 0xFF),
-                                    uint8_t(ye >> 8),
-                                    uint8_t(ye & 0xFF)};
-
-    if (auto error = spiDevice.write(y, true, callbackDcPinOn))
+    if (auto error = dmaWrite(uint8_t(ys >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(ys & 0xFF), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(ye >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(ye & 0xFF), true))
         return error;
 
     return dmaWrite(0x2C, false);
@@ -165,9 +172,9 @@ hal_spi_err_t TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, 
 hal_spi_err_t TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
 {
     if (dc) {
-        return spiDevice.write(tx_data, tx_len, true, callbackDcPinOn);
+        return spiDevice.dmaWrite(tx_data, tx_len, callbackDcPinOn);
     } else {
-        return spiDevice.write(tx_data, tx_len, true, callbackDcPinOff);
+        return spiDevice.dmaWrite(tx_data, tx_len, callbackDcPinOff);
     }
 }
 
@@ -175,9 +182,9 @@ hal_spi_err_t TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
     auto alocatedVal = new uint8_t(tx_val);
     if (dc) {
-        return spiDevice.write(alocatedVal, 1, true, callbackDcPinOn, postFreeCallBack);
+        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOn, postFreeCallBack);
     } else {
-        return spiDevice.write(alocatedVal, 1, true, callbackDcPinOff, postFreeCallBack);
+        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOff, postFreeCallBack);
     }
 }
 bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye, uint8_t* pixels, uint16_t nPixels)
@@ -185,7 +192,7 @@ bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsi
     if (auto error = this->setPos(xs, xe, ys, ye))
         return error;
 
-    return spiDevice.write(pixels, nPixels * 3, true, callbackDcPinOn, [&](TransactionData& t) {
+    return spiDevice.dmaWrite(pixels, nPixels * 3, callbackDcPinOn, [&](TransactionData& t) {
         this->finishCallback();
     });
 }

@@ -17,7 +17,7 @@ public:
     {
         auto nPixels = (area->x2 - area->x1 + 1) * (area->y2 - area->y1 + 1);
         if (!nPixels) {
-            ESP_LOGE("Flush", "Writing zero pixels");
+            // Log here when a better debug log is available.
         }
 
         uint8_t* readPtr = reinterpret_cast<uint8_t*>(color_p);
@@ -31,11 +31,6 @@ public:
         getInstance().display.writePixels(area->x1, area->x2, area->y1, area->y2, reinterpret_cast<uint8_t*>(color_p), nPixels);
     }
 
-    void handle()
-    {
-    }
-
-    // temporary hack
     void aquire_spi()
     {
         display.aquire_spi();
@@ -71,9 +66,6 @@ private:
 
         gridInit();
         display.release_spi();
-
-        
-
     }
 
     void gridInit()
@@ -88,18 +80,16 @@ private:
         lv_style_set_bg_grad_dir(&style, LV_STATE_DEFAULT, LV_GRAD_DIR_VER);
         lv_style_set_border_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
 
-
         grid = lv_cont_create(lv_scr_act(), NULL);
         lv_obj_align_origo(grid, NULL, LV_ALIGN_CENTER, 0, 0); /*This parametrs will be sued when realigned*/
         lv_cont_set_fit(grid, LV_FIT_PARENT);
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
-        // lv_obj_reset_style_list(lv_scr_act(), LV_BTN_PART_MAIN); 
+        // lv_obj_reset_style_list(lv_scr_act(), LV_BTN_PART_MAIN);
         lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style);
         lv_obj_add_style(lv_scr_act(), LV_CONT_PART_MAIN, &style);
-
     }
     lv_disp_drv_t disp_drv;
-    TFT035 display = TFT035([&]() {
+    TFT035 display = TFT035([this]() {
         lv_disp_flush_ready(&disp_drv);
     });
 };

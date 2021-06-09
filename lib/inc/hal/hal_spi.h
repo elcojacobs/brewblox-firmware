@@ -85,30 +85,30 @@ struct SpiDevice {
     * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
     * @return If any error will occur a non zero result will indicate an error has happened.
     */
-    hal_spi_err_t write(const std::vector<uint8_t>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
+    hal_spi_err_t write(const std::vector<uint8_t>& values)
     {
-        return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
+        return platform_spi::write(settings, values.data(), values.size());
     }
 
     /// Overload optimised for std::arrays smaller than pointer size.
-    template <size_t N, std::enable_if_t<N <= 4, int> = 0>
-    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
-    {
-        return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::VALUE);
-    }
+    // template <size_t N, std::enable_if_t<N <= 4, int> = 0>
+    // hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
+    // {
+    //     return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::VALUE);
+    // }
 
-    template <size_t N, std::enable_if_t<(N > 4), int> = 0>
-    hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
-    {
-        return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
-    }
+    // template <size_t N, std::enable_if_t<(N > 4), int> = 0>
+    // hal_spi_err_t write(const std::array<uint8_t, N>& values, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
+    // {
+    //     return platform_spi::write(settings, values.data(), values.size(), dma, pre, post, SpiDataType::POINTER);
+    // }
 
     template <size_t N>
     hal_spi_err_t write_and_read(
         const std::array<uint8_t, N>& toDevice,
         std::array<uint8_t, N>& fromDevice)
     {
-        return platform_spi::writeAndRead(settings, toDevice.data(), N, fromDevice.data(), N, nullptr, nullptr, SpiDataType::POINTER);
+        return platform_spi::writeAndRead(settings, toDevice.data(), N, fromDevice.data(), N);
     }
 
     /**
@@ -123,9 +123,9 @@ struct SpiDevice {
     * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    hal_spi_err_t write(const uint8_t* data, size_t size, bool dma = false, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
+    hal_spi_err_t write(const uint8_t* data, size_t size)
     {
-        return platform_spi::write(settings, data, size, dma, pre, post, SpiDataType::POINTER);
+        return platform_spi::write(settings, data, size);
     }
 
     /**
@@ -138,21 +138,26 @@ struct SpiDevice {
     * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    hal_spi_err_t write(uint8_t value, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
+    hal_spi_err_t write(uint8_t value)
     {
-        auto allocatedValue = uint8_t(value);
-        return platform_spi::write(settings, &allocatedValue, 1, false, pre, post, SpiDataType::VALUE);
+        // auto allocatedValue = uint8_t(value);
+        return platform_spi::write(settings, &value, 1);
     }
 
-    /**
-    * Writes a std::vector of bytes over the spi bus.
-    * 
-    * @param values A std::vector of bytes to be send over the bus.
-    * @return If any error will occur a non zero result will indicate an error has happened.
-    */
-    hal_spi_err_t write(const std::vector<uint8_t>& values)
+    // /**
+    // * Writes a std::vector of bytes over the spi bus.
+    // *
+    // * @param values A std::vector of bytes to be send over the bus.
+    // * @return If any error will occur a non zero result will indicate an error has happened.
+    // */
+    // hal_spi_err_t write(const std::vector<uint8_t>& values)
+    // {
+    //     return platform_spi::write(settings, values.data(), values.size());
+    // }
+
+    hal_spi_err_t dmaWrite(const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre = nullptr, std::function<void(TransactionData&)> post = nullptr)
     {
-        return platform_spi::write(settings, values.data(), values.size(), false, nullptr, nullptr, SpiDataType::POINTER);
+        return platform_spi::dmaWrite(settings, data, size, pre, post);
     }
 
     void aquire_bus()
