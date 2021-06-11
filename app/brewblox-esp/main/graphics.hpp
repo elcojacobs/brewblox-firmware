@@ -24,7 +24,10 @@ public:
         uint8_t* writePtr = reinterpret_cast<uint8_t*>(color_p);
 
         for (auto index = 0; index < nPixels; index++) {
-            memcpy(writePtr, readPtr, 3);
+            *writePtr = *(readPtr + 2);
+            *(writePtr + 1) = *(readPtr + 1);
+            *(writePtr + 2) = *readPtr;
+
             readPtr += 4;
             writePtr += 3;
         }
