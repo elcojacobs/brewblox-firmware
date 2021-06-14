@@ -83,13 +83,43 @@ private:
         lv_style_set_bg_grad_dir(&style, LV_STATE_DEFAULT, LV_GRAD_DIR_VER);
         lv_style_set_border_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
 
-        grid = lv_cont_create(lv_scr_act(), NULL);
+        static auto mainContainer = lv_cont_create(lv_scr_act(), NULL);
+        lv_cont_set_fit(mainContainer, LV_FIT_PARENT);
+        lv_cont_set_layout(mainContainer, LV_LAYOUT_PRETTY_MID);
+
+        lv_obj_set_style_local_pad_top(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_pad_bottom(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_pad_left(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_pad_right(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_pad_inner(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+
+        lv_obj_set_style_local_margin_all(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_border_width(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+
+        static auto bar = lv_obj_create(mainContainer, NULL);
+        lv_obj_set_size(bar, 480, 20);
+        lv_obj_set_style_local_bg_color(bar, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+        lv_obj_set_style_local_margin_all(bar, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_pad_all(bar, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_border_width(bar, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_set_style_local_radius(bar, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+
+        static auto label = lv_label_create(bar, NULL);
+        lv_label_set_text(label, "  Ethernet ip: 10.20.0.1 - Wifi ip: xx.xx.xx.xx - Version: 1.0.1");
+        lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
+
+        grid = lv_cont_create(mainContainer, NULL);
+        lv_obj_set_style_local_pad_all(grid, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 10);
+        lv_obj_set_style_local_margin_all(grid, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+
+        lv_obj_set_style_local_radius(grid, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+
         lv_obj_align_origo(grid, NULL, LV_ALIGN_CENTER, 0, 0); /*This parametrs will be sued when realigned*/
-        lv_cont_set_fit(grid, LV_FIT_PARENT);
+        lv_obj_set_size(grid, 480, 300);
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
         // lv_obj_reset_style_list(lv_scr_act(), LV_BTN_PART_MAIN);
         lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style);
-        lv_obj_add_style(lv_scr_act(), LV_CONT_PART_MAIN, &style);
+        // lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style);
     }
     lv_disp_drv_t disp_drv;
     TFT035 display = TFT035([this]() {

@@ -32,7 +32,7 @@ private:
     void makeObj(lv_obj_t* grid, const char* labelTxt, const char* value1Txt, const char* value2Txt)
     {
         obj = lv_obj_create(grid, NULL);
-        lv_obj_set_size(obj, 140, 140);
+        lv_obj_set_size(obj, 145, 138);
         lv_obj_reset_style_list(obj, LV_BTN_PART_MAIN);
         lv_obj_add_style(obj, LV_BTN_PART_MAIN, &style);
 
@@ -60,7 +60,7 @@ private:
     void makeStyle()
     {
         lv_style_init(&textStyle);
-        lv_style_set_value_color(&textStyle, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+        lv_style_set_text_color(&textStyle, LV_STATE_DEFAULT, LV_COLOR_WHITE);
 
         lv_style_init(&style);
         lv_style_set_radius(&style, LV_STATE_DEFAULT, 10);
@@ -117,7 +117,8 @@ private:
     void makeObj(lv_obj_t* grid, const char* labelTxt, const char* value1Txt, const char* value2Txt, const char* value3Txt, const char* value4Txt)
     {
         obj = lv_obj_create(grid, NULL);
-        lv_obj_set_size(obj, 140, 140);
+        lv_obj_set_size(obj, 145, 138);
+        lv_obj_set_style_local_margin_all(obj, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
 
         label = lv_label_create(obj, NULL);
         lv_label_set_text(label, labelTxt);
