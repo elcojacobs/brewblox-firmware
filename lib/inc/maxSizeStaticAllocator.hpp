@@ -12,8 +12,8 @@
  * @tparam size The amount of elements that can be stored.
  * 
  */
-template <typename T, size_t size>
-class StaticAllocator {
+template <size_t maxElementSize, size_t size>
+class MaxSizeStaticAllocator {
 public:
     /**
      * Returns a pointer to an empty T.
@@ -21,8 +21,10 @@ public:
      * @return A pointer to a T if space is available. If the buffer is full a nullptr will be returned.
      * 
      */
+    template<typename T>
     [[nodiscard]] T* get()
     {
+        static_assert(sizeof(T)<=maxElementSize);
         Element* element;
 
         bool expected = false;
@@ -36,7 +38,7 @@ public:
                 return nullptr;
             }
         } while (!element->inUse.compare_exchange_weak(expected, true));
-        return &element->data;
+        return reinterpret_cast<T*>(&element->data);
     }
 
     /**
@@ -63,8 +65,9 @@ public:
     }
 
 private:
+    typedef unsigned char DataType[maxElementSize];
     struct Element {
-        T data;
+        DataType data;
         std::atomic<bool> inUse = false;
     };
     std::array<Element, size> data;

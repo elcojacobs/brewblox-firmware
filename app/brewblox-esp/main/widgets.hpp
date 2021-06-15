@@ -16,16 +16,20 @@ public:
     void setLabel(std::string txt)
     {
         lv_label_set_text(label, txt.c_str());
+        lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 50);
     }
 
     void setValue1(std::string txt)
     {
         lv_label_set_text(value1, txt.c_str());
+        lv_obj_align(value1, NULL, LV_ALIGN_CENTER, 0, 0);
+
     }
 
     void setValue2(std::string txt)
     {
         lv_label_set_text(value2, txt.c_str());
+        lv_obj_align(value2, NULL, LV_ALIGN_CENTER, 0, -40);
     }
 
 private:

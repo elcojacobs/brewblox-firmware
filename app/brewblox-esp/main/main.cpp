@@ -86,6 +86,8 @@ int main(int /*argc*/, char** /*argv*/)
                                                       }
                                                       w_it++;
                                                   }
+                                                      auto& wifi = get_wifi();
+                                                      graphics.bar.setWifiIp(wifi.get_local_ip());
 
                                                   auto tick = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
                                                   graphics.aquire_spi();
