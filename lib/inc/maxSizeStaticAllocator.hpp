@@ -1,3 +1,6 @@
+
+#pragma once
+
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -21,10 +24,10 @@ public:
      * @return A pointer to a T if space is available. If the buffer is full a nullptr will be returned.
      * 
      */
-    template<typename T>
+    template <typename T>
     [[nodiscard]] T* get()
     {
-        static_assert(sizeof(T)<=maxElementSize);
+        static_assert(sizeof(T) <= maxElementSize, "The element that is requested is bigger than the slot size.");
         Element* element;
 
         bool expected = false;
@@ -47,17 +50,43 @@ public:
      * @param element The element to be freed.
      * 
      */
+    template <typename T>
     void free(T* element)
     {
-        auto index = std::find_if(data.begin(), data.end(), [element](Element& ele) { return &ele.data == element; });
-        assert(index->inUse);
-        index->inUse = false;
+        assert(tryFree(element));
+    }
+
+    /**
+     * Tries to free the element. If it's not in the buffer nothing will happen. 
+     * This is usefull if you're not sure if the element needs to be freed.
+     * 
+     * @param element The element to be freed.
+     * @return Returns true if the element was in the buffer, false if it was not.
+     * 
+     */
+    template <typename T>
+    bool tryFree(T* element)
+    {
+        auto index = std::find_if(
+            data.begin(),
+            data.end(),
+            [element](Element& ele) {
+                return reinterpret_cast<T*>(&ele.data) == element;
+            });
+
+        if (index != data.end()) {
+            assert(index->inUse);
+            index->inUse = false;
+            return true;
+        }
+        return false;
     }
 
     /**
      * Returns the amount of elements in the buffer which are still free. 
      */
-    size_t countFreeElements()
+    size_t
+    countFreeElements()
     {
         return std::count_if(data.begin(), data.end(), [](const Element& ele) {
             return !ele.inUse;

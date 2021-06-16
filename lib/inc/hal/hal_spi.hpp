@@ -133,13 +133,63 @@ struct SpiDevice {
     * 
     * @param data A pointer pointing to the beginning of the data to be send.
     * @param size The amount of bytes to be send.
-    * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
-    * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
+    * @param callbacks The callbacks to be called before and after the transaction. 
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    spi::error dmaWrite(const uint8_t* data, size_t size, std::function<void(spi::TransactionData&)> pre = nullptr, std::function<void(spi::TransactionData&)> post = nullptr)
+    template <typename... T>
+    spi::error dmaWrite(const uint8_t* data, size_t size, spi::StaticCallbacks<T...>& callbacks)
     {
-        return platform_spi::dmaWrite(settings, data, size, pre, post);
+        return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(&callbacks));
+    }
+
+    /**
+    * Writes the data at the address at a given pointer over the spi bus asynchronously using dma.
+    *
+    * The caller will be responsible for deallocating the data pointer. One way to do this is to perform deallocation in the post function.
+    * 
+    * @param data A pointer pointing to the beginning of the data to be send.
+    * @param size The amount of bytes to be send.
+    * @param callbacks The callbacks to be called before and after the transaction. 
+    * @return If any error has occurred a non zero result will indicate an error has happened.
+    */
+    template <typename... T>
+    spi::error dmaWrite(const uint8_t* data, size_t size, spi::StaticCallbacks<T...>&& callbacks)
+    {
+        return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(&callbacks));
+    }
+
+    /**
+    * Writes the data at the address at a given pointer over the spi bus asynchronously using dma.
+    *
+    * The caller will be responsible for deallocating the data pointer. One way to do this is to perform deallocation in the post function.
+    * 
+    * @param data A pointer pointing to the beginning of the data to be send.
+    * @param size The amount of bytes to be send.
+    * @param callbacks The callbacks to be called before and after the transaction. 
+    * @return If any error has occurred a non zero result will indicate an error has happened.
+    */
+    template <typename... T>
+    spi::error dmaWrite(const uint8_t* data, size_t size, spi::Callbacks<T...>& callbacks)
+    {
+        auto callbacksToSend = new (spi::callBackArgsBuffer.get<spi::Callbacks<T...>>()) spi::Callbacks<T...>(callbacks);
+        return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(callbacksToSend));
+    }
+
+    /**
+    * Writes the data at the address at a given pointer over the spi bus asynchronously using dma.
+    *
+    * The caller will be responsible for deallocating the data pointer. One way to do this is to perform deallocation in the post function.
+    * 
+    * @param data A pointer pointing to the beginning of the data to be send.
+    * @param size The amount of bytes to be send.
+    * @param callbacks The callbacks to be called before and after the transaction. 
+    * @return If any error has occurred a non zero result will indicate an error has happened.
+    */
+    template <typename... T>
+    spi::error dmaWrite(const uint8_t* data, size_t size, spi::Callbacks<T...>&& callbacks)
+    {
+        auto callbacksToSend = new (spi::callBackArgsBuffer.get<spi::Callbacks<T...>>()) spi::Callbacks<T...>(callbacks);
+        return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(callbacksToSend));
     }
 
     void aquire_bus()

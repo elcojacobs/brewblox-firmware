@@ -9,32 +9,36 @@
 #include <sys/time.h>
 using namespace spi;
 
-void callbackDcPinOn(TransactionData& t)
-{
-    hal_gpio_write(2, true);
-}
+auto callbackDcPinOn = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, true);
+    },
+    nullptr};
 
-void postFreeCallBack(TransactionData& t)
-{
-    delete t.tx_data;
-}
+auto callbackDcPinOnWithFree = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, true);
+    },
+    [](TransactionData& t) {
+        delete t.tx_data;
+    }};
 
-void callbackDcPinOff(TransactionData& t)
-{
-    hal_gpio_write(2, false);
-}
+auto callbackDcPinOffWithFree = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, false);
+    },
+    [](TransactionData& t) {
+        delete t.tx_data;
+    }};
+
+auto callbackDcPinOff = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, false);
+    },
+    nullptr};
 
 TFT035::TFT035(std::function<void()> finishCallback)
-    : spiDevice(
-        spi::Settings{
-            .spi_idx = 0,
-            .speed = 20'000'000UL,
-            .queueSize = 10,
-            .ssPin = 4,
-            .mode = Settings::Mode::SPI_MODE0,
-            .bitOrder = Settings::BitOrder::MSBFIRST,
-            .on_Aquire = []() {},
-            .on_Release = []() {}})
+    : spiDevice(spi::Settings{.spi_idx = 0, .speed = 20'000'000UL, .queueSize = 10, .ssPin = 4, .mode = Settings::Mode::SPI_MODE0, .bitOrder = Settings::BitOrder::MSBFIRST, .on_Aquire = []() {}, .on_Release = []() {}})
     , finishCallback(finishCallback)
     , dc(2)
 
@@ -187,9 +191,9 @@ error TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
     auto alocatedVal = new uint8_t(tx_val);
     if (dc) {
-        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOn, postFreeCallBack);
+        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOnWithFree);
     } else {
-        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOff, postFreeCallBack);
+        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOffWithFree);
     }
 }
 bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye, uint8_t* pixels, uint16_t nPixels)
@@ -197,9 +201,13 @@ bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsi
     if (auto error = this->setPos(xs, xe, ys, ye))
         return error;
 
-    return spiDevice.dmaWrite(pixels, nPixels * 3, callbackDcPinOn, [&](TransactionData& t) {
-        this->finishCallback();
-    });
+    return spiDevice.dmaWrite(pixels, nPixels * 3,
+                              Callbacks{[&](TransactionData& t) {
+                                            hal_gpio_write(2, true);
+                                        },
+                                        [&](TransactionData& t) {
+                                            this->finishCallback();
+                                        }});
 }
 
 void TFT035::aquire_spi()

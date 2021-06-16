@@ -18,11 +18,14 @@
  */
 
 #pragma once
+#include "maxSizeStaticAllocator.hpp"
 #include <cstddef>
 #include <functional>
 #include <stdint.h>
 
 namespace spi {
+
+extern MaxSizeStaticAllocator<20, 10> callBackArgsBuffer;
 
 /// An enum to designated if the data of a spi transaction will be used as value or pointer.
 enum class SpiDataType {
@@ -40,10 +43,60 @@ struct TransactionData {
     size_t rx_len = 0;
 };
 
+struct CallbacksBase {
+    virtual void callPre(TransactionData&) = 0;
+    virtual void callPost(TransactionData&) = 0;
+};
+
 /// A helper struct to combine the pre and post condition into one object.
-struct CallbackArg {
-    std::function<void(TransactionData&)> pre;
-    std::function<void(TransactionData&)> post;
+template <typename Pre, typename Post>
+struct Callbacks : public CallbacksBase {
+    Callbacks(Pre pre, Post post)
+        : pre(pre)
+        , post(post)
+    {
+    }
+    Pre pre;
+    Post post;
+
+    void callPre(TransactionData& t) override final
+    {
+        if constexpr (!std::is_same<Pre, nullptr_t>::value) {
+            pre(t);
+        }
+    }
+    void callPost(TransactionData& t) override final
+    {
+        if constexpr (!std::is_same<Post, nullptr_t>::value) {
+            post(t);
+        }
+    }
+};
+
+template <typename Pre, typename Post>
+struct StaticCallbacks : public CallbacksBase {
+
+    StaticCallbacks(Pre pre, Post post)
+        : pre(pre)
+        , post(post)
+    {
+    }
+
+    Pre pre;
+    Post post;
+
+    void callPre(TransactionData& t) override final
+    {
+        if constexpr (!std::is_same<Pre, nullptr_t>::value) {
+            pre(t);
+        }
+    }
+    void callPost(TransactionData& t) override final
+    {
+        if constexpr (!std::is_same<Post, nullptr_t>::value) {
+            post(t);
+        }
+    }
 };
 
 /// A struct to transfer the settings of the spiDevice around.
@@ -68,4 +121,5 @@ struct Settings {
     std::function<void()> on_Release;
     void* platform_device_ptr = nullptr;
 };
+
 }

@@ -47,15 +47,22 @@ void deInit(Settings& settings);
  * @param settings The settings struct containing the configuration of the spi device.
  * @param data A pointer to the bytes to be send.
  * @param size The amount of bytes to be send.
- * @param dma If true the write will be done asychronously by use of the dma. If false the call will be blocking until the bytes have been send.
- * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
- * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
 error write(Settings& settings, const uint8_t* data, size_t size);
 
-error dmaWrite(Settings& settings, const uint8_t* data, size_t size, std::function<void(TransactionData&)> pre, std::function<void(TransactionData&)> post);
-
+/**
+ * Writes a n amount of bytes to the spi device
+ * 
+ * The user will be responsible for deallocating the data pointer.
+ * 
+ * @param settings The settings struct containing the configuration of the spi device.
+ * @param data A pointer to the bytes to be send.
+ * @param size The amount of bytes to be send.
+ * @param callbacks The callbacks to be called before and after the transaction. 
+ * @return If any error will occur a non zero result will indicate an error has happened.
+ */
+error dmaWrite(Settings& settings, const uint8_t* data, size_t size, CallbacksBase* callbacks);
 /**
  * Writes a n amount of bytes to the spi device and reads the same amount of bytes.
  * 
