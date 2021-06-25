@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_CXX_STANDARD 20)
-
 set(srcs 
   main.cpp
   # App.cpp
@@ -22,6 +21,8 @@ set(srcs
  ABSOLUTE)
 
 file(GLOB network_srcs ./network/*.cpp)
+file(GLOB graphics_srcs ./graphics/*.cpp)
+file(GLOB fonts_srcs ./graphics/fonts/*.cpp)
 file(GLOB http_srcs ./httpserver/*.cpp)
 
 file(GLOB cbox_srcs ../../../controlbox/src/cbox/*.cpp)
@@ -83,10 +84,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROTO_VERSION=${PROTO_VERSION}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROTO_DATE=${PROTO_DATE}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPLATFORM_ID=100")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYSTEM_VERSION_STRING=${SYSTEM_VERSION_STRING}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLV_LVGL_H_INCLUDE_SIMPLE")
+
+
 
 idf_component_register(
   SRCS
     ${srcs}
+    ${fonts_srcs}
+    ${graphics_srcs}
     ${cbox_srcs}
     ${brewblox_srcs}
     ${lib_srcs}

@@ -1,7 +1,7 @@
 #include "TFT035.hpp"
+#include "bar.hpp"
 #include "esp_log.h"
 #include "lvgl.h"
-#include "bar.hpp"
 
 class Graphics {
 public:
@@ -69,51 +69,27 @@ private:
         disp = lv_disp_drv_register(&disp_drv);
         lv_disp_set_bg_color(disp, LV_COLOR_BLACK);
 
+        style::init();
+
         gridInit();
         display.release_spi();
     }
 
     void gridInit()
     {
-        static lv_style_t style;
-
-        lv_style_init(&style);
-        // lv_style_set_radius(&style, LV_STATE_DEFAULT, 10);
-        lv_style_set_bg_opa(&style, LV_STATE_DEFAULT, LV_OPA_COVER);
-        lv_style_set_bg_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
-        lv_style_set_bg_grad_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
-        lv_style_set_bg_grad_dir(&style, LV_STATE_DEFAULT, LV_GRAD_DIR_VER);
-        lv_style_set_border_color(&style, LV_STATE_DEFAULT, LV_COLOR_BLACK);
 
         static auto mainContainer = lv_cont_create(lv_scr_act(), NULL);
         lv_cont_set_fit(mainContainer, LV_FIT_PARENT);
         lv_cont_set_layout(mainContainer, LV_LAYOUT_PRETTY_MID);
-
-        lv_obj_set_style_local_pad_top(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-        lv_obj_set_style_local_pad_bottom(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-        lv_obj_set_style_local_pad_left(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-        lv_obj_set_style_local_pad_right(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-        lv_obj_set_style_local_pad_inner(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-
-        lv_obj_set_style_local_margin_all(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-        lv_obj_set_style_local_border_width(mainContainer, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        lv_obj_add_style(mainContainer, LV_CONT_PART_MAIN, &style::maincontainer);
 
         bar = Bar(mainContainer);
 
-   
-
         grid = lv_cont_create(mainContainer, NULL);
-        lv_obj_set_style_local_pad_all(grid, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 10);
-        lv_obj_set_style_local_margin_all(grid, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-
-        lv_obj_set_style_local_radius(grid, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
-
         lv_obj_align_origo(grid, NULL, LV_ALIGN_CENTER, 0, 0); /*This parametrs will be sued when realigned*/
         lv_obj_set_size(grid, 480, 295);
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
-        // lv_obj_reset_style_list(lv_scr_act(), LV_BTN_PART_MAIN);
-        lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style);
-        // lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style);
+        lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style::grid);
     }
     lv_disp_drv_t disp_drv;
     TFT035 display = TFT035([this]() {

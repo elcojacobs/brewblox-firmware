@@ -8,7 +8,8 @@
 #include "RecurringTask.hpp"
 #include "TempSensor.h"
 #include "brewblox_esp.hpp"
-#include "graphics.hpp"
+#include "graphics/graphics.hpp"
+#include "graphics/widgets.hpp"
 #include "hal/hal_delay.h"
 #include "lvgl.h"
 #include "network/BufferedConnection.hpp"
@@ -16,7 +17,6 @@
 #include "network/CboxConnectionSource.hpp"
 #include "network/CboxServer.hpp"
 #include "network/network.hpp"
-#include "widgets.hpp"
 #include <algorithm>
 #include <asio.hpp>
 #include <esp_heap_caps.h>
@@ -53,6 +53,8 @@ int main(int /*argc*/, char** /*argv*/)
     }};
 
     static auto widget6 = PidWidget(graphics.grid);
+    widget6.setBar1(25);
+    widget6.setBar2(-80);
     ESP_LOGI("Display", "Image written");
 
     asio::io_context io;
@@ -86,20 +88,39 @@ int main(int /*argc*/, char** /*argv*/)
                                                       }
                                                       w_it++;
                                                   }
-                                                      auto& wifi = get_wifi();
-                                                      graphics.bar.setWifiIp(wifi.get_local_ip());
+                                                  auto& wifi = get_wifi();
+                                                  graphics.bar.setWifiIp(wifi.get_local_ip());
+                                                  graphics.bar.setWifiEnabled(wifi.is_connected());
 
-                                                  auto tick = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
+                                                  auto& ethernet = get_ethernet();
+                                                  graphics.bar.setEthernetIp(ethernet.get_local_ip());
+                                                  graphics.bar.setEthernetEnabled(ethernet.is_connected());
+
                                                   graphics.aquire_spi();
-                                                  lv_obj_invalidate(graphics.grid); // keep writing full display for testing
-                                                  lv_tick_inc(100);                 // This must be set to the time it took!
+
                                                   lv_task_handler();
                                                   graphics.release_spi();
-                                                  auto tock = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
-                                                  uint32_t duration = tock - tick;
-                                                  ESP_LOGE("display tick", "duration  %u", duration);
                                               });
     displayTicker.start();
+
+    static auto displayTimer = RecurringTask(io, asio::chrono::milliseconds(100),
+                                             RecurringTask::IntervalType::FROM_EXPIRY,
+                                             []() {
+                                                 lv_tick_inc(100); // This must be set to the time it took!
+                                             });
+    displayTimer.start();
+
+    static auto timeSetter = RecurringTask(io, asio::chrono::milliseconds(1000),
+                                           RecurringTask::IntervalType::FROM_EXPIRY,
+                                           []() {
+                                               auto tickMinutes = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::minutes(1);
+                                               auto minutes = tickMinutes % (60);
+
+                                               auto tickHours = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::hours(1);
+                                               auto hours = tickHours % (24);
+                                               graphics.bar.setTime(hours, minutes);
+                                           });
+    timeSetter.start();
 
     static auto gpioTester = RecurringTask(io, asio::chrono::milliseconds(5000),
                                            RecurringTask::IntervalType::FROM_EXPIRY,

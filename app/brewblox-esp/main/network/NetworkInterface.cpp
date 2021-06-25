@@ -63,3 +63,8 @@ std::string NetworkInterface::get_mac_address_string() const
 
     return mac.str();
 }
+
+[[nodiscard]] bool NetworkInterface::is_connected() const
+{
+    return this->connected;
+}
