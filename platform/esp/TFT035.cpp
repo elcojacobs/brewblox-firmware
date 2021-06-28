@@ -46,23 +46,23 @@ TFT035::TFT035(std::function<void()> finishCallback)
     spiDevice.init();
 }
 
-error TFT035::writeCmd(const std::vector<uint8_t>& cmd)
+error_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
 {
     hal_gpio_write(2, false);
     return spiDevice.write(cmd);
 }
-error TFT035::write(const std::vector<uint8_t>& cmd)
+error_t TFT035::write(const std::vector<uint8_t>& cmd)
 {
     hal_gpio_write(2, true);
     return spiDevice.write(cmd);
 }
 
-error TFT035::writeCmd(uint8_t cmd)
+error_t TFT035::writeCmd(uint8_t cmd)
 {
     hal_gpio_write(2, false);
     return spiDevice.write(cmd);
 }
-error TFT035::write(uint8_t cmd)
+error_t TFT035::write(uint8_t cmd)
 {
     hal_gpio_write(2, true);
     return spiDevice.write(cmd);
@@ -149,7 +149,7 @@ void TFT035::init()
     writeCmd(DISON);
 }
 
-error TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
+error_t TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
 {
     if (auto error = dmaWrite(0x2A, false))
         return error;
@@ -178,7 +178,7 @@ error TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned
     return dmaWrite(0x2C, false);
 }
 
-error TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
+error_t TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
 {
     if (dc) {
         return spiDevice.dmaWrite(tx_data, tx_len, callbackDcPinOn);
@@ -187,7 +187,7 @@ error TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
     }
 }
 
-error TFT035::dmaWrite(uint8_t tx_val, bool dc)
+error_t TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
     auto alocatedVal = new uint8_t(tx_val);
     if (dc) {

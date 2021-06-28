@@ -42,8 +42,8 @@ struct SpiDevice {
     * @param ss_pin The slave select pin.
     * @param spi_mode The configuration of the spi device.
     * @param bit_order The bitorder of a spi transaction.
-    * @param on_aquire
-    * @param on_release
+    * @param on_aquire Gets called when te bus is aquired.
+    * @param on_release Gets called when te bus is released.
     */
     SpiDevice(spi::Settings&& settings)
         : settings{settings}
@@ -56,7 +56,7 @@ struct SpiDevice {
     }
 
     /// Initialises the spi device with the settings defined in the constructor.
-    spi::error init()
+    spi::error_t init()
     {
         return platform_spi::init(settings);
     }
@@ -73,12 +73,9 @@ struct SpiDevice {
     * This function will block until the transfer is finished.
     * 
     * @param values A std::vector of bytes to be send over the bus.
-    * @param dma If true the transfer will take place asynchronously by use of the dma. If false the method will be blocking. 
-    * @param pre A functionpointer to a function which will be called right before the transfer will take place. 
-    * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
     * @return If any error will occur a non zero result will indicate an error has happened.
     */
-    spi::error write(const std::vector<uint8_t>& values)
+    spi::error_t write(const std::vector<uint8_t>& values)
     {
         return platform_spi::write(settings, values.data(), values.size());
     }
@@ -91,7 +88,7 @@ struct SpiDevice {
     * @return If any error will occur a non zero result will indicate an error has happened.
     */
     template <size_t N>
-    spi::error write_and_read(
+    spi::error_t write_and_read(
         const std::array<uint8_t, N>& toDevice,
         std::array<uint8_t, N>& fromDevice)
     {
@@ -108,7 +105,7 @@ struct SpiDevice {
     * @param size The amount of bytes to be send.
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    spi::error write(const uint8_t* data, size_t size)
+    spi::error_t write(const uint8_t* data, size_t size)
     {
         return platform_spi::write(settings, data, size);
     }
@@ -121,7 +118,7 @@ struct SpiDevice {
     * @param value The value to be written to the bus.
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    spi::error write(uint8_t value)
+    spi::error_t write(uint8_t value)
     {
         return platform_spi::write(settings, &value, 1);
     }
@@ -136,10 +133,10 @@ struct SpiDevice {
     * @param callbacks The callbacks to be called before and after the transaction. 
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    template <typename... T>
-    spi::error dmaWrite(const uint8_t* data, size_t size, spi::StaticCallbacks<T...>& callbacks)
+    template <typename Pre, typename Post>
+    spi::error_t dmaWrite(const uint8_t* data, size_t size, const spi::StaticCallbacks<Pre, Post>& callbacks)
     {
-        return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(&callbacks));
+        return platform_spi::dmaWrite(settings, data, size, static_cast<const spi::CallbacksBase*>(&callbacks));
     }
 
     /**
@@ -152,26 +149,10 @@ struct SpiDevice {
     * @param callbacks The callbacks to be called before and after the transaction. 
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    template <typename... T>
-    spi::error dmaWrite(const uint8_t* data, size_t size, spi::StaticCallbacks<T...>&& callbacks)
+    template <typename Pre, typename Post>
+    spi::error_t dmaWrite(const uint8_t* data, size_t size, const spi::Callbacks<Pre, Post>& callbacks)
     {
-        return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(&callbacks));
-    }
-
-    /**
-    * Writes the data at the address at a given pointer over the spi bus asynchronously using dma.
-    *
-    * The caller will be responsible for deallocating the data pointer. One way to do this is to perform deallocation in the post function.
-    * 
-    * @param data A pointer pointing to the beginning of the data to be send.
-    * @param size The amount of bytes to be send.
-    * @param callbacks The callbacks to be called before and after the transaction. 
-    * @return If any error has occurred a non zero result will indicate an error has happened.
-    */
-    template <typename... T>
-    spi::error dmaWrite(const uint8_t* data, size_t size, spi::Callbacks<T...>& callbacks)
-    {
-        auto callbacksToSend = new (spi::callBackArgsBuffer.get<spi::Callbacks<T...>>()) spi::Callbacks<T...>(callbacks);
+        auto callbacksToSend = new (spi::callBackArgsBuffer.get<spi::Callbacks<Pre, Post>>()) spi::Callbacks<Pre, Post>(callbacks);
         return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(callbacksToSend));
     }
 
@@ -185,10 +166,10 @@ struct SpiDevice {
     * @param callbacks The callbacks to be called before and after the transaction. 
     * @return If any error has occurred a non zero result will indicate an error has happened.
     */
-    template <typename... T>
-    spi::error dmaWrite(const uint8_t* data, size_t size, spi::Callbacks<T...>&& callbacks)
+    template <typename Pre, typename Post>
+    spi::error_t dmaWrite(const uint8_t* data, size_t size, spi::Callbacks<Pre, Post>&& callbacks)
     {
-        auto callbacksToSend = new (spi::callBackArgsBuffer.get<spi::Callbacks<T...>>()) spi::Callbacks<T...>(callbacks);
+        auto callbacksToSend = new (spi::callBackArgsBuffer.get<spi::Callbacks<Pre, Post>>()) spi::Callbacks<Pre, Post>(callbacks);
         return platform_spi::dmaWrite(settings, data, size, static_cast<spi::CallbacksBase*>(callbacksToSend));
     }
 
@@ -211,4 +192,4 @@ struct SpiDevice {
 private:
     spi::Settings settings;
 };
-spi::error hal_spi_host_init(uint8_t idx);
+spi::error_t hal_spi_host_init(uint8_t idx);

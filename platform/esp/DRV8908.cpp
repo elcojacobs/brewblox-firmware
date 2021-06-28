@@ -19,7 +19,7 @@ DRV8908::DRV8908(uint8_t spi_idx, int ss,
     spi.init();
 }
 
-spi::error DRV8908::readRegister(RegAddr address, uint8_t& val)
+spi::error_t DRV8908::readRegister(RegAddr address, uint8_t& val)
 {
     spi.aquire_bus();
     std::array<uint8_t, 2> tx{uint8_t(static_cast<uint8_t>(address) | uint8_t(0x40)), 0};
@@ -35,7 +35,7 @@ spi::error DRV8908::readRegister(RegAddr address, uint8_t& val)
     return ec;
 }
 
-spi::error DRV8908::writeRegister(RegAddr address, uint8_t val)
+spi::error_t DRV8908::writeRegister(RegAddr address, uint8_t val)
 {
     std::array<uint8_t, 2> tx{static_cast<uint8_t>(address), val};
     std::array<uint8_t, 2> rx{0, 0};

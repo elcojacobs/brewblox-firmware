@@ -9,14 +9,14 @@
 
 /**
  * 
- * An alloctor which uses static storage for storing the elements.
+ * An allocator which uses static storage for storing the elements.
  * 
  * @tparam T The type of the elements to be stored.
- * @tparam size The amount of elements that can be stored.
+ * @tparam n The amount of elements that can be stored.
  * 
  */
-template <size_t maxElementSize, size_t size>
-class MaxSizeStaticAllocator {
+template <size_t maxElementSize, size_t n>
+class SlotMemPool {
 public:
     /**
      * Returns a pointer to an empty T.
@@ -94,10 +94,9 @@ public:
     }
 
 private:
-    typedef unsigned char DataType[maxElementSize];
     struct Element {
-        DataType data;
+        uint8_t data[maxElementSize];
         std::atomic<bool> inUse = false;
     };
-    std::array<Element, size> data;
+    std::array<Element, n> data;
 };

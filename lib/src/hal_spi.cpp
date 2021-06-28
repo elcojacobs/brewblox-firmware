@@ -1,5 +1,5 @@
 
 #include "hal/hal_spi_types.h"
 namespace spi {
-MaxSizeStaticAllocator<20, 10> callBackArgsBuffer = MaxSizeStaticAllocator<20, 10>{};
+SlotMemPool<20, 10> callBackArgsBuffer = SlotMemPool<20, 10>{};
 }

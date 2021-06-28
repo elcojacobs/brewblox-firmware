@@ -85,13 +85,13 @@ private:
     std::function<void()> finishCallback;
     const hal_pin_t dc;
 
-    spi::error setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
+    spi::error_t setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye);
 
-    spi::error dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
-    spi::error dmaWrite(uint8_t tx_data, bool dc);
+    spi::error_t dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc);
+    spi::error_t dmaWrite(uint8_t tx_data, bool dc);
 
-    spi::error writeCmd(const std::vector<uint8_t>& cmd);
-    spi::error write(const std::vector<uint8_t>& cmd);
-    spi::error writeCmd(uint8_t cmd);
-    spi::error write(uint8_t cmd);
+    spi::error_t writeCmd(const std::vector<uint8_t>& cmd);
+    spi::error_t write(const std::vector<uint8_t>& cmd);
+    spi::error_t writeCmd(uint8_t cmd);
+    spi::error_t write(uint8_t cmd);
 };

@@ -18,22 +18,16 @@
  */
 
 #pragma once
-#include "maxSizeStaticAllocator.hpp"
+#include "SlotMemPool.hpp"
 #include <cstddef>
 #include <functional>
 #include <stdint.h>
 
 namespace spi {
 
-extern MaxSizeStaticAllocator<20, 10> callBackArgsBuffer;
+extern SlotMemPool<20, 10> callBackArgsBuffer;
 
-/// An enum to designated if the data of a spi transaction will be used as value or pointer.
-enum class SpiDataType {
-    POINTER,
-    VALUE,
-};
-
-using error = int32_t;
+using error_t = int32_t;
 
 /// An struct containing the data of a transaction.
 struct TransactionData {
@@ -48,12 +42,18 @@ struct CallbacksBase {
     virtual void callPost(TransactionData&) = 0;
 };
 
+
 /// A helper struct to combine the pre and post condition into one object.
 template <typename Pre, typename Post>
 struct Callbacks : public CallbacksBase {
-    Callbacks(Pre pre, Post post)
+    Callbacks(const Pre& pre, const Post& post)
         : pre(pre)
         , post(post)
+    {
+    }
+    Callbacks(Pre&& pre, Post&& post)
+        : pre(std::move(pre))
+        , post(std::move(post))
     {
     }
     Pre pre;
@@ -82,8 +82,8 @@ struct StaticCallbacks : public CallbacksBase {
     {
     }
 
-    Pre pre;
-    Post post;
+    Pre& pre;
+    Post& post;
 
     void callPre(TransactionData& t) override final
     {

@@ -29,7 +29,7 @@ using namespace spi;
  * @param settings The settings struct containing the configuration of the spi device.
  * @return If any error will occur an non zero result will indicate an error has happened.
  */
-error init(Settings& settings);
+error_t init(Settings& settings);
 
 /**
  * Deinitialises the spi device.
@@ -49,7 +49,7 @@ void deInit(Settings& settings);
  * @param size The amount of bytes to be send.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-error write(Settings& settings, const uint8_t* data, size_t size);
+error_t write(Settings& settings, const uint8_t* data, size_t size);
 
 /**
  * Writes a n amount of bytes to the spi device
@@ -62,7 +62,7 @@ error write(Settings& settings, const uint8_t* data, size_t size);
  * @param callbacks The callbacks to be called before and after the transaction. 
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-error dmaWrite(Settings& settings, const uint8_t* data, size_t size, CallbacksBase* callbacks);
+error_t dmaWrite(Settings& settings, const uint8_t* data, size_t size, const CallbacksBase* callbacks);
 /**
  * Writes a n amount of bytes to the spi device and reads the same amount of bytes.
  * 
@@ -77,7 +77,7 @@ error dmaWrite(Settings& settings, const uint8_t* data, size_t size, CallbacksBa
  * @param post A functionpointer to a function which will be called right after the transfer will take place. This can be used for example for deallocation purpuses.
  * @return If any error will occur a non zero result will indicate an error has happened.
  */
-error writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, const uint8_t* rx, size_t rxSize);
+error_t writeAndRead(Settings& settings, const uint8_t* tx, size_t txSize, uint8_t* rx, size_t rxSize);
 
 void aquire_bus(Settings& settings);
 void release_bus(Settings& settings);
