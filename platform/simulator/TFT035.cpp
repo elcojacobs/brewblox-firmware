@@ -20,7 +20,7 @@ void TFT035::aquire_spi()
 void TFT035::release_spi()
 {
 }
-
+extern std::shared_ptr<listener> webSocketServer;
 bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye, uint8_t* pixels, uint16_t nPixels)
 {
     graphicsBuffer.resize(320 * 480);
@@ -41,6 +41,7 @@ bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsi
             pixels += 3;
         }
     }
+    webSocketServer->flush(graphicsBuffer);
     this->finishCallback();
     return true;
 }
