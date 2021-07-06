@@ -50,18 +50,18 @@ class session : public std::enable_shared_from_this<session> {
     net::io_context& ioc;
     boost::asio::steady_timer timer_;
     std::vector<std::shared_ptr<session>>& sessions;
+
 public:
     // Take ownership of the socket
     explicit session(tcp::socket&& socket, net::io_context& ioc, std::vector<std::shared_ptr<session>>& sessions)
-        : ws_(std::move(socket)),
-        ioc(ioc),
-        timer_(ioc,
-            (std::chrono::steady_clock::time_point::max)()),
-            sessions(sessions)
+        : ws_(std::move(socket))
+        , ioc(ioc)
+        , timer_(ioc,
+                 (std::chrono::steady_clock::time_point::max)())
+        , sessions(sessions)
     {
     }
 
-   
     // Get on the correct executor
     void run()
     {
@@ -91,48 +91,29 @@ public:
             beast::bind_front_handler(&session::on_accept, shared_from_this()));
     }
 
-    void on_timer(boost::system::error_code ec)
-    {
-        if(ec && ec != boost::asio::error::operation_aborted)
-            return fail(ec, "timer");
-
-        write_pixels();
-    }
-
-
     void on_accept(beast::error_code ec)
     {
         if (ec)
             return fail(ec, "accept");
-        // write_pixels();
+        write_pixels();
         do_read();
-
     }
 
-    void write_pixels1(std::vector<uint64_t> pixels) {
+    void write_pixels1(std::vector<uint64_t> pixels)
+    {
         auto buffer = boost::asio::buffer(pixels);
         ws_.text(false);
-        ws_.write(buffer); 
+        try {
+            ws_.write(buffer);
+        } catch (boost::wrapexcept<boost::system::system_error> error) {
+        }
     }
     void write_pixels()
     {
-        // if (newData) {
-        //     auto buffer = boost::asio::buffer(graphicsBuffer);
-        //     ws_.text(false);
-        //     ws_.async_write(buffer, beast::bind_front_handler(&session::on_write,
-        //                                                   shared_from_this()));   
-        // }
-        // else {
-        //     timer_.expires_after(std::chrono::milliseconds(100));
-        //     timer_.async_wait(
-        //     boost::asio::bind_executor(
-        //         ws_.get_executor(),
-        //         std::bind(
-        //             &session::on_timer,
-        //             shared_from_this(),
-        //             std::placeholders::_1)));     
-        // }
-                                                               
+        auto buffer = boost::asio::buffer(graphicsBuffer);
+        ws_.text(false);
+        ws_.async_write(buffer, beast::bind_front_handler(&session::on_write,
+                                                          shared_from_this()));
     }
 
     void do_read()
@@ -145,10 +126,11 @@ public:
     {
         boost::ignore_unused(bytes_transferred);
 
-        // This indicates that the session was closed
         if (ec == websocket::error::closed)
-            std::remove(sessions.begin(),sessions.end(),this);
-            return;
+            std::remove_if(sessions.begin(), sessions.end(), [this](std::shared_ptr<session> s) {
+                return s.get() == this;
+            });
+        return;
 
         if (ec)
             fail(ec, "read");
@@ -156,14 +138,6 @@ public:
 
     void on_write(beast::error_code ec, std::size_t bytes_transferred)
     {
-        // timer_.expires_after(std::chrono::milliseconds(100));
-        // timer_.async_wait(
-        //     boost::asio::bind_executor(
-        //         ws_.get_executor(),
-        //         std::bind(
-        //             &session::on_timer,
-        //             shared_from_this(),
-        //             std::placeholders::_1)));        
     }
 };
 
@@ -210,7 +184,8 @@ public:
             return;
         }
     }
-    void flush (std::vector<uint64_t> pixels){
+    void flush(std::vector<uint64_t> pixels)
+    {
         for (auto currentSession : sessions) {
             currentSession->write_pixels1(pixels);
         }
@@ -233,7 +208,7 @@ private:
             fail(ec, "accept");
         } else {
             // Create the session and run it
-            auto newSession = sessions.emplace_back(std::make_shared<session>(std::move(socket),ioc_,sessions));
+            auto newSession = sessions.emplace_back(std::make_shared<session>(std::move(socket), ioc_, sessions));
             // std::shared_ptr<session>& placeInVector = newSession);
             newSession->run();
         }
@@ -241,7 +216,6 @@ private:
         // Accept another connection
         do_accept();
     }
-    
 };
 
 // static net::io_context ioc{1};

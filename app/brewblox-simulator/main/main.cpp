@@ -2,6 +2,7 @@
 #include "graphics/graphics.hpp"
 #include "graphics/widgets.hpp"
 #include "websocketserver.hpp"
+#include <boost/asio.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
@@ -9,6 +10,23 @@
 
 #include <thread>
 std::shared_ptr<listener> webSocketServer;
+net::io_context ioc{1};
+
+boost::asio::deadline_timer timer(ioc, boost::posix_time::milliseconds(100));
+
+void loop(const boost::system::error_code& /*e*/)
+{
+
+    using namespace std::chrono_literals;
+    lv_task_handler();
+    lv_tick_inc(100);
+
+    // Reschedule the timer for 1 second in the future:
+    timer.expires_at(timer.expires_at() + boost::posix_time::milliseconds(100));
+    // Posts the timer event
+    timer.async_wait(loop);
+}
+
 int main()
 {
     namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -19,8 +37,6 @@ int main()
     // auto const address = net::ip::make_address("0.0.0.0");
     // auto const port = static_cast<unsigned short>(7376);
     // auto const threads = 1;
-
-    net::io_context ioc{1};
 
     webSocketServer = std::make_shared<listener>(ioc, tcp::endpoint{net::ip::make_address("0.0.0.0"), 7376});
     webSocketServer->run();
@@ -41,12 +57,9 @@ int main()
         NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
         NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
     }};
-
+    timer.async_wait(loop);
     while (true) {
         using namespace std::chrono_literals;
-        lv_task_handler();
-        lv_tick_inc(100);
         ioc.run_for(100ms);
-        lv_obj_invalidate(graphics.grid);
     }
 }
