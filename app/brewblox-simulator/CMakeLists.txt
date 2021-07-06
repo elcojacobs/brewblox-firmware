@@ -11,12 +11,13 @@ add_definitions(-DLV_CONF_INCLUDE_SIMPLE -DLV_LVGL_H_INCLUDE_SIMPLE)
 
 file(GLOB SOURCES 
 "main/*.cpp"
-"main/graphics/fonts/*.cpp"
+"../../lib/inc/graphics/fonts/*.cpp"
 "../../platform/simulator/*.cpp"
 )
 
 include_directories(
     ../../platform/simulator
+    ../../lib/inc
     main
     components/lvgl/src
     )

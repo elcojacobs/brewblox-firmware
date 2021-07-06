@@ -1,7 +1,9 @@
 
+#include "RecurringTask.hpp"
 #include "graphics/graphics.hpp"
 #include "graphics/widgets.hpp"
 #include "websocketserver.hpp"
+
 #include <boost/asio.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/strand.hpp>
@@ -12,21 +14,6 @@
 std::shared_ptr<listener> webSocketServer;
 net::io_context ioc{1};
 
-boost::asio::deadline_timer timer(ioc, boost::posix_time::milliseconds(100));
-
-void loop(const boost::system::error_code& /*e*/)
-{
-
-    using namespace std::chrono_literals;
-    lv_task_handler();
-    lv_tick_inc(100);
-
-    // Reschedule the timer for 1 second in the future:
-    timer.expires_at(timer.expires_at() + boost::posix_time::milliseconds(100));
-    // Posts the timer event
-    timer.async_wait(loop);
-}
-
 int main()
 {
     namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -34,21 +21,37 @@ int main()
     namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
     namespace net = boost::asio;            // from <boost/asio.hpp>
     using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
-    // auto const address = net::ip::make_address("0.0.0.0");
-    // auto const port = static_cast<unsigned short>(7376);
-    // auto const threads = 1;
 
-    webSocketServer = std::make_shared<listener>(ioc, tcp::endpoint{net::ip::make_address("0.0.0.0"), 7376});
+    webSocketServer = std::make_shared<listener>(ioc, tcp::endpoint{net::ip::make_address("0.0.0.0"), 7377});
     webSocketServer->run();
 
-    // Run the I/O service on the requested number of threads
-    // std::vector<std::thread> v;
-    // v.reserve(threads - 1);
-    // for (auto i = threads - 1; i > 0; --i)
-    //     v.emplace_back([&ioc] { ioc.run(); });
-    // server->run();
-
     auto graphics = Graphics::getInstance();
+
+    static auto timeSetter = RecurringTask(ioc, boost::asio::chrono::milliseconds(1000),
+                                           RecurringTask::IntervalType::FROM_EXPIRY,
+                                           [&graphics]() {
+                                               auto tickMinutes = boost::asio::chrono::system_clock::now().time_since_epoch() / asio::chrono::minutes(1);
+                                               auto minutes = tickMinutes % (60);
+
+                                               auto tickHours = boost::asio::chrono::system_clock::now().time_since_epoch() / asio::chrono::hours(1);
+                                               auto hours = tickHours % (24) + 2;
+                                               graphics.bar.setTime(hours, minutes);
+                                           });
+    timeSetter.start();
+
+    static auto graphicsLooper = RecurringTask(ioc, boost::asio::chrono::milliseconds(10),
+                                               RecurringTask::IntervalType::FROM_EXPIRY,
+                                               []() {
+                                                   lv_task_handler();
+                                               });
+    graphicsLooper.start();
+
+    static auto displayTick = RecurringTask(ioc, boost::asio::chrono::milliseconds(10),
+                                            RecurringTask::IntervalType::FROM_EXPIRY,
+                                            []() {
+                                                lv_tick_inc(10);
+                                            });
+    displayTick.start();
 
     static std::array<NormalWidget, 5> sensorWidgets{{
         NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),
@@ -57,9 +60,9 @@ int main()
         NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
         NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
     }};
-    timer.async_wait(loop);
-    while (true) {
-        using namespace std::chrono_literals;
-        ioc.run_for(100ms);
-    }
+    static auto widget6 = PidWidget(graphics.grid);
+    widget6.setBar1(25);
+    widget6.setBar2(-80);
+
+    ioc.run();
 }

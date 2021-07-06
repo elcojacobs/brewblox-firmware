@@ -1,6 +1,7 @@
 #pragma once
-#include <asio.hpp>
+#include <boost/asio.hpp>
 #include <functional>
+namespace asio = boost::asio;
 class RecurringTask {
 public:
     enum class IntervalType {

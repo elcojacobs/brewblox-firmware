@@ -21,8 +21,8 @@ set(srcs
  ABSOLUTE)
 
 file(GLOB network_srcs ./network/*.cpp)
-file(GLOB graphics_srcs ./graphics/*.cpp)
-file(GLOB fonts_srcs ./graphics/fonts/*.cpp)
+file(GLOB graphics_srcs ../../../lib/inc/graphics/*.cpp)
+file(GLOB fonts_srcs ../../../lib/inc/graphics/fonts/*.cpp)
 file(GLOB http_srcs ./httpserver/*.cpp)
 
 file(GLOB cbox_srcs ../../../controlbox/src/cbox/*.cpp)
