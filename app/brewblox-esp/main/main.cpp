@@ -43,15 +43,15 @@ int main(int /*argc*/, char** /*argv*/)
 
     hal_delay_ms(100);
     network_init();
-// auto settings = DisplaySettingsBlock::settings();
+    // auto settings = DisplaySettingsBlock::settings();
 
-    static std::array<NormalWidget, 5> sensorWidgets{{
-        NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),
-        NormalWidget(graphics.grid, "Widget 2", "Blond", "21.0"),
-        NormalWidget(graphics.grid, "Widget 3", "Lager", "5.1"),
-        NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
-        NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
-    }};
+    // static std::array<NormalWidget, 5> sensorWidgets{{
+    //     NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),
+    //     NormalWidget(graphics.grid, "Widget 2", "Blond", "21.0"),
+    //     NormalWidget(graphics.grid, "Widget 3", "Lager", "5.1"),
+    //     NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
+    //     NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
+    // }};
 
     static auto widget6 = PidWidget(graphics.grid);
     widget6.setBar1(25);
@@ -74,21 +74,21 @@ int main(int /*argc*/, char** /*argv*/)
     static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100),
                                               RecurringTask::IntervalType::FROM_EXPIRY,
                                               []() {
-                                                  auto w_it = sensorWidgets.begin();
-                                                  for (auto& s_lookup : sensors) {
-                                                      if (auto s = s_lookup.const_lock()) {
-                                                          if (s->valid()) {
-                                                              auto v = s->value();
-                                                              auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
-                                                              w_it->setValue2(temp_str);
-                                                          } else {
-                                                              w_it->setValue2("--.-");
-                                                          }
-                                                      } else {
-                                                          w_it->setValue2("-");
-                                                      }
-                                                      w_it++;
-                                                  }
+                                                  //   auto w_it = sensorWidgets.begin();
+                                                  //   for (auto& s_lookup : sensors) {
+                                                  //       if (auto s = s_lookup.const_lock()) {
+                                                  //           if (s->valid()) {
+                                                  //               auto v = s->value();
+                                                  //               auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
+                                                  //               w_it->setValue2(temp_str);
+                                                  //           } else {
+                                                  //               w_it->setValue2("--.-");
+                                                  //           }
+                                                  //       } else {
+                                                  //           w_it->setValue2("-");
+                                                  //       }
+                                                  //       w_it++;
+                                                  //   }
                                                   auto& wifi = get_wifi();
                                                   graphics.bar.setWifiIp(wifi.get_local_ip());
                                                   graphics.bar.setWifiEnabled(wifi.is_connected());
@@ -96,7 +96,7 @@ int main(int /*argc*/, char** /*argv*/)
                                                   auto& ethernet = get_ethernet();
                                                   graphics.bar.setEthernetIp(ethernet.get_local_ip());
                                                   graphics.bar.setEthernetEnabled(ethernet.is_connected());
-
+                                                  graphics.updateConfig();
                                                   graphics.aquire_spi();
 
                                                   lv_task_handler();
