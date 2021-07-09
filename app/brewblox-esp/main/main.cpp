@@ -43,6 +43,7 @@ int main(int /*argc*/, char** /*argv*/)
 
     hal_delay_ms(100);
     network_init();
+// auto settings = DisplaySettingsBlock::settings();
 
     static std::array<NormalWidget, 5> sensorWidgets{{
         NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),

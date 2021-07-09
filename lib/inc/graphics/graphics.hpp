@@ -1,6 +1,9 @@
 #include "TFT035.hpp"
 #include "bar.hpp"
 #include "lvgl.h"
+#include "graphics/widgets.hpp"
+#include "blox/DisplaySettingsBlock.h"
+
 
 class Graphics {
 public:
@@ -13,6 +16,17 @@ public:
         return instance;
     }
 
+
+    void updateConfig() {
+        if (DisplaySettingsBlock::newSettingsReceived()){
+            auto settings = DisplaySettingsBlock::settings();
+            sensorWidgets[0].setLabel(settings.name);
+            // here we update stuff
+
+        }
+        
+
+    }
     static void monitor_flush(lv_disp_drv_t* disp_drv, const lv_area_t* area, lv_color_t* color_p)
     {
         auto nPixels = (area->x2 - area->x1 + 1) * (area->y2 - area->y1 + 1);
@@ -76,6 +90,7 @@ private:
 
     void gridInit()
     {
+        
 
         static auto mainContainer = lv_cont_create(lv_scr_act(), NULL);
         lv_cont_set_fit(mainContainer, LV_FIT_PARENT);
@@ -89,7 +104,17 @@ private:
         lv_obj_set_size(grid, 480, 295);
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
         lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style::grid);
+
+        sensorWidgets = std::vector<NormalWidget>{{
+        NormalWidget(grid, "Widget 1", "IPA", "21.0"),
+        NormalWidget(grid, "Widget 2", "Blond", "21.0"),
+        NormalWidget(grid, "Widget 3", "Lager", "5.1"),
+        NormalWidget(grid, "Widget 4", "Stout", "23.1"),
+        NormalWidget(grid, "Widget 5", "Wit", "21.4"),
+        }};
+
     }
+    std::vector<NormalWidget> sensorWidgets;
     lv_disp_drv_t disp_drv;
     TFT035 display = TFT035([this]() {
         lv_disp_flush_ready(&disp_drv);

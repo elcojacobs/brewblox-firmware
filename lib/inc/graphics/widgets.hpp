@@ -1,3 +1,5 @@
+#pragma once
+
 #include "graphics/fonts/fonts.hpp"
 #include "lvgl.h"
 #include <string>
