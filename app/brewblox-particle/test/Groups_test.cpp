@@ -19,10 +19,9 @@
 
 #include "BrewBloxTestBox.h"
 #include "cbox/GroupsObject.h"
+#include "testHelpers.h"
 #include <catch.hpp>
 #include <cstdio>
-
-#include "testHelpers.h"
 
 SCENARIO("Active groups can written through the groups object at ID 1")
 {
@@ -54,11 +53,12 @@ SCENARIO("Active groups can written through the groups object at ID 1")
     std::stringstream expected;
 
     expected << cbox::addCrc("0000010100")
-             << "|" << cbox::addCrc("00"   // no error
-                                    "0100" // object id 2
-                                    "8F"   // groups 0x8F
-                                    "FEFF" // object type
-                                    "82")  // object data
+             << "|" << cbox::addCrc(
+                    "00"   // no error
+                    "0100" // object id 2
+                    "8F"   // groups 0x8F
+                    "FEFF" // object type
+                    "82")  // object data
              << "\n";
     CHECK(reply == expected.str());
 }

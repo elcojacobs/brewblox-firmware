@@ -82,9 +82,8 @@ CFLAGS += -DPB_MSGID=1
 INCLUDE_DIRS += $(SOURCE_PATH)/platform
 
 # brewblox app specific implementations
-CPPSRC += /app/brewblox-particle/nanopb_callbacks.cpp
-CPPSRC += /app/brewblox-particle/brewblox_particle.cpp
-CPPSRC += /app/brewblox-particle/AppTicks.cpp
+CPPSRC += app/brewblox-particle/brewblox_particle.cpp
+CPPSRC += app/brewblox-particle/AppTicks.cpp
 
 # catch test
 INCLUDE_DIRS += $(SOURCE_PATH)/platform/spark/device-os/third_party/catch2/catch2/single_include/catch2
@@ -101,6 +100,8 @@ CPPSRC += /platform/spark/device-os/hal/src/gcc/gpio_hal.cpp
 CPPSRC += /platform/spark/device-os/hal/src/gcc/eeprom_hal.cpp
 CPPSRC += /platform/spark/device-os/hal/src/gcc/filesystem.cpp
 CPPSRC += /platform/spark/device-os/test/unit_tests/communication/hal_stubs.cpp
+
+CPPSRC += controlbox/test/TestHelpers.cpp
 
 CFLAGS += -DPLATFORM_ID=3
 

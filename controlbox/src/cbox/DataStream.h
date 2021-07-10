@@ -202,14 +202,14 @@ public:
     }
 
     /**
-	 * Unconditional read of {@code length} bytes.
+	 * Read of {@code length} bytes.
 	 */
-    bool read(uint8_t* t, stream_size_t length);
+    bool readBytes(uint8_t* t, stream_size_t length);
 
     template <typename T>
     bool get(T& t)
     {
-        return read(reinterpret_cast<uint8_t*>(&t), sizeof(T));
+        return readBytes(reinterpret_cast<uint8_t*>(&t), sizeof(T));
     }
 
     /**

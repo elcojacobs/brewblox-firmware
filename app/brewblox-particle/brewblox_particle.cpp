@@ -122,7 +122,7 @@ makeBrewBloxBox()
 
     cbox::ObjectContainer systemObjects{{
                                             // groups will be at position 1
-                                            cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>()),
+                                            cbox::ContainedObject(2, 0x80, std::make_shared<SysInfoBlock>(HAL_device_ID)),
                                             cbox::ContainedObject(3, 0x80, std::make_shared<TicksBlock<TicksClass>>(ticks)),
                                             cbox::ContainedObject(4, 0x80, std::make_shared<OneWireBusBlock>(theOneWire())),
 #if defined(SPARK)
@@ -316,7 +316,7 @@ void connectionStarted(DataOut& out)
     char header[] = "<!BREWBLOX,";
 
     out.writeBuffer(header, strlen(header));
-    out.writeBuffer(versionCsv(), strlen(versionCsv()));
+    out.writeBuffer(versionCsv().data(), versionCsv().length());
     out.write(',');
     cbox::EncodedDataOut hexOut(out);
 

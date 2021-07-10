@@ -117,7 +117,7 @@ public:
         }
     }
 
-    int16_t peek() override
+    virtual int16_t peek() override
     {
         fetch();
         if (upper < '0' || lower < '0' || lower > 'F' || upper > 'F') {
@@ -126,7 +126,7 @@ public:
         return h2d(upper) * 16 + h2d(lower);
     }
 
-    int16_t read() override
+    virtual int16_t read() override
     {
         auto v = peek();
         if (v >= 0) {

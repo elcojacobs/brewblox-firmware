@@ -37,7 +37,7 @@ bool DataOut::writeBuffer(const uint8_t* data, stream_size_t len)
     return true;
 }
 
-bool DataIn::read(uint8_t* t, stream_size_t length)
+bool DataIn::readBytes(uint8_t* t, stream_size_t length)
 {
     uint8_t* target = t;
     while (length-- > 0) {

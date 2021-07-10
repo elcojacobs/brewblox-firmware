@@ -20,8 +20,7 @@
 #include "testHelpers.h"
 #include <google/protobuf/message.h>
 
-void
-ProtoDataOut::put(const ::google::protobuf::Message& message)
+void ProtoDataOut::put(const ::google::protobuf::Message& message)
 {
     for (auto& c : message.SerializeAsString()) {
         out.write(c);
@@ -29,16 +28,15 @@ ProtoDataOut::put(const ::google::protobuf::Message& message)
     out.write(0); // zero terminate protobuf message
 }
 
-void
-decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message)
+void decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message)
 {
     cbox::IStreamDataIn hex(ss);
     cbox::HexTextToBinaryIn decoder(hex);
-    while (hex.next() != '|') { // spool command echo
+    while (hex.read() != '|') { // spool command echo
     }
     // spool status, id, groups and object type
     uint8_t header[6];
-    decoder.read(header, 6);
+    decoder.readBytes(header, 6);
 
     // pass the rest to the protobuf decoder
     std::stringstream ssProto;

@@ -13,9 +13,12 @@ public:
     }
     virtual ~SparkEepromAccess() = default;
 
-    virtual uint8_t readByte(uint16_t offset) const override final
+    virtual int16_t readByte(uint16_t offset) const override final
     {
-        return HAL_EEPROM_Read(offset);
+        if (offset < 2048) {
+            return HAL_EEPROM_Read(offset);
+        }
+        return -1;
     }
     virtual void writeByte(uint16_t offset, uint8_t value) override final
     {
