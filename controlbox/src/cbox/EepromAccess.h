@@ -27,7 +27,7 @@ public:
     EepromAccess() = default;
     virtual ~EepromAccess() = default;
 
-    virtual uint8_t readByte(uint16_t offset) const = 0;
+    virtual int16_t readByte(uint16_t offset) const = 0;
     virtual void writeByte(uint16_t offset, uint8_t value) = 0;
     virtual void readBlock(uint8_t* target, uint16_t offset, uint16_t size) const = 0;
     virtual void writeBlock(uint16_t target, const uint8_t* source, uint16_t size) = 0;

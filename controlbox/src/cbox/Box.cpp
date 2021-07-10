@@ -384,7 +384,7 @@ void Box::readStoredObject(DataIn& in, EncodedDataOut& out)
         out.put(id);
         handlerCalled = true;
         RegionDataIn objWithoutCrc(objInStorage, objInStorage.available() - 1);
-        if (!objWithoutCrc.push(out)) {
+        if (objWithoutCrc.push(out) != CboxError::OK) {
             return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE;
         }
         return CboxError::OK;
@@ -409,14 +409,14 @@ void Box::listStoredObjects(DataIn& in, EncodedDataOut& out)
         return;
     }
     out.write(asUint8(CboxError::OK));
-    auto listObjectStreamer = [&out](const storage_id_t& id, DataIn& objInStorage) -> CboxError {
+    auto listObjectStreamer = [&out](const storage_id_t& id, RegionDataIn& objInStorage) -> CboxError {
         out.writeListSeparator();
         obj_id_t objId(id);
         RegionDataIn objWithoutCrc(objInStorage, objInStorage.available() - 1);
-        if (out.put(id) && objWithoutCrc.push(out)) {
-            return CboxError::OK;
+        if (!out.put(id)) {
+            return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
         }
-        return CboxError::OUTPUT_STREAM_WRITE_ERROR; // LCOV_EXCL_LINE
+        return objWithoutCrc.push(out);
     };
     storage.retrieveObjects(listObjectStreamer);
 }
@@ -590,7 +590,6 @@ void Box::discoverNewObjects(DataIn& in, EncodedDataOut& out)
     }
 }
 
-
 void Box::discoverNewObjects()
 {
     for (auto& scanner : scanners) {
@@ -613,8 +612,9 @@ void Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
     EncodedDataOut out(dataOut); // hex encodes and adds CRC after response, supports protocol special characters
     TeeDataIn in(hexIn, out);    // ensure command input is also echoed to output
     uint16_t msg_id;
-    in.get(msg_id);             // echo message id back
-    uint8_t cmd_id = in.next(); // get command type code
+    in.get(msg_id); // get and echo message id back
+
+    auto cmd_id = in.read(); // get command type code
 
     if (cmd_id < 100) {
         tracing::add(tracing::Action(cmd_id)); // non-custom commands trace that they are invoked
@@ -670,7 +670,7 @@ void Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
         }
     }
 
-    hexIn.unBlock(); // consumes any leftover \r or \n
+    hexIn.consumeLineEnd(); // consumes any leftover \r or \n
 
     out.endMessage();
 }
@@ -678,7 +678,7 @@ void Box::handleCommand(DataIn& dataIn, DataOut& dataOut)
 void Box::hexCommunicate()
 {
     connections.process([this](DataIn& in, DataOut& out) {
-        while (in.hasNext()) {
+        while (in.peek() >= 0) {
             this->handleCommand(in, out);
         }
     });

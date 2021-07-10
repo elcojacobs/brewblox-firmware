@@ -93,13 +93,8 @@ public:
  */
 class HexTextToBinaryIn : public DataIn {
     DataIn& textIn;
-    int nextByte = -1;
-
-    bool peekEndline()
-    {
-        auto inByte = textIn.peek();
-        return (inByte == '\r' || inByte == '\n');
-    }
+    int16_t upper = -1;
+    int16_t lower = -1;
 
 public:
     HexTextToBinaryIn(DataIn& _textIn)
@@ -107,47 +102,50 @@ public:
     {
     }
 
-    bool hasNext() override
-    {
-        return available() > 0;
-    }
-
     void fetch()
     {
-        if (nextByte < 0) {
-            if (textIn.available() > 1) {
-                nextByte = (h2d(textIn.next()) << 4) | h2d(textIn.next());
+        if (upper < 0) { // 2 bytes to fetch
+            upper = textIn.read();
+            if (upper < 0) {
+                // no data
+                return;
             }
         }
+
+        if (lower < 0) {
+            lower = textIn.read();
+        }
     }
 
-    uint8_t peek() override
+    int16_t peek() override
     {
         fetch();
-
-        if (nextByte > 0) {
-            return nextByte;
+        if (upper < '0' || lower < '0' || lower > 'F' || upper > 'F') {
+            return -1;
         }
-
-        return 0;
+        return h2d(upper) * 16 + h2d(lower);
     }
 
-    uint8_t next() override
+    int16_t read() override
     {
-        uint8_t r = peek();
-        nextByte = -1;
-        return r;
+        auto v = peek();
+        if (v >= 0) {
+            // valid value received, reset nibbles
+            upper = -1;
+            lower = -1;
+        }
+        return v;
     }
 
-    stream_size_t available() override
+    void consumeLineEnd()
     {
-        return textIn.available() / 2;
-    }
-
-    void unBlock()
-    {
-        while (peekEndline()) {
-            textIn.next();
+        while (true) {
+            auto v = peek();
+            if (v == '\r' || v == '\n') {
+                read();
+            } else {
+                return;
+            }
         }
     }
 

@@ -39,32 +39,44 @@ bool DataOut::writeBuffer(const uint8_t* data, stream_size_t len)
 
 bool DataIn::read(uint8_t* t, stream_size_t length)
 {
-    uint8_t* target = (uint8_t*)t;
+    uint8_t* target = t;
     while (length-- > 0) {
-        if (!hasNext()) {
+        auto v = read();
+        if (v < 0) {
             return false;
         }
-        *target++ = next();
+        *target++ = v;
     }
     return true;
 }
 
-bool DataIn::push(DataOut& out, stream_size_t length)
+CboxError DataIn::push(DataOut& out, stream_size_t length)
 {
-    while (length > 0 && hasNext()) {
-        out.write(next());
-        --length;
+    while (length-- > 0) {
+        auto v = read();
+        if (v < 0) {
+            return CboxError::INPUT_STREAM_READ_ERROR;
+        }
+        if (!out.write(v)) {
+            return CboxError::OUTPUT_STREAM_WRITE_ERROR;
+        }
     }
-    return length == 0;
+    return CboxError::OK;
 }
 
-bool DataIn::push(DataOut& out)
+CboxError DataIn::push(DataOut& out)
 {
-    bool success = true;
-    while (hasNext()) {
-        success &= out.write(next());
+    while (true) {
+        auto v = read();
+        if (v < 0) {
+            // stream is empty or error
+            // we don't know the expected length, so we assume this was expected
+            return CboxError::OK;
+        }
+        if (!out.write(v)) {
+            return CboxError::OUTPUT_STREAM_WRITE_ERROR;
+        }
     }
-    return success;
 }
 
 bool CrcDataOut::write(uint8_t data)

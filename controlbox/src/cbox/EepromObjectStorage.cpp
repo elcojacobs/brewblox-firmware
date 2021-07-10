@@ -159,8 +159,8 @@ CboxError EepromObjectStorage::retrieveObjects(
 {
     reader.reset(EepromLocation(objects), EepromLocationSize(objects));
 
-    while (reader.hasNext()) {
-        uint8_t type = reader.next();
+    while (reader.peek() >= 0) {
+        uint8_t type = reader.read();
         // loop over all blocks and write objects to output stream
         uint16_t blockSize = 0;
         if (!reader.get(blockSize)) {
@@ -171,9 +171,6 @@ CboxError EepromObjectStorage::retrieveObjects(
         case BlockType::object: {
             auto blockData = RegionDataIn(reader, blockSize);
             auto handleBlock = [&blockData, &handler]() -> CboxError {
-                if (blockData.available() < sizeof(uint16_t) + sizeof(storage_id_t)) {
-                    return CboxError::PERSISTED_BLOCK_STREAM_ERROR;
-                }
                 // first 2 bytes of block are actual data size. Limit reading to this region
                 uint16_t actualSize;
                 if (!blockData.get(actualSize)) {
@@ -276,8 +273,8 @@ void EepromObjectStorage::defrag()
 // To ensure this, after using the RegionDataIn object, skip to the end of the block.
 RegionDataIn EepromObjectStorage::getBlockReader(const BlockType requestedType)
 {
-    while (reader.hasNext()) {
-        uint8_t type = reader.next();
+    while (reader.peek() >= 0) {
+        uint8_t type = reader.read();
         uint16_t blockSize = 0;
         if (!reader.get(blockSize)) {
             break; // couldn't read blocksize, due to reaching end of reader
@@ -312,8 +309,12 @@ RegionDataOut EepromObjectStorage::getBlockWriter(const BlockType requestedType,
 RegionDataIn EepromObjectStorage::getObjectReader(const storage_id_t id, bool usedSize)
 {
     resetReader();
-    while (reader.hasNext()) {
+    while (reader.peek() >= 0) {
         RegionDataIn block = getBlockReader(BlockType::object);
+        if (block.available() < sizeof(uint16_t) + sizeof(storage_id_t)) {
+            reader.skip(block.available());
+            continue;
+        }
         uint16_t objectSize = 0;
         storage_id_t blockId = 0;
         block.get(objectSize);
@@ -437,7 +438,9 @@ bool EepromObjectStorage::moveDisposedBackwards()
     writer.put(uint16_t(disposedLength + objectLength + blockHeaderLength()));
 
     // Then we copy the data to the front of the block
-    reader.push(writer, objectLength);
+    if (reader.push(writer, objectLength) != CboxError::OK) {
+        return false;
+    };
 
     // Then we mark the remainder as disposed
     writer.put(BlockType::disposed_block); // write header of the now discarded block data
@@ -455,14 +458,14 @@ bool EepromObjectStorage::mergeDisposedBlocks()
 {
     resetReader();
     bool didMerge = false;
-    while (reader.hasNext()) {
+    while (reader.peek() >= 0) {
         RegionDataIn disposedBlock1 = getBlockReader(BlockType::disposed_block);
 
         uint16_t disposedDataStart1 = reader.offset();
         uint16_t disposedDataLength1 = disposedBlock1.available();
 
         reader.skip(disposedDataLength1);
-        if (!reader.hasNext()) {
+        if (reader.peek() < 0) {
             return false; // end of EEPROM, no next block
         }
 
