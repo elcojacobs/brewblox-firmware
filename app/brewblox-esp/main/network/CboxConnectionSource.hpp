@@ -56,7 +56,7 @@ private:
     {
         acceptor.async_accept([this](asio::error_code error, tcp::socket socket) {
             if (!error) {
-                waiting.push_back(std::unique_ptr<cbox::Connection>(new CboxTcpConnection(std::move(socket))));
+                waiting.push_back(std::unique_ptr<cbox::Connection>(new CboxConnection(std::move(socket))));
             } else {
                 ESP_LOGE("ConSource", "%s", error.message().c_str());
             }

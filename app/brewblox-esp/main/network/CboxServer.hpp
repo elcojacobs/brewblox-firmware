@@ -1,6 +1,6 @@
 #pragma once
-#include "CboxConnection.hpp"
 #include "CboxConnectionManager.hpp"
+#include "CboxTcpConnection.hpp"
 #include "esp_log.h"
 
 class CboxServer {

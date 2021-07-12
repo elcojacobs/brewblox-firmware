@@ -143,7 +143,7 @@ private:
     CircularBuffer<4096> buffer_out;
     std::function<void(std::istream& in, std::ostream& out)> onMessage;
 
-    friend class CboxTcpConnection;
+    friend class CboxConnection;
 };
 
 #endif

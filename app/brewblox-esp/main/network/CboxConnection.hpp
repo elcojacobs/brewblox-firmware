@@ -60,24 +60,27 @@ namespace cbox {
 class Box;
 }
 
-class CboxTcpConnection : public std::enable_shared_from_this<CboxTcpConnection> {
+class CboxConnection : public std::enable_shared_from_this<CboxConnection> {
 public:
-    CboxTcpConnection(const CboxTcpConnection&) = delete;
-    CboxTcpConnection& operator=(const CboxTcpConnection&) = delete;
+    CboxConnection(const CboxConnection&) = delete;
+    CboxConnection& operator=(const CboxConnection&) = delete;
 
-    explicit CboxTcpConnection(
-        asio::ip::tcp::socket socket_,
+    explicit CboxConnection(
         CboxConnectionManager& connection_manager_,
         cbox::Box& box_);
-    ~CboxTcpConnection() = default;
+    virtual ~CboxConnection() = default;
 
-    void start();
-    void stop();
-    void do_read();
-    void do_write();
+    virtual void start();
+    virtual void stop();
+    virtual void do_read() = 0;
+    virtual void do_write() = 0;
 
-private:
-    asio::ip::tcp::socket socket;
+    void handle_read(std::error_code ec, std::size_t bytes_transferred);
+    void handle_write(std::error_code ec, std::size_t bytes_transferred);
+
+protected:
+    // asio::posix::stream_descriptor input;
+    // asio::posix::stream_descriptor output;
     asio::streambuf buffer_in;
     asio::streambuf buffer_out;
     CboxConnectionManager& connection_manager;
@@ -85,4 +88,4 @@ private:
     cbox::Box& box;
 };
 
-using CboxConnectionPtr = std::shared_ptr<CboxTcpConnection>;
+using CboxConnectionPtr = std::shared_ptr<CboxConnection>;

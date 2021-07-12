@@ -10,6 +10,7 @@ set(srcs
   ExpansionGpio.cpp
   TimerInterrupts.cpp
   network/CboxConnection.cpp
+  network/CboxTcpConnection.cpp
   network/CboxConnectionManager.cpp
  )
 
