@@ -138,7 +138,7 @@ makeBrewBloxBox()
 
     auto scanners = std::vector<std::unique_ptr<cbox::ScanningFactory>>{};
     scanners.reserve(1);
-    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(theOneWire()));
+    scanners.push_back(std::make_unique<OneWireScanningFactory>(theOneWire()));
 
     static cbox::Box& box = brewblox::make_box(
         std::move(systemObjects),

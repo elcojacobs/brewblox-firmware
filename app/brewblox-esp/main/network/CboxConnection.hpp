@@ -15,30 +15,14 @@ public:
     {
     }
 
-    virtual bool hasNext() override
+    virtual int16_t read() override
     {
-        return available() > 0;
+        return in.sbumpc();
     }
 
-    virtual uint8_t next() override
+    virtual int16_t peek() override
     {
-        if (hasNext()) {
-            return in.sbumpc();
-        }
-        return 0;
-    }
-
-    virtual uint8_t peek() override
-    {
-        if (hasNext()) {
-            return in.sgetc();
-        }
-        return 0;
-    }
-
-    virtual stream_size_t available() override
-    {
-        return in.in_avail();
+        return in.sgetc();
     }
 
     virtual StreamType streamType() const override final
