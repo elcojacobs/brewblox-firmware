@@ -4,19 +4,20 @@
 #include "cbox/DataStreamIo.h"
 #include <asio.hpp>
 
-class CboxTcpConnection : public CboxConnection {
+class CboxStdioConnection : public CboxConnection {
 public:
-    explicit CboxTcpConnection(
-        asio::ip::tcp::socket socket_,
+    explicit CboxStdioConnection(
+        asio::io_context& io_context_,
         CboxConnectionManager& connection_manager_,
         cbox::Box& box_);
-    virtual ~CboxTcpConnection() = default;
+    virtual ~CboxStdioConnection() = default;
 
     // virtual void start();
-    virtual void stop() override;
+    // virtual void stop();
     virtual void do_read() override;
     virtual void do_write() override;
 
 private:
-    asio::ip::tcp::socket socket;
+    asio::posix::stream_descriptor in;
+    asio::posix::stream_descriptor out;
 };

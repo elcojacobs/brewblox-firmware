@@ -12,6 +12,7 @@ set(srcs
   network/CboxConnection.cpp
   network/CboxTcpConnection.cpp
   network/CboxConnectionManager.cpp
+  network/CboxStdioConnection.cpp
  )
 
  get_filename_component(ESP_ROOT

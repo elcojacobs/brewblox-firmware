@@ -1,6 +1,4 @@
 #pragma once
-
-#include "CircularBufferView.hpp"
 #include "cbox/DataStreamIo.h"
 #include <asio.hpp>
 
@@ -75,16 +73,13 @@ public:
     virtual void do_read() = 0;
     virtual void do_write() = 0;
 
+protected:
     void handle_read(std::error_code ec, std::size_t bytes_transferred);
     void handle_write(std::error_code ec, std::size_t bytes_transferred);
 
-protected:
-    // asio::posix::stream_descriptor input;
-    // asio::posix::stream_descriptor output;
     asio::streambuf buffer_in;
     asio::streambuf buffer_out;
     CboxConnectionManager& connection_manager;
-
     cbox::Box& box;
 };
 

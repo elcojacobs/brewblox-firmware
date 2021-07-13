@@ -11,9 +11,7 @@
 #include "graphics.hpp"
 #include "hal/hal_delay.h"
 #include "lvgl.h"
-#include "network/BufferedConnection.hpp"
 #include "network/CboxConnection.hpp"
-#include "network/CboxConnectionSource.hpp"
 #include "network/CboxServer.hpp"
 #include "network/network.hpp"
 #include "widgets.hpp"
@@ -23,7 +21,6 @@
 #include <esp_log.h>
 #include <iomanip>
 #include <sstream>
-
 
 extern "C" {
 #ifdef ESP_PLATFORM

@@ -1,38 +1,37 @@
-#include "CboxTcpConnection.hpp"
+#include "CboxStdioConnection.hpp"
+#include <unistd.h>
 
-CboxTcpConnection::CboxTcpConnection(
-    asio::ip::tcp::socket socket_,
+// note: not working on esp32, linking misses functions
+// asio doesn't support serial port according to documentation
+
+CboxStdioConnection::CboxStdioConnection(
+    asio::io_context& io_context_,
     CboxConnectionManager& connection_manager_,
     cbox::Box& box_)
     : CboxConnection(connection_manager_, box_)
-    , socket(std::move(socket_))
+    , in(io_context_, ::dup(STDIN_FILENO))
+    , out(io_context_, ::dup(STDOUT_FILENO))
 {
 }
 
-void CboxTcpConnection::stop()
-{
-    CboxConnection::stop();
-    socket.close();
-}
-
-void CboxTcpConnection::do_read()
+void CboxStdioConnection::do_read()
 {
     auto self(shared_from_this());
     asio::async_read_until(
-        socket,
-        buffer_in, '\n',
+        in,
+        buffer_in,
+        '\n',
         [this, self](std::error_code ec, std::size_t bytes_transferred) {
             handle_read(ec, bytes_transferred);
         });
 }
 
-void CboxTcpConnection::do_write()
+void CboxStdioConnection::do_write()
 {
     if (buffer_out.size()) {
         auto self(shared_from_this());
         asio::async_write(
-            socket,
-            buffer_out,
+            out, buffer_out,
             [this, self](std::error_code ec, std::size_t bytes_transferred) {
                 handle_write(ec, bytes_transferred);
             });
