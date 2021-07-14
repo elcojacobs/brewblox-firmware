@@ -1,6 +1,7 @@
 #pragma once
-#include "CboxConnection.hpp"
 #include "CboxConnectionManager.hpp"
+#include "CboxStdioConnection.hpp"
+#include "CboxTcpConnection.hpp"
 #include "esp_log.h"
 
 class CboxServer {
@@ -38,6 +39,12 @@ public:
     CboxServer& operator=(const CboxServer&) = delete;
 
     ~CboxServer() = default;
+
+    void attach_stdio()
+    {
+        connection_manager.start(std::make_shared<CboxStdioConnection>(
+            io_context, connection_manager, box));
+    }
 
     void do_accept()
     {

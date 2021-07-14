@@ -1,6 +1,4 @@
 #pragma once
-
-#include "CircularBufferView.hpp"
 #include "cbox/DataStreamIo.h"
 #include <asio.hpp>
 
@@ -15,30 +13,14 @@ public:
     {
     }
 
-    virtual bool hasNext() override
+    virtual int16_t read() override
     {
-        return available() > 0;
+        return in.sbumpc();
     }
 
-    virtual uint8_t next() override
+    virtual int16_t peek() override
     {
-        if (hasNext()) {
-            return in.sbumpc();
-        }
-        return 0;
-    }
-
-    virtual uint8_t peek() override
-    {
-        if (hasNext()) {
-            return in.sgetc();
-        }
-        return 0;
-    }
-
-    virtual stream_size_t available() override
-    {
-        return in.in_avail();
+        return in.sgetc();
     }
 
     virtual StreamType streamType() const override final
@@ -76,29 +58,29 @@ namespace cbox {
 class Box;
 }
 
-class CboxTcpConnection : public std::enable_shared_from_this<CboxTcpConnection> {
+class CboxConnection : public std::enable_shared_from_this<CboxConnection> {
 public:
-    CboxTcpConnection(const CboxTcpConnection&) = delete;
-    CboxTcpConnection& operator=(const CboxTcpConnection&) = delete;
+    CboxConnection(const CboxConnection&) = delete;
+    CboxConnection& operator=(const CboxConnection&) = delete;
 
-    explicit CboxTcpConnection(
-        asio::ip::tcp::socket socket_,
+    explicit CboxConnection(
         CboxConnectionManager& connection_manager_,
         cbox::Box& box_);
-    ~CboxTcpConnection() = default;
+    virtual ~CboxConnection() = default;
 
-    void start();
-    void stop();
-    void do_read();
-    void do_write();
+    virtual void start();
+    virtual void stop();
+    virtual void do_read() = 0;
+    virtual void do_write() = 0;
 
-private:
-    asio::ip::tcp::socket socket;
+protected:
+    void handle_read(std::error_code ec, std::size_t bytes_transferred);
+    void handle_write(std::error_code ec, std::size_t bytes_transferred);
+
     asio::streambuf buffer_in;
     asio::streambuf buffer_out;
     CboxConnectionManager& connection_manager;
-
     cbox::Box& box;
 };
 
-using CboxConnectionPtr = std::shared_ptr<CboxTcpConnection>;
+using CboxConnectionPtr = std::shared_ptr<CboxConnection>;

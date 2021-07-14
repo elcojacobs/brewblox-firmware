@@ -38,11 +38,11 @@ public:
     }
     virtual ~ArrayEepromAccess() = default;
 
-    virtual uint8_t readByte(uint16_t offset) const override final
+    virtual int16_t readByte(uint16_t offset) const override final
     {
         if (isValidRange(offset, 1))
             return data[offset];
-        return 0;
+        return -1;
     }
 
     virtual void writeByte(uint16_t offset, uint8_t value) override final
@@ -101,9 +101,7 @@ protected:
 
     bool isValidRange(uint16_t offset, uint16_t size) const
     {
-        bool valid = offset >= 0 && offset < length()
-                     && size <= length() && offset + size <= length();
-        return valid;
+        return offset >= 0 && offset + size <= eeprom_size;
     }
 
 private:

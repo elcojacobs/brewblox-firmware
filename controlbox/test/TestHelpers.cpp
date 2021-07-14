@@ -1,6 +1,6 @@
 #include "TestHelpers.h"
-#include "Crc.h"
-#include "hex_utility.h"
+#include "../src/cbox/Crc.h"
+#include "../src/cbox/hex_utility.h"
 
 namespace cbox {
 /*

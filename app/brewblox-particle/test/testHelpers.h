@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "cbox/../../test/TestHelpers.h"
 #include "cbox/DataStream.h"
 #include "cbox/DataStreamConverters.h"
 #include "cbox/DataStreamIo.h"
@@ -41,5 +42,4 @@ public:
     void put(const ::google::protobuf::Message& message);
 };
 
-void
-decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message);
+void decodeProtoFromReply(std::stringstream& ss, ::google::protobuf::Message& message);

@@ -26,7 +26,7 @@
 // provides a protobuf interface to the read only system info
 class SysInfoBlock : public cbox::ObjectBase<BrewBloxTypes_BlockType_SysInfo> {
 public:
-    SysInfoBlock(void (&device_id_func_)(uint8_t*, size_t len))
+    SysInfoBlock(unsigned (&device_id_func_)(uint8_t*, unsigned len))
         : device_id_func(device_id_func_)
     {
     }
@@ -50,5 +50,5 @@ public:
 
     mutable Command command = Command::NONE;
 
-    void (&device_id_func)(uint8_t*, size_t len);
+    unsigned (&device_id_func)(uint8_t*, unsigned len);
 };

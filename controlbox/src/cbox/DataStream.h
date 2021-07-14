@@ -176,72 +176,56 @@ enum class StreamType : uint8_t {
 };
 
 /**
- * A data input stream. The stream contents may be determined asynchronously.
- * hasNext() returns true if the stream may eventually produce a new item, false if the stream is closed.
- * next() fetches the next item from the stream. return value is undefined if available()==0.
- * peek() retrieves the next data in the stream without removing it. Result is undefined if
- * available() returns 0.
- * available() the number of times read can be called to retrieve valid data.
+ * A data input stream. Byte based, but returns int16_t to be able to return negative values for error conditions
  */
 class DataIn {
 public:
     virtual ~DataIn() = default;
-    /*
-	 * Determines if there is potentially more data in this stream.
-	 * Note that this is not dependent upon time and asynchronous delivery of data, but if the stream is still open.
+    /**
+	 * Retrieves the next byte of data. The return value is -1 if no data is available.
 	 */
-    virtual bool hasNext() = 0;
+    virtual int16_t read() = 0;
 
     /**
-	 * Retrieves the next byte of data. The return value is only valid when `hasNext()` returns true.
+	 * Retrieves the next byte of data without removing it from the stream. -1 when no data is availabe.
 	 */
-    virtual uint8_t next() = 0;
-
-    /**
-	 * Retrieves the next byte of data without removing it from the stream. The result is only valid if `available`
-	 * previously returned a non-zero value.
-	 */
-    virtual uint8_t peek() = 0;
-
-    /**
-	 * Determines how many bytes are available for reading from the stream without blocking.
-	 */
-    virtual stream_size_t available() = 0;
+    virtual int16_t peek() = 0;
 
     /**
 	 * Discards all data until no new data is available
 	 */
     void spool()
     {
-        while (hasNext()) {
-            next();
+        while (read() >= 0) {
+            ;
         }
     }
 
     /**
-	 * Unconditional read of {@code length} bytes.
+	 * Read of {@code length} bytes.
 	 */
-    bool read(uint8_t* t, stream_size_t length);
+    bool readBytes(uint8_t* t, stream_size_t length);
 
     template <typename T>
     bool get(T& t)
     {
-        return read(reinterpret_cast<uint8_t*>(&t), sizeof(T));
+        return readBytes(reinterpret_cast<uint8_t*>(&t), sizeof(T));
     }
 
     /**
      * Writes the contents of this stream to an output stream.
      * @param out
      * @param length
-     * @return length was written
+     * @return CboxError
      */
-    bool push(DataOut& out, stream_size_t length);
+    CboxError push(DataOut& out, stream_size_t length);
 
     /**
      * Writes the contents of this stream to an output stream, until input stream is empty
      * @param out
+     * @return CboxError
      */
-    bool push(DataOut& out);
+    CboxError push(DataOut& out);
 
     virtual StreamType streamType() const = 0;
 };
@@ -254,10 +238,8 @@ public:
     EmptyDataIn() = default;
     virtual ~EmptyDataIn() = default;
 
-    virtual bool hasNext() override { return false; }
-    virtual uint8_t next() override { return 0; }
-    virtual uint8_t peek() override { return 0; }
-    virtual stream_size_t available() override { return 0; }
+    virtual int16_t read() override { return -1; }
+    virtual int16_t peek() override { return -1; }
 
     virtual StreamType streamType() const override final
     {
@@ -271,30 +253,25 @@ public:
 class TeeDataIn : public DataIn {
     DataIn& in;
     DataOut& out;
-    bool success;
 
 public:
     TeeDataIn(DataIn& _in, DataOut& _out)
         : in(_in)
         , out(_out)
-        , success(true)
     {
     }
     virtual ~TeeDataIn() = default;
 
-    bool teeOk() { return success; }
-
-    virtual uint8_t next() override
+    virtual int16_t read() override
     {
-        uint8_t val = in.next();
-        bool result = out.write(val);
-        success = success && result;
+        auto val = in.read();
+        if (val >= 0) {
+            out.write(val);
+        }
         return val;
     }
 
-    virtual bool hasNext() override { return in.hasNext(); }
-    virtual uint8_t peek() override { return in.peek(); }
-    virtual stream_size_t available() override { return in.available(); }
+    virtual int16_t peek() override { return in.peek(); }
 
     virtual StreamType streamType() const override final
     {
@@ -342,10 +319,22 @@ public:
     {
     }
 
-    virtual uint8_t next() override { return data[pos++]; }
-    virtual bool hasNext() override { return pos < size; }
-    virtual uint8_t peek() override { return data[pos]; }
-    virtual stream_size_t available() override { return size - pos; }
+    virtual int16_t peek() override
+    {
+        if (pos < size) {
+            return data[pos];
+        }
+        return -1;
+    }
+
+    virtual int16_t read() override
+    {
+        if (pos < size) {
+            return data[pos++];
+        }
+        return -1;
+    }
+
     void reset() { pos = 0; }
     stream_size_t bytes_read() { return pos; }
 
@@ -358,7 +347,7 @@ public:
 /**
  * Limits reading from the stream to the given number of bytes.
  */
-class RegionDataIn final : public DataIn {
+class RegionDataIn : public DataIn {
     DataIn& in;
     stream_size_t len;
 
@@ -370,24 +359,24 @@ public:
     }
     virtual ~RegionDataIn() = default;
 
-    bool hasNext() override final
+    int16_t read() override final
     {
-        return len && in.hasNext();
+        int16_t v = -1;
+        if (len) {
+            v = in.read();
+            --len;
+        }
+        return v;
     }
 
-    uint8_t next() override final
-    {
-        return hasNext() ? --len, in.next() : 0;
-    }
-
-    uint8_t peek() override final
+    int16_t peek() override final
     {
         return in.peek();
     }
 
-    stream_size_t available() override final
+    stream_size_t available()
     {
-        return std::min(len, in.available());
+        return len;
     }
 
     void reduceLength(stream_size_t newLen)

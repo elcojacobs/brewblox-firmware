@@ -33,38 +33,17 @@ public:
     {
     }
 
-    virtual bool hasNext() override
+    virtual int16_t read() override
     {
-        int next = in.peek();
-        // we don't want the peek to set the eof or fail flag because no input is available
-        // this prevents streaming in new data for testing
-        in.clear(in.rdstate() & std::istream::badbit); // only keep badbit
-        return next != EOF;
+        return in.get();
     }
 
-    virtual uint8_t next() override
+    virtual int16_t peek() override
     {
-        char val = 0;
-        if (hasNext()) {
-            in.get(val);
-        }
-        return uint8_t(val);
+        return in.peek();
     }
 
-    virtual uint8_t peek() override
-    {
-        if (hasNext()) {
-            return uint8_t(in.peek());
-        }
-        return 0;
-    }
-
-    virtual stream_size_t available() override
-    {
-        return hasNext() ? 1 : 0; // don't use in.eof() as the stream is already in error state then
-    }
-
-    virtual StreamType streamType() const override final
+    virtual StreamType streamType() const override
     {
         return StreamType::Mock;
     }

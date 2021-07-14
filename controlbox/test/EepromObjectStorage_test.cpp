@@ -377,8 +377,9 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
         }
 
         CboxError res = CboxError::OK;
-        obj_id_t id = 1; // first id will be 1, because 0 is an invalid id
+        obj_id_t id = 0; // first id will be 1, 0 is an invalid id
         while (true) {
+            ++id;
             if (id % 2 == 0) {
                 res = saveObjectToStorage(id, small);
             } else {
@@ -387,7 +388,6 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
             if (res != CboxError::OK) {
                 break;
             }
-            ++id;
         }
 
         uint16_t bigSize = 2 + 24 * sizeof(uint32_t) + 1;  // 2 bytes (number of elements) + vector + CRC
@@ -401,7 +401,7 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
         THEN("Retreiving objects gives a reader of the actually written size")
         {
             uint16_t readSize;
-            auto readSizeFetcher = [&readSize](DataIn& in) -> CboxError {
+            auto readSizeFetcher = [&readSize](RegionDataIn& in) -> CboxError {
                 readSize = in.available();
                 return CboxError::OK;
             };
@@ -416,7 +416,7 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
         // last id was not successfully created
         THEN("28 objects have been created")
         {
-            CHECK(id - 1 == 28);
+            CHECK(id == 29); // failed to create id 29
         }
 
         uint16_t expectedFreeSpace = originalSpace - (14 * bigSizeReserved + 14 * smallSizeReserved + 28 * headerSize); // header is 5 bytes
@@ -508,18 +508,17 @@ SCENARIO("Storing and retreiving blocks with EEPROM storage")
         AND_WHEN("Only the small objects are deleted")
         {
             obj_id_t id;
-            for (id = 1;; id++) {
+            for (id = 1; id <= 28; id++) {
                 if (id % 2 == 0) {
-                    if (!storage.disposeObject(id)) {
-                        break; // break when object cannot be deleted (id doesn't exist)
-                    }
+                    bool deleted = storage.disposeObject(id);
+                    CHECK(deleted);
                 }
             }
             THEN("Continuous free space has increased by size of 1 small object + header")
             {
                 CHECK(storage.continuousFreeSpace() == expectedFreeSpace + smallSizeReserved + 7);
             }
-            THEN("But free space has increased to by all small object's size combined")
+            THEN("But free space has increased by the size of all small objects combined")
             {
                 CHECK(storage.freeSpace() == expectedFreeSpace + 14 * (smallSizeReserved + 7));
             }

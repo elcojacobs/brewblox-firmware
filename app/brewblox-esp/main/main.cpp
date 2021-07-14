@@ -12,9 +12,7 @@
 #include "graphics/widgets.hpp"
 #include "hal/hal_delay.h"
 #include "lvgl.h"
-#include "network/BufferedConnection.hpp"
 #include "network/CboxConnection.hpp"
-#include "network/CboxConnectionSource.hpp"
 #include "network/CboxServer.hpp"
 #include "network/network.hpp"
 #include <algorithm>

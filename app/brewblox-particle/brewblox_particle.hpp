@@ -40,9 +40,6 @@ void updateBrewbloxBox();
 cbox::StringStreamConnectionSource&
 testConnectionSource();
 
-const char*
-versionCsv();
-
 void logEvent(const std::string& event);
 
 enum AppTrace : uint8_t {

@@ -90,19 +90,23 @@ public:
     {
     }
 
-    virtual bool hasNext() override final { return _length; }
-    virtual uint8_t peek() override final { return eepromAccess.readByte(_offset); }
-
-    virtual uint8_t next() override final
+    virtual int16_t peek() override final
     {
-        uint8_t result = 0;
+        return eepromAccess.readByte(_offset);
+    }
+
+    virtual int16_t read() override final
+    {
+        int16_t result = -1;
         if (_length) {
+            result = eepromAccess.readByte(_offset);
+        }
+        if (result >= 0) {
             _length--;
-            result = eepromAccess.readByte(_offset++);
+            _offset++;
         }
         return result;
     }
-    virtual stream_size_t available() override final { return _length; }
 
     bool skip(stream_size_t skip_length)
     {
@@ -115,6 +119,11 @@ public:
     virtual StreamType streamType() const override final
     {
         return StreamType::Eeprom;
+    }
+
+    stream_size_t available()
+    {
+        return _length;
     }
 };
 }

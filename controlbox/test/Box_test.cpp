@@ -53,7 +53,7 @@ SCENARIO("A controlbox Box")
 
     Box box(factory, container, storage, connPool, std::move(scanningFactories));
 
-    auto in = std::make_shared<std::stringstream>();
+    auto in = std::make_shared<StringStreamAutoClear>();
     auto out = std::make_shared<std::stringstream>();
     std::stringstream expected;
     connSource.add(in, out);
@@ -1212,11 +1212,11 @@ SCENARIO("A controlbox Box")
     WHEN("A connection sends only a partial message with half a hex encoded byte (1 nibble), a CRC error is returned")
     {
         *in << "000003" // create object
-            << "0";     // ID assigned by box
+            << "0";     // ID with a nibble missing
 
         box.hexCommunicate();
 
-        expected << "00000300"
+        expected << "000003"
                  << "|"
                  << addCrc("43") << "\n";
         CHECK(out->str() == expected.str());

@@ -43,13 +43,14 @@
 
 using namespace std::placeholders;
 
-void get_device_id(uint8_t* dest, size_t len)
+unsigned get_device_id(uint8_t* dest, unsigned len)
 {
     uint8_t mac[6];
     esp_wifi_get_mac(WIFI_IF_STA, mac);
     for (uint8_t i = 0; i < len; i++) {
         dest[i] = i < 6 ? mac[i] : 0;
     }
+    return len;
 }
 
 void everySecond(const asio::error_code& e, std::shared_ptr<asio::steady_timer> t, uint32_t count)
@@ -111,10 +112,10 @@ makeBrewBloxBox(asio::io_context& io)
 
     auto scanners = std::vector<std::unique_ptr<cbox::ScanningFactory>>{};
     scanners.reserve(4);
-    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow1));
-    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow2));
-    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow3));
-    scanners.emplace_back(std::make_unique<OneWireScanningFactory>(ow4));
+    scanners.push_back(std::make_unique<OneWireScanningFactory>(ow1));
+    scanners.push_back(std::make_unique<OneWireScanningFactory>(ow2));
+    scanners.push_back(std::make_unique<OneWireScanningFactory>(ow3));
+    scanners.push_back(std::make_unique<OneWireScanningFactory>(ow4));
 
     static cbox::Box& box = brewblox::make_box(
         std::move(systemObjects),
