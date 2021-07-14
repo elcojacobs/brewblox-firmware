@@ -173,6 +173,7 @@ enum class StreamType : uint8_t {
     Usb = 1,
     Tcp = 2,
     Eeprom = 3,
+    File = 4,
 };
 
 /**
