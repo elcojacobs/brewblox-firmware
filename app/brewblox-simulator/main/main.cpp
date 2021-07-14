@@ -60,9 +60,6 @@ int main()
         NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
         NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
     }};
-    static auto widget6 = PidWidget(graphics.grid);
-    widget6.setBar1(25);
-    widget6.setBar2(-80);
 
     ioc.run();
 }

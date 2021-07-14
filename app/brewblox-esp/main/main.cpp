@@ -39,7 +39,6 @@ int main(int /*argc*/, char** /*argv*/)
 #endif
 {
     Spark4::hw_init();
-    static auto graphics = Graphics::getInstance();
 
     hal_delay_ms(100);
     network_init();
@@ -53,13 +52,16 @@ int main(int /*argc*/, char** /*argv*/)
     //     NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
     // }};
 
-    static auto widget6 = PidWidget(graphics.grid);
-    widget6.setBar1(25);
-    widget6.setBar2(-80);
     ESP_LOGI("Display", "Image written");
 
     asio::io_context io;
     static auto& box = makeBrewBloxBox(io);
+
+    static auto graphics = Graphics::getInstance();
+    graphics.setBox(&box);
+    // static auto widget6 = PidWidget(graphics.grid);
+    // widget6.setBar1(25);
+    // widget6.setBar2(-80);
 
     static std::array<cbox::CboxPtr<TempSensor>, 5> sensors{{
         box.makeCboxPtr<TempSensor>(cbox::obj_id_t(100)),
@@ -93,6 +95,7 @@ int main(int /*argc*/, char** /*argv*/)
                                                   graphics.bar.setWifiIp(wifi.get_local_ip());
                                                   graphics.bar.setWifiEnabled(wifi.is_connected());
 
+                                                  graphics.updateWidgets();
                                                   auto& ethernet = get_ethernet();
                                                   graphics.bar.setEthernetIp(ethernet.get_local_ip());
                                                   graphics.bar.setEthernetEnabled(ethernet.is_connected());
