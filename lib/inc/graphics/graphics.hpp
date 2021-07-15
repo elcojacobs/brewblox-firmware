@@ -2,6 +2,8 @@
 #include "TFT035.hpp"
 #include "bar.hpp"
 #include "blox/DisplaySettingsBlock.h"
+#include "blox/SetpointSensorPairBlock.h"
+
 #include "blox/PidBlock.h"
 #include "graphics/widgets.hpp"
 #include "lvgl.h"
@@ -36,31 +38,29 @@ public:
 
             sensorWidgets.clear();
             for (uint16_t x = 0; x < settings.widgets_count; x++) {
-                if (settings.widgets[x].which_WidgetType == blox_Widget_tempSensor_tag) {
-                    auto lookup = box->makeCboxPtr<TempSensor>(cbox::obj_id_t(settings.widgets[x].WidgetType.tempSensor));
-                    auto ptr = std::make_unique<TemperatureWidget>(grid, lookup, settings.widgets[x].name, tempUnit);
+                auto widget = settings.widgets[x];
+                assert(widget.pos > 0 && widget.pos <= 6);
+                auto placeholder = placeholders[widget.pos - 1];
+                auto color = lv_color_make(widget.color[0], widget.color[1], widget.color[2]);
+                if (widget.which_WidgetType == blox_Widget_tempSensor_tag) {
+                    auto lookup = box->makeCboxPtr<TempSensor>(cbox::obj_id_t(widget.WidgetType.tempSensor));
+                    auto ptr = std::make_unique<TemperatureWidget>(placeholder, lookup, widget.name, tempUnit, color);
                     sensorWidgets.push_back(std::move(ptr));
                 }
-                // if (settings.widgets[x].which_WidgetType == blox_Widget_setpointSensorPair_tag) {
-                //     auto ptr = std::make_unique<NormalWidget>(grid, settings.widgets[x].name, "NOT YET IMPLEMENTED", "21.0");
+                // else if (settings.widgets[x].which_WidgetType == blox_Widget_setpointSensorPair_tag) {
+                //     auto lookup = box->makeCboxPtr<SetpointSensorPairBlock>(cbox::obj_id_t(widget.WidgetType.setpointSensorPair));
+                //     auto ptr = std::make_unique<SetpointWidget>(placeholder, lookup, widget.name, tempUnit, color);
+                //     sensorWidgets.push_back(std::move(ptr));
+                // } else if (settings.widgets[x].which_WidgetType == blox_Widget_actuatorAnalog_tag) {
+                //     auto lookup = box->makeCboxPtr<ActuatorAnalogConstrained>(cbox::obj_id_t(widget.WidgetType.setpointSensorPair));
+                //     auto ptr = std::make_unique<ActuatorAnalogWidget>(placeholder, lookup, widget.name, tempUnit, color);
+                //     sensorWidgets.push_back(std::move(ptr));
+                // } else if (widget.which_WidgetType == blox_Widget_pid_tag) {
+                //     auto lookup = box->makeCboxPtr<PidBlock>(cbox::obj_id_t(widget.WidgetType.pid));
+                //     auto ptr = std::make_unique<PidWidget>(placeholder, lookup, widget.name, tempUnit, color);
                 //     sensorWidgets.push_back(std::move(ptr));
                 // }
-                // if (settings.widgets[x].which_WidgetType == blox_Widget_actuatorAnalog_tag) {
-                //     auto ptr = std::make_unique<NormalWidget>(grid, settings.widgets[x].name, "NOT YET IMPLEMENTED", "21.0");
-                //     sensorWidgets.push_back(std::move(ptr));
-                // }
-                if (settings.widgets[x].which_WidgetType == blox_Widget_pid_tag) {
-                    auto lookup = box->makeCboxPtr<PidBlock>(cbox::obj_id_t(settings.widgets[x].WidgetType.pid));
-                    auto ptr = std::make_unique<PidWidget>(grid, lookup, settings.widgets[x].name, tempUnit);
-                    sensorWidgets.push_back(std::move(ptr));
-                    // static auto widget6 = PidWidget(graphics.grid);
-                    // widget6.setBar1(25);
-                    // widget6.setBar2(-80);
-                }
             }
-            // sensorWidgets[0].setLabel(settings.name);
-
-            // here we update stuff
         }
     }
     static void monitor_flush(lv_disp_drv_t* disp_drv, const lv_area_t* area, lv_color_t* color_p)
@@ -145,13 +145,16 @@ private:
         lv_cont_set_layout(grid, LV_LAYOUT_PRETTY_MID);
         lv_obj_add_style(grid, LV_CONT_PART_MAIN, &style::grid);
 
-        // sensorWidgets.push_back(NormalWidget(grid, "Widget 1", "IPA", "21.0"));
-        // sensorWidgets.push_back(NormalWidget(grid, "Widget 2", "Blond", "21.0"));
-        // sensorWidgets.push_back(NormalWidget(grid, "Widget 3", "Lager", "5.1"));
-        // sensorWidgets.push_back(NormalWidget(grid, "Widget 4", "Stout", "23.1"));
-        // sensorWidgets.push_back(NormalWidget(grid, "Widget 5", "Wit", "21.4"));
+        for (auto& placeholder : placeholders) {
+            placeholder = lv_obj_create(grid, NULL);
+            lv_obj_reset_style_list(placeholder, LV_BTN_PART_MAIN);
+            lv_obj_set_size(placeholder, 145, 132);
+            lv_obj_set_style_local_pad_all(placeholder, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+            lv_obj_set_style_local_margin_all(placeholder, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+        }
     }
-    inline static std::vector<std::unique_ptr<baseWidget>> sensorWidgets;
+    inline static std::vector<std::unique_ptr<BaseWidget>> sensorWidgets;
+    std::array<lv_obj_t*, 6> placeholders;
     lv_disp_drv_t disp_drv;
     cbox::Box* box;
     TFT035 display = TFT035([this]() {
