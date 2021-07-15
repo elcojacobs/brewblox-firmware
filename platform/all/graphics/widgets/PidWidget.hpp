@@ -1,12 +1,11 @@
-#include "lvgl.h"
-#include "widgets/BaseWidget.hpp"
+#pragma once
+#include "./BaseWidget.hpp"
 
 class PidWidget : public BaseWidget {
 public:
-    PidWidget(lv_obj_t* grid, const cbox::CboxPtr<PidBlock> ptr, const char* label, TempUnit tempUnit, lv_color_t color)
+    PidWidget(lv_obj_t* grid, cbox::CboxPtr<PidBlock>&& ptr, const char* label, lv_color_t color)
         : BaseWidget(grid, color)
         , lookup(ptr)
-        , tempUnit(tempUnit)
     {
         makeObj(label);
     }
@@ -23,9 +22,9 @@ public:
     {
         if (auto ptr = lookup.const_lock()) {
 
-            setBar1(cnl::unwrap(ptr->get().p()));
-            setBar2(cnl::unwrap(ptr->get().i()));
-            setBar3(cnl::unwrap(ptr->get().d()));
+            setBar1(int32_t(ptr->get().p()));
+            setBar2(int32_t(ptr->get().i()));
+            setBar3(int32_t(ptr->get().d()));
 
             auto& inputLookup = ptr->getInputLookup();
             auto& outputLookup = ptr->getOutputLookup();
@@ -162,5 +161,4 @@ private:
     lv_obj_t* bar2;
     lv_obj_t* bar3;
     cbox::CboxPtr<PidBlock> lookup;
-    TempUnit tempUnit;
 };

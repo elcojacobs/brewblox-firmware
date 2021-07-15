@@ -1,16 +1,14 @@
-#pragma once
-
+#include "styles.hpp"
 #include "fonts/fonts.hpp"
-#include "lvgl.h"
 
 namespace style {
 
-static lv_style_t bar;
-static lv_style_t grid;
-static lv_style_t maincontainer;
-static lv_style_t block;
-static lv_style_t block_text;
-static lv_style_t bigNumber_text;
+lv_style_t bar;
+lv_style_t grid;
+lv_style_t maincontainer;
+lv_style_t block;
+lv_style_t block_text;
+lv_style_t bigNumber_text;
 
 void init()
 {

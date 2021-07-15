@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 20)
 set(srcs 
   main.cpp
-  # App.cpp
   AppTicks.cpp
   brewblox_esp.cpp
   ExpansionGpio.cpp
@@ -23,9 +22,8 @@ set(srcs
  ABSOLUTE)
 
 file(GLOB network_srcs ./network/*.cpp)
-file(GLOB graphics_srcs ../../../lib/inc/graphics/*.cpp)
-file(GLOB fonts_srcs ../../../lib/inc/graphics/fonts/*.cpp)
 file(GLOB http_srcs ./httpserver/*.cpp)
+file(GLOB graphics_srcs ../../../platform/all/graphics/*.cpp ../../../platform/all/graphics/fonts/*.cpp ../../../platform/all/graphics/widgets/*.cpp)
 
 file(GLOB cbox_srcs ../../../controlbox/src/cbox/*.cpp)
 set(cbox_inc "../../../controlbox/src/")
@@ -89,11 +87,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYSTEM_VERSION_STRING=${SYSTEM_VERSION
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLV_LVGL_H_INCLUDE_SIMPLE")
 
 
-
 idf_component_register(
   SRCS
     ${srcs}
-    ${fonts_srcs}
     ${graphics_srcs}
     ${cbox_srcs}
     ${brewblox_srcs}
@@ -111,4 +107,5 @@ idf_component_register(
     ${lib_inc}
     ${cnl_inc}
     ${esp_inc}
+    ../../../platform/all
 )

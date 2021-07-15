@@ -1,0 +1,100 @@
+{
+	"folders": [
+		{
+			"name": "brewblox-esp",
+			"path": "../app/brewblox-esp"
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"editor.formatOnSave": true,
+		// "search.exclude": {
+		// 	"**/.git": true,
+		// 	"platform/spark/target": true,
+		// 	"platform/spark/device-os/build": true,
+		// 	"**/test/build": true,
+		// 	"build/coverage": true,
+		// 	"build/target": true,
+		// 	"controlbox/build": true,
+		// 	"docs/_build": true,
+		// 	"lib/test/build": true,
+		// 	"**/*.o.d": true,
+		// 	"**/compile-commands.json": true,
+		// 	"**/build.ninja": true
+		// },
+		"testMate.cpp.test.advancedExecutables": [
+			{
+				"pattern": "app/brewblox-particle/test/build/brewblox_test_runner"
+			},
+			{
+				"pattern": "lib/test/build/lib_test_runner"
+			},
+			{
+				"pattern": "controlbox/build/cbox_test_runner"
+			}
+		],
+		"files.associations": {
+			"array": "cpp",
+			"atomic": "cpp",
+			"*.tcc": "cpp",
+			"cctype": "cpp",
+			"chrono": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"codecvt": "cpp",
+			"condition_variable": "cpp",
+			"csignal": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"deque": "cpp",
+			"unordered_map": "cpp",
+			"vector": "cpp",
+			"exception": "cpp",
+			"algorithm": "cpp",
+			"functional": "cpp",
+			"iterator": "cpp",
+			"memory": "cpp",
+			"memory_resource": "cpp",
+			"numeric": "cpp",
+			"optional": "cpp",
+			"random": "cpp",
+			"ratio": "cpp",
+			"string": "cpp",
+			"string_view": "cpp",
+			"system_error": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"fstream": "cpp",
+			"future": "cpp",
+			"initializer_list": "cpp",
+			"iosfwd": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"ostream": "cpp",
+			"sstream": "cpp",
+			"stdexcept": "cpp",
+			"streambuf": "cpp",
+			"thread": "cpp",
+			"cinttypes": "cpp",
+			"typeinfo": "cpp",
+			"bit": "cpp",
+			"set": "cpp",
+			"iomanip": "cpp",
+			"*.inc": "cpp",
+			"*.ipp": "cpp",
+			"list": "cpp"
+		},
+	}
+}

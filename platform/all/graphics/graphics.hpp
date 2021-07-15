@@ -5,8 +5,10 @@
 #include "blox/SetpointSensorPairBlock.h"
 
 #include "blox/PidBlock.h"
+#include "cbox/Box.h"
 #include "graphics/widgets.hpp"
 #include "lvgl.h"
+
 class Graphics {
 public:
     lv_obj_t* grid = nullptr;
@@ -29,11 +31,10 @@ public:
         if (DisplaySettingsBlock::newSettingsReceived()) {
             auto settings = DisplaySettingsBlock::settings();
 
-            TempUnit tempUnit;
             if (settings.tempUnit == blox_DisplaySettings_TemperatureUnit_TEMP_CELSIUS) {
-                tempUnit = TempUnit::Celsius;
+                BaseWidget::tempUnit = TempUnit::Celsius;
             } else {
-                tempUnit = TempUnit::Fahrenheit;
+                BaseWidget::tempUnit = TempUnit::Fahrenheit;
             }
 
             sensorWidgets.clear();
@@ -44,22 +45,21 @@ public:
                 auto color = lv_color_make(widget.color[0], widget.color[1], widget.color[2]);
                 if (widget.which_WidgetType == blox_Widget_tempSensor_tag) {
                     auto lookup = box->makeCboxPtr<TempSensor>(cbox::obj_id_t(widget.WidgetType.tempSensor));
-                    auto ptr = std::make_unique<TemperatureWidget>(placeholder, lookup, widget.name, tempUnit, color);
+                    auto ptr = std::make_unique<TemperatureWidget>(placeholder, lookup, widget.name, color);
+                    sensorWidgets.push_back(std::move(ptr));
+                } else if (settings.widgets[x].which_WidgetType == blox_Widget_setpointSensorPair_tag) {
+                    auto lookup = box->makeCboxPtr<SetpointSensorPairBlock>(cbox::obj_id_t(widget.WidgetType.setpointSensorPair));
+                    auto ptr = std::make_unique<SetpointWidget>(placeholder, lookup, widget.name, color);
+                    sensorWidgets.push_back(std::move(ptr));
+                } else if (settings.widgets[x].which_WidgetType == blox_Widget_actuatorAnalog_tag) {
+                    auto lookup = box->makeCboxPtr<ActuatorAnalogConstrained>(cbox::obj_id_t(widget.WidgetType.setpointSensorPair));
+                    auto ptr = std::make_unique<ActuatorAnalogWidget>(placeholder, lookup, widget.name, color);
+                    sensorWidgets.push_back(std::move(ptr));
+                } else if (widget.which_WidgetType == blox_Widget_pid_tag) {
+                    auto lookup = box->makeCboxPtr<PidBlock>(cbox::obj_id_t(widget.WidgetType.pid));
+                    auto ptr = std::make_unique<PidWidget>(placeholder, std::move(lookup), widget.name, color);
                     sensorWidgets.push_back(std::move(ptr));
                 }
-                // else if (settings.widgets[x].which_WidgetType == blox_Widget_setpointSensorPair_tag) {
-                //     auto lookup = box->makeCboxPtr<SetpointSensorPairBlock>(cbox::obj_id_t(widget.WidgetType.setpointSensorPair));
-                //     auto ptr = std::make_unique<SetpointWidget>(placeholder, lookup, widget.name, tempUnit, color);
-                //     sensorWidgets.push_back(std::move(ptr));
-                // } else if (settings.widgets[x].which_WidgetType == blox_Widget_actuatorAnalog_tag) {
-                //     auto lookup = box->makeCboxPtr<ActuatorAnalogConstrained>(cbox::obj_id_t(widget.WidgetType.setpointSensorPair));
-                //     auto ptr = std::make_unique<ActuatorAnalogWidget>(placeholder, lookup, widget.name, tempUnit, color);
-                //     sensorWidgets.push_back(std::move(ptr));
-                // } else if (widget.which_WidgetType == blox_Widget_pid_tag) {
-                //     auto lookup = box->makeCboxPtr<PidBlock>(cbox::obj_id_t(widget.WidgetType.pid));
-                //     auto ptr = std::make_unique<PidWidget>(placeholder, lookup, widget.name, tempUnit, color);
-                //     sensorWidgets.push_back(std::move(ptr));
-                // }
             }
         }
     }

@@ -1,14 +1,13 @@
 #pragma once
 
+#include "./BaseWidget.hpp"
 #include "lvgl.h"
-#include "widgets/BaseWidget.hpp"
 
 class TemperatureWidget : public BaseWidget {
 public:
-    TemperatureWidget(lv_obj_t* grid, const cbox::CboxPtr<TempSensor> ptr, const char* label, TempUnit tempUnit, lv_color_t color)
+    TemperatureWidget(lv_obj_t* grid, const cbox::CboxPtr<TempSensor> ptr, const char* label, lv_color_t color)
         : BaseWidget(grid, color)
         , lookup(ptr)
-        , tempUnit(tempUnit)
     {
         makeObj(grid, label, "-");
     }

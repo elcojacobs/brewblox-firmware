@@ -1,40 +1,59 @@
 #pragma once
 
+#include "./BaseWidget.hpp"
+#include "blox/ActuatorPwmBlock.h"
 #include "lvgl.h"
-#include "widgets/BaseWidget.hpp"
 
-class SetpointWidget : public BaseWidget {
+class ActuatorAnalogWidget : public BaseWidget {
 public:
-    SetpointWidget(lv_obj_t* grid, const cbox::CboxPtr<SetpointSensorPairBlock> ptr, const char* label, TempUnit tempUnit, lv_color_t color)
+    ActuatorAnalogWidget(lv_obj_t* grid, const cbox::CboxPtr<ActuatorAnalogConstrained> ptr, const char* label, lv_color_t color)
         : BaseWidget(grid, color)
         , lookup(ptr)
-        , tempUnit(tempUnit)
     {
         makeObj(grid, label, "-", "-");
     }
 
-    SetpointWidget(const SetpointWidget&) = delete;
-    SetpointWidget& operator=(const SetpointWidget&) = delete;
+    ActuatorAnalogWidget(const ActuatorAnalogWidget&) = delete;
+    ActuatorAnalogWidget& operator=(const ActuatorAnalogWidget&) = delete;
 
-    ~SetpointWidget()
+    ~ActuatorAnalogWidget()
     {
         lv_obj_del(obj);
     }
     void update()
     {
-        if (auto ptr = lookup.const_lock()) {
-            auto& pair = ptr->get();
+        if (auto pAct = lookup.const_lock()) {
+            if (pAct->valueValid()) {
+                setValue1(temp_to_string(pAct->value(), 2, tempUnit));
+            } else {
+                setValue1("-");
+            }
+            if (pAct->settingValid()) {
+                setValue2(temp_to_string(pAct->setting(), 2, tempUnit));
 
-            if (pair.valueValid()) {
-                setValue1(temp_to_string(pair.value(), 2, tempUnit));
             } else {
                 setValue1("-");
             }
-            if (pair.settingValid()) {
-                setValue2(temp_to_string(pair.setting(), 2, tempUnit));
+
+            if (auto pwmBlock = lookup.lock_as<ActuatorPwmBlock>()) {
+                lv_obj_set_hidden(led, false);
+                if (auto pwmTarget = pwmBlock->targetLookup().const_lock()) {
+                    switch (pwmTarget->state()) {
+                    case ActuatorPwm::State::Inactive:
+                        lv_led_off(led);
+                        break;
+                    case ActuatorPwm::State::Active:
+                        lv_led_on(led);
+                        break;
+                    case ActuatorPwm::State::Unknown:
+                        lv_obj_set_hidden(led, true);
+                        break;
+                    }
+                }
             } else {
-                setValue1("-");
+                lv_obj_set_hidden(led, true);
             }
+
             return;
         }
     }
@@ -79,11 +98,15 @@ private:
         lv_label_set_align(value2, LV_LABEL_ALIGN_CENTER);
         lv_obj_reset_style_list(value2, LV_LABEL_PART_MAIN);
         lv_obj_add_style(value2, LV_LABEL_PART_MAIN, &style::block_text);
+
+        led = lv_led_create(obj, NULL);
+        lv_obj_set_size(led, 16, 16);
+        lv_obj_align(led, NULL, LV_ALIGN_CENTER, 00, 30);
     }
 
-    cbox::CboxPtr<SetpointSensorPairBlock> lookup;
+    cbox::CboxPtr<ActuatorAnalogConstrained> lookup;
+    lv_obj_t* led;
     lv_obj_t* label;
     lv_obj_t* value1;
     lv_obj_t* value2;
-    TempUnit tempUnit;
 };
