@@ -1,29 +1,112 @@
+// {
+//     "configurations": [
+//         {
+//             "name": "clang",
+//             "defines": [
+//                 "_DEBUG",
+//                 "UNICODE",
+//                 "_UNICODE"
+//             ],
+//             "intelliSenseMode": "linux-gcc-arm",
+//             "includePath": [
+//                 ".",
+//                 "${workspaceFolder}/**",
+//                 "${workspaceFolder}/lib/inc",
+//                 "${workspaceFolder}/lib/inc/hal",
+//                 "${workspaceFolder}/controlbox/test",
+//                 "${workspaceFolder}/platform/spark/modules",
+//                 "${workspaceFolder}/platform/spark/device-os/user/inc",
+//                 "${workspaceFolder}/platform/spark/device-os/system/inc",
+//                 "${workspaceFolder}/platform/spark/device-os/wiring/inc",
+//                 "${workspaceFolder}/platform/spark/device-os/hal/inc",
+//                 "${workspaceFolder}/platform/spark/device-os/hal/shared",
+//                 "${workspaceFolder}/platform/spark/device-os/hal/src/gcc",
+//                 "${workspaceFolder}/platform/spark/device-os/services/inc",
+//                 "${workspaceFolder}/platform/spark/device-os/hal/src/newhal",
+//                 "${workspaceFolder}/platform/spark/device-os/communication/src"
+//             ],
+//             "compileCommands": "${workspaceFolder}/app/brewblox-esp/build/compile_commands.json"
+//         }
+//     ],
+//     "version": 4
+// }
+// {
+//     "env": {
+//         "defaultIncludePath": [
+//             "${env:IDF_PATH}/components/**",
+//             "${workspaceFolder}/app/brewblox-esp/main/**",
+//             "${workspaceFolder}/app/brewblox-esp/components/**",
+//             "${workspaceFolder}/app/brewblox-esp/build/config/*",
+//             "${workspaceFolder}/lib/inc/**",
+//             "${env:IDF_PATH}/examples/common_components/protocol_examples_common/**"
+//         ],
+//         "defaultBrowsePath": [
+//             "${env:IDF_PATH}/components",
+//             "${workspaceFolder}/lib/inc/hal",
+//             "${workspaceFolder}/app/brewblox-esp/main",
+//             "${workspaceFolder}/app/brewblox-esp/components",
+//             "${workspaceFolder}/app/brewblox-esp/build/config",
+//             "${env:IDF_PATH}/examples/common_components/protocol_examples_common"
+//         ]
+//     },
+//     "configurations": [
+//         {
+//             "name": "ESP32",
+//             "includePath": [
+//                 "${defaultIncludePath}"
+//             ],
+//             "browse": {
+//                 "path": [
+//                     "${defaultBrowsePath}"
+//                 ],
+//                 "limitSymbolsToIncludedHeaders": false
+//             },
+//             "compilerPath": "/home/carlos/.espressif/tools/xtensa-esp32-elf/esp-2020r3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc",
+//             "cStandard": "c11",
+//             "cppStandard": "c++17"
+//         },
+//         {
+//             "name": "ESP8266",
+//             "includePath": [
+//                 "${defaultIncludePath}"
+//             ],
+//             "browse": {
+//                 "path": [
+//                     "${defaultBrowsePath}"
+//                 ],
+//                 "limitSymbolsToIncludedHeaders": false
+//             },
+//             "compilerPath": "xtensa-lx106-elf-gcc",
+//             "cStandard": "c11",
+//             "cppStandard": "c++11"
+//         }
+//     ],
+//     "version": 4
+// }
 {
+    "env": {
+        "defaultIncludePath": [
+            "/home/carlos/esp-idf/components/**",
+            "${workspaceFolder}/app/brewblox-esp/main/**",
+            "${workspaceFolder}/app/brewblox-esp/components/**",
+            "${workspaceFolder}/app/brewblox-esp/build/config/*",
+            "${workspaceFolder}/lib/inc/**",
+            "/home/carlos/esp-idf/examples/common_components/protocol_examples_common/**"
+        ],
+        "defaultBrowsePath": [
+            "/home/carlos/esp-idf/components",
+            "${workspaceFolder}/lib/inc/hal",
+            "${workspaceFolder}/app/brewblox-esp/main",
+            "${workspaceFolder}/app/brewblox-esp/components",
+            "${workspaceFolder}/app/brewblox-esp/build/config",
+            "/home/carlos/esp-idf/examples/common_components/protocol_examples_common"
+        ]
+    },
     "configurations": [
         {
-            "name": "clang",
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
-            ],
-            "intelliSenseMode": "linux-gcc-arm",
-            "includePath": [
-                ".",
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/lib/inc",
-                "${workspaceFolder}/controlbox/test",
-                "${workspaceFolder}/platform/spark/modules",
-                "${workspaceFolder}/platform/spark/device-os/user/inc",
-                "${workspaceFolder}/platform/spark/device-os/system/inc",
-                "${workspaceFolder}/platform/spark/device-os/wiring/inc",
-                "${workspaceFolder}/platform/spark/device-os/hal/inc",
-                "${workspaceFolder}/platform/spark/device-os/hal/shared",
-                "${workspaceFolder}/platform/spark/device-os/hal/src/gcc",
-                "${workspaceFolder}/platform/spark/device-os/services/inc",
-                "${workspaceFolder}/platform/spark/device-os/hal/src/newhal",
-                "${workspaceFolder}/platform/spark/device-os/communication/src"
-            ],
+            "name": "Linux",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
             "compileCommands": "${workspaceFolder}/app/brewblox-esp/build/compile_commands.json"
         }
     ],

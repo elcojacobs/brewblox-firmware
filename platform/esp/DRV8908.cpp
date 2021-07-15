@@ -1,17 +1,25 @@
 #include "DRV8908.hpp"
+#include "esp_err.h"
 #include <array>
 
 DRV8908::DRV8908(uint8_t spi_idx, int ss,
                  std::function<void()> on_spi_aquire,
                  std::function<void()> on_spi_release)
-    : spi(spi_idx, 100000, 1, ss,
-          SpiDevice::Mode::SPI_MODE1, SpiDevice::BitOrder::MSBFIRST,
-          on_spi_aquire, on_spi_release)
+    : spi(
+        spi::Settings{
+            .spi_idx = spi_idx,
+            .speed = 100000,
+            .queueSize = 1,
+            .ssPin = ss,
+            .mode = spi::Settings::Mode::SPI_MODE1,
+            .bitOrder = spi::Settings::BitOrder::MSBFIRST,
+            .on_Aquire = []() {},
+            .on_Release = []() {}})
 {
     spi.init();
 }
 
-hal_spi_err_t DRV8908::readRegister(RegAddr address, uint8_t& val)
+spi::error_t DRV8908::readRegister(RegAddr address, uint8_t& val)
 {
     spi.aquire_bus();
     std::array<uint8_t, 2> tx{uint8_t(static_cast<uint8_t>(address) | uint8_t(0x40)), 0};
@@ -27,7 +35,7 @@ hal_spi_err_t DRV8908::readRegister(RegAddr address, uint8_t& val)
     return ec;
 }
 
-hal_spi_err_t DRV8908::writeRegister(RegAddr address, uint8_t val)
+spi::error_t DRV8908::writeRegister(RegAddr address, uint8_t val)
 {
     std::array<uint8_t, 2> tx{static_cast<uint8_t>(address), val};
     std::array<uint8_t, 2> rx{0, 0};

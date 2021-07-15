@@ -1,7 +1,6 @@
 #pragma once
 #include <asio.hpp>
 #include <functional>
-
 class RecurringTask {
 public:
     enum class IntervalType {
@@ -38,10 +37,10 @@ public:
 private:
     void run()
     {
-        timer.async_wait([this](const asio::error_code& e) { onTimeout(e); });
+        timer.async_wait([this](const std::error_code& e) { onTimeout(e); });
     }
 
-    void onTimeout(const asio::error_code& e)
+    void onTimeout(const std::error_code& e)
     {
         if (e) {
             return;

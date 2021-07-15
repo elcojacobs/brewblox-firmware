@@ -8,13 +8,13 @@
 #include "RecurringTask.hpp"
 #include "TempSensor.h"
 #include "brewblox_esp.hpp"
-#include "graphics.hpp"
+#include "graphics/graphics.hpp"
+#include "graphics/widgets.hpp"
 #include "hal/hal_delay.h"
 #include "lvgl.h"
 #include "network/CboxConnection.hpp"
 #include "network/CboxServer.hpp"
 #include "network/network.hpp"
-#include "widgets.hpp"
 #include <algorithm>
 #include <asio.hpp>
 #include <esp_heap_caps.h>
@@ -70,21 +70,16 @@ int main(int /*argc*/, char** /*argv*/)
 
     mount_blocks_spiff();
 
-    static auto graphics = Graphics::getInstance();
-    static std::array<NormalWidget, 5> sensorWidgets{{
-        NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),
-        NormalWidget(graphics.grid, "Widget 2", "Blond", "21.0"),
-        NormalWidget(graphics.grid, "Widget 3", "Lager", "5.1"),
-        NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
-        NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
-    }};
-
-    static auto widget6 = PidWidget(graphics.grid);
-
     ESP_LOGI("Display", "Image written");
 
     asio::io_context io;
     static auto& box = makeBrewBloxBox(io);
+
+    static auto graphics = Graphics::getInstance();
+    graphics.setBox(&box);
+    // static auto widget6 = PidWidget(graphics.grid);
+    // widget6.setBar1(25);
+    // widget6.setBar2(-80);
 
     static std::array<cbox::CboxPtr<TempSensor>, 5> sensors{{
         box.makeCboxPtr<TempSensor>(cbox::obj_id_t(100)),
@@ -99,33 +94,55 @@ int main(int /*argc*/, char** /*argv*/)
     static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100),
                                               RecurringTask::IntervalType::FROM_EXPIRY,
                                               []() {
-                                                  auto w_it = sensorWidgets.begin();
-                                                  for (auto& s_lookup : sensors) {
-                                                      if (auto s = s_lookup.const_lock()) {
-                                                          if (s->valid()) {
-                                                              auto v = s->value();
-                                                              auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
-                                                              w_it->setValue2(temp_str);
-                                                          } else {
-                                                              w_it->setValue2("--.-");
-                                                          }
-                                                      } else {
-                                                          w_it->setValue2("-");
-                                                      }
-                                                      w_it++;
-                                                  }
+                                                  //   auto w_it = sensorWidgets.begin();
+                                                  //   for (auto& s_lookup : sensors) {
+                                                  //       if (auto s = s_lookup.const_lock()) {
+                                                  //           if (s->valid()) {
+                                                  //               auto v = s->value();
+                                                  //               auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
+                                                  //               w_it->setValue2(temp_str);
+                                                  //           } else {
+                                                  //               w_it->setValue2("--.-");
+                                                  //           }
+                                                  //       } else {
+                                                  //           w_it->setValue2("-");
+                                                  //       }
+                                                  //       w_it++;
+                                                  //   }
+                                                  auto& wifi = get_wifi();
+                                                  graphics.bar.setWifiIp(wifi.get_local_ip());
+                                                  graphics.bar.setWifiEnabled(wifi.is_connected());
 
-                                                  //   auto tick = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
-                                                  Graphics::getInstance().aquire_spi();
-                                                  lv_obj_invalidate(graphics.grid); // keep writing full display for testing
-                                                  lv_tick_inc(100);                 // This must be set to the time it took!
+                                                  graphics.updateWidgets();
+                                                  auto& ethernet = get_ethernet();
+                                                  graphics.bar.setEthernetIp(ethernet.get_local_ip());
+                                                  graphics.bar.setEthernetEnabled(ethernet.is_connected());
+                                                  graphics.updateConfig();
+                                                  graphics.aquire_spi();
+
                                                   lv_task_handler();
-                                                  Graphics::getInstance().release_spi();
-                                                  //   auto tock = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::milliseconds(1);
-                                                  //   uint32_t duration = tock - tick;
-                                                  //   ESP_LOGE("display tick", "duration  %u", duration);
+                                                  graphics.release_spi();
                                               });
     displayTicker.start();
+
+    static auto displayTimer = RecurringTask(io, asio::chrono::milliseconds(100),
+                                             RecurringTask::IntervalType::FROM_EXPIRY,
+                                             []() {
+                                                 lv_tick_inc(100); // This must be set to the time it took!
+                                             });
+    displayTimer.start();
+
+    static auto timeSetter = RecurringTask(io, asio::chrono::milliseconds(1000),
+                                           RecurringTask::IntervalType::FROM_EXPIRY,
+                                           []() {
+                                               auto tickMinutes = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::minutes(1);
+                                               auto minutes = tickMinutes % (60);
+
+                                               auto tickHours = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::hours(1);
+                                               auto hours = tickHours % (24);
+                                               graphics.bar.setTime(hours, minutes);
+                                           });
+    timeSetter.start();
 
     static auto gpioTester = RecurringTask(io, asio::chrono::milliseconds(5000),
                                            RecurringTask::IntervalType::FROM_EXPIRY,

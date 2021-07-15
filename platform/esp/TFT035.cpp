@@ -1,66 +1,71 @@
 #include "TFT035.hpp"
-#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/hal_delay.h"
+#include "hal/hal_spi_types.h"
+#include <cstring>
 #include <esp_log.h>
+#include <functional>
 #include <sys/time.h>
+using namespace spi;
 
-TFT035::TFT035()
-    : spi(
-        0, 20'000'000UL, 100, 4,
-        SpiDevice::Mode::SPI_MODE0, SpiDevice::BitOrder::MSBFIRST,
-        []() {}, []() {},
-        [&](SpiTransaction& t) { // PRE
-            bool val;
-            // get bool that was stored in pointer address
-            memcpy(&val, &t.user_cb_data, sizeof(bool));
-            hal_gpio_write(dc, val);
-            // hal_gpio_write(dc, true);
+auto callbackDcPinOn = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, true);
+    },
+    nullptr};
 
-        },
-        {} // POST
-        )
+auto callbackDcPinOnWithFree = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, true);
+    },
+    [](TransactionData& t) {
+        delete t.tx_data;
+    }};
+
+auto callbackDcPinOffWithFree = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, false);
+    },
+    [](TransactionData& t) {
+        delete t.tx_data;
+    }};
+
+auto callbackDcPinOff = StaticCallbacks{
+    [](TransactionData& t) {
+        hal_gpio_write(2, false);
+    },
+    nullptr};
+
+TFT035::TFT035(std::function<void()> finishCallback)
+    : spiDevice(spi::Settings{.spi_idx = 0, .speed = 20'000'000UL, .queueSize = 10, .ssPin = 4, .mode = Settings::Mode::SPI_MODE0, .bitOrder = Settings::BitOrder::MSBFIRST, .on_Aquire = []() {}, .on_Release = []() {}})
+    , finishCallback(finishCallback)
     , dc(2)
+
 {
-    spi.init();
+    spiDevice.init();
 }
 
-void TFT035::ClearScreen(unsigned int bColor)
+error_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
 {
-    unsigned int i, j;
-    setPos(0, 49, 0, 49);
-    for (i = 0; i < 50; i++) {
-
-        for (j = 0; j < 50; j++) {
-            Write_Data_U16(bColor);
-        }
-        vTaskDelay(1);
-    }
+    hal_gpio_write(2, false);
+    return spiDevice.write(cmd);
+}
+error_t TFT035::write(const std::vector<uint8_t>& cmd)
+{
+    hal_gpio_write(2, true);
+    return spiDevice.write(cmd);
 }
 
-hal_spi_err_t TFT035::writeCmd(const std::vector<uint8_t>& cmd)
+error_t TFT035::writeCmd(uint8_t cmd)
 {
-    // hal_gpio_write(dc, false);
-    auto err = spi.write(cmd, false);
-    return err;
+    hal_gpio_write(2, false);
+    return spiDevice.write(cmd);
 }
-hal_spi_err_t TFT035::write(const std::vector<uint8_t>& cmd)
+error_t TFT035::write(uint8_t cmd)
 {
-    // hal_gpio_write(dc, true);
-    return spi.write(cmd, true);
-}
-
-hal_spi_err_t TFT035::writeCmd(uint8_t cmd)
-{
-    // hal_gpio_write(dc, false);
-    auto err = spi.write(cmd, false);
-    return err;
-}
-hal_spi_err_t TFT035::write(uint8_t cmd)
-{
-    // hal_gpio_write(dc, true);
-    return spi.write(cmd, true);
+    hal_gpio_write(2, true);
+    return spiDevice.write(cmd);
 }
 
 void TFT035::init()
@@ -142,171 +147,75 @@ void TFT035::init()
     writeCmd(SLPOUT); //Sleep out
     hal_delay_ms(120);
     writeCmd(DISON);
-
-    // writeCmd(0x23);
-
-    // DispRGBGray();
-    // writeCmd(0x00);
-}
-void TFT035::Write_Data(unsigned char DH, unsigned char DL)
-{
-    unsigned char R1, G1, B1, i;
-    unsigned int LD = 0;
-
-    // RGB565 TO RGB666
-    LD = DH << 8;
-    LD |= DL;
-
-    R1 = (0x1f & (LD >> 11)) * 2;
-    R1 <<= 2;
-    G1 = 0x3f & (LD >> 5);
-    G1 <<= 2;
-    B1 = (0x1f & LD) * 2;
-    B1 <<= 2;
-
-    write({R1, G1, B1});
-}
-void TFT035::DispRGBGray(void)
-{
-
-    unsigned int COL = 320;
-    unsigned char i, j, k, dbl, dbh;
-
-    setPos(0, 319, 0, 479);
-
-    // balck -> red
-    for (k = 0; k < 80; k++) {
-        for (i = 0; i < 32; i++) {
-            for (j = 0; j < 10; j++) {
-                dbh = i << 3;
-                dbl = 0;
-                Write_Data(dbh, dbl);
-            }
-        }
-    }
-    hal_delay_ms(1);
-    // red -> black
-    for (k = 0; k < 80; k++) {
-
-        for (i = 31; i > 0; i--) {
-            for (j = 0; j < 10; j++) {
-                dbh = i << 3;
-                dbl = 0;
-                Write_Data(dbh, dbl);
-            }
-        }
-
-        dbh = 0x00;
-        dbl = 0x00;
-        for (i = 0; i < 10; i++)
-            Write_Data(dbh, dbl);
-    }
-    hal_delay_ms(1);
-    // balck -> green
-    for (k = 0; k < 80; k++) {
-
-        for (i = 0; i < 64; i += 2) {
-            for (j = 0; j < 10; j++) {
-                dbh = i >> 3;
-                dbl = i << 5;
-                Write_Data(dbh, dbl);
-            }
-        }
-    }
-    hal_delay_ms(1);
-    // green -> black
-    for (k = 0; k < 80; k++) {
-        for (i = 63; i != 1; i -= 2) {
-            for (j = 0; j < 10; j++) {
-                dbh = i >> 3;
-                dbl = i << 5;
-                Write_Data(dbh, dbl);
-            }
-        }
-        dbh = 0x00;
-        dbl = 0x00;
-        for (i = 0; i < 10; i++)
-            Write_Data(dbh, dbl);
-    }
-
-    hal_delay_ms(1);
-    // balck -> blue
-    for (k = 0; k < 80; k++) {
-        for (i = 0; i < 32; i++) {
-            for (j = 0; j < 10; j++) {
-                dbh = 0;
-                dbl = i;
-                Write_Data(dbh, dbl);
-            }
-        }
-    }
-    hal_delay_ms(1);
-    // blue -> black
-    for (k = 0; k < 80; k++) {
-
-        for (i = 31; i > 0; i--) {
-            for (j = 0; j < 10; j++) {
-                dbh = 0;
-                dbl = i;
-                Write_Data(dbh, dbl);
-            }
-        }
-        dbh = 0x00;
-        dbl = 0x00;
-        for (i = 0; i < 10; i++)
-            Write_Data(dbh, dbl);
-    }
-}
-void TFT035::Write_Data_U16(unsigned int y)
-{
-    unsigned char m, n;
-    m = y >> 8;
-    n = y;
-    Write_Data(m, n);
 }
 
-void TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
+error_t TFT035::setPos(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye)
 {
-    dmaWrite(0x2A, false);
+    if (auto error = dmaWrite(0x2A, false))
+        return error;
 
-    auto x = std::array<uint8_t, 4>{uint8_t(xs >> 8),
-                                    uint8_t(xs & 0xFF),
-                                    uint8_t(xe >> 8),
-                                    uint8_t(xe & 0xFF)};
-    spi.write(x, true, true);
+    if (auto error = dmaWrite(uint8_t(xs >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(xs & 0xFF), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(xe >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(xe & 0xFF), true))
+        return error;
 
-    dmaWrite(0x2B, false);
+    if (auto error = dmaWrite(0x2B, false))
+        return error;
 
-    auto y = std::array<uint8_t, 4>{uint8_t(ys >> 8),
-                                    uint8_t(ys & 0xFF),
-                                    uint8_t(ye >> 8),
-                                    uint8_t(ye & 0xFF)};
+    if (auto error = dmaWrite(uint8_t(ys >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(ys & 0xFF), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(ye >> 8), true))
+        return error;
+    if (auto error = dmaWrite(uint8_t(ye & 0xFF), true))
+        return error;
 
-    spi.write(y, true, true);
-
-    dmaWrite(0x2C, false);
+    return dmaWrite(0x2C, false);
 }
 
-bool TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
+error_t TFT035::dmaWrite(uint8_t* tx_data, uint16_t tx_len, bool dc)
 {
-    spi.write(tx_data, tx_len, dc, true);
-
-    return true;
+    if (dc) {
+        return spiDevice.dmaWrite(tx_data, tx_len, callbackDcPinOn);
+    } else {
+        return spiDevice.dmaWrite(tx_data, tx_len, callbackDcPinOff);
+    }
 }
 
-bool TFT035::dmaWrite(uint8_t tx_val, bool dc)
+error_t TFT035::dmaWrite(uint8_t tx_val, bool dc)
 {
-    spi.write(tx_val, dc, true);
+    auto alocatedVal = new uint8_t(tx_val);
+    if (dc) {
+        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOnWithFree);
+    } else {
+        return spiDevice.dmaWrite(alocatedVal, 1, callbackDcPinOffWithFree);
+    }
+}
+bool TFT035::writePixels(unsigned int xs, unsigned int xe, unsigned int ys, unsigned int ye, uint8_t* pixels, uint16_t nPixels)
+{
+    if (auto error = this->setPos(xs, xe, ys, ye))
+        return error;
 
-    return true;
+    return spiDevice.dmaWrite(pixels, nPixels * 3,
+                              Callbacks{[&](TransactionData& t) {
+                                            hal_gpio_write(2, true);
+                                        },
+                                        [&](TransactionData& t) {
+                                            this->finishCallback();
+                                        }});
 }
 
 void TFT035::aquire_spi()
 {
-    spi.aquire_bus();
+    spiDevice.aquire_bus();
 }
 
 void TFT035::release_spi()
 {
-    spi.release_bus();
+    spiDevice.release_bus();
 }
