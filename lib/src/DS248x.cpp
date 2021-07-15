@@ -38,7 +38,7 @@ bool DS248x::busyWait()
                     return true;
                 }
             }
-            hal_delay_us(50);
+            hal_delay_ms(1);
         }
     }
     if (failedWaits++ > 100) {
@@ -128,9 +128,7 @@ bool DS248x::selectChannel(uint8_t channel)
 
 bool DS248x::reset()
 {
-    bool ready = false;
     for (uint8_t retries = 0; retries < 10; retries++) {
-
         if (!i2c_write(DS248X_1WRS)) {
             // No ack received, onewire is busy
             hal_delay_ms(1);
@@ -139,15 +137,17 @@ bool DS248x::reset()
 
         // read status until ready
         // todo: use repeated start condition ?
-        while (!ready) {
+        for (uint8_t retries2 = 0; retries2 < 10; retries2++) {
             auto result = i2c_read(1);
             if (result.size() == 0) {
                 // i2c error
                 return false;
             }
-            ready = (result[0] & DS248X_STATUS_BUSY) == 0;
+            if ((result[0] & DS248X_STATUS_BUSY) == 0) {
+                return true;
+            }
+            hal_delay_ms(1);
         }
-        return true;
     }
     return false;
 }
@@ -184,7 +184,7 @@ bool DS248x::read(uint8_t& b)
                     }
                 }
             }
-            hal_delay_us(50);
+            hal_delay_ms(1);
         }
     }
     return false;
