@@ -124,6 +124,8 @@ makeBrewBloxBox(asio::io_context& io)
         connections,
         std::move(scanners));
 
+    box.loadObjectsFromStorage(); // init box and load stored objects
+
     static auto updater = RecurringTask(
         io, asio::chrono::milliseconds(10),
         RecurringTask::IntervalType::FROM_EXECUTION,
