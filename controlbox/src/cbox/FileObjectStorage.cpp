@@ -19,18 +19,21 @@
 
 #include "FileObjectStorage.h"
 #include "DataStreamIo.h"
+#include <cstdio>
+#include <dirent.h>
 #include <fstream>
 
 namespace cbox {
 
-FileObjectStorage::FileObjectStorage(const std::filesystem::path& root_)
-    : root(root_)
+FileObjectStorage::FileObjectStorage(const std::string& root)
 {
-}
-
-FileObjectStorage::FileObjectStorage(std::filesystem::path&& root_)
-    : root(root_)
-{
+    rootLen = root.size();
+    path.reserve(rootLen + 10);
+    path = root;
+    if (root.back() != '/') {
+        path += '/';
+        ++rootLen;
+    }
 }
 
 /**
@@ -62,7 +65,7 @@ CboxError FileObjectStorage::storeObject(
         return res;
     };
 
-    auto path = getPath(id);
+    setPath(id);
     std::fstream fs(path, std::fstream::out | std::fstream::binary);
     if (!fs.is_open()) {
         return CboxError::PERSISTED_STORAGE_WRITE_ERROR;
@@ -87,10 +90,11 @@ CboxError FileObjectStorage::storeObject(
     };
 
     res = writeWithCrc();
+    fs.flush();
     fs.close();
 
     if (res != CboxError::OK) {
-        std::filesystem::remove(path);
+        remove(path.c_str());
     }
 
     return res;
@@ -107,14 +111,14 @@ CboxError FileObjectStorage::retrieveObject(
     const storage_id_t& id,
     const std::function<CboxError(RegionDataIn&)>& handler)
 {
-    auto path = getPath(id);
+    setPath(id);
     std::fstream fs(path, std::fstream::in | std::fstream::binary);
     if (!fs.is_open()) {
         return cbox::CboxError::PERSISTED_OBJECT_NOT_FOUND;
     }
 
     IStreamDataIn inStream{fs};
-    RegionDataIn objectData(inStream, std::filesystem::file_size(path));
+    RegionDataIn objectData(inStream, UINT16_MAX);
     // check that the first 2 bytes match the ID
     storage_id_t stored_id{0};
     if (objectData.get(stored_id) && stored_id == id) {
@@ -132,28 +136,46 @@ CboxError FileObjectStorage::retrieveObject(
 CboxError FileObjectStorage::retrieveObjects(
     const std::function<CboxError(const storage_id_t& id, RegionDataIn&)>& handler)
 {
-
-    for (auto& p : std::filesystem::directory_iterator(root)) {
-        std::fstream fs(p.path(), std::fstream::in | std::fstream::binary);
-        IStreamDataIn inStream{fs};
-        RegionDataIn objectData(inStream, std::filesystem::file_size(p.path()));
-        // check that the first 2 bytes match the ID
-        storage_id_t stored_id{0};
-        if (objectData.get(stored_id) && stored_id == stoi(p.path().stem().string())) {
-            handler(stored_id, objectData);
+    path.resize(rootLen);
+    if (auto* dir = opendir(path.c_str())) {
+        while (auto* entry = readdir(dir)) {
+            if ((entry->d_type & DT_REG) == DT_REG) {
+                path.resize(rootLen);
+                path += entry->d_name;
+                std::fstream fs(path, std::fstream::in | std::fstream::binary);
+                IStreamDataIn inStream{fs};
+                RegionDataIn objectData(inStream, UINT16_MAX);
+                // check that the first 2 bytes match the ID
+                storage_id_t stored_id{0};
+                if (objectData.get(stored_id) && stored_id == atoi(entry->d_name)) {
+                    handler(stored_id, objectData);
+                }
+            }
         }
+        closedir(dir);
     }
     return CboxError::OK;
 }
 
 bool FileObjectStorage::disposeObject(const storage_id_t& id, bool mergeDisposed)
 {
-    return std::filesystem::remove(getPath(id));
+    setPath(id);
+    return remove(path.c_str()) == 0;
 }
 
 void FileObjectStorage::clear()
 {
-    std::filesystem::remove_all(root);
+    path.resize(rootLen);
+    if (auto* dir = opendir(path.c_str())) {
+        while (auto* entry = readdir(dir)) {
+            if ((entry->d_type & DT_REG) == DT_REG) {
+                path.resize(rootLen);
+                path += entry->d_name;
+                remove(path.c_str());
+            }
+        }
+        closedir(dir);
+    }
 }
 
 } // end namespace cbox

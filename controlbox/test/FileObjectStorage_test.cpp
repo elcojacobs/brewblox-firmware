@@ -33,8 +33,7 @@ SCENARIO("Storing and retreiving blocks with file storage")
     std::filesystem::create_directories(tmpPath, err);
     REQUIRE(!err);
 
-    const char* storage_root = tmpPath.c_str();
-    FileObjectStorage storage(storage_root);
+    FileObjectStorage storage(tmpPath.string());
 
     // storage doesn't know about the Object class, these functors handle the conversion to streams
     auto retreiveObjectFromStorage = [&storage](const obj_id_t& id, Object& target) -> CboxError {

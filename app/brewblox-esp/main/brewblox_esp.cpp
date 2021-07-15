@@ -20,6 +20,7 @@
 #include "AppTicks.h"
 #include "DS248x.hpp"
 #include "Logger.h"
+#include "MockTicks.h"
 #include "OneWireScanningFactory.h"
 #include "RecurringTask.hpp"
 #include "blox/DisplaySettingsBlock.h"
@@ -29,13 +30,12 @@
 #include "blox/stringify.h"
 #include "brewblox.hpp"
 #include "cbox/Box.h"
+#include "cbox/FileObjectStorage.h"
 #include "cbox/ObjectContainer.h"
 #include "cbox/ObjectFactory.h"
-#include "cbox/ObjectStorage.h"
 #include "cbox/Tracing.h"
-#include "esp_log.h"
-#include <MockTicks.h>
 #include <asio.hpp>
+#include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_wifi_types.h>
 #include <functional>
@@ -83,7 +83,7 @@ void handleReset(bool, uint8_t)
 cbox::Box&
 makeBrewBloxBox(asio::io_context& io)
 {
-    static cbox::ObjectStorageStub objectStore;
+    static cbox::FileObjectStorage objectStore{"/blocks/"};
 
     static auto owDriver1 = DS248x(0x00);
     static auto ow1 = OneWire(owDriver1);

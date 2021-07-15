@@ -22,14 +22,12 @@
 #include "CboxError.h"
 #include "DataStream.h"
 #include "ObjectStorage.h"
-#include <filesystem>
 #include <string>
 
 namespace cbox {
 class FileObjectStorage : public ObjectStorage {
 public:
-    FileObjectStorage(const std::filesystem::path& root_);
-    FileObjectStorage(std::filesystem::path&& root_);
+    FileObjectStorage(const std::string& root_);
 
     virtual ~FileObjectStorage() = default;
 
@@ -48,10 +46,9 @@ public:
 
     virtual void clear() override final;
 
-    stream_size_t freeSpace();
-
 private:
-    std::filesystem::path root;
+    std::string path;
+    size_t rootLen;
 
     inline uint8_t
     storageVersion() const
@@ -59,9 +56,10 @@ private:
         return 0x01;
     }
 
-    std::filesystem::path getPath(const storage_id_t& id)
+    void setPath(const storage_id_t& id)
     {
-        return root / std::to_string(uint16_t(id));
+        path.resize(rootLen);
+        path += std::to_string(uint16_t(id));
     }
 };
 

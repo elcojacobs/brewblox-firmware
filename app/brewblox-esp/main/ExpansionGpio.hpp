@@ -34,8 +34,6 @@ public:
         expander.set_outputs(0b11111111); // 24V aan
     }
 
-    void drv_status();
-
     void test();
 
     virtual bool supportsFastIo()
@@ -125,10 +123,8 @@ public:
 
         void apply(const ChanBitsInternal& mask, const ChanBitsInternal& state)
         {
-            ESP_LOGW("apply_before", "%x %x", state.all, mask.all);
             this->all &= ~mask.all;
             this->all |= state.all;
-            ESP_LOGW("apply_after", "%x", this->all);
         }
     };
 

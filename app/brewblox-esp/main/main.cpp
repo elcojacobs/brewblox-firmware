@@ -19,8 +19,35 @@
 #include <asio.hpp>
 #include <esp_heap_caps.h>
 #include <esp_log.h>
+#include <esp_spiffs.h>
 #include <iomanip>
 #include <sstream>
+
+void mount_blocks_spiff()
+{
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/blocks",
+        .partition_label = "blocks",
+        .max_files = 1,
+        .format_if_mount_failed = true};
+
+    // Use settings defined above to initialize and mount SPIFFS filesystem.
+    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+
+    const char* TAG = "BLOCKS";
+
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        }
+        return;
+    }
+}
 
 extern "C" {
 #ifdef ESP_PLATFORM
@@ -40,6 +67,8 @@ int main(int /*argc*/, char** /*argv*/)
 
     hal_delay_ms(100);
     network_init();
+
+    mount_blocks_spiff();
 
     static auto graphics = Graphics::getInstance();
     static std::array<NormalWidget, 5> sensorWidgets{{
@@ -104,7 +133,6 @@ int main(int /*argc*/, char** /*argv*/)
                                                static ExpansionGpio* exp1 = new ExpansionGpio(0);
                                                static bool active = false;
                                                exp1->test();
-                                               exp1->drv_status();
                                                if (active) {
                                                    exp1->writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_HIGH);
                                                } else {

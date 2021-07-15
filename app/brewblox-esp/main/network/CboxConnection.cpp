@@ -80,6 +80,7 @@ void CboxConnection::handle_write(std::error_code ec, std::size_t bytes_transfer
         // ESP_LOGE("CbConn", "graceful close, %s", ec.message().c_str());
         // socket.shutdown(asio::ip::tcp::socket::shutdown_both,
         //                 ignored_ec);
+        do_write(); // write more in case data is available
     } else if (ec != asio::error::operation_aborted) {
         connection_manager.stop(shared_from_this());
     }
