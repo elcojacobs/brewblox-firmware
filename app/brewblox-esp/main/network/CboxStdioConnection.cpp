@@ -14,26 +14,23 @@ CboxStdioConnection::CboxStdioConnection(
 {
 }
 
-void CboxStdioConnection::do_read()
+void CboxStdioConnection::async_read_impl(asio::streambuf& buffer_out, std::shared_ptr<CboxConnection> self)
 {
-    auto self(shared_from_this());
     asio::async_read_until(
         in,
         buffer_in,
         '\n',
-        [this, self](std::error_code ec, std::size_t bytes_transferred) {
-            handle_read(ec, bytes_transferred);
+        [self{std::move(self)}](std::error_code ec, std::size_t bytes_transferred) {
+            self->finish_read(ec, bytes_transferred);
         });
 }
 
-void CboxStdioConnection::do_write()
+void CboxStdioConnection::async_write_impl(asio::streambuf& buffer_out, std::shared_ptr<CboxConnection> self)
 {
-    if (buffer_out.size()) {
-        auto self(shared_from_this());
-        asio::async_write(
-            out, buffer_out,
-            [this, self](std::error_code ec, std::size_t bytes_transferred) {
-                handle_write(ec, bytes_transferred);
-            });
-    }
+    asio::async_write(
+        out,
+        buffer_out,
+        [self{std::move(self)}](std::error_code ec, std::size_t bytes_transferred) {
+            self->finish_write(ec, bytes_transferred);
+        });
 }

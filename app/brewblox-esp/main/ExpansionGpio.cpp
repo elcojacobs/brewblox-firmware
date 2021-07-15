@@ -97,7 +97,6 @@ void FlexChannel::configure(
     pins_mask = pins;
     when_active_mask = when_active_state;
     when_inactive_mask = when_inactive_state;
-    ESP_LOGW("configure", "%x %x", pins.all, pins_mask.all);
 }
 
 void FlexChannel::apply(ChannelConfig& config, ChanBitsInternal& op_ctrl)
@@ -123,20 +122,12 @@ bool ExpansionGpio::writeChannelImpl(uint8_t channel, IoArray::ChannelConfig con
     uint8_t idx = channel - 1;
 
     flexChannels[idx].apply(config, op_ctrl);
-    ESP_LOGW("OP", "%x", op_ctrl.all);
     ESP_ERROR_CHECK_WITHOUT_ABORT(drv.writeRegister(DRV8908::RegAddr::OP_CTRL_1, op_ctrl.byte1));
     ESP_ERROR_CHECK_WITHOUT_ABORT(drv.writeRegister(DRV8908::RegAddr::OP_CTRL_2, op_ctrl.byte2));
     return true;
 }
 
-void ExpansionGpio::drv_status()
-{
-    // uint8_t result = 0xFF;
-    // ESP_ERROR_CHECK_WITHOUT_ABORT(drv.readRegister(DRV8908::RegAddr::IC_STAT, result));
-    ESP_LOGI("drv status", "%x", drv.status());
-}
-
-void ExpansionGpio::selfTest()
+void ExpansionGpio::test()
 {
     ChanBits pins;
     ChanBits whenActive;
@@ -150,7 +141,6 @@ void ExpansionGpio::selfTest()
     ChanBits pins3 = pins2;
     // pins2.set(1, PinState::BOTH);
     // pins2.set(2, PinState::BOTH);
-    ESP_LOGW("test", "%x %x %x", pins.all, pins2.all, pins3.all);
 
     whenActive.set(1, PinState::PULL_DOWN);
     whenActive.set(2, PinState::PULL_DOWN);
@@ -171,6 +161,4 @@ void ExpansionGpio::selfTest()
     whenInactive.set(8, PinState::PULL_DOWN);
 
     flexChannels[0].configure(pins, whenActive, whenInactive);
-    auto f = flexChannels[0];
-    ESP_LOGW("converted_Back", "%x %x", f.when_active().all, f.when_inactive().all);
 }

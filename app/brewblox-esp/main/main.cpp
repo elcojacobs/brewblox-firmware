@@ -19,8 +19,35 @@
 #include <asio.hpp>
 #include <esp_heap_caps.h>
 #include <esp_log.h>
+#include <esp_spiffs.h>
 #include <iomanip>
 #include <sstream>
+
+void mount_blocks_spiff()
+{
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/blocks",
+        .partition_label = "blocks",
+        .max_files = 1,
+        .format_if_mount_failed = true};
+
+    // Use settings defined above to initialize and mount SPIFFS filesystem.
+    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+
+    const char* TAG = "BLOCKS";
+
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        }
+        return;
+    }
+}
 
 extern "C" {
 #ifdef ESP_PLATFORM
@@ -40,15 +67,8 @@ int main(int /*argc*/, char** /*argv*/)
 
     hal_delay_ms(100);
     network_init();
-    // auto settings = DisplaySettingsBlock::settings();
 
-    // static std::array<NormalWidget, 5> sensorWidgets{{
-    //     NormalWidget(graphics.grid, "Widget 1", "IPA", "21.0"),
-    //     NormalWidget(graphics.grid, "Widget 2", "Blond", "21.0"),
-    //     NormalWidget(graphics.grid, "Widget 3", "Lager", "5.1"),
-    //     NormalWidget(graphics.grid, "Widget 4", "Stout", "23.1"),
-    //     NormalWidget(graphics.grid, "Widget 5", "Wit", "21.4"),
-    // }};
+    mount_blocks_spiff();
 
     ESP_LOGI("Display", "Image written");
 
@@ -129,8 +149,7 @@ int main(int /*argc*/, char** /*argv*/)
                                            []() {
                                                static ExpansionGpio* exp1 = new ExpansionGpio(0);
                                                static bool active = false;
-                                               exp1->selfTest();
-                                               exp1->drv_status();
+                                               exp1->test();
                                                if (active) {
                                                    exp1->writeChannelConfig(1, IoArray::ChannelConfig::ACTIVE_HIGH);
                                                } else {

@@ -70,8 +70,14 @@ public:
 
     virtual void start();
     virtual void stop();
-    virtual void do_read() = 0;
-    virtual void do_write() = 0;
+    // virtual dispatch because only derived class knows stream type to pass to templated async read/write
+    virtual void async_write_impl(asio::streambuf& buffer_out, std::shared_ptr<CboxConnection> self) = 0;
+    virtual void async_read_impl(asio::streambuf& buffer_in, std::shared_ptr<CboxConnection> self) = 0;
+
+    void start_read();
+    void start_write();
+    void finish_write(std::error_code ec, std::size_t bytes_transferred);
+    void finish_read(std::error_code ec, std::size_t bytes_transferred);
 
 protected:
     void handle_read(std::error_code ec, std::size_t bytes_transferred);
@@ -81,6 +87,7 @@ protected:
     asio::streambuf buffer_out;
     CboxConnectionManager& connection_manager;
     cbox::Box& box;
+    bool writing = false;
 };
 
 using CboxConnectionPtr = std::shared_ptr<CboxConnection>;

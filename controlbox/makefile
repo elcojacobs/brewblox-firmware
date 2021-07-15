@@ -42,7 +42,7 @@ CFLAGS += -Werror=deprecated-declarations
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -DDEBUG_BUILD
 
-CPPFLAGS += -std=gnu++14
+CPPFLAGS += -std=gnu++17
 CFLAGS += -pthread
 
 

@@ -26,7 +26,7 @@
 #include <string>
 namespace cbox {
 
-using stream_size_t = uint16_t;
+using stream_size_t = size_t;
 
 /**
  * An output stream that supports writing data.
@@ -173,6 +173,7 @@ enum class StreamType : uint8_t {
     Usb = 1,
     Tcp = 2,
     Eeprom = 3,
+    File = 4,
 };
 
 /**

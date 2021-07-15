@@ -25,8 +25,6 @@
 
 namespace cbox {
 
-typedef uint16_t stream_size_t;
-
 bool DataOut::writeBuffer(const uint8_t* data, stream_size_t len)
 {
     const uint8_t* d = data;
