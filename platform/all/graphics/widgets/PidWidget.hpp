@@ -1,5 +1,6 @@
 #pragma once
 #include "./BaseWidget.hpp"
+#include "blox/PidBlock.h"
 
 class PidWidget : public BaseWidget {
 public:

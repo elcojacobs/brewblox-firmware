@@ -1,6 +1,7 @@
 #include "fonts/fonts.hpp"
 #include "lvgl.h"
 #include "styles.hpp"
+#include <ctime>
 #include <string>
 
 class Bar {
@@ -25,7 +26,7 @@ public:
         timeLabel = lv_label_create(barObj, NULL);
         lv_label_set_align(timeLabel, LV_LABEL_ALIGN_CENTER);
 
-        lv_label_set_text(this->timeLabel, time.c_str());
+        lv_label_set_text(this->timeLabel, time);
         lv_obj_align(timeLabel, NULL, LV_ALIGN_IN_RIGHT_MID, -5, 0);
         updateLabel();
     }
@@ -54,15 +55,17 @@ public:
         updateLabel();
     }
 
-    void setTime(uint8_t hours, uint8_t minutes)
+    void updateTime()
     {
-        auto hoursString = std::to_string(hours);
-        auto minuteString = std::to_string(minutes);
+        struct timeval tv;
+        time_t nowtime;
+        struct tm* nowtm;
 
-        hoursString.insert(hoursString.begin(), 2 - hoursString.length(), '0');
-        minuteString.insert(minuteString.begin(), 2 - minuteString.length(), '0');
+        gettimeofday(&tv, NULL);
+        nowtime = tv.tv_sec;
+        nowtm = localtime(&nowtime);
+        strftime(time, sizeof(time), "%H:%M:%S", nowtm);
 
-        this->time = hoursString + ":" + minuteString;
         updateLabel();
     }
 
@@ -85,19 +88,20 @@ private:
         std::string t = std::string() + " " + ethernet + "  " + wifi;
         lv_label_set_text(this->label, t.c_str());
         lv_obj_align(label, NULL, LV_ALIGN_IN_LEFT_MID, 0, 0);
-        lv_label_set_text(this->timeLabel, time.c_str());
+        lv_label_set_text(this->timeLabel, time);
     }
 
     std::string formatIp(uint32_t ip)
     {
         return std::to_string((ip >> (8 * 0)) & 0xff) + "." + std::to_string((ip >> (8 * 1)) & 0xff) + "." + std::to_string((ip >> (8 * 2)) & 0xff) + "." + std::to_string((ip >> (8 * 3)) & 0xff);
     }
+
     std::string ethernetIp = "xx.xx.xx.xx";
     std::string wifiIp = "xx.xx.xx.xx";
     bool wifiEnabled = false;
     bool ethernetEnabled = false;
 
-    std::string time = "00:00";
+    char time[10] = "00:00:00";
     lv_obj_t* barObj = nullptr;
     lv_obj_t* label = nullptr;
     lv_obj_t* timeLabel = nullptr;

@@ -75,8 +75,7 @@ int main(int /*argc*/, char** /*argv*/)
     asio::io_context io;
     static auto& box = makeBrewBloxBox(io);
 
-    static auto graphics = Graphics::getInstance();
-    graphics.setBox(&box);
+    Graphics::init(box);
     // static auto widget6 = PidWidget(graphics.grid);
     // widget6.setBar1(25);
     // widget6.setBar2(-80);
@@ -94,55 +93,11 @@ int main(int /*argc*/, char** /*argv*/)
     static auto displayTicker = RecurringTask(io, asio::chrono::milliseconds(100),
                                               RecurringTask::IntervalType::FROM_EXPIRY,
                                               []() {
-                                                  //   auto w_it = sensorWidgets.begin();
-                                                  //   for (auto& s_lookup : sensors) {
-                                                  //       if (auto s = s_lookup.const_lock()) {
-                                                  //           if (s->valid()) {
-                                                  //               auto v = s->value();
-                                                  //               auto temp_str = temp_to_string(v, 2, TempUnit::Celsius);
-                                                  //               w_it->setValue2(temp_str);
-                                                  //           } else {
-                                                  //               w_it->setValue2("--.-");
-                                                  //           }
-                                                  //       } else {
-                                                  //           w_it->setValue2("-");
-                                                  //       }
-                                                  //       w_it++;
-                                                  //   }
-                                                  auto& wifi = get_wifi();
-                                                  graphics.bar.setWifiIp(wifi.get_local_ip());
-                                                  graphics.bar.setWifiEnabled(wifi.is_connected());
-
-                                                  graphics.updateWidgets();
-                                                  auto& ethernet = get_ethernet();
-                                                  graphics.bar.setEthernetIp(ethernet.get_local_ip());
-                                                  graphics.bar.setEthernetEnabled(ethernet.is_connected());
-                                                  graphics.updateConfig();
-                                                  graphics.aquire_spi();
-
-                                                  lv_task_handler();
-                                                  graphics.release_spi();
+                                                  Graphics::update();
+                                                  Graphics::tick(100);
                                               });
+
     displayTicker.start();
-
-    static auto displayTimer = RecurringTask(io, asio::chrono::milliseconds(100),
-                                             RecurringTask::IntervalType::FROM_EXPIRY,
-                                             []() {
-                                                 lv_tick_inc(100); // This must be set to the time it took!
-                                             });
-    displayTimer.start();
-
-    static auto timeSetter = RecurringTask(io, asio::chrono::milliseconds(1000),
-                                           RecurringTask::IntervalType::FROM_EXPIRY,
-                                           []() {
-                                               auto tickMinutes = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::minutes(1);
-                                               auto minutes = tickMinutes % (60);
-
-                                               auto tickHours = asio::chrono::steady_clock::now().time_since_epoch() / asio::chrono::hours(1);
-                                               auto hours = tickHours % (24);
-                                               graphics.bar.setTime(hours, minutes);
-                                           });
-    timeSetter.start();
 
     static auto gpioTester = RecurringTask(io, asio::chrono::milliseconds(5000),
                                            RecurringTask::IntervalType::FROM_EXPIRY,

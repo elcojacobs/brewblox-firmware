@@ -1,5 +1,4 @@
 #include "./BaseWidget.hpp"
-#include "../styles.hpp"
 
 BaseWidget::BaseWidget(lv_obj_t* grid, lv_color_t color)
     : grid(grid)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "./BaseWidget.hpp"
-#include "lvgl.h"
+#include "blox/SetpointSensorPairBlock.h"
 
 class SetpointWidget : public BaseWidget {
 public:

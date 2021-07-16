@@ -1,4 +1,6 @@
 #pragma once
+#include "../fonts/fonts.hpp"
+#include "../styles.hpp"
 #include "Temperature.h"
 #include "lvgl.h"
 

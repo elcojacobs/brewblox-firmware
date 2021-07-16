@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../styles.hpp"
 #include "./BaseWidget.hpp"
 #include "lvgl.h"
 

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BrewBlox.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#pragma once
 #include "IntervalHelper.h"
 #include "SetpointSensorPair.h"
 #include "blox/Block.h"
